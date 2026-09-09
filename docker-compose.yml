@@ -1,0 +1,42 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: scrobbler
+      POSTGRES_USER: scrobbler
+      POSTGRES_PASSWORD: scrobbler
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://scrobbler:scrobbler@db:5432/scrobbler
+    depends_on:
+      - db
+
+  worker:
+    build:
+      context: ./worker
+    ports:
+      - "8001:8001"
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
