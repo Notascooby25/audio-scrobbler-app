@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base
@@ -21,6 +21,7 @@ class User(Base):
 
 class ListeningEvent(Base):
     __tablename__ = "listening_events"
+    __table_args__ = (UniqueConstraint("user_id", "track_id", "played_at", name="uq_listening_event_identity"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
