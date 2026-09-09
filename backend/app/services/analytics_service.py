@@ -2,8 +2,13 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from ..queries.analytics_queries import build_monthly_summary_query
-from ..schemas.analytics import MonthlySummaryEntry, MonthlySummaryResponse
+from ..queries.analytics_queries import build_monthly_summary_query, build_recent_scrobbles_query
+from ..schemas.analytics import (
+    MonthlySummaryEntry,
+    MonthlySummaryResponse,
+    ScrobbleListEntry,
+    ScrobbleListResponse,
+)
 
 
 def get_monthly_summary(
@@ -33,4 +38,32 @@ def get_monthly_summary(
         user_id=user_id,
         summary=summary,
         total_months=len(summary),
+    )
+
+
+def get_recent_scrobbles(
+    db: Session,
+    user_id: int,
+    limit: int = 50,
+    offset: int = 0,
+) -> ScrobbleListResponse:
+    statement = build_recent_scrobbles_query(user_id=user_id, limit=limit, offset=offset)
+    rows = db.execute(statement).all()
+
+    scrobbles = [
+        ScrobbleListEntry(
+            id=row.id,
+            track_name=row.track_name,
+            artist_name=row.artist_name,
+            source=row.source,
+            played_at=row.played_at,
+        )
+        for row in rows
+    ]
+
+    return ScrobbleListResponse(
+        user_id=user_id,
+        scrobbles=scrobbles,
+        limit=limit,
+        offset=offset,
     )

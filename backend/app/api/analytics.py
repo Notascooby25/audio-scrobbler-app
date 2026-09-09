@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 from ..api.deps import get_current_user
 from ..db import get_db
 from ..models import User
-from ..schemas.analytics import MonthlySummaryResponse
-from ..services.analytics_service import get_monthly_summary
+from ..schemas.analytics import MonthlySummaryResponse, ScrobbleListResponse
+from ..services.analytics_service import get_monthly_summary, get_recent_scrobbles
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -23,3 +23,13 @@ def monthly_summary(
         return get_monthly_summary(db, current_user.id, from_month, to_month)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/recent-scrobbles")
+def recent_scrobbles(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ScrobbleListResponse:
+    return get_recent_scrobbles(db, current_user.id, limit, offset)
