@@ -26,6 +26,7 @@ services:
       APP_ENV: development
       APP_VERSION: 0.1.2
       DATABASE_URL: postgresql+psycopg://scrobbler:scrobbler@db:5432/scrobbler
+      WORKER_INGESTION_TOKEN: dev-worker-token
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
@@ -41,6 +42,11 @@ services:
       context: ./worker
     ports:
       - "8001:8001"
+    environment:
+      WORKER_BACKEND_URL: http://backend:8000
+      WORKER_INGESTION_TOKEN: dev-worker-token
+      WORKER_FIXTURE_ENABLED: "false"
+      WORKER_USER_ID: "1"
     depends_on:
       db:
         condition: service_healthy

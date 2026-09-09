@@ -18,6 +18,7 @@ class Settings:
     jwt_secret: str = os.getenv("JWT_SECRET", "dev-secret-change-me")
     refresh_token_key: str = os.getenv("REFRESH_TOKEN_KEY", "0123456789abcdef0123456789abcdef")
     ingestion_worker_url: str = os.getenv("INGESTION_WORKER_URL", "http://worker:8001")
+    worker_ingestion_token: str = os.getenv("WORKER_INGESTION_TOKEN", "dev-worker-token")
 
     def validate(self) -> None:
         if self.environment.lower() == "production":
@@ -25,6 +26,8 @@ class Settings:
                 raise ValueError("JWT_SECRET must be changed in production")
             if self.refresh_token_key == "0123456789abcdef0123456789abcdef":
                 raise ValueError("REFRESH_TOKEN_KEY must be changed in production")
+            if self.worker_ingestion_token == "dev-worker-token":
+                raise ValueError("WORKER_INGESTION_TOKEN must be changed in production")
 
 
 settings = Settings()

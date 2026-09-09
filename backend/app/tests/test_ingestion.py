@@ -80,6 +80,21 @@ def test_ingest_route_requires_authentication():
     assert response.status_code == 401
 
 
+def test_worker_ingest_route_requires_worker_token():
+    response = client.post(
+        "/ingestion/internal/events",
+        json={
+            "user_id": 1,
+            "track_id": "track-4",
+            "track_name": "Track Four",
+            "artist_name": "Artist Four",
+            "played_at": "2026-01-15T12:30:00",
+        },
+    )
+
+    assert response.status_code == 401
+
+
 def test_ingest_route_rejects_invalid_payload():
     app.dependency_overrides[ingestion_module.get_current_user] = lambda: DemoUser()
     response = client.post(
