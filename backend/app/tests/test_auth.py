@@ -91,3 +91,21 @@ def test_dev_token_endpoint_returns_signed_token():
 def test_spotify_denial_returns_bad_request():
     response = client.get("/auth/spotify/callback?state=valid-state&error=access_denied")
     assert response.status_code == 400
+
+
+def test_cors_origins_are_parsed_and_wildcards_rejected_in_production():
+    development = type(settings)(cors_origins="http://localhost:5173, https://example.test")
+    assert development.allowed_cors_origins() == ["http://localhost:5173", "https://example.test"]
+
+    production = type(settings)(
+        environment="production",
+        jwt_secret="real-jwt-secret",
+        refresh_token_key="real-refresh-secret",
+        worker_ingestion_token="real-worker-token",
+        database_url="postgresql+psycopg://user:password@db:5432/app",
+        spotify_client_id="client",
+        spotify_client_secret="secret",
+        cors_origins="*",
+    )
+    with pytest.raises(ValueError, match="CORS_ORIGINS"):
+        production.validate()

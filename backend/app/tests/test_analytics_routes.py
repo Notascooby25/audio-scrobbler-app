@@ -44,7 +44,7 @@ def test_monthly_summary_requires_authentication():
 def test_health_reports_current_application_version():
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json()["version"] == "0.2.0"
+    assert response.json()["version"] == "0.2.1"
 
 
 def test_production_settings_reject_placeholder_secrets():

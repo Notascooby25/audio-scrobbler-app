@@ -12,7 +12,7 @@ load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 @dataclass(frozen=True)
 class Settings:
     app_name: str = "Audio Scrobbler App"
-    app_version: str = os.getenv("APP_VERSION", "0.2.0")
+    app_version: str = os.getenv("APP_VERSION", "0.2.1")
     environment: str = os.getenv("APP_ENV", "development")
     database_url: str = os.getenv("DATABASE_URL", "postgresql+psycopg://scrobbler:scrobbler@db:5432/scrobbler")
     jwt_secret: str = os.getenv("JWT_SECRET", "dev-secret-change-me")
@@ -28,6 +28,10 @@ class Settings:
     spotify_redirect_uri: str = os.getenv("SPOTIFY_REDIRECT_URI", "http://localhost:8000/auth/spotify/callback")
     spotify_scopes: str = os.getenv("SPOTIFY_SCOPES", "user-read-recently-played")
     frontend_auth_callback_url: str = os.getenv("FRONTEND_AUTH_CALLBACK_URL", "")
+    cors_origins: str = os.getenv("CORS_ORIGINS", "http://localhost:5173")
+
+    def allowed_cors_origins(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
     def validate(self) -> None:
         if self.environment.lower() == "production":
@@ -37,6 +41,10 @@ class Settings:
                 raise ValueError("REFRESH_TOKEN_KEY must be changed in production")
             if self.worker_ingestion_token == "dev-worker-token":
                 raise ValueError("WORKER_INGESTION_TOKEN must be changed in production")
+            if self.database_url == "postgresql+psycopg://scrobbler:scrobbler@db:5432/scrobbler":
+                raise ValueError("DATABASE_URL must be configured in production")
+            if "*" in self.allowed_cors_origins():
+                raise ValueError("CORS_ORIGINS cannot contain wildcard origins in production")
             if not self.spotify_client_id or not self.spotify_client_secret:
                 raise ValueError("Spotify OAuth credentials must be configured in production")
 
