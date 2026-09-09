@@ -2,7 +2,17 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import JSON, BigInteger, Boolean, DateTime, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base
@@ -39,6 +49,19 @@ class ListeningEvent(Base):
     play_id: Mapped[str] = mapped_column(String(255), index=True, nullable=False, default="")
     payload: Mapped[str] = mapped_column(Text, nullable=True)
     raw_metadata: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class Follow(Base):
+    __tablename__ = "follows"
+    __table_args__ = (
+        UniqueConstraint("follower_id", "followee_id", name="uq_follow_identity"),
+        CheckConstraint("follower_id != followee_id", name="ck_follow_no_self_follow"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    follower_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    followee_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
