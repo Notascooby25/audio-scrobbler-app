@@ -4,12 +4,14 @@ import App from './App'
 
 vi.mock('./api', () => ({
   fetchMonthlySummary: vi.fn(),
+  fetchRecentScrobbles: vi.fn().mockResolvedValue({ user_id: 1, scrobbles: [], limit: 50, offset: 0 }),
+  submitImportScrobbles: vi.fn(),
   requestDevelopmentToken: vi.fn().mockResolvedValue({ access_token: 'demo-token', expires_in: 3600 }),
   requestSpotifyAuthorization: vi.fn().mockResolvedValue({ authorization_url: 'https://accounts.spotify.com/authorize' }),
   redirectToAuthorization: vi.fn(),
 }))
 
-import { fetchMonthlySummary, requestDevelopmentToken, requestSpotifyAuthorization } from './api'
+import { fetchMonthlySummary, fetchRecentScrobbles, requestDevelopmentToken, requestSpotifyAuthorization, submitImportScrobbles } from './api'
 
 describe('App', () => {
   afterEach(() => {
@@ -79,5 +81,48 @@ describe('App', () => {
 
     await waitFor(() => expect(screen.getByText('Your session has expired. Sign in again.')).toBeInTheDocument())
     expect(localStorage.getItem('audio-scrobbler-session')).toBeNull()
+  })
+
+  it('renders source badges for recent scrobbles', async () => {
+    fetchMonthlySummary.mockResolvedValue({ user_id: 1, summary: [], total_months: 0 })
+    fetchRecentScrobbles.mockResolvedValue({
+      user_id: 1,
+      limit: 50,
+      offset: 0,
+      scrobbles: [
+        { id: 1, track_name: 'Daylight', artist_name: 'Matt Berninger', source: 'spotify', played_at: '2026-01-15T12:30:00' },
+        { id: 2, track_name: 'Midnight City', artist_name: 'M83', source: 'youtube', played_at: '2026-01-15T12:31:00' },
+      ],
+    })
+    render(<App />)
+
+    fireEvent.change(screen.getByLabelText('Development user ID'), { target: { value: '1' } })
+    fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'))
+
+    await waitFor(() => expect(screen.getByText('Daylight')).toBeInTheDocument())
+    expect(screen.getByText('spotify')).toBeInTheDocument()
+    expect(screen.getByText('youtube')).toBeInTheDocument()
+  })
+
+  it('shows an import summary breakdown after a successful import', async () => {
+    fetchMonthlySummary.mockResolvedValue({ user_id: 1, summary: [], total_months: 0 })
+    fetchRecentScrobbles.mockResolvedValue({ user_id: 1, scrobbles: [], limit: 50, offset: 0 })
+    submitImportScrobbles.mockResolvedValue({
+      source: 'spotify',
+      status: 'ok',
+      summary: { inserted: 2, skipped: 1, duplicate: 0 },
+    })
+    render(<App />)
+
+    fireEvent.change(screen.getByLabelText('Development user ID'), { target: { value: '1' } })
+    fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'))
+    await waitFor(() => expect(screen.getByText('No listens found for this date range.')).toBeInTheDocument())
+
+    const file = new File([JSON.stringify([{ trackName: 'Slow Show' }])], 'spotify-history.json', { type: 'application/json' })
+    file.text = async () => JSON.stringify([{ trackName: 'Slow Show' }])
+    fireEvent.change(screen.getByLabelText('Import history JSON'), { target: { files: [file] } })
+
+    await waitFor(() => expect(screen.getByText('spotify', { exact: false })).toBeInTheDocument())
+    expect(screen.getByText('2')).toBeInTheDocument()
   })
 })
