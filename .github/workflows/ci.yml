@@ -102,6 +102,22 @@ jobs:
       - name: Validate monitoring configuration files
         run: test -s monitoring/prometheus.yml && test -s monitoring/alerts.yml && test -s monitoring/alertmanager.yml
 
+      - name: Validate Prometheus configuration and rules
+        run: |
+          docker run --rm -v "$PWD/monitoring:/etc/prometheus:ro" --entrypoint promtool docker.io/prom/prometheus:v2.54.1 \
+            check config /etc/prometheus/prometheus.yml
+          docker run --rm -v "$PWD/monitoring:/etc/prometheus:ro" --entrypoint promtool docker.io/prom/prometheus:v2.54.1 \
+            check rules /etc/prometheus/alerts.yml
+
+      - name: Validate Alertmanager configuration
+        run: |
+          docker run --rm \
+            -e ALERTMANAGER_CRITICAL_WEBHOOK_URL=http://127.0.0.1:65535/disabled \
+            -e ALERTMANAGER_WARNING_WEBHOOK_URL=http://127.0.0.1:65535/disabled \
+            -v "$PWD/monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro" \
+            --entrypoint sh docker.io/prom/alertmanager:v0.27.0 -c \
+            'sed "s|\${ALERTMANAGER_CRITICAL_WEBHOOK_URL}|$ALERTMANAGER_CRITICAL_WEBHOOK_URL|g; s|\${ALERTMANAGER_WARNING_WEBHOOK_URL}|$ALERTMANAGER_WARNING_WEBHOOK_URL|g" /etc/alertmanager/alertmanager.yml > /tmp/alertmanager.yml && amtool check-config /tmp/alertmanager.yml'
+
   container-smoke:
     runs-on: ubuntu-latest
     steps:
