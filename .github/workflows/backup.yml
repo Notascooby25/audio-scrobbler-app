@@ -30,6 +30,15 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: monitoring/prometheus.yml,monitoring/alerts.yml,monitoring/alertmanager.yml
+          target: ${{ secrets.DEPLOY_PATH }}
+
+      - name: Upload monitoring configuration
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
           source: monitoring/prometheus.yml,monitoring/alerts.yml
           target: ${{ secrets.DEPLOY_PATH }}
 
@@ -43,6 +52,7 @@ jobs:
           script: |
             set -eu
             cd '${{ secrets.DEPLOY_PATH }}'
+            mkdir -p monitoring
             chmod 700 scripts/backup_database.sh scripts/verify_database_backup.sh
             backup_file="$(ENV_FILE=.env.production COMPOSE_FILE=docker-compose.prod.yml scripts/backup_database.sh)"
             test -s "$backup_file"
