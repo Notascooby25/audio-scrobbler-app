@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from uuid import UUID
-
 from pydantic import BaseModel, ConfigDict
 
 
@@ -15,7 +13,7 @@ class MonthlySummaryEntry(BaseModel):
 
 
 class MonthlySummaryResponse(BaseModel):
-    user_id: UUID
+    user_id: int
     summary: list[MonthlySummaryEntry]
     total_months: int
 

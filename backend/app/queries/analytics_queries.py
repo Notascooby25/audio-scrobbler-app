@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from datetime import date
-from uuid import UUID
-
 from sqlalchemy import func, select
 
 from backend.app.models import ListeningEvent
@@ -24,12 +22,14 @@ def _month_end(value: date) -> date:
 
 
 def build_monthly_summary_query(
-    user_id: UUID,
+    user_id: int,
     from_month: str | None = None,
     to_month: str | None = None,
 ):
-    from_date = _parse_month(from_month) or date.today().replace(day=1)
+    from_date = _parse_month(from_month) or date.min
     to_date = _parse_month(to_month) or date.today().replace(day=1)
+    if from_date > to_date:
+        raise ValueError("from_month must be earlier than or equal to to_month")
 
     month_expr = func.date_trunc("month", ListeningEvent.played_at)
     return (
@@ -37,7 +37,6 @@ def build_monthly_summary_query(
             func.to_char(month_expr, "YYYY-MM").label("month"),
             func.count(ListeningEvent.id).label("total_plays"),
             func.count(func.distinct(ListeningEvent.track_id)).label("unique_tracks"),
-            func.sum(1).label("total_duration_ms"),
         )
         .where(ListeningEvent.user_id == user_id)
         .where(ListeningEvent.played_at >= from_date)
