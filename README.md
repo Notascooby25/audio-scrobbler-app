@@ -67,6 +67,7 @@ Production Compose includes an internal Prometheus service scraping backend and 
 Prometheus also tracks the last verified database backup through a host-local textfile metric and alerts when verification is stale for more than 48 hours.
 Production Compose includes an internal Alertmanager with severity-based routing. Configure the critical and warning webhook URLs through the deployment environment; the documented defaults intentionally disable delivery.
 CI validates Prometheus and Alertmanager configuration semantics with the pinned monitoring images before changes can merge.
+CI builds local application images to start the production monitoring Compose stack with inert placeholder secrets, verifies Prometheus targets and Alertmanager readiness, and tears the stack down afterward.
 
 ## Listening Ingestion
 

@@ -163,6 +163,73 @@ jobs:
         if: always()
         run: docker compose down -v
 
+  production-monitoring-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Start production monitoring stack
+        env:
+          GHCR_OWNER: example
+          IMAGE_TAG: sha-example
+          POSTGRES_DB: scrobbler
+          POSTGRES_USER: scrobbler
+          POSTGRES_PASSWORD: example-password
+          JWT_SECRET: example-jwt-secret
+          REFRESH_TOKEN_KEY: example-refresh-secret
+          WORKER_INGESTION_TOKEN: example-worker-token
+          SPOTIFY_CLIENT_ID: example-client-id
+          SPOTIFY_CLIENT_SECRET: example-client-secret
+          SPOTIFY_REDIRECT_URI: https://example.com/auth/spotify/callback
+          FRONTEND_AUTH_CALLBACK_URL: https://example.com
+          CORS_ORIGINS: https://example.com
+          VITE_API_BASE_URL: https://example.com/api
+          ALERTMANAGER_CRITICAL_WEBHOOK_URL: http://127.0.0.1:65535/disabled
+          ALERTMANAGER_WARNING_WEBHOOK_URL: http://127.0.0.1:65535/disabled
+        run: |
+          docker build -t ci-audio-scrobbler-backend ./backend
+          docker build -t ci-audio-scrobbler-worker ./worker
+          docker build -t ci-audio-scrobbler-frontend ./frontend
+          cat > /tmp/ci-prod-override.yml <<'EOF'
+          services:
+            backend:
+              image: ci-audio-scrobbler-backend
+            worker:
+              image: ci-audio-scrobbler-worker
+            frontend:
+              image: ci-audio-scrobbler-frontend
+          EOF
+          docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml config --quiet
+          docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml up -d
+
+      - name: Wait for production monitoring health
+        run: |
+          for attempt in {1..30}; do
+            healthy="$(docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml ps --format json | grep -c '"Health":"healthy"' || true)"
+            if [ "$healthy" -ge 6 ]; then break; fi
+            sleep 5
+          done
+          docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml ps
+
+      - name: Verify Prometheus and Alertmanager
+        run: |
+          docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml exec -T prometheus wget --spider --quiet http://localhost:9090/-/ready
+          docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml exec -T alertmanager wget --spider --quiet http://localhost:9093/-/ready
+          targets="$(docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml exec -T prometheus wget -qO- http://localhost:9090/api/v1/targets)"
+          printf '%s' "$targets" | grep -q '"job":"backend".*"health":"up"'
+          printf '%s' "$targets" | grep -q '"job":"worker".*"health":"up"'
+          printf '%s' "$targets" | grep -q '"job":"backup".*"health":"up"'
+          docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml exec -T prometheus wget -qO- http://localhost:9090/api/v1/rules | grep -q AudioScrobbler
+
+      - name: Dump production monitoring logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml logs --no-color
+
+      - name: Tear down production monitoring stack
+        if: always()
+        run: docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml down -v
+
   publish-images:
     needs: [backend-worker, frontend, compose, container-smoke]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
