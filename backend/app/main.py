@@ -9,6 +9,8 @@ from .db import Base, engine
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
 
+settings.validate()
+
 app.include_router(analytics_router)
 
 app.add_middleware(

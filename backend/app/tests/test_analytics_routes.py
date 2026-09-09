@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
+import pytest
 from fastapi.testclient import TestClient
 
 from backend.app.api import analytics as analytics_module
+from backend.app.config import Settings
 from backend.app.db import get_db
 from backend.app.main import app
 from backend.app.services.analytics_service import get_monthly_summary
@@ -37,6 +39,17 @@ def test_monthly_summary_requires_authentication():
     response = client.get("/analytics/monthly-summary")
     assert response.status_code == 401
     app.dependency_overrides.clear()
+
+
+def test_health_reports_current_application_version():
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json()["version"] == "0.1.2"
+
+
+def test_production_settings_reject_placeholder_secrets():
+    with pytest.raises(ValueError, match="JWT_SECRET"):
+        Settings(environment="production").validate()
 
 
 def test_monthly_summary_accepts_authenticated_user():

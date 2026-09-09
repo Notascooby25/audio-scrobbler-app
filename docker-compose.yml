@@ -23,6 +23,8 @@ services:
     ports:
       - "8000:8000"
     environment:
+      APP_ENV: development
+      APP_VERSION: 0.1.2
       DATABASE_URL: postgresql+psycopg://scrobbler:scrobbler@db:5432/scrobbler
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
