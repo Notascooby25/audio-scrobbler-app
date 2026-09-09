@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 import requests
 from sqlalchemy import create_engine
 from sqlalchemy import text
@@ -113,6 +113,29 @@ def health_check() -> dict[str, str]:
         "last_spotify_sync_failures": str(last_spotify_sync_failures),
         "last_spotify_sync_events": str(last_spotify_sync_events),
     }
+
+
+@app.get("/metrics", response_class=PlainTextResponse)
+def metrics() -> str:
+    last_sync = 0 if last_spotify_sync_at == "never" or last_spotify_sync_at is None else 1
+    return "\n".join([
+        "# HELP audio_scrobbler_worker_scheduler_running Scheduler state.",
+        "# TYPE audio_scrobbler_worker_scheduler_running gauge",
+        f"audio_scrobbler_worker_scheduler_running {int(scheduler.running)}",
+        "# HELP audio_scrobbler_worker_spotify_sync_success Last sync completed.",
+        "# TYPE audio_scrobbler_worker_spotify_sync_success gauge",
+        f"audio_scrobbler_worker_spotify_sync_success {last_sync}",
+        "# HELP audio_scrobbler_worker_spotify_sync_users Users attempted in the last sync.",
+        "# TYPE audio_scrobbler_worker_spotify_sync_users gauge",
+        f"audio_scrobbler_worker_spotify_sync_users {last_spotify_sync_users}",
+        "# HELP audio_scrobbler_worker_spotify_sync_failures Failures in the last sync.",
+        "# TYPE audio_scrobbler_worker_spotify_sync_failures gauge",
+        f"audio_scrobbler_worker_spotify_sync_failures {last_spotify_sync_failures}",
+        "# HELP audio_scrobbler_worker_spotify_sync_events Events submitted in the last sync.",
+        "# TYPE audio_scrobbler_worker_spotify_sync_events gauge",
+        f"audio_scrobbler_worker_spotify_sync_events {last_spotify_sync_events}",
+        "",
+    ])
 
 
 @app.get("/readyz", response_model=None)

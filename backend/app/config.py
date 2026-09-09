@@ -12,7 +12,7 @@ load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 @dataclass(frozen=True)
 class Settings:
     app_name: str = "Audio Scrobbler App"
-    app_version: str = os.getenv("APP_VERSION", "0.2.3")
+    app_version: str = os.getenv("APP_VERSION", "0.2.4")
     environment: str = os.getenv("APP_ENV", "development")
     database_url: str = os.getenv("DATABASE_URL", "postgresql+psycopg://scrobbler:scrobbler@db:5432/scrobbler")
     jwt_secret: str = os.getenv("JWT_SECRET", "dev-secret-change-me")

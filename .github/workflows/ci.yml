@@ -125,6 +125,11 @@ jobs:
       - name: Verify worker health
         run: test "$(curl --fail --silent http://localhost:8001/readyz | python -c "import json, sys; print(json.load(sys.stdin)['status'])")" = "ready"
 
+      - name: Verify metrics endpoints
+        run: |
+          curl --fail --silent http://localhost:8000/metrics | grep -q 'audio_scrobbler_ingestion_events_total'
+          curl --fail --silent http://localhost:8001/metrics | grep -q 'audio_scrobbler_worker_scheduler_running'
+
       - name: Verify frontend serves
         run: curl --fail --silent --show-error http://localhost:5173/ > /dev/null
 

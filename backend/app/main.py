@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api.analytics import router as analytics_router
@@ -16,6 +17,7 @@ from .db import engine
 from .services.bootstrap_service import bootstrap_development_user
 from .services.readiness_service import check_backend_readiness
 from .services.runtime_metrics import snapshot
+from .services.metrics_service import prometheus_metrics
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
 logger = logging.getLogger("audio-scrobbler-api")
@@ -47,6 +49,11 @@ async def request_correlation_middleware(request, call_next):
 @app.get("/health")
 def health_check() -> dict[str, str]:
     return {"status": "ok", "app": settings.app_name, "version": settings.app_version, **{key: str(value) for key, value in snapshot().items()}}
+
+
+@app.get("/metrics", response_class=PlainTextResponse)
+def metrics() -> str:
+    return prometheus_metrics()
 
 
 @app.get("/readyz", response_model=None)

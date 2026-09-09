@@ -32,6 +32,7 @@ Spotify OAuth endpoints are available at `/auth/spotify/authorize` and `/auth/sp
 Real Spotify polling is opt-in with `WORKER_SPOTIFY_ENABLED=true`; it remains disabled in the default Compose development stack.
 The worker health endpoint reports the last Spotify sync timestamp, user count, failures, and submitted event count.
 Backend responses include an `X-Request-ID` correlation header, and `/health` reports safe ingestion event and duplicate counters.
+Backend and worker `/metrics` endpoints expose bounded Prometheus-compatible operational metrics without user IDs or credentials.
 
 ## CI
 

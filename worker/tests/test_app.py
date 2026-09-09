@@ -82,3 +82,10 @@ def test_readiness_requires_running_scheduler(monkeypatch):
     monkeypatch.setattr(app, "scheduler", SimpleNamespace(running=False))
     response = app.readiness_check()
     assert response.status_code == 503
+
+
+def test_metrics_exposes_worker_gauges_without_user_data():
+    metrics = app.metrics()
+    assert "audio_scrobbler_worker_scheduler_running" in metrics
+    assert "audio_scrobbler_worker_spotify_sync_failures" in metrics
+    assert "user_id" not in metrics

@@ -45,9 +45,16 @@ def test_monthly_summary_requires_authentication():
 def test_health_reports_current_application_version():
     response = client.get("/health", headers={"X-Request-ID": "test-request-id"})
     assert response.status_code == 200
-    assert response.json()["version"] == "0.2.3"
+    assert response.json()["version"] == "0.2.4"
     assert response.headers["X-Request-ID"] == "test-request-id"
     assert "ingestion_events" in response.json()
+
+
+def test_metrics_exposes_prometheus_counters_without_sensitive_data():
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    assert "audio_scrobbler_ingestion_events_total" in response.text
+    assert "spotify" not in response.text.lower()
 
 
 def test_readiness_reports_ready(monkeypatch):
