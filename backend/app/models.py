@@ -13,6 +13,7 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     spotify_user_id: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    username: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     refresh_token_cipher: Mapped[str] = mapped_column(Text, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -31,6 +32,7 @@ class ListeningEvent(Base):
     track_id: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
     track_name: Mapped[str] = mapped_column(String(255), nullable=False)
     artist_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    album_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     played_at: Mapped[datetime] = mapped_column(DateTime, index=True, nullable=False)
     duration_ms: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     source: Mapped[str] = mapped_column(String(64), default="spotify", nullable=False)

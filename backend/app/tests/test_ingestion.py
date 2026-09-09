@@ -385,7 +385,7 @@ def test_internal_import_route_imports_entries_for_active_user():
     db.query(ListeningEvent).delete()
     db.commit()
     if db.query(User).filter(User.id == 1).first() is None:
-        db.add(User(id=1, spotify_user_id="demo-user", display_name="Demo", refresh_token_cipher="cipher", is_active=True))
+        db.add(User(id=1, spotify_user_id="demo-user", username="demo-user", display_name="Demo", refresh_token_cipher="cipher", is_active=True))
         db.commit()
     app.dependency_overrides[imports_module.get_db] = lambda: db
     try:

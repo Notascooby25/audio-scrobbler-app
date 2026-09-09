@@ -11,6 +11,7 @@ from ..config import settings
 from ..models import User
 from ..security import encrypt_refresh_token
 from .auth_service import create_access_token
+from .username_service import generate_unique_username
 
 SPOTIFY_AUTHORIZE_URL = "https://accounts.spotify.com/authorize"
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
@@ -65,6 +66,7 @@ def complete_spotify_callback(db: Session, code: str, state: str) -> tuple[str, 
     if user is None:
         user = User(
             spotify_user_id=spotify_user_id,
+            username=generate_unique_username(db, profile.get("display_name") or spotify_user_id),
             display_name=profile.get("display_name") or spotify_user_id,
             refresh_token_cipher=encrypt_refresh_token(token_data["refresh_token"]),
             is_active=True,
