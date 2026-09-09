@@ -24,6 +24,15 @@ jobs:
           source: scripts/backup_database.sh,scripts/verify_database_backup.sh
           target: ${{ secrets.DEPLOY_PATH }}
 
+      - name: Upload monitoring configuration
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: monitoring/prometheus.yml,monitoring/alerts.yml
+          target: ${{ secrets.DEPLOY_PATH }}
+
       - name: Create and verify backup
         uses: appleboy/ssh-action@v1.2.0
         with:

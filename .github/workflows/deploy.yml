@@ -37,6 +37,15 @@ jobs:
           source: scripts/backup_database.sh,scripts/verify_database_backup.sh
           target: ${{ secrets.DEPLOY_PATH }}
 
+      - name: Upload monitoring configuration
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: monitoring/prometheus.yml,monitoring/alerts.yml
+          target: ${{ secrets.DEPLOY_PATH }}
+
       - name: Deploy immutable image tag
         id: deploy
         uses: appleboy/ssh-action@v1.2.0
@@ -84,6 +93,20 @@ jobs:
               sleep 5
             done
             exit 1
+
+      - name: Verify monitoring deployment
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -eu
+            cd '${{ secrets.DEPLOY_PATH }}'
+            curl --fail --silent http://localhost:9090/-/ready >/dev/null
+            curl --fail --silent http://localhost:9090/api/v1/targets | grep -q '"health":"up"'
+            curl --fail --silent http://localhost:9090/api/v1/rules | grep -q 'AudioScrobbler'
 
       - name: Write deployment summary
         if: success()

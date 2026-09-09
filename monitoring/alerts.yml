@@ -40,3 +40,11 @@ groups:
           severity: warning
         annotations:
           summary: Spotify sync has not completed successfully
+
+      - alert: AudioScrobblerBackupStale
+        expr: time() - audio_scrobbler_backup_last_verified_timestamp_seconds > 172800
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: Production database backup verification is stale

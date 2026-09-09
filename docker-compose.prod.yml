@@ -98,6 +98,20 @@ services:
         condition: service_healthy
       worker:
         condition: service_healthy
+      node-exporter:
+        condition: service_healthy
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    volumes:
+      - ./monitoring:/host-monitoring:ro
+    command:
+      - --collector.textfile.directory=/host-monitoring
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:9100/metrics"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
 volumes:
   postgres_data:
