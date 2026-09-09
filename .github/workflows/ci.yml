@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend-worker:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: scrobbler
+          POSTGRES_USER: scrobbler
+          POSTGRES_PASSWORD: scrobbler
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U scrobbler -d scrobbler"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            worker/requirements.txt
+
+      - name: Install Python dependencies
+        run: python -m pip install -r backend/requirements.txt -r worker/requirements.txt pytest
+
+      - name: Run backend and worker tests
+        run: PYTHONPATH=worker python -m pytest backend/app/tests worker/tests -q
+
+      - name: Apply clean database migrations
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+psycopg://scrobbler:scrobbler@localhost:5432/scrobbler
+        run: alembic upgrade head
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run frontend tests
+        run: npm test
+
+      - name: Build frontend
+        run: npm run build
+
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate Compose configuration
+        run: docker compose config --quiet

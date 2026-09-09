@@ -30,6 +30,10 @@ Spotify OAuth endpoints are available at `/auth/spotify/authorize` and `/auth/sp
 Real Spotify polling is opt-in with `WORKER_SPOTIFY_ENABLED=true`; it remains disabled in the default Compose development stack.
 The worker health endpoint reports the last Spotify sync timestamp, user count, failures, and submitted event count.
 
+## CI
+
+GitHub Actions runs backend and worker tests, clean PostgreSQL migrations, frontend tests and builds, and Docker Compose validation on pushes to `main` and pull requests.
+
 ## Listening Ingestion
 
 Authenticated clients can submit listening events to `POST /ingestion/events`.
