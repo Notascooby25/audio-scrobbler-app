@@ -71,12 +71,15 @@ def normalize_recent_item(item: dict[str, object], user_id: int) -> dict[str, ob
     artist = artists[0]
     if not isinstance(artist, dict) or not isinstance(artist.get("name"), str):
         return None
+    album = track.get("album")
+    album_name = album.get("name") if isinstance(album, dict) else None
     timestamp = datetime.fromisoformat(played_at.replace("Z", "+00:00")).astimezone(timezone.utc).replace(tzinfo=None)
     return {
         "user_id": user_id,
         "track_id": track_id,
         "track_name": track_name,
         "artist_name": artist["name"],
+        "album_name": album_name if isinstance(album_name, str) else None,
         "played_at": timestamp.isoformat(),
         "duration_ms": track.get("duration_ms") if isinstance(track.get("duration_ms"), int) else None,
         "source": "spotify",

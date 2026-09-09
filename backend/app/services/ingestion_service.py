@@ -21,6 +21,7 @@ def ingest_listening_event(
         track_id=event.track_id,
         track_name=event.track_name,
         artist_name=event.artist_name,
+        album_name=event.album_name,
         played_at=event.played_at,
         duration_ms=event.duration_ms,
         source=event.source,
