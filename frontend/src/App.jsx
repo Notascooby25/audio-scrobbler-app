@@ -12,6 +12,11 @@ function readSavedSession() {
 
 function readCallbackSession() {
   const params = new URLSearchParams(window.location.hash.slice(1))
+  const authError = params.get('auth_error')
+  if (authError) {
+    window.history.replaceState({}, document.title, window.location.pathname + window.location.search)
+    return { authError }
+  }
   const accessToken = params.get('access_token')
   const userId = params.get('user_id')
   const expiresIn = Number(params.get('expires_in'))
@@ -22,15 +27,17 @@ function readCallbackSession() {
 
 export default function App() {
   const callbackSession = readCallbackSession()
+  const callbackError = callbackSession?.authError
+  if (callbackError) localStorage.removeItem('audio-scrobbler-session')
   if (callbackSession) localStorage.setItem('audio-scrobbler-session', JSON.stringify(callbackSession))
-  const savedSession = callbackSession || readSavedSession()
+  const savedSession = callbackSession?.accessToken ? callbackSession : readSavedSession()
   const [userId, setUserId] = useState(savedSession?.userId || '')
   const [token, setToken] = useState(savedSession?.accessToken || '')
   const [fromMonth, setFromMonth] = useState('')
   const [toMonth, setToMonth] = useState('')
   const [summary, setSummary] = useState(null)
-  const [status, setStatus] = useState(savedSession?.accessToken ? 'loading' : 'idle')
-  const [error, setError] = useState('')
+  const [error, setError] = useState(callbackError ? 'Spotify authorization was cancelled.' : '')
+  const [status, setStatus] = useState(callbackError ? 'error' : savedSession?.accessToken ? 'loading' : 'idle')
 
   const connectSpotify = async () => {
     setStatus('loading')

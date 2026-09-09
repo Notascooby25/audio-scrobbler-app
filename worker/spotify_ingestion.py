@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import time
 from datetime import datetime, timedelta, timezone
 
 import requests
@@ -40,6 +41,23 @@ def encrypt_refresh_token(token: str, refresh_token_key: str) -> str:
     return Fernet(key).encrypt(token.encode()).decode()
 
 
+def submit_event_with_retries(backend_url: str, worker_token: str, event: dict[str, object]):
+    for attempt in range(3):
+        response = requests.post(
+            f"{backend_url}/ingestion/internal/events",
+            json=event,
+            headers={"X-Worker-Token": worker_token},
+            timeout=10,
+        )
+        if response.status_code in (429, 500, 502, 503, 504) and attempt < 2:
+            retry_after = min(float(response.headers.get("Retry-After", "1")), 30) if response.status_code == 429 else 2 ** attempt
+            time.sleep(retry_after)
+            continue
+        response.raise_for_status()
+        return response
+    raise requests.HTTPError("Backend ingestion failed after retries")
+
+
 def normalize_recent_item(item: dict[str, object], user_id: int) -> dict[str, object] | None:
     track = item.get("track")
     played_at = item.get("played_at")
@@ -73,12 +91,7 @@ class SpotifyClient:
         self.refresh_token_key = refresh_token_key
 
     def refresh_access_token(self, refresh_token: str) -> tuple[str, str | None]:
-        response = requests.post(
-            SPOTIFY_TOKEN_URL,
-            data={"grant_type": "refresh_token", "refresh_token": refresh_token},
-            auth=(self.client_id, self.client_secret),
-            timeout=10,
-        )
+        response = self._request("post", SPOTIFY_TOKEN_URL, data={"grant_type": "refresh_token", "refresh_token": refresh_token}, auth=(self.client_id, self.client_secret))
         response.raise_for_status()
         data = response.json()
         return data["access_token"], data.get("refresh_token")
@@ -87,15 +100,25 @@ class SpotifyClient:
         params = {"limit": 50}
         if after is not None:
             params["after"] = int(after.replace(tzinfo=timezone.utc).timestamp() * 1000)
-        response = requests.get(
-            SPOTIFY_RECENT_URL,
-            headers={"Authorization": f"Bearer {access_token}"},
-            params=params,
-            timeout=10,
-        )
+        response = self._request("get", SPOTIFY_RECENT_URL, headers={"Authorization": f"Bearer {access_token}"}, params=params)
         response.raise_for_status()
         items = response.json().get("items", [])
         return [event for event in items if isinstance(event, dict)]
+
+    @staticmethod
+    def _request(method: str, url: str, **kwargs):
+        for attempt in range(3):
+            response = getattr(requests, method)(url, timeout=10, **kwargs)
+            if response.status_code == 429 and attempt < 2:
+                retry_after = min(float(response.headers.get("Retry-After", "1")), 30)
+                time.sleep(retry_after)
+                continue
+            if response.status_code >= 500 and attempt < 2:
+                time.sleep(2 ** attempt)
+                continue
+            response.raise_for_status()
+            return response
+        raise requests.HTTPError(f"Spotify request failed after retries: {url}")
 
 
 def sync_user(session, user: UserRecord, client: SpotifyClient, backend_url: str, worker_token: str) -> int:
@@ -107,16 +130,16 @@ def sync_user(session, user: UserRecord, client: SpotifyClient, backend_url: str
     after = checkpoint.last_played_at - timedelta(seconds=60) if checkpoint and checkpoint.last_played_at else None
     access_token, rotated_refresh_token = client.refresh_access_token(refresh_token)
     items = client.recently_played(access_token, after)
-    events = [normalize_recent_item(item, user.id) for item in items]
-    events = [event for event in events if event is not None]
+    events = []
+    for item in items:
+        try:
+            event = normalize_recent_item(item, user.id)
+        except (TypeError, ValueError):
+            continue
+        if event is not None:
+            events.append(event)
     for event in events:
-        response = requests.post(
-            f"{backend_url}/ingestion/internal/events",
-            json=event,
-            headers={"X-Worker-Token": worker_token},
-            timeout=10,
-        )
-        response.raise_for_status()
+        submit_event_with_retries(backend_url, worker_token, event)
     if rotated_refresh_token:
         user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)
     newest = max((datetime.fromisoformat(event["played_at"]) for event in events), default=None)

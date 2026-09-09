@@ -71,4 +71,8 @@ def test_health_reports_scheduler_and_fixture_status(monkeypatch):
         "scheduler_running": "true",
         "fixture_enabled": "false",
         "spotify_enabled": "false",
+        "last_spotify_sync_at": "never",
+        "last_spotify_sync_users": "0",
+        "last_spotify_sync_failures": "0",
+        "last_spotify_sync_events": "0",
     }

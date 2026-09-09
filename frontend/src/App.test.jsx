@@ -26,6 +26,13 @@ describe('App', () => {
     expect(screen.getByText('Connect your account to see your listening history.')).toBeInTheDocument()
   })
 
+  it('shows an error after Spotify authorization is cancelled', () => {
+    window.location.hash = '#auth_error=spotify_authorization_denied'
+    render(<App />)
+    expect(screen.getByText('Spotify authorization was cancelled.')).toBeInTheDocument()
+    window.history.replaceState({}, document.title, window.location.pathname)
+  })
+
   it('requests Spotify authorization from the dashboard', async () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'Connect Spotify' }))

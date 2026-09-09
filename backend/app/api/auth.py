@@ -27,10 +27,17 @@ def spotify_authorize() -> SpotifyAuthorizeResponse:
 
 @router.get("/spotify/callback", response_model=None)
 def spotify_callback(
-    code: str = Query(min_length=1),
+    code: str | None = Query(default=None),
     state: str = Query(min_length=1),
+    error: str | None = Query(default=None),
     db: Session = Depends(get_db),
 ) -> SpotifyCallbackResponse | RedirectResponse:
+    if error:
+        if settings.frontend_auth_callback_url:
+            return RedirectResponse(f"{settings.frontend_auth_callback_url}#auth_error=spotify_authorization_denied")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Spotify authorization was not completed")
+    if not code:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Spotify authorization code is missing")
     try:
         access_token, user_id = complete_spotify_callback(db, code, state)
     except (ValueError, jwt.InvalidTokenError) as exc:

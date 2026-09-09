@@ -27,6 +27,10 @@ spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET", "")
 refresh_token_key = os.getenv("REFRESH_TOKEN_KEY", "0123456789abcdef0123456789abcdef")
 spotify_interval_minutes = int(os.getenv("WORKER_SPOTIFY_INTERVAL_MINUTES", "5"))
 max_attempts = 3
+last_spotify_sync_at: str | None = None
+last_spotify_sync_users = 0
+last_spotify_sync_failures = 0
+last_spotify_sync_events = 0
 
 
 def build_fixture_event() -> dict[str, object]:
@@ -66,6 +70,7 @@ def run_fixture_ingestion() -> None:
 
 
 def run_spotify_ingestion() -> None:
+    global last_spotify_sync_at, last_spotify_sync_users, last_spotify_sync_failures, last_spotify_sync_events
     if not spotify_enabled or not spotify_client_id or not spotify_client_secret:
         return
     engine = create_engine(database_url, pool_pre_ping=True)
@@ -73,13 +78,21 @@ def run_spotify_ingestion() -> None:
     client = SpotifyClient(spotify_client_id, spotify_client_secret, refresh_token_key)
     try:
         users = session.query(UserRecord).filter(UserRecord.is_active.is_(True)).all()
+        failures = 0
+        events = 0
         for user in users:
             try:
                 count = sync_user(session, user, client, backend_url, worker_token)
+                events += count
                 logger.info("Spotify sync completed for user %s: %s events", user.id, count)
-            except requests.RequestException:
+            except Exception:
                 session.rollback()
+                failures += 1
                 logger.exception("Spotify sync failed for user %s", user.id)
+        last_spotify_sync_at = datetime.now(timezone.utc).isoformat()
+        last_spotify_sync_users = len(users)
+        last_spotify_sync_failures = failures
+        last_spotify_sync_events = events
     finally:
         session.close()
         engine.dispose()
@@ -87,7 +100,17 @@ def run_spotify_ingestion() -> None:
 
 @app.get("/health")
 def health_check() -> dict[str, str]:
-    return {"status": "ok", "service": "worker", "scheduler_running": str(scheduler.running).lower(), "fixture_enabled": str(fixture_enabled).lower(), "spotify_enabled": str(spotify_enabled).lower()}
+    return {
+        "status": "ok",
+        "service": "worker",
+        "scheduler_running": str(scheduler.running).lower(),
+        "fixture_enabled": str(fixture_enabled).lower(),
+        "spotify_enabled": str(spotify_enabled).lower(),
+        "last_spotify_sync_at": last_spotify_sync_at or "never",
+        "last_spotify_sync_users": str(last_spotify_sync_users),
+        "last_spotify_sync_failures": str(last_spotify_sync_failures),
+        "last_spotify_sync_events": str(last_spotify_sync_events),
+    }
 
 
 @app.on_event("startup")
