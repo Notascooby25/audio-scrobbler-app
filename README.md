@@ -46,6 +46,14 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d
 
 To roll back, change `IMAGE_TAG` to a previously published SHA and run the same commands. Database migrations run during backend startup; application image rollback does not roll back database migrations.
 The deployment workflow verifies backend, worker, and frontend health and attempts an application-image rollback if startup or readiness fails. It never removes the PostgreSQL volume.
+Before deployment, the workflow creates and restore-verifies a compressed PostgreSQL backup under the host deployment directory. Backups are retained for `BACKUP_RETENTION_DAYS` (14 days by default).
+
+Manual backup and verification from the production host:
+
+```bash
+ENV_FILE=.env.production COMPOSE_FILE=docker-compose.prod.yml scripts/backup_database.sh
+ENV_FILE=.env.production COMPOSE_FILE=docker-compose.prod.yml scripts/verify_database_backup.sh backups/scrobbler-<timestamp>.dump
+```
 
 Production deployment is manually triggered through the GitHub Actions `Deploy production` workflow. Configure the protected `production` environment with `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_PATH`, `DEPLOY_SSH_KEY`, `GHCR_USERNAME`, and `GHCR_TOKEN`. Keep `.env.production` only on the deployment host.
 
