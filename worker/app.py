@@ -12,6 +12,7 @@ from sqlalchemy import create_engine
 from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
+from file_import import process_import_directory
 from spotify_ingestion import SpotifyClient, UserRecord, sync_user
 
 app = FastAPI(title="Audio Scrobbler Worker")
@@ -28,11 +29,17 @@ spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID", "")
 spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET", "")
 refresh_token_key = os.getenv("REFRESH_TOKEN_KEY", "0123456789abcdef0123456789abcdef")
 spotify_interval_minutes = int(os.getenv("WORKER_SPOTIFY_INTERVAL_MINUTES", "5"))
+file_import_enabled = os.getenv("WORKER_FILE_IMPORT_ENABLED", "false").lower() == "true"
+file_import_dir = os.getenv("WORKER_IMPORT_DIR", "/data/imports")
+file_import_interval_minutes = int(os.getenv("WORKER_FILE_IMPORT_INTERVAL_MINUTES", "10"))
 max_attempts = 3
 last_spotify_sync_at: str | None = None
 last_spotify_sync_users = 0
 last_spotify_sync_failures = 0
 last_spotify_sync_events = 0
+last_file_import_at: str | None = None
+last_file_import_processed = 0
+last_file_import_failed = 0
 
 
 def build_fixture_event() -> dict[str, object]:
@@ -100,6 +107,19 @@ def run_spotify_ingestion() -> None:
         engine.dispose()
 
 
+def run_file_import() -> None:
+    global last_file_import_at, last_file_import_processed, last_file_import_failed
+    if not file_import_enabled:
+        return
+    result = process_import_directory(file_import_dir, backend_url, worker_token)
+    last_file_import_at = datetime.now(timezone.utc).isoformat()
+    last_file_import_processed = result["processed"]
+    last_file_import_failed = result["failed"]
+    logger.info(
+        "File import completed: %s processed, %s failed", last_file_import_processed, last_file_import_failed
+    )
+
+
 @app.get("/health")
 def health_check() -> dict[str, str]:
     return {
@@ -112,6 +132,10 @@ def health_check() -> dict[str, str]:
         "last_spotify_sync_users": str(last_spotify_sync_users),
         "last_spotify_sync_failures": str(last_spotify_sync_failures),
         "last_spotify_sync_events": str(last_spotify_sync_events),
+        "file_import_enabled": str(file_import_enabled).lower(),
+        "last_file_import_at": last_file_import_at or "never",
+        "last_file_import_processed": str(last_file_import_processed),
+        "last_file_import_failed": str(last_file_import_failed),
     }
 
 
@@ -134,6 +158,12 @@ def metrics() -> str:
         "# HELP audio_scrobbler_worker_spotify_sync_events Events submitted in the last sync.",
         "# TYPE audio_scrobbler_worker_spotify_sync_events gauge",
         f"audio_scrobbler_worker_spotify_sync_events {last_spotify_sync_events}",
+        "# HELP audio_scrobbler_worker_file_import_processed Files processed in the last file import run.",
+        "# TYPE audio_scrobbler_worker_file_import_processed gauge",
+        f"audio_scrobbler_worker_file_import_processed {last_file_import_processed}",
+        "# HELP audio_scrobbler_worker_file_import_failed Files failed in the last file import run.",
+        "# TYPE audio_scrobbler_worker_file_import_failed gauge",
+        f"audio_scrobbler_worker_file_import_failed {last_file_import_failed}",
         "",
     ])
 
@@ -161,6 +191,8 @@ def start_scheduler() -> None:
         scheduler.add_job(run_fixture_ingestion, "interval", minutes=1, id="fixture-ingestion")
     if spotify_enabled:
         scheduler.add_job(run_spotify_ingestion, "interval", minutes=spotify_interval_minutes, id="spotify-ingestion")
+    if file_import_enabled:
+        scheduler.add_job(run_file_import, "interval", minutes=file_import_interval_minutes, id="file-import")
 
 
 @app.on_event("shutdown")
