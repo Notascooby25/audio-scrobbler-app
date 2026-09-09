@@ -1,5 +1,17 @@
 import { describe, expect, it, vi } from 'vitest'
 import { fetchMonthlySummary, requestDevelopmentToken } from './api'
+import { requestSpotifyAuthorization } from './api'
+
+describe('requestSpotifyAuthorization', () => {
+  it('requests the backend authorization URL', async () => {
+    const response = { ok: true, json: vi.fn().mockResolvedValue({ authorization_url: 'https://accounts.spotify.com/authorize' }) }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response))
+
+    await requestSpotifyAuthorization()
+
+    expect(fetch).toHaveBeenCalledWith('/auth/spotify/authorize')
+  })
+})
 
 describe('requestDevelopmentToken', () => {
   it('requests a signed token for a development user', async () => {

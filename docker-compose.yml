@@ -24,12 +24,13 @@ services:
       - "8000:8000"
     environment:
       APP_ENV: development
-      APP_VERSION: 0.1.8
+      APP_VERSION: 0.1.9
       ACCESS_TOKEN_TTL_SECONDS: 3600
       SPOTIFY_CLIENT_ID: ""
       SPOTIFY_CLIENT_SECRET: ""
       SPOTIFY_REDIRECT_URI: http://localhost:8000/auth/spotify/callback
       SPOTIFY_SCOPES: user-read-recently-played
+      FRONTEND_AUTH_CALLBACK_URL: http://localhost:5173
       DEV_USER_ID: 1
       DEV_USER_SPOTIFY_ID: development-user
       DEV_USER_DISPLAY_NAME: Development User

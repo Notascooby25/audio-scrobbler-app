@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchMonthlySummary, requestDevelopmentToken } from './api'
+import { fetchMonthlySummary, redirectToAuthorization, requestDevelopmentToken, requestSpotifyAuthorization } from './api'
 
 function readSavedSession() {
   try {
@@ -10,8 +10,20 @@ function readSavedSession() {
   }
 }
 
+function readCallbackSession() {
+  const params = new URLSearchParams(window.location.hash.slice(1))
+  const accessToken = params.get('access_token')
+  const userId = params.get('user_id')
+  const expiresIn = Number(params.get('expires_in'))
+  if (!accessToken || !userId || !expiresIn) return null
+  window.history.replaceState({}, document.title, window.location.pathname + window.location.search)
+  return { userId: Number(userId), accessToken, expiresAt: Date.now() + expiresIn * 1000, authMethod: 'spotify' }
+}
+
 export default function App() {
-  const savedSession = readSavedSession()
+  const callbackSession = readCallbackSession()
+  if (callbackSession) localStorage.setItem('audio-scrobbler-session', JSON.stringify(callbackSession))
+  const savedSession = callbackSession || readSavedSession()
   const [userId, setUserId] = useState(savedSession?.userId || '')
   const [token, setToken] = useState(savedSession?.accessToken || '')
   const [fromMonth, setFromMonth] = useState('')
@@ -19,6 +31,18 @@ export default function App() {
   const [summary, setSummary] = useState(null)
   const [status, setStatus] = useState(savedSession?.accessToken ? 'loading' : 'idle')
   const [error, setError] = useState('')
+
+  const connectSpotify = async () => {
+    setStatus('loading')
+    setError('')
+    try {
+      const { authorization_url: authorizationUrl } = await requestSpotifyAuthorization()
+      redirectToAuthorization(authorizationUrl)
+    } catch (requestError) {
+      setError(requestError.message)
+      setStatus('error')
+    }
+  }
 
   const clearSession = () => {
     localStorage.removeItem('audio-scrobbler-session')
@@ -126,6 +150,7 @@ export default function App() {
           </button>
           {token && <button type="button" onClick={clearSession}>Sign out</button>}
         </form>
+        {!token && <button type="button" onClick={connectSpotify}>Connect Spotify</button>}
 
         {status === 'idle' && <p className="notice">Connect your account to see your listening history.</p>}
         {status === 'error' && <p className="notice notice-error" role="alert">{error}</p>}

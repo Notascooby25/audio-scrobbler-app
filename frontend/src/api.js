@@ -19,6 +19,15 @@ export async function requestDevelopmentToken(userId) {
   return parseResponse(response)
 }
 
+export async function requestSpotifyAuthorization() {
+  const response = await fetch(`${API_BASE_URL}/auth/spotify/authorize`)
+  return parseResponse(response)
+}
+
+export function redirectToAuthorization(url) {
+  window.location.assign(url)
+}
+
 export async function fetchMonthlySummary({ token, fromMonth, toMonth }) {
   const params = new URLSearchParams()
   if (fromMonth) params.set('from_month', fromMonth)

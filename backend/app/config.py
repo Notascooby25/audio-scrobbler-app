@@ -12,7 +12,7 @@ load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 @dataclass(frozen=True)
 class Settings:
     app_name: str = "Audio Scrobbler App"
-    app_version: str = os.getenv("APP_VERSION", "0.1.8")
+    app_version: str = os.getenv("APP_VERSION", "0.1.9")
     environment: str = os.getenv("APP_ENV", "development")
     database_url: str = os.getenv("DATABASE_URL", "postgresql+psycopg://scrobbler:scrobbler@db:5432/scrobbler")
     jwt_secret: str = os.getenv("JWT_SECRET", "dev-secret-change-me")
@@ -27,6 +27,7 @@ class Settings:
     spotify_client_secret: str = os.getenv("SPOTIFY_CLIENT_SECRET", "")
     spotify_redirect_uri: str = os.getenv("SPOTIFY_REDIRECT_URI", "http://localhost:8000/auth/spotify/callback")
     spotify_scopes: str = os.getenv("SPOTIFY_SCOPES", "user-read-recently-played")
+    frontend_auth_callback_url: str = os.getenv("FRONTEND_AUTH_CALLBACK_URL", "")
 
     def validate(self) -> None:
         if self.environment.lower() == "production":

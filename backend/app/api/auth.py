@@ -3,6 +3,7 @@ from __future__ import annotations
 import jwt
 import requests
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from ..config import settings
@@ -24,19 +25,23 @@ def spotify_authorize() -> SpotifyAuthorizeResponse:
     return SpotifyAuthorizeResponse(authorization_url=build_authorization_url(state), state=state)
 
 
-@router.get("/spotify/callback", response_model=SpotifyCallbackResponse)
+@router.get("/spotify/callback", response_model=None)
 def spotify_callback(
     code: str = Query(min_length=1),
     state: str = Query(min_length=1),
     db: Session = Depends(get_db),
-) -> SpotifyCallbackResponse:
+) -> SpotifyCallbackResponse | RedirectResponse:
     try:
         access_token, user_id = complete_spotify_callback(db, code, state)
     except (ValueError, jwt.InvalidTokenError) as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OAuth state") from exc
     except requests.RequestException as exc:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Spotify OAuth request failed") from exc
-    return SpotifyCallbackResponse(access_token=access_token, expires_in=settings.access_token_ttl_seconds, user_id=user_id)
+    response = SpotifyCallbackResponse(access_token=access_token, expires_in=settings.access_token_ttl_seconds, user_id=user_id)
+    if settings.frontend_auth_callback_url:
+        callback_fragment = f"access_token={response.access_token}&expires_in={response.expires_in}&user_id={response.user_id}"
+        return RedirectResponse(f"{settings.frontend_auth_callback_url}#{callback_fragment}")
+    return response
 
 
 @router.post("/dev-token", response_model=AccessTokenResponse)

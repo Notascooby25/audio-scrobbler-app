@@ -5,9 +5,11 @@ import App from './App'
 vi.mock('./api', () => ({
   fetchMonthlySummary: vi.fn(),
   requestDevelopmentToken: vi.fn().mockResolvedValue({ access_token: 'demo-token', expires_in: 3600 }),
+  requestSpotifyAuthorization: vi.fn().mockResolvedValue({ authorization_url: 'https://accounts.spotify.com/authorize' }),
+  redirectToAuthorization: vi.fn(),
 }))
 
-import { fetchMonthlySummary, requestDevelopmentToken } from './api'
+import { fetchMonthlySummary, requestDevelopmentToken, requestSpotifyAuthorization } from './api'
 
 describe('App', () => {
   afterEach(() => {
@@ -22,6 +24,12 @@ describe('App', () => {
   it('shows the connection prompt before a token is provided', () => {
     render(<App />)
     expect(screen.getByText('Connect your account to see your listening history.')).toBeInTheDocument()
+  })
+
+  it('requests Spotify authorization from the dashboard', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Connect Spotify' }))
+    await waitFor(() => expect(requestSpotifyAuthorization).toHaveBeenCalled())
   })
 
   it('renders an empty result after loading a filtered summary', async () => {
