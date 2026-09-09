@@ -27,6 +27,7 @@ In development, the backend creates an idempotent user with ID `1`, then you can
 Protected analytics and ingestion requests require that signed token.
 
 Spotify OAuth endpoints are available at `/auth/spotify/authorize` and `/auth/spotify/callback` once Spotify credentials are configured in `.env`.
+Real Spotify polling is opt-in with `WORKER_SPOTIFY_ENABLED=true`; it remains disabled in the default Compose development stack.
 
 ## Listening Ingestion
 

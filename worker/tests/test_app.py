@@ -70,4 +70,5 @@ def test_health_reports_scheduler_and_fixture_status(monkeypatch):
         "service": "worker",
         "scheduler_running": "true",
         "fixture_enabled": "false",
+        "spotify_enabled": "false",
     }

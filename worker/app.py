@@ -7,6 +7,10 @@ from datetime import datetime, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI
 import requests
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from spotify_ingestion import SpotifyClient, UserRecord, sync_user
 
 app = FastAPI(title="Audio Scrobbler Worker")
 logger = logging.getLogger("audio-scrobbler-worker")
@@ -16,6 +20,12 @@ backend_url = os.getenv("WORKER_BACKEND_URL", "http://backend:8000")
 worker_token = os.getenv("WORKER_INGESTION_TOKEN", "dev-worker-token")
 fixture_enabled = os.getenv("WORKER_FIXTURE_ENABLED", "false").lower() == "true"
 fixture_user_id = int(os.getenv("WORKER_USER_ID", "1"))
+spotify_enabled = os.getenv("WORKER_SPOTIFY_ENABLED", "false").lower() == "true"
+database_url = os.getenv("DATABASE_URL", "postgresql+psycopg://scrobbler:scrobbler@db:5432/scrobbler")
+spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID", "")
+spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET", "")
+refresh_token_key = os.getenv("REFRESH_TOKEN_KEY", "0123456789abcdef0123456789abcdef")
+spotify_interval_minutes = int(os.getenv("WORKER_SPOTIFY_INTERVAL_MINUTES", "5"))
 max_attempts = 3
 
 
@@ -55,9 +65,29 @@ def run_fixture_ingestion() -> None:
                 raise
 
 
+def run_spotify_ingestion() -> None:
+    if not spotify_enabled or not spotify_client_id or not spotify_client_secret:
+        return
+    engine = create_engine(database_url, pool_pre_ping=True)
+    session = sessionmaker(bind=engine)()
+    client = SpotifyClient(spotify_client_id, spotify_client_secret, refresh_token_key)
+    try:
+        users = session.query(UserRecord).filter(UserRecord.is_active.is_(True)).all()
+        for user in users:
+            try:
+                count = sync_user(session, user, client, backend_url, worker_token)
+                logger.info("Spotify sync completed for user %s: %s events", user.id, count)
+            except requests.RequestException:
+                session.rollback()
+                logger.exception("Spotify sync failed for user %s", user.id)
+    finally:
+        session.close()
+        engine.dispose()
+
+
 @app.get("/health")
 def health_check() -> dict[str, str]:
-    return {"status": "ok", "service": "worker", "scheduler_running": str(scheduler.running).lower(), "fixture_enabled": str(fixture_enabled).lower()}
+    return {"status": "ok", "service": "worker", "scheduler_running": str(scheduler.running).lower(), "fixture_enabled": str(fixture_enabled).lower(), "spotify_enabled": str(spotify_enabled).lower()}
 
 
 @app.on_event("startup")
@@ -65,6 +95,8 @@ def start_scheduler() -> None:
     scheduler.start()
     if fixture_enabled:
         scheduler.add_job(run_fixture_ingestion, "interval", minutes=1, id="fixture-ingestion")
+    if spotify_enabled:
+        scheduler.add_job(run_spotify_ingestion, "interval", minutes=spotify_interval_minutes, id="spotify-ingestion")
 
 
 @app.on_event("shutdown")

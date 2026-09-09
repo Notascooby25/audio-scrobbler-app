@@ -33,3 +33,11 @@ class ListeningEvent(Base):
     source: Mapped[str] = mapped_column(String(64), default="spotify")
     payload: Mapped[str] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class IngestionCheckpoint(Base):
+    __tablename__ = "ingestion_checkpoints"
+
+    user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    last_played_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
