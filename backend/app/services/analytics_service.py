@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from backend.app.queries.analytics_queries import build_monthly_summary_query
-from backend.app.schemas.analytics import MonthlySummaryEntry, MonthlySummaryResponse
+from ..queries.analytics_queries import build_monthly_summary_query
+from ..schemas.analytics import MonthlySummaryEntry, MonthlySummaryResponse
 
 
 def get_monthly_summary(

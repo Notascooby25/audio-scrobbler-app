@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 from sqlalchemy import func, select
 
-from backend.app.models import ListeningEvent
+from ..models import ListeningEvent
 
 
 def _parse_month(value: str | None) -> date | None:
