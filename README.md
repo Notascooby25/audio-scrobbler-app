@@ -23,7 +23,7 @@ cd backend
 alembic upgrade head
 ```
 
-In development, request a bearer token for an active user with `POST /auth/dev-token`.
+In development, the backend creates an idempotent user with ID `1`, then you can request a bearer token with `POST /auth/dev-token` and `{"user_id": 1}`.
 Protected analytics and ingestion requests require that signed token.
 
 ## Listening Ingestion

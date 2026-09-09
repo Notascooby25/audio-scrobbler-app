@@ -20,6 +20,9 @@ class Settings:
     ingestion_worker_url: str = os.getenv("INGESTION_WORKER_URL", "http://worker:8001")
     worker_ingestion_token: str = os.getenv("WORKER_INGESTION_TOKEN", "dev-worker-token")
     access_token_ttl_seconds: int = int(os.getenv("ACCESS_TOKEN_TTL_SECONDS", "3600"))
+    dev_user_id: int = int(os.getenv("DEV_USER_ID", "1"))
+    dev_user_spotify_id: str = os.getenv("DEV_USER_SPOTIFY_ID", "development-user")
+    dev_user_display_name: str = os.getenv("DEV_USER_DISPLAY_NAME", "Development User")
 
     def validate(self) -> None:
         if self.environment.lower() == "production":
