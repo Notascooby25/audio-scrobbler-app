@@ -1,0 +1,42 @@
+groups:
+  - name: audio-scrobbler
+    rules:
+      - alert: AudioScrobblerBackendDown
+        expr: up{job="backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Backend metrics target is unavailable
+
+      - alert: AudioScrobblerWorkerDown
+        expr: up{job="worker"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Worker metrics target is unavailable
+
+      - alert: AudioScrobblerSchedulerStopped
+        expr: audio_scrobbler_worker_scheduler_running == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Worker scheduler is not running
+
+      - alert: AudioScrobblerSpotifySyncFailures
+        expr: audio_scrobbler_worker_spotify_sync_failures > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Spotify sync failures detected
+
+      - alert: AudioScrobblerNoRecentSpotifySync
+        expr: audio_scrobbler_worker_spotify_sync_success == 0 and audio_scrobbler_worker_spotify_sync_users > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Spotify sync has not completed successfully

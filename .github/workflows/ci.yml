@@ -99,6 +99,9 @@ jobs:
           VITE_API_BASE_URL: https://example.com/api
         run: docker compose -f docker-compose.prod.yml config --quiet
 
+      - name: Validate monitoring configuration files
+        run: test -s monitoring/prometheus.yml && test -s monitoring/alerts.yml
+
   container-smoke:
     runs-on: ubuntu-latest
     steps:

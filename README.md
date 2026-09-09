@@ -63,6 +63,8 @@ Production deployment is manually triggered through the GitHub Actions `Deploy p
 
 The `Verify production backup` workflow runs daily at `02:17 UTC` and can also be started manually. It creates and restore-verifies a backup on the deployment host without uploading database contents to GitHub.
 
+Production Compose includes an internal Prometheus service scraping backend and worker metrics with 14-day retention by default. It is not published directly to the host; access it through an internal network or an authenticated operator tunnel.
+
 ## Listening Ingestion
 
 Authenticated clients can submit listening events to `POST /ingestion/events`.
