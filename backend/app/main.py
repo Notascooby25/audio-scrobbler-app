@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import logging
+from uuid import uuid4
+
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,8 +15,10 @@ from .db import SessionLocal
 from .db import engine
 from .services.bootstrap_service import bootstrap_development_user
 from .services.readiness_service import check_backend_readiness
+from .services.runtime_metrics import snapshot
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
+logger = logging.getLogger("audio-scrobbler-api")
 
 settings.validate()
 
@@ -30,9 +35,18 @@ app.add_middleware(
 )
 
 
+@app.middleware("http")
+async def request_correlation_middleware(request, call_next):
+    request_id = request.headers.get("X-Request-ID") or str(uuid4())
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    logger.info("request_completed request_id=%s method=%s path=%s status=%s", request_id, request.method, request.url.path, response.status_code)
+    return response
+
+
 @app.get("/health")
 def health_check() -> dict[str, str]:
-    return {"status": "ok", "app": settings.app_name, "version": settings.app_version}
+    return {"status": "ok", "app": settings.app_name, "version": settings.app_version, **{key: str(value) for key, value in snapshot().items()}}
 
 
 @app.get("/readyz", response_model=None)

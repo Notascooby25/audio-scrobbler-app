@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from ..models import ListeningEvent
 from ..schemas.ingestion import ListeningEventCreate, ListeningEventResponse
+from .runtime_metrics import record_ingestion
 
 
 def ingest_listening_event(
@@ -28,6 +29,7 @@ def ingest_listening_event(
     try:
         db.commit()
         db.refresh(listening_event)
+        record_ingestion(False)
         return ListeningEventResponse(event_id=listening_event.id, duplicate=False)
     except IntegrityError:
         db.rollback()
@@ -42,4 +44,5 @@ def ingest_listening_event(
         )
         if existing is None:
             raise
+        record_ingestion(True)
         return ListeningEventResponse(event_id=existing.id, duplicate=True)

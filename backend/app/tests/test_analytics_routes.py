@@ -43,9 +43,11 @@ def test_monthly_summary_requires_authentication():
 
 
 def test_health_reports_current_application_version():
-    response = client.get("/health")
+    response = client.get("/health", headers={"X-Request-ID": "test-request-id"})
     assert response.status_code == 200
-    assert response.json()["version"] == "0.2.2"
+    assert response.json()["version"] == "0.2.3"
+    assert response.headers["X-Request-ID"] == "test-request-id"
+    assert "ingestion_events" in response.json()
 
 
 def test_readiness_reports_ready(monkeypatch):
