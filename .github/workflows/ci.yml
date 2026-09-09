@@ -100,7 +100,7 @@ jobs:
         run: docker compose -f docker-compose.prod.yml config --quiet
 
       - name: Validate monitoring configuration files
-        run: test -s monitoring/prometheus.yml && test -s monitoring/alerts.yml
+        run: test -s monitoring/prometheus.yml && test -s monitoring/alerts.yml && test -s monitoring/alertmanager.yml
 
   container-smoke:
     runs-on: ubuntu-latest

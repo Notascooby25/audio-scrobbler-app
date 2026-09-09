@@ -105,8 +105,12 @@ jobs:
             set -eu
             cd '${{ secrets.DEPLOY_PATH }}'
             curl --fail --silent http://localhost:9090/-/ready >/dev/null
-            curl --fail --silent http://localhost:9090/api/v1/targets | grep -q '"health":"up"'
+            targets="$(curl --fail --silent http://localhost:9090/api/v1/targets)"
+            printf '%s' "$targets" | grep -q '"job":"backend".*"health":"up"'
+            printf '%s' "$targets" | grep -q '"job":"worker".*"health":"up"'
+            printf '%s' "$targets" | grep -q '"job":"backup".*"health":"up"'
             curl --fail --silent http://localhost:9090/api/v1/rules | grep -q 'AudioScrobbler'
+            curl --fail --silent http://localhost:9093/-/ready >/dev/null
 
       - name: Write deployment summary
         if: success()
