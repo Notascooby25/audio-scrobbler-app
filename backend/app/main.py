@@ -6,7 +6,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from .api.analytics import router as analytics_router
 from .api.ingestion import router as ingestion_router
 from .config import settings
-from .db import Base, engine
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
 
@@ -27,11 +26,6 @@ app.add_middleware(
 @app.get("/health")
 def health_check() -> dict[str, str]:
     return {"status": "ok", "app": settings.app_name, "version": settings.app_version}
-
-
-@app.on_event("startup")
-def startup() -> None:
-    Base.metadata.create_all(bind=engine)
 
 
 @app.get("/api/v1/me")

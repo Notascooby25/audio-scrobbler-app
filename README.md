@@ -16,6 +16,13 @@ The services are available at:
 
 Compose waits for PostgreSQL and the backend health checks before starting dependent services.
 
+The backend runs `alembic upgrade head` before serving requests. To apply migrations manually:
+
+```bash
+cd backend
+alembic upgrade head
+```
+
 ## Listening Ingestion
 
 Authenticated clients can submit listening events to `POST /ingestion/events`.
