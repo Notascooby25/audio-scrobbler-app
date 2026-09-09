@@ -75,6 +75,10 @@ def test_health_reports_scheduler_and_fixture_status(monkeypatch):
         "last_spotify_sync_users": "0",
         "last_spotify_sync_failures": "0",
         "last_spotify_sync_events": "0",
+        "file_import_enabled": "false",
+        "last_file_import_at": "never",
+        "last_file_import_processed": "0",
+        "last_file_import_failed": "0",
     }
 
 
@@ -88,4 +92,27 @@ def test_metrics_exposes_worker_gauges_without_user_data():
     metrics = app.metrics()
     assert "audio_scrobbler_worker_scheduler_running" in metrics
     assert "audio_scrobbler_worker_spotify_sync_failures" in metrics
+    assert "audio_scrobbler_worker_file_import_processed" in metrics
     assert "user_id" not in metrics
+
+
+def test_run_file_import_is_disabled_by_default(monkeypatch):
+    monkeypatch.setattr(app, "file_import_enabled", False)
+    monkeypatch.setattr(
+        app,
+        "process_import_directory",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError()),
+    )
+
+    app.run_file_import()
+
+
+def test_run_file_import_records_processed_and_failed_counts(monkeypatch):
+    monkeypatch.setattr(app, "file_import_enabled", True)
+    monkeypatch.setattr(app, "process_import_directory", lambda *args, **kwargs: {"processed": 2, "failed": 1})
+
+    app.run_file_import()
+
+    assert app.last_file_import_processed == 2
+    assert app.last_file_import_failed == 1
+    assert app.last_file_import_at is not None
