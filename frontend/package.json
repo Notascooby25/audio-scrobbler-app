@@ -1,7 +1,7 @@
 {
   "name": "audio-scrobbler-app",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,7 +14,10 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
     "@vitejs/plugin-react": "^4.3.2",
+    "jsdom": "^25.0.1",
     "vite": "^5.4.10",
     "vitest": "^2.1.4"
   }
