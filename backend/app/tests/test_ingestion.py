@@ -95,6 +95,35 @@ def test_worker_ingest_route_requires_worker_token():
     assert response.status_code == 401
 
 
+def test_worker_ingest_route_rejects_unknown_user():
+    class Query:
+        def filter(self, *args):
+            return self
+
+        def first(self):
+            return None
+
+    class FakeDB:
+        def query(self, *args):
+            return Query()
+
+    app.dependency_overrides[get_db] = lambda: FakeDB()
+    response = client.post(
+        "/ingestion/internal/events",
+        headers={"X-Worker-Token": "dev-worker-token"},
+        json={
+            "user_id": 999,
+            "track_id": "track-5",
+            "track_name": "Track Five",
+            "artist_name": "Artist Five",
+            "played_at": "2026-01-15T12:30:00",
+        },
+    )
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 404
+
+
 def test_ingest_route_rejects_invalid_payload():
     app.dependency_overrides[ingestion_module.get_current_user] = lambda: DemoUser()
     response = client.post(

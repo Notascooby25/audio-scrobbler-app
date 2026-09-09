@@ -34,4 +34,7 @@ def create_worker_listening_event(
     db: Session = Depends(get_db),
     _: None = Depends(require_worker_token),
 ) -> ListeningEventResponse:
+    user = db.query(User).filter(User.id == event.user_id, User.is_active.is_(True)).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Active user not found")
     return ingest_listening_event(db, event.user_id, event)

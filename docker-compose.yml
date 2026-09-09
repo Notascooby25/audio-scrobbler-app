@@ -48,6 +48,8 @@ services:
       WORKER_FIXTURE_ENABLED: "false"
       WORKER_USER_ID: "1"
     depends_on:
+      backend:
+        condition: service_healthy
       db:
         condition: service_healthy
 
