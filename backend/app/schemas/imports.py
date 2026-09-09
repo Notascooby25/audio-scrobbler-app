@@ -24,3 +24,11 @@ class ImportScrobbleResponse(BaseModel):
     summary: ImportScrobbleSummary
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class WorkerImportScrobbleRequest(BaseModel):
+    user_id: int = Field(..., ge=1)
+    source: str = Field(..., min_length=1, max_length=32)
+    entries: list[dict[str, Any]] = Field(..., min_length=1)
+
+    model_config = ConfigDict(extra="forbid")
