@@ -75,6 +75,7 @@ Authenticated clients can submit listening events to `POST /ingestion/events`.
 The backend validates event fields and deduplicates repeated events per user, track, and playback timestamp.
 The unified import endpoint is `POST /import/scrobbles` and accepts a `source` of `spotify` or `youtube` together with an array of raw history entries. The API normalizes each item through the canonical importer layer and preserves source-aware dedupe by `(user_id, source, play_id)`.
 The frontend supports importing a local JSON export by choosing a Spotify or YouTube history file from the dashboard.
+The worker can also import history files unattended: enable `WORKER_FILE_IMPORT_ENABLED=true`, mount a host directory at `WORKER_IMPORT_DIR` (default `/data/imports`), and drop files named `user-<id>-<source>.json` (for example `user-1-spotify.json`). The worker submits each file's entries through a worker-token-authenticated `POST /import/internal/scrobbles` endpoint on its configured interval (`WORKER_FILE_IMPORT_INTERVAL_MINUTES`, default 10) and moves processed files into a `processed/` subfolder or failed files into a `failed/` subfolder. This is disabled by default.
 The worker's development fixture is disabled by default and can be enabled explicitly with `WORKER_FIXTURE_ENABLED=true`.
 
 To stop the stack:

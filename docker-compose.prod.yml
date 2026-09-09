@@ -48,10 +48,16 @@ services:
       WORKER_FIXTURE_ENABLED: "false"
       WORKER_SPOTIFY_ENABLED: ${WORKER_SPOTIFY_ENABLED:-true}
       WORKER_SPOTIFY_INTERVAL_MINUTES: ${WORKER_SPOTIFY_INTERVAL_MINUTES:-5}
+      WORKER_FILE_IMPORT_ENABLED: ${WORKER_FILE_IMPORT_ENABLED:-false}
+      WORKER_IMPORT_DIR: /data/imports
+      WORKER_FILE_IMPORT_INTERVAL_MINUTES: ${WORKER_FILE_IMPORT_INTERVAL_MINUTES:-10}
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       REFRESH_TOKEN_KEY: ${REFRESH_TOKEN_KEY}
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID}
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET}
+    # To enable worker file-based import, mount a host directory at /data/imports and set WORKER_FILE_IMPORT_ENABLED=true:
+    # volumes:
+    #   - ${WORKER_IMPORT_HOST_DIR}:/data/imports
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/readyz')"]
       interval: 10s
