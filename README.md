@@ -35,6 +35,17 @@ The worker health endpoint reports the last Spotify sync timestamp, user count, 
 GitHub Actions runs backend and worker tests, clean PostgreSQL migrations, frontend tests and builds, Docker Compose validation, and a full container smoke test on pushes to `main` and pull requests.
 Successful pushes to `main` publish backend, worker, and frontend images to GHCR with commit-SHA tags and a `latest` tag.
 
+## Production Images
+
+Copy `.env.example` to a deployment-only environment file, replace every placeholder secret, and set `IMAGE_TAG` to an immutable commit-SHA tag. Pull and start the GHCR images with:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.production pull
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+```
+
+To roll back, change `IMAGE_TAG` to a previously published SHA and run the same commands. Database migrations run during backend startup; application image rollback does not roll back database migrations.
+
 ## Listening Ingestion
 
 Authenticated clients can submit listening events to `POST /ingestion/events`.
