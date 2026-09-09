@@ -159,6 +159,72 @@ button:disabled { cursor: wait; opacity: 0.65; }
 
 .notice-error { background: #f4dfd7; color: #893d29; }
 
+.import-summary {
+  background: #e7eee5;
+  font: 0.85rem system-ui, sans-serif;
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.import-summary-error { background: #f4dfd7; }
+
+.import-summary-heading { margin: 0 0 0.75rem; }
+
+.import-summary-counts {
+  display: flex;
+  gap: 1.5rem;
+  margin: 0 0 0.75rem;
+}
+
+.import-summary-counts div { display: flex; flex-direction: column; gap: 0.2rem; }
+.import-summary-counts dt { color: #657268; font-size: 0.72rem; text-transform: uppercase; }
+.import-summary-counts dd { font-size: 1.1rem; font-weight: 700; margin: 0; }
+
+.import-summary-dismiss {
+  background: transparent;
+  color: #a34e32;
+  min-height: auto;
+  padding: 0.35rem 0;
+  text-decoration: underline;
+}
+
+.scrobble-list {
+  font: 0.85rem system-ui, sans-serif;
+  margin-top: 2rem;
+}
+
+.scrobble-list h3 {
+  color: #a34e32;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+  text-transform: uppercase;
+}
+
+.scrobble-list ul { list-style: none; margin: 0; padding: 0; }
+
+.scrobble-row {
+  align-items: center;
+  border-top: 1px solid #dce2d9;
+  display: flex;
+  gap: 0.9rem;
+  padding: 0.6rem 0;
+}
+
+.source-badge {
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  text-transform: uppercase;
+}
+
+.source-badge-spotify { background: #1db95422; color: #17843e; }
+.source-badge-youtube { background: #ff000022; color: #c4291e; }
+
+.scrobble-track { font-weight: 700; }
+.scrobble-artist { color: #657268; }
+
 .summary-grid {
   display: grid;
   gap: 1px;

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { fetchMonthlySummary, redirectToAuthorization, requestDevelopmentToken, requestSpotifyAuthorization, submitImportScrobbles } from './api'
+import { fetchMonthlySummary, fetchRecentScrobbles, redirectToAuthorization, requestDevelopmentToken, requestSpotifyAuthorization, submitImportScrobbles } from './api'
+import ImportSummaryPanel from './components/ImportSummaryPanel'
+import ScrobbleList from './components/ScrobbleList'
 
 function readSavedSession() {
   try {
@@ -36,10 +38,11 @@ export default function App() {
   const [fromMonth, setFromMonth] = useState('')
   const [toMonth, setToMonth] = useState('')
   const [summary, setSummary] = useState(null)
+  const [scrobbles, setScrobbles] = useState([])
   const [error, setError] = useState(callbackError ? 'Spotify authorization was cancelled.' : '')
   const [status, setStatus] = useState(callbackError ? 'error' : savedSession?.accessToken ? 'loading' : 'idle')
-  const [importStatus, setImportStatus] = useState('idle')
-  const [importMessage, setImportMessage] = useState('')
+  const [importResult, setImportResult] = useState(null)
+  const [importError, setImportError] = useState('')
   const importInputRef = useRef(null)
 
   const connectSpotify = async () => {
@@ -101,6 +104,8 @@ export default function App() {
       const data = await fetchMonthlySummary({ token: accessToken, fromMonth, toMonth })
       setSummary(data)
       setStatus('ready')
+      const recent = await fetchRecentScrobbles({ token: accessToken })
+      setScrobbles(recent.scrobbles)
     } catch (requestError) {
       if (requestError.status === 401) {
         clearSession()
@@ -118,20 +123,18 @@ export default function App() {
     const file = event.target.files?.[0]
     if (!file) return
 
-    setImportStatus('loading')
-    setImportMessage('')
+    setImportResult(null)
+    setImportError('')
     try {
       const text = await file.text()
       const parsed = JSON.parse(text)
       const entries = Array.isArray(parsed) ? parsed : parsed.history || parsed.entries || []
       const source = file.name.toLowerCase().includes('youtube') ? 'youtube' : 'spotify'
       const result = await submitImportScrobbles({ token, source, entries })
-      setImportStatus('success')
-      setImportMessage(`${result.source}: ${result.summary.inserted} inserted, ${result.summary.skipped} skipped.`)
+      setImportResult(result)
       await loadSummary(null, token)
     } catch (requestError) {
-      setImportStatus('error')
-      setImportMessage(requestError.message || 'Import failed.')
+      setImportError(requestError.message || 'Import failed.')
     } finally {
       event.target.value = ''
     }
@@ -190,7 +193,14 @@ export default function App() {
               Import history JSON
               <input ref={importInputRef} type="file" accept="application/json,.json" onChange={handleImport} />
             </label>
-            {importStatus !== 'idle' && <p className="notice">{importMessage}</p>}
+            <ImportSummaryPanel
+              result={importResult}
+              error={importError}
+              onDismiss={() => {
+                setImportResult(null)
+                setImportError('')
+              }}
+            />
           </div>
         )}
 
@@ -212,6 +222,7 @@ export default function App() {
             ))}
           </div>
         )}
+        {status === 'ready' && <ScrobbleList scrobbles={scrobbles} />}
       </section>
     </main>
   )
