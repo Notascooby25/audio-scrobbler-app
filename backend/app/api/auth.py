@@ -1,15 +1,42 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+import jwt
+import requests
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..db import get_db
 from ..models import User
 from ..schemas.auth import AccessTokenResponse, DevTokenRequest
+from ..schemas.spotify import SpotifyAuthorizeResponse, SpotifyCallbackResponse
 from ..services.auth_service import create_access_token
+from ..services.spotify_oauth_service import build_authorization_url, complete_spotify_callback, create_oauth_state
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+@router.get("/spotify/authorize", response_model=SpotifyAuthorizeResponse)
+def spotify_authorize() -> SpotifyAuthorizeResponse:
+    if not settings.spotify_client_id:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Spotify OAuth is not configured")
+    state = create_oauth_state()
+    return SpotifyAuthorizeResponse(authorization_url=build_authorization_url(state), state=state)
+
+
+@router.get("/spotify/callback", response_model=SpotifyCallbackResponse)
+def spotify_callback(
+    code: str = Query(min_length=1),
+    state: str = Query(min_length=1),
+    db: Session = Depends(get_db),
+) -> SpotifyCallbackResponse:
+    try:
+        access_token, user_id = complete_spotify_callback(db, code, state)
+    except (ValueError, jwt.InvalidTokenError) as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OAuth state") from exc
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Spotify OAuth request failed") from exc
+    return SpotifyCallbackResponse(access_token=access_token, expires_in=settings.access_token_ttl_seconds, user_id=user_id)
 
 
 @router.post("/dev-token", response_model=AccessTokenResponse)

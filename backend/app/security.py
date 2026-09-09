@@ -1,10 +1,20 @@
 from __future__ import annotations
 
+import base64
+import hashlib
+
 from cryptography.fernet import Fernet
 
 from .config import settings
 
-_cipher = Fernet(settings.refresh_token_key.encode()[:32].ljust(32, b"0") if len(settings.refresh_token_key) >= 32 else settings.refresh_token_key.encode().ljust(32, b"0"))
+
+
+def _derive_fernet_key(secret: str) -> bytes:
+    digest = hashlib.sha256(secret.encode()).digest()
+    return base64.urlsafe_b64encode(digest)
+
+
+_cipher = Fernet(_derive_fernet_key(settings.refresh_token_key))
 
 
 def encrypt_refresh_token(token: str) -> str:

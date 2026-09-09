@@ -26,6 +26,8 @@ alembic upgrade head
 In development, the backend creates an idempotent user with ID `1`, then you can request a bearer token with `POST /auth/dev-token` and `{"user_id": 1}`.
 Protected analytics and ingestion requests require that signed token.
 
+Spotify OAuth endpoints are available at `/auth/spotify/authorize` and `/auth/spotify/callback` once Spotify credentials are configured in `.env`.
+
 ## Listening Ingestion
 
 Authenticated clients can submit listening events to `POST /ingestion/events`.
