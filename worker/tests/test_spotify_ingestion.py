@@ -23,9 +23,12 @@ def test_normalize_recent_item_maps_spotify_fields():
 
     assert event["user_id"] == 4
     assert event["track_id"] == "track-1"
+    assert event["play_id"] == "track-1"
     assert event["artist_name"] == "Artist One"
     assert event["duration_ms"] == 210000
     assert event["played_at"] == "2026-02-01T12:00:00"
+    assert event["raw_metadata"] == ITEM
+    assert event["source"] == "spotify"
 
 
 def test_normalize_recent_item_skips_malformed_items():

@@ -12,7 +12,9 @@ class ListeningEventCreate(BaseModel):
     played_at: datetime
     duration_ms: int | None = Field(default=None, ge=0)
     source: str = Field(default="spotify", min_length=1, max_length=64)
+    play_id: str | None = Field(default=None, min_length=1, max_length=255)
     payload: dict[str, object] | None = None
+    raw_metadata: dict[str, object] | None = None
 
 
 class ListeningEventResponse(BaseModel):

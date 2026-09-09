@@ -80,7 +80,9 @@ def normalize_recent_item(item: dict[str, object], user_id: int) -> dict[str, ob
         "played_at": timestamp.isoformat(),
         "duration_ms": track.get("duration_ms") if isinstance(track.get("duration_ms"), int) else None,
         "source": "spotify",
+        "play_id": track_id,
         "payload": item,
+        "raw_metadata": item,
     }
 
 

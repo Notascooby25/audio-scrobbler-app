@@ -15,6 +15,7 @@ def ingest_listening_event(
     user_id: int,
     event: ListeningEventCreate,
 ) -> ListeningEventResponse:
+    canonical_play_id = event.play_id or event.track_id
     listening_event = ListeningEvent(
         user_id=user_id,
         track_id=event.track_id,
@@ -23,7 +24,9 @@ def ingest_listening_event(
         played_at=event.played_at,
         duration_ms=event.duration_ms,
         source=event.source,
+        play_id=canonical_play_id,
         payload=json.dumps(event.payload) if event.payload is not None else None,
+        raw_metadata=event.raw_metadata,
     )
     db.add(listening_event)
     try:
