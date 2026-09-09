@@ -9,6 +9,7 @@ from backend.app.api import analytics as analytics_module
 from backend.app.config import Settings
 from backend.app.db import get_db
 from backend.app.main import app
+from backend.app import main as main_module
 from backend.app.services.analytics_service import get_monthly_summary
 
 client = TestClient(app)
@@ -44,7 +45,21 @@ def test_monthly_summary_requires_authentication():
 def test_health_reports_current_application_version():
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json()["version"] == "0.2.1"
+    assert response.json()["version"] == "0.2.2"
+
+
+def test_readiness_reports_ready(monkeypatch):
+    monkeypatch.setattr(main_module, "check_backend_readiness", lambda engine: (True, "ready"))
+    response = client.get("/readyz")
+    assert response.status_code == 200
+    assert response.json()["status"] == "ready"
+
+
+def test_readiness_reports_database_failure(monkeypatch):
+    monkeypatch.setattr(main_module, "check_backend_readiness", lambda engine: (False, "database is unavailable"))
+    response = client.get("/readyz")
+    assert response.status_code == 503
+    assert response.json()["status"] == "not_ready"
 
 
 def test_production_settings_reject_placeholder_secrets():

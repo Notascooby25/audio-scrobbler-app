@@ -6,8 +6,10 @@ from datetime import datetime, timezone
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 import requests
 from sqlalchemy import create_engine
+from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from spotify_ingestion import SpotifyClient, UserRecord, sync_user
@@ -111,6 +113,22 @@ def health_check() -> dict[str, str]:
         "last_spotify_sync_failures": str(last_spotify_sync_failures),
         "last_spotify_sync_events": str(last_spotify_sync_events),
     }
+
+
+@app.get("/readyz", response_model=None)
+def readiness_check() -> dict[str, str] | JSONResponse:
+    if not scheduler.running:
+        return JSONResponse(status_code=503, content={"status": "not_ready", "detail": "scheduler is not running"})
+    if spotify_enabled:
+        engine = create_engine(database_url, pool_pre_ping=True)
+        try:
+            with engine.connect() as connection:
+                connection.execute(text("select 1"))
+        except Exception:
+            return JSONResponse(status_code=503, content={"status": "not_ready", "detail": "database is unavailable"})
+        finally:
+            engine.dispose()
+    return {"status": "ready", "service": "worker"}
 
 
 @app.on_event("startup")

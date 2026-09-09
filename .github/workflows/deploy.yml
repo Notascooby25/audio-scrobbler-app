@@ -73,8 +73,8 @@ jobs:
             GHCR_OWNER="$GHCR_OWNER" IMAGE_TAG="$IMAGE_TAG" docker compose -f docker-compose.prod.yml --env-file .env.production pull
             GHCR_OWNER="$GHCR_OWNER" IMAGE_TAG="$IMAGE_TAG" docker compose -f docker-compose.prod.yml --env-file .env.production up -d
             for attempt in $(seq 1 30); do
-              backend_status="$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:8000/health || true)"
-              worker_status="$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:8001/health || true)"
+              backend_status="$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:8000/readyz || true)"
+              worker_status="$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:8001/readyz || true)"
               frontend_status="$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:5173/ || true)"
               if [ "$backend_status" = "200" ] && [ "$worker_status" = "200" ] && [ "$frontend_status" = "200" ]; then
                 printf '%s\n' "$IMAGE_TAG" > .deployed-image-tag

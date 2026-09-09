@@ -14,6 +14,8 @@ The services are available at:
 - Backend health: http://localhost:8000/health
 - Worker: http://localhost:8001
 
+`/health` is a lightweight liveness check. `/readyz` verifies service dependencies and migration readiness; deployment and Compose health checks use readiness.
+
 Compose waits for PostgreSQL and the backend health checks before starting dependent services.
 
 The backend runs `alembic upgrade head` before serving requests. To apply migrations manually:

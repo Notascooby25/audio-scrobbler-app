@@ -76,3 +76,9 @@ def test_health_reports_scheduler_and_fixture_status(monkeypatch):
         "last_spotify_sync_failures": "0",
         "last_spotify_sync_events": "0",
     }
+
+
+def test_readiness_requires_running_scheduler(monkeypatch):
+    monkeypatch.setattr(app, "scheduler", SimpleNamespace(running=False))
+    response = app.readiness_check()
+    assert response.status_code == 503

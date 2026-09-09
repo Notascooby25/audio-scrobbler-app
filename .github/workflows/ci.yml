@@ -120,10 +120,10 @@ jobs:
           docker compose ps
 
       - name: Verify backend health
-        run: test "$(curl --fail --silent http://localhost:8000/health | python -c "import json, sys; print(json.load(sys.stdin)['status'])")" = "ok"
+        run: test "$(curl --fail --silent http://localhost:8000/readyz | python -c "import json, sys; print(json.load(sys.stdin)['status'])")" = "ready"
 
       - name: Verify worker health
-        run: test "$(curl --fail --silent http://localhost:8001/health | python -c "import json, sys; print(json.load(sys.stdin)['status'])")" = "ok"
+        run: test "$(curl --fail --silent http://localhost:8001/readyz | python -c "import json, sys; print(json.load(sys.stdin)['status'])")" = "ready"
 
       - name: Verify frontend serves
         run: curl --fail --silent --show-error http://localhost:5173/ > /dev/null
