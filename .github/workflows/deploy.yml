@@ -1,0 +1,67 @@
+name: Deploy production
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Immutable GHCR tag to deploy
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Upload production Compose file
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: docker-compose.prod.yml
+          target: ${{ secrets.DEPLOY_PATH }}
+
+      - name: Deploy immutable image tag
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          GHCR_OWNER: ${{ github.repository_owner }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: IMAGE_TAG,GHCR_OWNER,GHCR_USERNAME,GHCR_TOKEN
+          script_stop: true
+          script: |
+            set -eu
+            cd '${{ secrets.DEPLOY_PATH }}'
+            previous_tag="$(sed -n 's/^IMAGE_TAG=//p' .env.production | head -n 1 || true)"
+            printf '%s\n' "$previous_tag" > .previous-image-tag
+            printf '%s\n' "$IMAGE_TAG" > .requested-image-tag
+            printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USERNAME" --password-stdin
+            GHCR_OWNER="$GHCR_OWNER" IMAGE_TAG="$IMAGE_TAG" docker compose -f docker-compose.prod.yml --env-file .env.production pull
+            GHCR_OWNER="$GHCR_OWNER" IMAGE_TAG="$IMAGE_TAG" docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+            for attempt in $(seq 1 30); do
+              backend_status="$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:8000/health || true)"
+              frontend_status="$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:5173/ || true)"
+              if [ "$backend_status" = "200" ] && [ "$frontend_status" = "200" ]; then
+                exit 0
+              fi
+              sleep 5
+            done
+            echo "Deployment health check failed" >&2
+            GHCR_OWNER="$GHCR_OWNER" IMAGE_TAG="$IMAGE_TAG" docker compose -f docker-compose.prod.yml --env-file .env.production logs --no-color
+            if [ -n "$previous_tag" ]; then
+              GHCR_OWNER="$GHCR_OWNER" IMAGE_TAG="$previous_tag" docker compose -f docker-compose.prod.yml --env-file .env.production pull
+              GHCR_OWNER="$GHCR_OWNER" IMAGE_TAG="$previous_tag" docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+            fi
+            exit 1
