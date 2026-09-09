@@ -46,6 +46,9 @@ class FakeClient:
 
 
 class FakeResponse:
+    status_code = 201
+    headers = {}
+
     def raise_for_status(self):
         return None
 

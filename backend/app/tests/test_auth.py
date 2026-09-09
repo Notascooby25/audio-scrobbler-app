@@ -86,3 +86,8 @@ def test_dev_token_endpoint_returns_signed_token():
 
     assert response.status_code == 200
     assert decode_access_token(response.json()["access_token"]) == 1
+
+
+def test_spotify_denial_returns_bad_request():
+    response = client.get("/auth/spotify/callback?state=valid-state&error=access_denied")
+    assert response.status_code == 400
