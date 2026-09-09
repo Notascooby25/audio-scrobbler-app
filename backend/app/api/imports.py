@@ -25,13 +25,13 @@ def import_scrobbles(
         return ImportScrobbleResponse(source="spotify", summary={
             "inserted": summary["inserted"],
             "skipped": summary["skipped"],
-            "duplicate": 0,
+            "duplicate": summary.get("duplicate", 0),
         })
     if source == "youtube":
         summary = import_youtube_history(db, current_user.id, payload.entries)
         return ImportScrobbleResponse(source="youtube", summary={
             "inserted": summary["inserted"],
             "skipped": summary["skipped"],
-            "duplicate": 0,
+            "duplicate": summary.get("duplicate", 0),
         })
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported import source")

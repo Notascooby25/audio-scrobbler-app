@@ -11,6 +11,7 @@ from .canonical_scrobble import canonicalize_scrobble
 def import_youtube_history(db: Session, user_id: int, entries: list[dict[str, Any]]) -> dict[str, int]:
     inserted = 0
     skipped = 0
+    duplicate = 0
 
     for entry in entries:
         if not isinstance(entry, dict):
@@ -42,7 +43,7 @@ def import_youtube_history(db: Session, user_id: int, entries: list[dict[str, An
             skipped += 1
             continue
 
-        duplicate = (
+        existing = (
             db.query(ListeningEvent)
             .filter(
                 ListeningEvent.user_id == user_id,
@@ -51,8 +52,8 @@ def import_youtube_history(db: Session, user_id: int, entries: list[dict[str, An
             )
             .first()
         )
-        if duplicate is not None:
-            skipped += 1
+        if existing is not None:
+            duplicate += 1
             continue
 
         record = ListeningEvent(
@@ -71,4 +72,4 @@ def import_youtube_history(db: Session, user_id: int, entries: list[dict[str, An
         inserted += 1
 
     db.commit()
-    return {"inserted": inserted, "skipped": skipped}
+    return {"inserted": inserted, "skipped": skipped, "duplicate": duplicate}

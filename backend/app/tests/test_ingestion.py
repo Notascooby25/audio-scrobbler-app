@@ -10,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.app.api import ingestion as ingestion_module
+from backend.app.api import imports as imports_module
 from backend.app.db import Base, get_db
 from backend.app.main import app
 from backend.app.models import ListeningEvent
@@ -281,10 +282,45 @@ def test_import_youtube_history_inserts_valid_tracks_and_skips_bad_rows():
     db.close()
 
 
+def test_import_services_count_duplicate_records_separately():
+    db = TestingSession()
+    db.query(ListeningEvent).delete()
+    db.commit()
+
+    entries = [
+        {
+            "endTime": "2026-01-15 12:30:00",
+            "artistName": "The National",
+            "trackName": "Slow Show",
+            "albumName": "Trouble Will Find Me",
+            "msPlayed": 240000,
+            "trackUri": "spotify:track:slow-show",
+        },
+        {
+            "endTime": "2026-01-15 12:30:00",
+            "artistName": "The National",
+            "trackName": "Slow Show",
+            "albumName": "Trouble Will Find Me",
+            "msPlayed": 240000,
+            "trackUri": "spotify:track:slow-show",
+        },
+    ]
+
+    summary = import_spotify_history(db, 1, entries)
+
+    assert summary["inserted"] == 1
+    assert summary["duplicate"] == 1
+    assert summary["skipped"] == 0
+    assert db.query(ListeningEvent).filter(ListeningEvent.user_id == 1).count() == 1
+    db.close()
+
+
 def test_import_route_accepts_unified_source_payloads():
     db = TestingSession()
-    app.dependency_overrides[ingestion_module.get_current_user] = lambda: DemoUser()
-    app.dependency_overrides[get_db] = lambda: db
+    db.query(ListeningEvent).delete()
+    db.commit()
+    app.dependency_overrides[imports_module.get_current_user] = lambda: DemoUser()
+    app.dependency_overrides[imports_module.get_db] = lambda: db
     try:
         response = client.post(
             "/import/scrobbles",
@@ -310,3 +346,4 @@ def test_import_route_accepts_unified_source_payloads():
     assert response.status_code == 200
     assert response.json()["source"] == "spotify"
     assert response.json()["summary"]["inserted"] == 1
+    assert response.json()["summary"]["duplicate"] == 0
