@@ -13,13 +13,12 @@ from backend.app.api import ingestion as ingestion_module
 from backend.app.api import imports as imports_module
 from backend.app.db import Base, get_db
 from backend.app.main import app
-from backend.app.models import ListeningEvent
+from backend.app.models import ListeningEvent, User
 from backend.app.schemas.ingestion import ListeningEventCreate
 from backend.app.services.canonical_scrobble import canonicalize_scrobble
 from backend.app.services.ingestion_service import ingest_listening_event
 from backend.app.services.spotify_import_service import import_spotify_history
 from backend.app.services.youtube_import_service import import_youtube_history
-
 
 engine = create_engine(
     "sqlite://",
@@ -347,3 +346,69 @@ def test_import_route_accepts_unified_source_payloads():
     assert response.json()["source"] == "spotify"
     assert response.json()["summary"]["inserted"] == 1
     assert response.json()["summary"]["duplicate"] == 0
+
+
+def test_internal_import_route_requires_worker_token():
+    response = client.post(
+        "/import/internal/scrobbles",
+        json={"user_id": 1, "source": "spotify", "entries": [{"trackName": "Slow Show"}]},
+    )
+
+    assert response.status_code == 401
+
+
+def test_internal_import_route_rejects_unknown_user():
+    class Query:
+        def filter(self, *args):
+            return self
+
+        def first(self):
+            return None
+
+    class FakeDB:
+        def query(self, *args):
+            return Query()
+
+    app.dependency_overrides[imports_module.get_db] = lambda: FakeDB()
+    response = client.post(
+        "/import/internal/scrobbles",
+        headers={"X-Worker-Token": "dev-worker-token"},
+        json={"user_id": 999, "source": "spotify", "entries": [{"trackName": "Slow Show"}]},
+    )
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 404
+
+
+def test_internal_import_route_imports_entries_for_active_user():
+    db = TestingSession()
+    db.query(ListeningEvent).delete()
+    db.commit()
+    if db.query(User).filter(User.id == 1).first() is None:
+        db.add(User(id=1, spotify_user_id="demo-user", display_name="Demo", refresh_token_cipher="cipher", is_active=True))
+        db.commit()
+    app.dependency_overrides[imports_module.get_db] = lambda: db
+    try:
+        response = client.post(
+            "/import/internal/scrobbles",
+            headers={"X-Worker-Token": "dev-worker-token"},
+            json={
+                "user_id": 1,
+                "source": "youtube",
+                "entries": [
+                    {
+                        "title": "Midnight City",
+                        "artist": "M83",
+                        "time": "2026-01-15T12:31:00Z",
+                        "duration_ms": 240000,
+                    }
+                ],
+            },
+        )
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+
+    assert response.status_code == 200
+    assert response.json()["source"] == "youtube"
+    assert response.json()["summary"]["inserted"] == 1
