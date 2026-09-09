@@ -1,33 +1,79 @@
 import { useEffect, useState } from 'react'
-import { fetchMonthlySummary } from './api'
+import { fetchMonthlySummary, requestDevelopmentToken } from './api'
 
-const savedToken = localStorage.getItem('audio-scrobbler-token') || ''
+function readSavedSession() {
+  try {
+    return JSON.parse(localStorage.getItem('audio-scrobbler-session') || 'null')
+  } catch {
+    localStorage.removeItem('audio-scrobbler-session')
+    return null
+  }
+}
 
 export default function App() {
-  const [token, setToken] = useState(savedToken)
+  const savedSession = readSavedSession()
+  const [userId, setUserId] = useState(savedSession?.userId || '')
+  const [token, setToken] = useState(savedSession?.accessToken || '')
   const [fromMonth, setFromMonth] = useState('')
   const [toMonth, setToMonth] = useState('')
   const [summary, setSummary] = useState(null)
-  const [status, setStatus] = useState(savedToken ? 'loading' : 'idle')
+  const [status, setStatus] = useState(savedSession?.accessToken ? 'loading' : 'idle')
   const [error, setError] = useState('')
 
-  const loadSummary = async (event) => {
+  const clearSession = () => {
+    localStorage.removeItem('audio-scrobbler-session')
+    setToken('')
+    setSummary(null)
+    setStatus('idle')
+  }
+
+  const signIn = async (event) => {
     event?.preventDefault()
-    if (!token.trim()) {
-      setError('Enter a bearer token to load your listening history.')
+    if (!userId || Number(userId) < 1) {
+      setError('Enter a valid development user ID.')
       setStatus('error')
       return
     }
 
-    localStorage.setItem('audio-scrobbler-token', token.trim())
+    setStatus('loading')
+    setError('')
+    try {
+      const session = await requestDevelopmentToken(userId)
+      const storedSession = {
+        userId: Number(userId),
+        accessToken: session.access_token,
+        expiresAt: Date.now() + session.expires_in * 1000,
+      }
+      localStorage.setItem('audio-scrobbler-session', JSON.stringify(storedSession))
+      setToken(session.access_token)
+      await loadSummary(null, session.access_token)
+    } catch (requestError) {
+      setError(requestError.message)
+      setStatus('error')
+    }
+  }
+
+  const loadSummary = async (event, accessToken = token) => {
+    event?.preventDefault()
+    if (!accessToken) {
+      setStatus('idle')
+      return
+    }
+
     setStatus('loading')
     setError('')
 
     try {
-      const data = await fetchMonthlySummary({ token: token.trim(), fromMonth, toMonth })
+      const data = await fetchMonthlySummary({ token: accessToken, fromMonth, toMonth })
       setSummary(data)
       setStatus('ready')
     } catch (requestError) {
+      if (requestError.status === 401) {
+        clearSession()
+        setError('Your session has expired. Sign in again.')
+        setStatus('error')
+        return
+      }
       setSummary(null)
       setError(requestError.message)
       setStatus('error')
@@ -35,7 +81,12 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (savedToken) loadSummary()
+    if (!savedSession?.accessToken) return
+    if (savedSession.expiresAt && savedSession.expiresAt <= Date.now()) {
+      signIn()
+      return
+    }
+    loadSummary(null, savedSession.accessToken)
   }, [])
 
   return (
@@ -57,10 +108,10 @@ export default function App() {
           {summary && <p className="month-count">{summary.total_months} months found</p>}
         </div>
 
-        <form className="filters" onSubmit={loadSummary}>
+        <form className="filters" onSubmit={token ? loadSummary : signIn}>
           <label>
-            Bearer token
-            <input type="password" value={token} onChange={(event) => setToken(event.target.value)} placeholder="Paste your token" autoComplete="off" />
+            Development user ID
+            <input type="number" min="1" value={userId} onChange={(event) => setUserId(event.target.value)} placeholder="1" />
           </label>
           <label>
             From
@@ -71,8 +122,9 @@ export default function App() {
             <input type="month" value={toMonth} onChange={(event) => setToMonth(event.target.value)} />
           </label>
           <button type="submit" disabled={status === 'loading'}>
-            {status === 'loading' ? 'Loading...' : 'Refresh summary'}
+            {status === 'loading' ? 'Loading...' : token ? 'Refresh summary' : 'Sign in'}
           </button>
+          {token && <button type="button" onClick={clearSession}>Sign out</button>}
         </form>
 
         {status === 'idle' && <p className="notice">Connect your account to see your listening history.</p>}

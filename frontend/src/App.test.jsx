@@ -4,9 +4,10 @@ import App from './App'
 
 vi.mock('./api', () => ({
   fetchMonthlySummary: vi.fn(),
+  requestDevelopmentToken: vi.fn().mockResolvedValue({ access_token: 'demo-token', expires_in: 3600 }),
 }))
 
-import { fetchMonthlySummary } from './api'
+import { fetchMonthlySummary, requestDevelopmentToken } from './api'
 
 describe('App', () => {
   afterEach(() => {
@@ -27,11 +28,12 @@ describe('App', () => {
     fetchMonthlySummary.mockResolvedValue({ user_id: 1, summary: [], total_months: 0 })
     render(<App />)
 
-    fireEvent.change(screen.getByLabelText('Bearer token'), { target: { value: 'demo-token' } })
-    fireEvent.submit(screen.getByRole('button', { name: 'Refresh summary' }).closest('form'))
+    fireEvent.change(screen.getByLabelText('Development user ID'), { target: { value: '1' } })
+    fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'))
 
     await waitFor(() => expect(screen.getByText('No listens found for this date range.')).toBeInTheDocument())
-    expect(fetchMonthlySummary).toHaveBeenCalledWith({ token: 'demo-token', fromMonth: '', toMonth: '' })
+    expect(fetchMonthlySummary).toHaveBeenCalled()
+    expect(requestDevelopmentToken).toHaveBeenCalledWith('1')
   })
 
   it('renders monthly metrics from a populated summary', async () => {
@@ -42,11 +44,25 @@ describe('App', () => {
     })
     render(<App />)
 
-    fireEvent.change(screen.getByLabelText('Bearer token'), { target: { value: 'demo-token' } })
-    fireEvent.submit(screen.getByRole('button', { name: 'Refresh summary' }).closest('form'))
+    fireEvent.change(screen.getByLabelText('Development user ID'), { target: { value: '1' } })
+    fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'))
 
     await waitFor(() => expect(screen.getByText('2026-01')).toBeInTheDocument())
     expect(screen.getByText('12')).toBeInTheDocument()
     expect(screen.getByText('240 min')).toBeInTheDocument()
+  })
+
+  it('clears the session when analytics returns unauthorized', async () => {
+    fetchMonthlySummary.mockRejectedValue(Object.assign(new Error('Unauthorized'), { status: 401 }))
+    localStorage.setItem('audio-scrobbler-session', JSON.stringify({
+      userId: 1,
+      accessToken: 'expired-token',
+      expiresAt: Date.now() + 60000,
+    }))
+
+    render(<App />)
+
+    await waitFor(() => expect(screen.getByText('Your session has expired. Sign in again.')).toBeInTheDocument())
+    expect(localStorage.getItem('audio-scrobbler-session')).toBeNull()
   })
 })

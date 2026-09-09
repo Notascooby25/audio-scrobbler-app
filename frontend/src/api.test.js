@@ -1,5 +1,20 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fetchMonthlySummary } from './api'
+import { fetchMonthlySummary, requestDevelopmentToken } from './api'
+
+describe('requestDevelopmentToken', () => {
+  it('requests a signed token for a development user', async () => {
+    const response = { ok: true, json: vi.fn().mockResolvedValue({ access_token: 'demo-token' }) }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response))
+
+    await requestDevelopmentToken('7')
+
+    expect(fetch).toHaveBeenCalledWith('/auth/dev-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: 7 }),
+    })
+  })
+})
 
 describe('fetchMonthlySummary', () => {
   it('sends the bearer token and encoded month filters', async () => {
