@@ -1,0 +1,51 @@
+name: Verify production backup
+
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Upload database maintenance scripts
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: scripts/backup_database.sh,scripts/verify_database_backup.sh
+          target: ${{ secrets.DEPLOY_PATH }}
+
+      - name: Create and verify backup
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -eu
+            cd '${{ secrets.DEPLOY_PATH }}'
+            chmod 700 scripts/backup_database.sh scripts/verify_database_backup.sh
+            backup_file="$(ENV_FILE=.env.production COMPOSE_FILE=docker-compose.prod.yml scripts/backup_database.sh)"
+            test -s "$backup_file"
+            ENV_FILE=.env.production COMPOSE_FILE=docker-compose.prod.yml scripts/verify_database_backup.sh "$backup_file"
+            find backups -type f -name 'scrobbler-*.dump' -mtime -1 -print -quit | grep -q .
+            printf 'backup=%s\nsize_bytes=%s\n' "$backup_file" "$(wc -c < "$backup_file")"
+
+      - name: Write backup summary
+        if: success()
+        run: |
+          {
+            echo "### Production backup verification"
+            echo "- Backup created and restore-verified successfully"
+            echo "- Retention cleanup completed on the deployment host"
+          } >> "$GITHUB_STEP_SUMMARY"

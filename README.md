@@ -57,6 +57,8 @@ ENV_FILE=.env.production COMPOSE_FILE=docker-compose.prod.yml scripts/verify_dat
 
 Production deployment is manually triggered through the GitHub Actions `Deploy production` workflow. Configure the protected `production` environment with `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_PATH`, `DEPLOY_SSH_KEY`, `GHCR_USERNAME`, and `GHCR_TOKEN`. Keep `.env.production` only on the deployment host.
 
+The `Verify production backup` workflow runs daily at `02:17 UTC` and can also be started manually. It creates and restore-verifies a backup on the deployment host without uploading database contents to GitHub.
+
 ## Listening Ingestion
 
 Authenticated clients can submit listening events to `POST /ingestion/events`.
