@@ -40,6 +40,18 @@ export async function fetchMonthlySummary({ token, fromMonth, toMonth }) {
   return parseResponse(response)
 }
 
+export async function fetchRecentScrobbles({ token, limit, offset }) {
+  const params = new URLSearchParams()
+  if (limit) params.set('limit', limit)
+  if (offset) params.set('offset', offset)
+
+  const query = params.toString()
+  const response = await fetch(`${API_BASE_URL}/analytics/recent-scrobbles${query ? `?${query}` : ''}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return parseResponse(response)
+}
+
 export async function submitImportScrobbles({ token, source, entries }) {
   const response = await fetch(`${API_BASE_URL}/import/scrobbles`, {
     method: 'POST',

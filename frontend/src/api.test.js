@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fetchMonthlySummary, requestDevelopmentToken } from './api'
+import { fetchMonthlySummary, fetchRecentScrobbles, requestDevelopmentToken } from './api'
 import { requestSpotifyAuthorization } from './api'
 
 describe('requestSpotifyAuthorization', () => {
@@ -51,5 +51,18 @@ describe('fetchMonthlySummary', () => {
     await expect(fetchMonthlySummary({ token: 'demo token' })).rejects.toThrow(
       'from_month must be earlier than or equal to to_month',
     )
+  })
+})
+
+describe('fetchRecentScrobbles', () => {
+  it('sends the bearer token and encoded pagination params', async () => {
+    const response = { ok: true, json: vi.fn().mockResolvedValue({ scrobbles: [] }) }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response))
+
+    await fetchRecentScrobbles({ token: 'demo token', limit: 10, offset: 5 })
+
+    expect(fetch).toHaveBeenCalledWith('/analytics/recent-scrobbles?limit=10&offset=5', {
+      headers: { Authorization: 'Bearer demo token' },
+    })
   })
 })
