@@ -56,6 +56,24 @@ def test_ingest_service_inserts_and_deduplicates_events():
     db.close()
 
 
+def test_ingest_service_persists_album_name():
+    db = TestingSession()
+    db.query(ListeningEvent).delete()
+    db.commit()
+    event = ListeningEventCreate(
+        track_id="track-album",
+        track_name="Slow Show",
+        artist_name="The National",
+        album_name="Trouble Will Find Me",
+        played_at=datetime(2026, 1, 15, 12, 30),
+    )
+
+    ingest_listening_event(db, 1, event)
+
+    assert db.query(ListeningEvent).first().album_name == "Trouble Will Find Me"
+    db.close()
+
+
 def test_ingest_service_keeps_users_isolated():
     db = TestingSession()
     db.query(ListeningEvent).delete()
@@ -247,6 +265,7 @@ def test_import_spotify_history_inserts_valid_tracks_and_skips_bad_rows():
     assert summary["skipped"] == 1
     assert db.query(ListeningEvent).filter(ListeningEvent.user_id == 1).count() == 1
     assert db.query(ListeningEvent).first().source == "spotify"
+    assert db.query(ListeningEvent).first().album_name == "Trouble Will Find Me"
     db.close()
 
 
@@ -278,6 +297,7 @@ def test_import_youtube_history_inserts_valid_tracks_and_skips_bad_rows():
     assert summary["skipped"] == 1
     assert db.query(ListeningEvent).filter(ListeningEvent.user_id == 1).count() == 1
     assert db.query(ListeningEvent).first().source == "youtube"
+    assert db.query(ListeningEvent).first().album_name == "Hurry Up, We're Dreaming"
     db.close()
 
 
