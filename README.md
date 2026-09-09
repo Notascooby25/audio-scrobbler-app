@@ -23,6 +23,9 @@ cd backend
 alembic upgrade head
 ```
 
+In development, request a bearer token for an active user with `POST /auth/dev-token`.
+Protected analytics and ingestion requests require that signed token.
+
 ## Listening Ingestion
 
 Authenticated clients can submit listening events to `POST /ingestion/events`.

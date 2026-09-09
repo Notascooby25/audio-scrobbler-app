@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api.analytics import router as analytics_router
+from .api.auth import router as auth_router
 from .api.ingestion import router as ingestion_router
 from .config import settings
 
@@ -12,6 +13,7 @@ app = FastAPI(title=settings.app_name, version=settings.app_version)
 settings.validate()
 
 app.include_router(analytics_router)
+app.include_router(auth_router)
 app.include_router(ingestion_router)
 
 app.add_middleware(

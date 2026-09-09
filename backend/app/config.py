@@ -19,6 +19,7 @@ class Settings:
     refresh_token_key: str = os.getenv("REFRESH_TOKEN_KEY", "0123456789abcdef0123456789abcdef")
     ingestion_worker_url: str = os.getenv("INGESTION_WORKER_URL", "http://worker:8001")
     worker_ingestion_token: str = os.getenv("WORKER_INGESTION_TOKEN", "dev-worker-token")
+    access_token_ttl_seconds: int = int(os.getenv("ACCESS_TOKEN_TTL_SECONDS", "3600"))
 
     def validate(self) -> None:
         if self.environment.lower() == "production":
