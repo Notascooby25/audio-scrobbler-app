@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, DateTime, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base
@@ -29,6 +29,7 @@ class ListeningEvent(Base):
     track_name: Mapped[str] = mapped_column(String(255), nullable=False)
     artist_name: Mapped[str] = mapped_column(String(255), nullable=False)
     played_at: Mapped[datetime] = mapped_column(DateTime, index=True, nullable=False)
+    duration_ms: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     source: Mapped[str] = mapped_column(String(64), default="spotify")
     payload: Mapped[str] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)

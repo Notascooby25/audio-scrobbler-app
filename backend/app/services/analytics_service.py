@@ -24,7 +24,7 @@ def get_monthly_summary(
             month=row.month,
             total_plays=int(row.total_plays),
             unique_tracks=int(row.unique_tracks),
-            total_listening_minutes=0,
+            total_listening_minutes=int(getattr(row, "total_duration_ms", 0) // 60000),
         )
         for row in rows
     ]

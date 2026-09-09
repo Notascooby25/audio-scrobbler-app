@@ -10,6 +10,7 @@ class ListeningEventCreate(BaseModel):
     track_name: str = Field(min_length=1, max_length=255)
     artist_name: str = Field(min_length=1, max_length=255)
     played_at: datetime
+    duration_ms: int | None = Field(default=None, ge=0)
     source: str = Field(default="spotify", min_length=1, max_length=64)
     payload: dict[str, object] | None = None
 

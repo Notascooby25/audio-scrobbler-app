@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
+import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -64,6 +66,17 @@ def test_ingest_service_keeps_users_isolated():
     assert second.duplicate is False
     assert db.query(ListeningEvent).count() == 2
     db.close()
+
+
+def test_ingestion_rejects_negative_duration():
+    with pytest.raises(ValidationError):
+        ListeningEventCreate(
+            track_id="track-duration",
+            track_name="Track Duration",
+            artist_name="Artist Duration",
+            played_at=datetime(2026, 1, 15, 12, 30),
+            duration_ms=-1,
+        )
 
 
 def test_ingest_route_requires_authentication():

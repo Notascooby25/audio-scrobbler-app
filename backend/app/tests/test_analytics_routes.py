@@ -93,8 +93,8 @@ def test_service_get_monthly_summary_builds_monthly_rows():
     class Result:
         def all(self):
             return [
-                SimpleNamespace(month="2026-01", total_plays=12, unique_tracks=5),
-                SimpleNamespace(month="2026-02", total_plays=7, unique_tracks=3),
+                SimpleNamespace(month="2026-01", total_plays=12, unique_tracks=5, total_duration_ms=3600000),
+                SimpleNamespace(month="2026-02", total_plays=7, unique_tracks=3, total_duration_ms=0),
             ]
 
     class FakeDBFactory:
@@ -106,3 +106,5 @@ def test_service_get_monthly_summary_builds_monthly_rows():
     assert result.total_months == 2
     assert result.summary[0].month == "2026-01"
     assert result.summary[0].total_plays == 12
+    assert result.summary[0].total_listening_minutes == 60
+    assert result.summary[1].total_listening_minutes == 0

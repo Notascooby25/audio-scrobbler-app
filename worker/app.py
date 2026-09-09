@@ -26,6 +26,7 @@ def build_fixture_event() -> dict[str, object]:
         "track_name": "Development Fixture Track",
         "artist_name": "Audio Scrobbler",
         "played_at": datetime(2026, 1, 1, tzinfo=timezone.utc).isoformat(),
+        "duration_ms": 180000,
         "source": "development-fixture",
         "payload": {"fixture": True},
     }

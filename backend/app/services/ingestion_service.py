@@ -20,6 +20,7 @@ def ingest_listening_event(
         track_name=event.track_name,
         artist_name=event.artist_name,
         played_at=event.played_at,
+        duration_ms=event.duration_ms,
         source=event.source,
         payload=json.dumps(event.payload) if event.payload is not None else None,
     )

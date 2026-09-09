@@ -37,6 +37,7 @@ def build_monthly_summary_query(
             func.to_char(month_expr, "YYYY-MM").label("month"),
             func.count(ListeningEvent.id).label("total_plays"),
             func.count(func.distinct(ListeningEvent.track_id)).label("unique_tracks"),
+            func.coalesce(func.sum(ListeningEvent.duration_ms), 0).label("total_duration_ms"),
         )
         .where(ListeningEvent.user_id == user_id)
         .where(ListeningEvent.played_at >= from_date)
