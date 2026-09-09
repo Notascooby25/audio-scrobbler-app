@@ -33,6 +33,7 @@ The worker health endpoint reports the last Spotify sync timestamp, user count, 
 ## CI
 
 GitHub Actions runs backend and worker tests, clean PostgreSQL migrations, frontend tests and builds, Docker Compose validation, and a full container smoke test on pushes to `main` and pull requests.
+Successful pushes to `main` publish backend, worker, and frontend images to GHCR with commit-SHA tags and a `latest` tag.
 
 ## Listening Ingestion
 

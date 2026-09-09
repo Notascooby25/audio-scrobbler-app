@@ -93,9 +93,8 @@ jobs:
       - name: Wait for service health
         run: |
           for attempt in {1..30}; do
-            if docker compose ps --status running | grep -q 'backend' && \
-               docker compose ps --status running | grep -q 'worker' && \
-               docker compose ps --status running | grep -q 'frontend'; then
+            if docker compose ps --format json | grep -q '"Health":"healthy"' && \
+               [ "$(docker compose ps --format json | grep -c '"Health":"healthy"')" -ge 3 ]; then
               break
             fi
             sleep 5
@@ -121,3 +120,48 @@ jobs:
       - name: Tear down stack
         if: always()
         run: docker compose down -v
+
+  publish-images:
+    needs: [backend-worker, frontend, compose, container-smoke]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - name: backend
+            context: ./backend
+          - name: worker
+            context: ./worker
+          - name: frontend
+            context: ./frontend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}-${{ matrix.name }}
+          tags: |
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: true
