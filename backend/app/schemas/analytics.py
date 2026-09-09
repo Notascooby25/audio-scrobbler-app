@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -16,5 +18,24 @@ class MonthlySummaryResponse(BaseModel):
     user_id: int
     summary: list[MonthlySummaryEntry]
     total_months: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ScrobbleListEntry(BaseModel):
+    id: int
+    track_name: str
+    artist_name: str
+    source: str
+    played_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ScrobbleListResponse(BaseModel):
+    user_id: int
+    scrobbles: list[ScrobbleListEntry]
+    limit: int
+    offset: int
 
     model_config = ConfigDict(from_attributes=True)

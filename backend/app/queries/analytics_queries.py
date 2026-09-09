@@ -45,3 +45,19 @@ def build_monthly_summary_query(
         .group_by(month_expr)
         .order_by(month_expr)
     )
+
+
+def build_recent_scrobbles_query(user_id: int, limit: int, offset: int):
+    return (
+        select(
+            ListeningEvent.id,
+            ListeningEvent.track_name,
+            ListeningEvent.artist_name,
+            ListeningEvent.source,
+            ListeningEvent.played_at,
+        )
+        .where(ListeningEvent.user_id == user_id)
+        .order_by(ListeningEvent.played_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
