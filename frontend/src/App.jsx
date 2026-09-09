@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { fetchMonthlySummary, redirectToAuthorization, requestDevelopmentToken, requestSpotifyAuthorization } from './api'
+import { useEffect, useRef, useState } from 'react'
+import { fetchMonthlySummary, redirectToAuthorization, requestDevelopmentToken, requestSpotifyAuthorization, submitImportScrobbles } from './api'
 
 function readSavedSession() {
   try {
@@ -38,6 +38,9 @@ export default function App() {
   const [summary, setSummary] = useState(null)
   const [error, setError] = useState(callbackError ? 'Spotify authorization was cancelled.' : '')
   const [status, setStatus] = useState(callbackError ? 'error' : savedSession?.accessToken ? 'loading' : 'idle')
+  const [importStatus, setImportStatus] = useState('idle')
+  const [importMessage, setImportMessage] = useState('')
+  const importInputRef = useRef(null)
 
   const connectSpotify = async () => {
     setStatus('loading')
@@ -111,6 +114,29 @@ export default function App() {
     }
   }
 
+  const handleImport = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setImportStatus('loading')
+    setImportMessage('')
+    try {
+      const text = await file.text()
+      const parsed = JSON.parse(text)
+      const entries = Array.isArray(parsed) ? parsed : parsed.history || parsed.entries || []
+      const source = file.name.toLowerCase().includes('youtube') ? 'youtube' : 'spotify'
+      const result = await submitImportScrobbles({ token, source, entries })
+      setImportStatus('success')
+      setImportMessage(`${result.source}: ${result.summary.inserted} inserted, ${result.summary.skipped} skipped.`)
+      await loadSummary(null, token)
+    } catch (requestError) {
+      setImportStatus('error')
+      setImportMessage(requestError.message || 'Import failed.')
+    } finally {
+      event.target.value = ''
+    }
+  }
+
   useEffect(() => {
     if (!savedSession?.accessToken) return
     if (savedSession.expiresAt && savedSession.expiresAt <= Date.now()) {
@@ -158,6 +184,15 @@ export default function App() {
           {token && <button type="button" onClick={clearSession}>Sign out</button>}
         </form>
         {!token && <button type="button" onClick={connectSpotify}>Connect Spotify</button>}
+        {token && (
+          <div className="import-panel">
+            <label className="import-picker">
+              Import history JSON
+              <input ref={importInputRef} type="file" accept="application/json,.json" onChange={handleImport} />
+            </label>
+            {importStatus !== 'idle' && <p className="notice">{importMessage}</p>}
+          </div>
+        )}
 
         {status === 'idle' && <p className="notice">Connect your account to see your listening history.</p>}
         {status === 'error' && <p className="notice notice-error" role="alert">{error}</p>}

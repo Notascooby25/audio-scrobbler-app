@@ -39,3 +39,15 @@ export async function fetchMonthlySummary({ token, fromMonth, toMonth }) {
   })
   return parseResponse(response)
 }
+
+export async function submitImportScrobbles({ token, source, entries }) {
+  const response = await fetch(`${API_BASE_URL}/import/scrobbles`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ source, entries }),
+  })
+  return parseResponse(response)
+}
