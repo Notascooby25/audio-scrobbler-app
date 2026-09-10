@@ -1,0 +1,22 @@
+{
+  "name": "Audio Scrobbler App",
+  "short_name": "Scrobbler",
+  "description": "Track, chart, and share your listening history.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#efe9dd",
+  "theme_color": "#111827",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
