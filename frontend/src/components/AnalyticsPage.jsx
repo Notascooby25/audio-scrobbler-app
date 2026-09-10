@@ -13,6 +13,7 @@ export default function AnalyticsPage({ eyebrow, title, children }) {
           <Link to="/library">Library</Link>
           <Link to="/reports">Reports</Link>
           <Link to="/profile">Profile</Link>
+          <Link to="/connect">Connect</Link>
         </nav>
       </header>
       <section className="dashboard analytics-page">

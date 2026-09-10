@@ -28,7 +28,7 @@ export default function ReportsPage() {
 
   return (
     <AnalyticsPage eyebrow="Listening report" title="Reports">
-      {!session?.accessToken && <p className="notice">Sign in from the <Link to="/">home page</Link> to see your listening report.</p>}
+      {!session?.accessToken && <p className="notice">Connect Spotify from the <Link to="/connect">connection page</Link> to see your listening report.</p>}
       {error && <p className="notice notice-error" role="alert">{error}</p>}
       <div className="report-banner">
         <div>

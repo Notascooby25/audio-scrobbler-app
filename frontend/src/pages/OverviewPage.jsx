@@ -44,7 +44,7 @@ export default function OverviewPage() {
 
   return (
     <AnalyticsPage eyebrow="Personal archive" title="Overview">
-      {!session?.accessToken && <p className="notice">Sign in from the <Link to="/">home page</Link> to see your listening overview.</p>}
+      {!session?.accessToken && <p className="notice">Connect Spotify from the <Link to="/connect">connection page</Link> to see your listening overview.</p>}
       {status === 'loading' && <p className="notice">Loading your listening overview...</p>}
       {status === 'error' && <p className="notice notice-error" role="alert">{error}</p>}
       {data && (

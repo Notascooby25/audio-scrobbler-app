@@ -24,27 +24,31 @@ describe('App', () => {
     vi.clearAllMocks()
   })
 
-  it('shows the connection prompt before a token is provided', () => {
+  function renderConnectPage(hash = '') {
+    window.history.pushState({}, '', `/connect${hash}`)
+    return render(<App />)
+  }
+
+  it('renders the new Overview page at the root route', () => {
     render(<App />)
-    expect(screen.getByText('Connect your account to see your listening history.')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Overview' })).toBeInTheDocument()
   })
 
   it('shows an error after Spotify authorization is cancelled', () => {
-    window.location.hash = '#auth_error=spotify_authorization_denied'
-    render(<App />)
+    renderConnectPage('#auth_error=spotify_authorization_denied')
     expect(screen.getByText('Spotify authorization was cancelled.')).toBeInTheDocument()
     window.history.replaceState({}, document.title, window.location.pathname)
   })
 
   it('requests Spotify authorization from the dashboard', async () => {
-    render(<App />)
+    renderConnectPage()
     fireEvent.click(screen.getByRole('button', { name: 'Connect Spotify' }))
     await waitFor(() => expect(requestSpotifyAuthorization).toHaveBeenCalled())
   })
 
   it('renders an empty result after loading a filtered summary', async () => {
     fetchMonthlySummary.mockResolvedValue({ user_id: 1, summary: [], total_months: 0 })
-    render(<App />)
+    renderConnectPage()
 
     fireEvent.change(screen.getByLabelText('Development user ID'), { target: { value: '1' } })
     fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'))
@@ -60,7 +64,7 @@ describe('App', () => {
       total_months: 1,
       summary: [{ month: '2026-01', total_plays: 12, unique_tracks: 5, total_listening_minutes: 240 }],
     })
-    render(<App />)
+    renderConnectPage()
 
     fireEvent.change(screen.getByLabelText('Development user ID'), { target: { value: '1' } })
     fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'))
@@ -78,7 +82,7 @@ describe('App', () => {
       expiresAt: Date.now() + 60000,
     }))
 
-    render(<App />)
+    renderConnectPage()
 
     await waitFor(() => expect(screen.getByText('Your session has expired. Sign in again.')).toBeInTheDocument())
     expect(localStorage.getItem('audio-scrobbler-session')).toBeNull()
@@ -95,7 +99,7 @@ describe('App', () => {
         { id: 2, track_name: 'Midnight City', artist_name: 'M83', source: 'youtube', played_at: '2026-01-15T12:31:00' },
       ],
     })
-    render(<App />)
+    renderConnectPage()
 
     fireEvent.change(screen.getByLabelText('Development user ID'), { target: { value: '1' } })
     fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'))
@@ -113,7 +117,7 @@ describe('App', () => {
       status: 'ok',
       summary: { inserted: 2, skipped: 1, duplicate: 0 },
     })
-    render(<App />)
+    renderConnectPage()
 
     fireEvent.change(screen.getByLabelText('Development user ID'), { target: { value: '1' } })
     fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'))
@@ -135,7 +139,7 @@ describe('App', () => {
       status: 'ok',
       summary: { inserted: 1, skipped: 0, duplicate: 0 },
     })
-    render(<App />)
+    renderConnectPage()
 
     fireEvent.change(screen.getByLabelText('Development user ID'), { target: { value: '1' } })
     fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'))

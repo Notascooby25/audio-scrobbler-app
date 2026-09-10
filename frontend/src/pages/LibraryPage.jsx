@@ -44,7 +44,7 @@ export default function LibraryPage() {
 
   return (
     <AnalyticsPage eyebrow="Personal archive" title="Library">
-      {!session?.accessToken && <p className="notice">Sign in from the home page to browse your library.</p>}
+      {!session?.accessToken && <p className="notice">Connect Spotify from the <a href="/connect">connection page</a> to browse your library.</p>}
       {status === 'loading' && <p className="notice">Loading your library...</p>}
       {status === 'error' && <p className="notice notice-error" role="alert">{error}</p>}
       {session?.accessToken && (
