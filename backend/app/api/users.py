@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from ..api.deps import get_current_user
 from ..db import get_db
 from ..models import User
-from ..schemas.users import FollowActionResponse, UserSearchResponse
+from ..schemas.users import FollowActionResponse, UserProfileResponse, UserSearchResponse
 from ..services import social_service
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -51,3 +51,13 @@ def search(
     current_user: User = Depends(get_current_user),
 ) -> UserSearchResponse:
     return UserSearchResponse(results=social_service.search_users(db, q))
+
+
+@router.get("/{user_id}/profile", response_model=UserProfileResponse, status_code=status.HTTP_200_OK)
+def profile(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> UserProfileResponse:
+    target_user = _get_active_user_or_404(db, user_id)
+    return social_service.get_user_profile(db, current_user.id, target_user)

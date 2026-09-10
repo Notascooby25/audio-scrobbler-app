@@ -3,7 +3,8 @@ from __future__ import annotations
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from ..models import Follow, User
+from ..models import Follow, ListeningEvent, User
+from ..schemas.users import LastScrobble, UserProfileResponse
 
 
 def follow_user(db: Session, follower_id: int, followee_id: int) -> None:
@@ -57,4 +58,39 @@ def search_users(db: Session, query: str, limit: int = 20) -> list[User]:
         .order_by(User.username)
         .limit(limit)
         .all()
+    )
+
+
+def get_user_profile(db: Session, viewer_id: int, target_user: User) -> UserProfileResponse:
+    is_self = viewer_id == target_user.id
+    following = is_self or is_following(db, viewer_id, target_user.id)
+    can_view_details = is_self or following
+
+    last_scrobble = None
+    if can_view_details:
+        event = (
+            db.query(ListeningEvent)
+            .filter(ListeningEvent.user_id == target_user.id)
+            .order_by(ListeningEvent.played_at.desc())
+            .first()
+        )
+        if event is not None:
+            last_scrobble = LastScrobble(
+                track_name=event.track_name,
+                artist_name=event.artist_name,
+                album_name=event.album_name,
+                source=event.source,
+                played_at=event.played_at,
+            )
+
+    return UserProfileResponse(
+        id=target_user.id,
+        username=target_user.username,
+        display_name=target_user.display_name,
+        follower_count=follower_count(db, target_user.id),
+        following_count=following_count(db, target_user.id),
+        is_self=is_self,
+        is_following=following,
+        can_view_details=can_view_details,
+        last_scrobble=last_scrobble,
     )
