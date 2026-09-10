@@ -126,4 +126,26 @@ describe('App', () => {
     await waitFor(() => expect(screen.getByText('spotify', { exact: false })).toBeInTheDocument())
     expect(screen.getByText('2')).toBeInTheDocument()
   })
+
+  it('detects a youtube import from file content when the filename gives no hint', async () => {
+    fetchMonthlySummary.mockResolvedValue({ user_id: 1, summary: [], total_months: 0 })
+    fetchRecentScrobbles.mockResolvedValue({ user_id: 1, scrobbles: [], limit: 50, offset: 0 })
+    submitImportScrobbles.mockResolvedValue({
+      source: 'youtube',
+      status: 'ok',
+      summary: { inserted: 1, skipped: 0, duplicate: 0 },
+    })
+    render(<App />)
+
+    fireEvent.change(screen.getByLabelText('Development user ID'), { target: { value: '1' } })
+    fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'))
+    await waitFor(() => expect(screen.getByText('No listens found for this date range.')).toBeInTheDocument())
+
+    const entries = [{ artist: 'The Sherlocks', song: 'Everything Must Make Sense', album: 'Everything Must Make Sense!', time: '2025-10-20T12:33:20.422Z' }]
+    const file = new File([JSON.stringify(entries)], 'watch-history.json', { type: 'application/json' })
+    file.text = async () => JSON.stringify(entries)
+    fireEvent.change(screen.getByLabelText('Import history JSON'), { target: { files: [file] } })
+
+    await waitFor(() => expect(submitImportScrobbles).toHaveBeenCalledWith({ token: 'demo-token', source: 'youtube', entries }))
+  })
 })

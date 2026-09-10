@@ -65,7 +65,7 @@ def canonicalize_scrobble(user_id: int, source: str, raw_item: dict[str, Any]) -
         timestamp = _normalize_timestamp(time_value)
         if timestamp is None:
             raise ValueError("YouTube scrobble is missing a valid time value")
-        title = raw_item.get("title")
+        title = raw_item.get("title") or raw_item.get("song")
         artist = raw_item.get("artist")
         if not isinstance(title, str) or not isinstance(artist, str):
             raise ValueError("YouTube scrobble is missing required title or artist fields")

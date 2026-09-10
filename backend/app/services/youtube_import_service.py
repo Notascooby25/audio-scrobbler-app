@@ -18,7 +18,7 @@ def import_youtube_history(db: Session, user_id: int, entries: list[dict[str, An
             skipped += 1
             continue
 
-        title = entry.get("title")
+        title = entry.get("title") or entry.get("song")
         artist = entry.get("artist")
         time_value = entry.get("time")
         if not isinstance(title, str) or not isinstance(artist, str) or not isinstance(time_value, str):

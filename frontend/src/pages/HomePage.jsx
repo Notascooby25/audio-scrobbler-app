@@ -131,7 +131,14 @@ export default function HomePage() {
       const text = await file.text()
       const parsed = JSON.parse(text)
       const entries = Array.isArray(parsed) ? parsed : parsed.history || parsed.entries || []
-      const source = file.name.toLowerCase().includes('youtube') ? 'youtube' : 'spotify'
+      const firstEntry = entries[0] || {}
+      const looksLikeSpotify = 'trackUri' in firstEntry || 'endTime' in firstEntry || 'trackName' in firstEntry
+      const looksLikeYoutube = 'song' in firstEntry || 'subtitles' in firstEntry || 'titleUrl' in firstEntry
+      const source = looksLikeSpotify
+        ? 'spotify'
+        : looksLikeYoutube || file.name.toLowerCase().includes('youtube') || file.name.toLowerCase().includes('watch-history')
+          ? 'youtube'
+          : 'spotify'
       const result = await submitImportScrobbles({ token, source, entries })
       setImportResult(result)
       await loadSummary(null, token)

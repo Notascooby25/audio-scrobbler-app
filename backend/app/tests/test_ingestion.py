@@ -301,6 +301,32 @@ def test_import_youtube_history_inserts_valid_tracks_and_skips_bad_rows():
     db.close()
 
 
+def test_import_youtube_history_accepts_song_field_as_title_alias():
+    db = TestingSession()
+    db.query(ListeningEvent).delete()
+    db.commit()
+
+    entries = [
+        {
+            "artist": "The Sherlocks",
+            "song": "Everything Must Make Sense",
+            "album": "Everything Must Make Sense!",
+            "time": "2025-10-20T12:33:20.422Z",
+        },
+    ]
+
+    summary = import_youtube_history(db, 1, entries)
+
+    assert summary["inserted"] == 1
+    assert summary["skipped"] == 0
+    event = db.query(ListeningEvent).filter(ListeningEvent.user_id == 1).first()
+    assert event.track_name == "Everything Must Make Sense"
+    assert event.artist_name == "The Sherlocks"
+    assert event.album_name == "Everything Must Make Sense!"
+    assert event.source == "youtube"
+    db.close()
+
+
 def test_import_services_count_duplicate_records_separately():
     db = TestingSession()
     db.query(ListeningEvent).delete()
