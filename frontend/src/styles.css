@@ -35,6 +35,19 @@ body {
   margin-bottom: 4rem;
 }
 
+.topbar-nav {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+}
+
+.topbar-nav a {
+  color: #46624d;
+  font: 600 0.75rem system-ui, sans-serif;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.12em;
