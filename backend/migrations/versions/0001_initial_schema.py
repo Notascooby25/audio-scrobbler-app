@@ -12,6 +12,12 @@ depends_on = None
 
 def upgrade() -> None:
     bind = op.get_bind()
+
+    if bind.dialect.name == "postgresql":
+        # Alembic's default alembic_version.version_num column is VARCHAR(32),
+        # too narrow for this repo's descriptive (>32 char) revision ids.
+        op.execute("ALTER TABLE alembic_version ALTER COLUMN version_num TYPE character varying(255)")
+
     inspector = inspect(bind)
     tables = inspector.get_table_names()
 

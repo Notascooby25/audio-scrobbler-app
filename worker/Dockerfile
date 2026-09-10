@@ -7,6 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py ./app.py
 COPY spotify_ingestion.py ./spotify_ingestion.py
+COPY file_import.py ./file_import.py
 
 EXPOSE 8001
 
