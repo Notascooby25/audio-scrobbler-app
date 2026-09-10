@@ -26,8 +26,8 @@ services:
       APP_ENV: development
       APP_VERSION: 0.3.0
       ACCESS_TOKEN_TTL_SECONDS: 3600
-      SPOTIFY_CLIENT_ID: ""
-      SPOTIFY_CLIENT_SECRET: ""
+      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
+      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
       SPOTIFY_REDIRECT_URI: http://localhost:8000/auth/spotify/callback
       SPOTIFY_SCOPES: user-read-recently-played user-library-read
       FRONTEND_AUTH_CALLBACK_URL: http://localhost:5173
@@ -64,8 +64,8 @@ services:
       WORKER_FILE_IMPORT_INTERVAL_MINUTES: "10"
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-scrobbler}:${POSTGRES_PASSWORD:-scrobbler}@db:5432/${POSTGRES_DB:-scrobbler}
       REFRESH_TOKEN_KEY: ${REFRESH_TOKEN_KEY:-0123456789abcdef0123456789abcdef}
-      SPOTIFY_CLIENT_ID: ""
-      SPOTIFY_CLIENT_SECRET: ""
+      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
+      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
     # To enable worker file-based import, mount a host directory at /data/imports and set WORKER_FILE_IMPORT_ENABLED=true:
     # volumes:
     #   - ./worker-imports:/data/imports
