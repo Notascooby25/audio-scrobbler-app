@@ -120,7 +120,7 @@ def _top_stats(
 
 @stats_router.get("/top-artists", response_model=ChartResponse)
 def top_artists(
-    limit: int = Query(default=5, ge=1, le=50),
+    limit: int = Query(default=10, ge=1, le=50),
     range: str | None = Query(default=None, description="Optional: last.week, last.month, last.year, custom"),
     start_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
     end_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
@@ -132,7 +132,7 @@ def top_artists(
 
 @stats_router.get("/top-albums", response_model=ChartResponse)
 def top_albums(
-    limit: int = Query(default=5, ge=1, le=50),
+    limit: int = Query(default=10, ge=1, le=50),
     range: str | None = Query(default=None, description="Optional: last.week, last.month, last.year, custom"),
     start_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
     end_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
@@ -144,7 +144,7 @@ def top_albums(
 
 @stats_router.get("/top-tracks", response_model=ChartResponse)
 def top_tracks(
-    limit: int = Query(default=8, ge=1, le=50),
+    limit: int = Query(default=10, ge=1, le=50),
     range: str | None = Query(default=None, description="Optional: last.week, last.month, last.year, custom"),
     start_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
     end_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),

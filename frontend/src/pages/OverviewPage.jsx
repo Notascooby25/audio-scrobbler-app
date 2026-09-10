@@ -30,9 +30,9 @@ export default function OverviewPage() {
     if (!isValidDateRange(dateRange)) return
     setStatus('loading')
     Promise.all([
-      fetchStatsChart({ token: session.accessToken, entity: 'artists', limit: 5, dateRange }),
-      fetchStatsChart({ token: session.accessToken, entity: 'albums', limit: 5, dateRange }),
-      fetchStatsChart({ token: session.accessToken, entity: 'tracks', limit: 8, dateRange }),
+      fetchStatsChart({ token: session.accessToken, entity: 'artists', limit: 10, dateRange }),
+      fetchStatsChart({ token: session.accessToken, entity: 'albums', limit: 10, dateRange }),
+      fetchStatsChart({ token: session.accessToken, entity: 'tracks', limit: 10, dateRange }),
     ]).then(([artists, albums, tracks]) => {
       setCharts({ artists: artists.entries, albums: albums.entries, tracks: tracks.entries })
       setStatus('ready')
