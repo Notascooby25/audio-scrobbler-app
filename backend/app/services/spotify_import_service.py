@@ -18,10 +18,14 @@ def import_spotify_history(db: Session, user_id: int, entries: list[dict[str, An
         if not isinstance(entry, dict):
             skipped += 1
             continue
-        track_name = entry.get("trackName")
-        artist_name = entry.get("artistName")
-        end_time = entry.get("endTime")
-        track_uri = entry.get("trackUri")
+        # Accept both the basic "Account Data" export field names and the
+        # real "Extended Streaming History" export field names.
+        track_name = entry.get("trackName") or entry.get("master_metadata_track_name")
+        artist_name = entry.get("artistName") or entry.get("master_metadata_album_artist_name")
+        end_time = entry.get("endTime") or entry.get("ts")
+        track_uri = entry.get("trackUri") or entry.get("spotify_track_uri")
+        album_name = entry.get("albumName") or entry.get("master_metadata_album_album_name")
+        ms_played = entry.get("msPlayed") if isinstance(entry.get("msPlayed"), int) else entry.get("ms_played")
         if not isinstance(track_name, str) or not isinstance(artist_name, str) or not isinstance(end_time, str) or not isinstance(track_uri, str):
             skipped += 1
             continue
@@ -35,8 +39,8 @@ def import_spotify_history(db: Session, user_id: int, entries: list[dict[str, An
                 "id": track_uri,
                 "name": track_name,
                 "artists": [{"name": artist_name}],
-                "album": {"name": entry.get("albumName") if isinstance(entry.get("albumName"), str) else None},
-                "duration_ms": entry.get("msPlayed") if isinstance(entry.get("msPlayed"), int) else None,
+                "album": {"name": album_name if isinstance(album_name, str) else None},
+                "duration_ms": ms_played if isinstance(ms_played, int) else None,
             },
             "context": {
                 "platform": "spotify",

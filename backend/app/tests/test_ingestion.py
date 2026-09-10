@@ -269,6 +269,47 @@ def test_import_spotify_history_inserts_valid_tracks_and_skips_bad_rows():
     db.close()
 
 
+def test_import_spotify_history_accepts_extended_streaming_history_fields():
+    db = TestingSession()
+    db.query(ListeningEvent).delete()
+    db.commit()
+
+    entries = [
+        {
+            "ts": "2026-06-02T18:16:44Z",
+            "platform": "ios",
+            "ms_played": 284000,
+            "conn_country": "GB",
+            "master_metadata_track_name": "Slow Show",
+            "master_metadata_album_artist_name": "The National",
+            "master_metadata_album_album_name": "Trouble Will Find Me",
+            "spotify_track_uri": "spotify:track:slow-show",
+            "reason_start": "trackdone",
+            "reason_end": "trackdone",
+        },
+        {
+            "ts": "2026-06-02T18:20:00Z",
+            "ms_played": 5000,
+            "master_metadata_track_name": None,
+            "episode_name": "A Podcast Episode",
+            "episode_show_name": "Some Podcast",
+            "spotify_episode_uri": "spotify:episode:some-episode",
+        },
+    ]
+
+    summary = import_spotify_history(db, 1, entries)
+
+    assert summary["inserted"] == 1
+    assert summary["skipped"] == 1
+    event = db.query(ListeningEvent).filter(ListeningEvent.user_id == 1).first()
+    assert event.track_name == "Slow Show"
+    assert event.artist_name == "The National"
+    assert event.album_name == "Trouble Will Find Me"
+    assert event.duration_ms == 284000
+    assert event.source == "spotify"
+    db.close()
+
+
 def test_import_youtube_history_inserts_valid_tracks_and_skips_bad_rows():
     db = TestingSession()
     db.query(ListeningEvent).delete()

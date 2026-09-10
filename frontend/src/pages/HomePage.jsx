@@ -132,7 +132,7 @@ export default function HomePage() {
       const parsed = JSON.parse(text)
       const entries = Array.isArray(parsed) ? parsed : parsed.history || parsed.entries || []
       const firstEntry = entries[0] || {}
-      const looksLikeSpotify = 'trackUri' in firstEntry || 'endTime' in firstEntry || 'trackName' in firstEntry
+      const looksLikeSpotify = 'trackUri' in firstEntry || 'endTime' in firstEntry || 'trackName' in firstEntry || 'spotify_track_uri' in firstEntry || 'master_metadata_track_name' in firstEntry
       const looksLikeYoutube = 'song' in firstEntry || 'subtitles' in firstEntry || 'titleUrl' in firstEntry
       const source = looksLikeSpotify
         ? 'spotify'
