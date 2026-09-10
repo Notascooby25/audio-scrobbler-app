@@ -8,10 +8,11 @@ from fastapi.responses import JSONResponse
 from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api.analytics import router as analytics_router
+from .api.analytics import library_router, reports_router, router as analytics_router, stats_router
 from .api.auth import router as auth_router
 from .api.imports import router as import_router
 from .api.ingestion import router as ingestion_router
+from .api.spotify_library import router as spotify_library_router
 from .api.users import router as users_router
 from .config import settings
 from .db import SessionLocal
@@ -27,9 +28,13 @@ logger = logging.getLogger("audio-scrobbler-api")
 settings.validate()
 
 app.include_router(analytics_router)
+app.include_router(stats_router)
+app.include_router(library_router)
+app.include_router(reports_router)
 app.include_router(auth_router)
 app.include_router(import_router)
 app.include_router(ingestion_router)
+app.include_router(spotify_library_router)
 app.include_router(users_router)
 
 app.add_middleware(

@@ -40,6 +40,8 @@ def canonicalize_scrobble(user_id: int, source: str, raw_item: dict[str, Any]) -
             raise ValueError("Spotify scrobble contains a blank artist name")
         album = track.get("album")
         album_name = album.get("name") if isinstance(album, dict) else None
+        images = album.get("images") if isinstance(album, dict) else None
+        artwork_url = images[0].get("url") if isinstance(images, list) and images and isinstance(images[0], dict) else None
         timestamp = _normalize_timestamp(played_at)
         if timestamp is None:
             raise ValueError("Spotify scrobble is missing a valid played_at timestamp")
@@ -52,6 +54,7 @@ def canonicalize_scrobble(user_id: int, source: str, raw_item: dict[str, Any]) -
             "track_name": track_name,
             "artist_name": artist["name"],
             "album_name": album_name,
+            "artwork_url": artwork_url if isinstance(artwork_url, str) else None,
             "duration_ms": track.get("duration_ms") if isinstance(track.get("duration_ms"), int) else None,
             "context": {
                 "platform": context.get("platform", "spotify"),
@@ -81,6 +84,7 @@ def canonicalize_scrobble(user_id: int, source: str, raw_item: dict[str, Any]) -
             "track_name": title,
             "artist_name": artist,
             "album_name": raw_item.get("album") if isinstance(raw_item.get("album"), str) else None,
+            "artwork_url": raw_item.get("artwork_url") if isinstance(raw_item.get("artwork_url"), str) else None,
             "duration_ms": raw_item.get("duration_ms") if isinstance(raw_item.get("duration_ms"), int) else None,
             "context": {
                 "platform": context.get("platform", "youtube"),

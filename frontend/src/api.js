@@ -107,3 +107,55 @@ export async function fetchUserCharts({ token, userId, entity, range, limit }) {
   })
   return parseResponse(response)
 }
+
+async function fetchAnalyticsResource(path, { token, params = {} } = {}) {
+  const query = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') query.set(key, value)
+  })
+  const suffix = query.toString() ? `?${query.toString()}` : ''
+  const response = await fetch(`${API_BASE_URL}${path}${suffix}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return parseResponse(response)
+}
+
+export function fetchStatsSummary({ token }) {
+  return fetchAnalyticsResource('/stats/summary', { token })
+}
+
+export function fetchStatsChart({ token, entity, limit }) {
+  return fetchAnalyticsResource(`/stats/top-${entity}`, { token, params: { limit } })
+}
+
+export function fetchLibraryCollection({ token, entity, limit, offset }) {
+  return fetchAnalyticsResource(`/library/${entity}`, { token, params: { limit, offset } })
+}
+
+export function fetchLibraryScrobbles({ token, limit, offset }) {
+  return fetchLibraryCollection({ token, entity: 'scrobbles', limit, offset })
+}
+
+export function fetchLibraryTimeline({ token }) {
+  return fetchAnalyticsResource('/library/timeline', { token })
+}
+
+export function fetchReportsSummary({ token }) {
+  return fetchAnalyticsResource('/reports/summary', { token })
+}
+
+export function fetchReportsCharts({ token }) {
+  return fetchAnalyticsResource('/reports/charts', { token })
+}
+
+export function syncLikedTracks({ token }) {
+  return fetchAnalyticsResource('/spotify/sync-liked-tracks', { token })
+}
+
+export function backfillArtwork({ token }) {
+  return fetchAnalyticsResource('/spotify/backfill-artwork', { token })
+}
+
+export function fetchLikedTracks({ token, limit, offset }) {
+  return fetchAnalyticsResource('/spotify/liked-tracks', { token, params: { limit, offset } })
+}

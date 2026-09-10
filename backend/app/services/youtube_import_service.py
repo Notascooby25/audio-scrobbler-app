@@ -62,6 +62,7 @@ def import_youtube_history(db: Session, user_id: int, entries: list[dict[str, An
             track_name=canonical["track_name"],
             artist_name=canonical["artist_name"],
             album_name=canonical["album_name"],
+            artwork_url=canonical["artwork_url"],
             played_at=canonical["played_at"],
             duration_ms=canonical["duration_ms"],
             source="youtube",

@@ -55,6 +55,7 @@ def build_recent_scrobbles_query(user_id: int, limit: int, offset: int):
             ListeningEvent.artist_name,
             ListeningEvent.source,
             ListeningEvent.played_at,
+            ListeningEvent.artwork_url,
         )
         .where(ListeningEvent.user_id == user_id)
         .order_by(ListeningEvent.played_at.desc())
@@ -78,7 +79,7 @@ def build_top_entities_query(user_id: int, entity: str, range_key: str, limit: i
     else:
         raise ValueError(f"Unsupported chart entity: {entity!r}")
 
-    statement = select(*group_columns, func.count(ListeningEvent.id).label("play_count")).where(
+    statement = select(*group_columns, func.max(ListeningEvent.artwork_url).label("artwork_url"), func.count(ListeningEvent.id).label("play_count")).where(
         ListeningEvent.user_id == user_id
     )
     if entity == "albums":
@@ -95,4 +96,103 @@ def build_top_entities_query(user_id: int, entity: str, range_key: str, limit: i
         statement.group_by(*group_columns)
         .order_by(func.count(ListeningEvent.id).desc())
         .limit(limit)
+    )
+
+
+def build_stats_summary_query(user_id: int):
+    return select(
+        func.count(ListeningEvent.id).label("total_scrobbles"),
+        func.count(func.distinct(ListeningEvent.artist_name)).label("unique_artists"),
+    ).where(ListeningEvent.user_id == user_id)
+
+
+def build_library_scrobbles_query(user_id: int, limit: int, offset: int):
+    return build_recent_scrobbles_query(user_id=user_id, limit=limit, offset=offset)
+
+
+def build_library_count_query(user_id: int):
+    return select(func.count(ListeningEvent.id)).where(ListeningEvent.user_id == user_id)
+
+
+def build_library_entities_query(user_id: int, entity: str, limit: int, offset: int):
+    if entity == "artists":
+        group_columns = [ListeningEvent.artist_name]
+    elif entity == "albums":
+        group_columns = [ListeningEvent.album_name, ListeningEvent.artist_name]
+    elif entity == "tracks":
+        group_columns = [ListeningEvent.track_name, ListeningEvent.artist_name]
+    else:
+        raise ValueError(f"Unsupported library entity: {entity!r}")
+
+    statement = select(*group_columns, func.max(ListeningEvent.artwork_url).label("artwork_url"), func.count(ListeningEvent.id).label("play_count")).where(
+        ListeningEvent.user_id == user_id
+    )
+    if entity == "albums":
+        statement = statement.where(ListeningEvent.album_name.isnot(None))
+
+    return (
+        statement.group_by(*group_columns)
+        .order_by(func.count(ListeningEvent.id).desc())
+        .limit(limit)
+        .offset(offset)
+    )
+
+
+def build_library_entity_count_query(user_id: int, entity: str):
+    if entity == "artists":
+        value = ListeningEvent.artist_name
+    elif entity == "albums":
+        value = ListeningEvent.album_name
+    elif entity == "tracks":
+        value = ListeningEvent.track_name
+    else:
+        raise ValueError(f"Unsupported library entity: {entity!r}")
+
+    statement = select(func.count(func.distinct(value))).where(ListeningEvent.user_id == user_id)
+    if entity == "albums":
+        statement = statement.where(value.isnot(None))
+    return statement
+
+
+def build_scrobbles_timeline_query(user_id: int):
+    year_expr = func.date_trunc("year", ListeningEvent.played_at)
+    return (
+        select(
+            func.to_char(year_expr, "YYYY").label("period"),
+            func.count(ListeningEvent.id).label("count"),
+        )
+        .where(ListeningEvent.user_id == user_id)
+        .group_by(year_expr)
+        .order_by(year_expr)
+    )
+
+
+def build_report_period_count_query(user_id: int, start: datetime, end: datetime):
+    return select(
+        func.count(ListeningEvent.id).label("scrobble_count"),
+        func.coalesce(func.sum(ListeningEvent.duration_ms), 0).label("duration_ms"),
+    ).where(
+        ListeningEvent.user_id == user_id,
+        ListeningEvent.played_at >= start,
+        ListeningEvent.played_at < end,
+    )
+
+
+def build_report_weekly_query(user_id: int, start: datetime, end: datetime):
+    day_expr = func.date_trunc("day", ListeningEvent.played_at)
+    return (
+        select(func.to_char(day_expr, "YYYY-MM-DD").label("label"), func.count(ListeningEvent.id).label("count"))
+        .where(ListeningEvent.user_id == user_id, ListeningEvent.played_at >= start, ListeningEvent.played_at < end)
+        .group_by(day_expr)
+        .order_by(day_expr)
+    )
+
+
+def build_report_clock_query(user_id: int, start: datetime, end: datetime):
+    hour_expr = func.extract("hour", ListeningEvent.played_at)
+    return (
+        select(hour_expr.label("label"), func.count(ListeningEvent.id).label("count"))
+        .where(ListeningEvent.user_id == user_id, ListeningEvent.played_at >= start, ListeningEvent.played_at < end)
+        .group_by(hour_expr)
+        .order_by(hour_expr)
     )

@@ -236,6 +236,22 @@ def test_canonicalize_scrobble_normalizes_spotify_and_youtube_records():
     assert youtube["context"]["country"] == "GB"
 
 
+def test_canonicalize_spotify_record_preserves_album_artwork():
+    spotify_record = {
+        "played_at": "2026-01-15T12:30:00Z",
+        "track": {
+            "id": "spotify:track:artwork",
+            "name": "Daylight",
+            "artists": [{"name": "Matt Berninger"}],
+            "album": {"name": "Serpentine Prison", "images": [{"url": "https://i.scdn.co/image/test"}]},
+        },
+    }
+
+    result = canonicalize_scrobble(user_id=1, source="spotify", raw_item=spotify_record)
+
+    assert result["artwork_url"] == "https://i.scdn.co/image/test"
+
+
 def test_import_spotify_history_inserts_valid_tracks_and_skips_bad_rows():
     db = TestingSession()
     db.query(ListeningEvent).delete()

@@ -10,6 +10,7 @@ class ListeningEventCreate(BaseModel):
     track_name: str = Field(min_length=1, max_length=255)
     artist_name: str = Field(min_length=1, max_length=255)
     album_name: str | None = Field(default=None, max_length=255)
+    artwork_url: str | None = Field(default=None, max_length=2048)
     played_at: datetime
     duration_ms: int | None = Field(default=None, ge=0)
     source: str = Field(default="spotify", min_length=1, max_length=64)

@@ -24,12 +24,12 @@ services:
       - "8000:8000"
     environment:
       APP_ENV: development
-      APP_VERSION: 0.2.4
+      APP_VERSION: 0.3.0
       ACCESS_TOKEN_TTL_SECONDS: 3600
       SPOTIFY_CLIENT_ID: ""
       SPOTIFY_CLIENT_SECRET: ""
       SPOTIFY_REDIRECT_URI: http://localhost:8000/auth/spotify/callback
-      SPOTIFY_SCOPES: user-read-recently-played
+      SPOTIFY_SCOPES: user-read-recently-played user-library-read
       FRONTEND_AUTH_CALLBACK_URL: http://localhost:5173
       CORS_ORIGINS: http://localhost:5173
       DEV_USER_ID: 1
@@ -57,7 +57,7 @@ services:
       WORKER_INGESTION_TOKEN: ${WORKER_INGESTION_TOKEN:-dev-worker-token}
       WORKER_FIXTURE_ENABLED: "false"
       WORKER_USER_ID: "1"
-      WORKER_SPOTIFY_ENABLED: "false"
+      WORKER_SPOTIFY_ENABLED: "true"
       WORKER_SPOTIFY_INTERVAL_MINUTES: "5"
       WORKER_FILE_IMPORT_ENABLED: "false"
       WORKER_IMPORT_DIR: /data/imports

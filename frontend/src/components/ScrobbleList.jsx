@@ -7,6 +7,7 @@ export default function ScrobbleList({ scrobbles }) {
       <ul>
         {scrobbles.map((scrobble) => (
           <li className="scrobble-row" key={scrobble.id}>
+            {scrobble.artwork_url && <img className="scrobble-artwork" src={scrobble.artwork_url} alt="" />}
             <span className={`source-badge source-badge-${scrobble.source}`}>{scrobble.source}</span>
             <span className="scrobble-track">{scrobble.track_name}</span>
             <span className="scrobble-artist">{scrobble.artist_name}</span>

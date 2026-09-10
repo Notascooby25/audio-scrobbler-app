@@ -58,6 +58,7 @@ def test_oauth_state_is_signed_and_authorization_url_contains_state(monkeypatch)
     spotify_oauth_service.validate_oauth_state(state)
     assert "client_id=" in url
     assert params["state"] == [state]
+    assert "user-library-read" in params["scope"][0]
 
 
 def test_oauth_state_rejects_tampering():

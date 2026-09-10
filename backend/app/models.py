@@ -43,6 +43,7 @@ class ListeningEvent(Base):
     track_name: Mapped[str] = mapped_column(String(255), nullable=False)
     artist_name: Mapped[str] = mapped_column(String(255), nullable=False)
     album_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    artwork_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     played_at: Mapped[datetime] = mapped_column(DateTime, index=True, nullable=False)
     duration_ms: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     source: Mapped[str] = mapped_column(String(64), default="spotify", nullable=False)
@@ -50,6 +51,24 @@ class ListeningEvent(Base):
     payload: Mapped[str] = mapped_column(Text, nullable=True)
     raw_metadata: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class LikedTrack(Base):
+    __tablename__ = "liked_tracks"
+    __table_args__ = (
+        UniqueConstraint("user_id", "spotify_track_id", name="uq_liked_track_user_spotify_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    spotify_track_id: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
+    track_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    artist_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    album_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    artwork_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    added_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    raw_metadata: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 class Follow(Base):
