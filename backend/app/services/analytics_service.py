@@ -2,8 +2,14 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from ..queries.analytics_queries import build_monthly_summary_query, build_recent_scrobbles_query
+from ..queries.analytics_queries import (
+    build_monthly_summary_query,
+    build_recent_scrobbles_query,
+    build_top_entities_query,
+)
 from ..schemas.analytics import (
+    ChartEntry,
+    ChartResponse,
     MonthlySummaryEntry,
     MonthlySummaryResponse,
     ScrobbleListEntry,
@@ -67,3 +73,25 @@ def get_recent_scrobbles(
         limit=limit,
         offset=offset,
     )
+
+
+def get_user_charts(
+    db: Session,
+    user_id: int,
+    entity: str,
+    range_key: str,
+    limit: int = 10,
+) -> ChartResponse:
+    statement = build_top_entities_query(user_id=user_id, entity=entity, range_key=range_key, limit=limit)
+    rows = db.execute(statement).all()
+
+    entries = []
+    for row in rows:
+        if entity == "artists":
+            entries.append(ChartEntry(label=row.artist_name, secondary=None, play_count=row.play_count))
+        elif entity == "tracks":
+            entries.append(ChartEntry(label=row.track_name, secondary=row.artist_name, play_count=row.play_count))
+        else:
+            entries.append(ChartEntry(label=row.album_name, secondary=row.artist_name, play_count=row.play_count))
+
+    return ChartResponse(user_id=user_id, entity=entity, range=range_key, entries=entries)

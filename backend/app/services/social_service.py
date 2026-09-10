@@ -7,6 +7,14 @@ from ..models import Follow, ListeningEvent, User
 from ..schemas.users import LastScrobble, UserProfileResponse
 
 
+def get_active_user(db: Session, user_id: int) -> User | None:
+    return db.query(User).filter(User.id == user_id, User.is_active.is_(True)).first()
+
+
+def can_view_details(db: Session, viewer_id: int, target_user_id: int) -> bool:
+    return viewer_id == target_user_id or is_following(db, viewer_id, target_user_id)
+
+
 def follow_user(db: Session, follower_id: int, followee_id: int) -> None:
     if follower_id == followee_id:
         raise ValueError("Users cannot follow themselves")
@@ -64,10 +72,10 @@ def search_users(db: Session, query: str, limit: int = 20) -> list[User]:
 def get_user_profile(db: Session, viewer_id: int, target_user: User) -> UserProfileResponse:
     is_self = viewer_id == target_user.id
     following = is_self or is_following(db, viewer_id, target_user.id)
-    can_view_details = is_self or following
+    can_view = is_self or following
 
     last_scrobble = None
-    if can_view_details:
+    if can_view:
         event = (
             db.query(ListeningEvent)
             .filter(ListeningEvent.user_id == target_user.id)
@@ -91,6 +99,6 @@ def get_user_profile(db: Session, viewer_id: int, target_user: User) -> UserProf
         following_count=following_count(db, target_user.id),
         is_self=is_self,
         is_following=following,
-        can_view_details=can_view_details,
+        can_view_details=can_view,
         last_scrobble=last_scrobble,
     )

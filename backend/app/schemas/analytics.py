@@ -39,3 +39,22 @@ class ScrobbleListResponse(BaseModel):
     offset: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ChartEntry(BaseModel):
+    label: str
+    secondary: str | None = None
+    play_count: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ChartResponse(BaseModel):
+    user_id: int
+    entity: str
+    range: str
+    entries: list[ChartEntry]
+
+    model_config = ConfigDict(from_attributes=True)
+
+    model_config = ConfigDict(from_attributes=True)

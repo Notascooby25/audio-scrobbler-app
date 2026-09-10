@@ -6,8 +6,10 @@ from sqlalchemy.orm import Session
 from ..api.deps import get_current_user
 from ..db import get_db
 from ..models import User
-from ..schemas.analytics import MonthlySummaryResponse, ScrobbleListResponse
-from ..services.analytics_service import get_monthly_summary, get_recent_scrobbles
+from ..queries.analytics_queries import CHART_ENTITIES, CHART_RANGES
+from ..schemas.analytics import ChartResponse, MonthlySummaryResponse, ScrobbleListResponse
+from ..services import social_service
+from ..services.analytics_service import get_monthly_summary, get_recent_scrobbles, get_user_charts
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -33,3 +35,26 @@ def recent_scrobbles(
     current_user: User = Depends(get_current_user),
 ) -> ScrobbleListResponse:
     return get_recent_scrobbles(db, current_user.id, limit, offset)
+
+
+@router.get("/charts/{user_id}")
+def user_charts(
+    user_id: int,
+    entity: str = Query(default="artists", description="One of: artists, tracks, albums"),
+    range: str = Query(default="overall", description="One of: 7day, 1month, 12month, overall"),
+    limit: int = Query(default=10, ge=1, le=50),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ChartResponse:
+    if entity not in CHART_ENTITIES:
+        raise HTTPException(status_code=400, detail=f"Unsupported entity: {entity!r}")
+    if range not in CHART_RANGES:
+        raise HTTPException(status_code=400, detail=f"Unsupported range: {range!r}")
+
+    target_user = social_service.get_active_user(db, user_id)
+    if target_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not social_service.can_view_details(db, current_user.id, user_id):
+        raise HTTPException(status_code=403, detail="Charts are only visible to the owner or their followers")
+
+    return get_user_charts(db, user_id, entity, range, limit)

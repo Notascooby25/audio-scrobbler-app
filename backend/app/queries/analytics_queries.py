@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, timedelta
 from sqlalchemy import func, select
 
 from ..models import ListeningEvent
@@ -60,4 +60,39 @@ def build_recent_scrobbles_query(user_id: int, limit: int, offset: int):
         .order_by(ListeningEvent.played_at.desc())
         .limit(limit)
         .offset(offset)
+    )
+
+
+CHART_RANGE_TO_DAYS = {"7day": 7, "1month": 30, "12month": 365}
+CHART_ENTITIES = ("artists", "tracks", "albums")
+CHART_RANGES = (*CHART_RANGE_TO_DAYS.keys(), "overall")
+
+
+def build_top_entities_query(user_id: int, entity: str, range_key: str, limit: int = 10):
+    if entity == "artists":
+        group_columns = [ListeningEvent.artist_name]
+    elif entity == "tracks":
+        group_columns = [ListeningEvent.track_name, ListeningEvent.artist_name]
+    elif entity == "albums":
+        group_columns = [ListeningEvent.album_name, ListeningEvent.artist_name]
+    else:
+        raise ValueError(f"Unsupported chart entity: {entity!r}")
+
+    statement = select(*group_columns, func.count(ListeningEvent.id).label("play_count")).where(
+        ListeningEvent.user_id == user_id
+    )
+    if entity == "albums":
+        statement = statement.where(ListeningEvent.album_name.isnot(None))
+
+    days = CHART_RANGE_TO_DAYS.get(range_key)
+    if days is not None:
+        cutoff = datetime.utcnow() - timedelta(days=days)
+        statement = statement.where(ListeningEvent.played_at >= cutoff)
+    elif range_key != "overall":
+        raise ValueError(f"Unsupported chart range: {range_key!r}")
+
+    return (
+        statement.group_by(*group_columns)
+        .order_by(func.count(ListeningEvent.id).desc())
+        .limit(limit)
     )
