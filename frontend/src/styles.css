@@ -275,6 +275,32 @@ button:disabled { cursor: wait; opacity: 0.65; }
   padding-top: 1rem;
 }
 
+.charts-panel {
+  margin-top: 2rem;
+}
+
+.charts-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.charts-list { list-style: none; margin: 0; padding: 0; }
+
+.charts-row {
+  align-items: center;
+  border-top: 1px solid #dce2d9;
+  display: flex;
+  font: 0.85rem system-ui, sans-serif;
+  gap: 0.9rem;
+  padding: 0.6rem 0;
+}
+
+.charts-rank { color: #a34e32; font-weight: 700; width: 1.5rem; }
+.charts-label { flex: 1; font-weight: 700; }
+.charts-secondary { color: #657268; }
+.charts-count { color: #657268; }
+
 .summary-grid {
   display: grid;
   gap: 1px;

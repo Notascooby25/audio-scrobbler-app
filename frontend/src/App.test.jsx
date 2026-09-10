@@ -5,6 +5,7 @@ import App from './App'
 vi.mock('./api', () => ({
   fetchMonthlySummary: vi.fn(),
   fetchRecentScrobbles: vi.fn().mockResolvedValue({ user_id: 1, scrobbles: [], limit: 50, offset: 0 }),
+  fetchUserCharts: vi.fn().mockResolvedValue({ user_id: 1, entity: 'artists', range: 'overall', entries: [] }),
   submitImportScrobbles: vi.fn(),
   requestDevelopmentToken: vi.fn().mockResolvedValue({ access_token: 'demo-token', expires_in: 3600 }),
   requestSpotifyAuthorization: vi.fn().mockResolvedValue({ authorization_url: 'https://accounts.spotify.com/authorize' }),

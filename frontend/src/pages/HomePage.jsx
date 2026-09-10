@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchMonthlySummary, fetchRecentScrobbles, redirectToAuthorization, requestDevelopmentToken, requestSpotifyAuthorization, submitImportScrobbles } from '../api'
+import ChartsPanel from '../components/ChartsPanel'
 import ImportSummaryPanel from '../components/ImportSummaryPanel'
 import ScrobbleList from '../components/ScrobbleList'
 
@@ -226,6 +227,7 @@ export default function HomePage() {
             ))}
           </div>
         )}
+        {status === 'ready' && <ChartsPanel token={token} userId={savedSession?.userId} />}
         {status === 'ready' && <ScrobbleList scrobbles={scrobbles} />}
       </section>
     </main>
