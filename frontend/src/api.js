@@ -159,6 +159,11 @@ export function fetchReportsCharts({ token, dateRange }) {
   return fetchAnalyticsResource('/reports/charts', { token, params })
 }
 
+export function fetchReportsEntity({ token, entity, dateRange }) {
+  const params = dateRange ? toQueryParams(dateRange) : {}
+  return fetchAnalyticsResource(`/reports/${entity}`, { token, params })
+}
+
 export function syncLikedTracks({ token }) {
   return fetchAnalyticsResource('/spotify/sync-liked-tracks', { token })
 }

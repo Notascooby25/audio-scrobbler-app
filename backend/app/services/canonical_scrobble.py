@@ -2,6 +2,19 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
+from urllib.parse import urlparse
+
+
+def _normalize_artwork_url(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    artwork_url = value.strip()
+    if not artwork_url or artwork_url.lower() in {"no artwork", "none", "null"}:
+        return None
+    parsed = urlparse(artwork_url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return None
+    return artwork_url
 
 
 def _normalize_timestamp(raw_value: Any) -> datetime | None:
@@ -54,7 +67,7 @@ def canonicalize_scrobble(user_id: int, source: str, raw_item: dict[str, Any]) -
             "track_name": track_name,
             "artist_name": artist["name"],
             "album_name": album_name,
-            "artwork_url": artwork_url if isinstance(artwork_url, str) else None,
+            "artwork_url": _normalize_artwork_url(artwork_url),
             "duration_ms": track.get("duration_ms") if isinstance(track.get("duration_ms"), int) else None,
             "context": {
                 "platform": context.get("platform", "spotify"),
@@ -75,6 +88,9 @@ def canonicalize_scrobble(user_id: int, source: str, raw_item: dict[str, Any]) -
         if not title.strip() or not artist.strip():
             raise ValueError("YouTube scrobble contains blank title or artist")
         context = raw_item.get("context") if isinstance(raw_item.get("context"), dict) else {}
+        raw_context = dict(context)
+        raw_context["artwork"] = raw_item.get("artwork")
+        raw_context["artwork_url"] = raw_item.get("artwork_url")
         play_id = f"youtube-{title.lower().replace(' ', '-')}-{time_value}"
         return {
             "user_id": user_id,
@@ -83,13 +99,19 @@ def canonicalize_scrobble(user_id: int, source: str, raw_item: dict[str, Any]) -
             "played_at": timestamp,
             "track_name": title,
             "artist_name": artist,
-            "album_name": raw_item.get("album") if isinstance(raw_item.get("album"), str) else None,
-            "artwork_url": raw_item.get("artwork_url") if isinstance(raw_item.get("artwork_url"), str) else None,
+            "album_name": (
+                raw_item.get("album")
+                if isinstance(raw_item.get("album"), str)
+                else raw_item.get("release")
+                if isinstance(raw_item.get("release"), str)
+                else None
+            ),
+            "artwork_url": _normalize_artwork_url(raw_item.get("artwork_url") or raw_item.get("artwork")),
             "duration_ms": raw_item.get("duration_ms") if isinstance(raw_item.get("duration_ms"), int) else None,
             "context": {
                 "platform": context.get("platform", "youtube"),
                 "country": context.get("country"),
-                "raw": context,
+                "raw": raw_context,
             },
         }
 

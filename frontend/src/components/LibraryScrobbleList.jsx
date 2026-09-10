@@ -1,4 +1,5 @@
 import LikeButton from './LikeButton'
+import Artwork from './Artwork'
 import { formatScrobbleTime } from '../timeFormatting'
 
 function dayLabel(value) {
@@ -27,7 +28,7 @@ export default function LibraryScrobbleList({ scrobbles = [], token, view, showS
           <ul className="library-scrobble-list">
             {entries.map((scrobble) => (
               <li className="library-scrobble-row" key={scrobble.id}>
-                {showArtwork && (scrobble.artwork_url ? <img className="library-row-artwork scrobble-grid-artwork" src={scrobble.artwork_url} alt="" /> : <span className="library-row-artwork library-row-artwork-empty scrobble-grid-artwork" aria-hidden="true" />)}
+                {showArtwork && <Artwork className="library-row-artwork scrobble-grid-artwork" src={scrobble.artwork_url} label={scrobble.track_name} />}
                 <LikeButton token={token} trackId={scrobble.spotify_track_id} initialLiked={scrobble.is_liked} />
                 <span className="library-row-copy">
                   <strong>{scrobble.track_name}</strong>

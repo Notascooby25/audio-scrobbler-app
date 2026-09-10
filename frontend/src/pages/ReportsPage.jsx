@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AnalyticsPage from '../components/AnalyticsPage'
 import DateRangeSelector from '../components/DateRangeSelector'
-import { fetchReportsCharts, fetchReportsSummary } from '../api'
+import LibraryRankList from '../components/LibraryRankList'
+import BarTrendChart from '../components/charts/BarTrendChart'
+import ListeningClockChart from '../components/charts/ListeningClockChart'
+import { fetchReportsCharts, fetchReportsEntity, fetchReportsSummary } from '../api'
 import { createDefaultDateRange, isValidDateRange } from '../dateRange'
 import { readSession } from '../session'
 
 const REPORTS = [
-  ['Weekly scrobbles', 'Compare this week with the previous period.'],
-  ['Listening clock', 'See when your listening habit is most active.'],
   ['Music ratio', 'Compare artists, albums, and tracks in your history.'],
   ['Listening fingerprint', 'A richer listening profile will be calculated from your history.'],
   ['Music by decade', 'Release-year metadata will unlock this view.'],
@@ -26,7 +27,10 @@ export default function ReportsPage() {
     Promise.all([
       fetchReportsSummary({ token: session.accessToken, dateRange }),
       fetchReportsCharts({ token: session.accessToken, dateRange }),
-    ]).then(([summary, charts]) => setReport({ summary, charts }))
+      fetchReportsEntity({ token: session.accessToken, entity: 'artists', dateRange }),
+      fetchReportsEntity({ token: session.accessToken, entity: 'albums', dateRange }),
+      fetchReportsEntity({ token: session.accessToken, entity: 'tracks', dateRange }),
+    ]).then(([summary, charts, artists, albums, tracks]) => setReport({ summary, charts, artists, albums, tracks }))
       .catch((requestError) => setError(requestError.message))
   }, [dateRange])
 
@@ -43,26 +47,29 @@ export default function ReportsPage() {
         </div>
         <Link to="/library">Browse the source history</Link>
       </div>
+      {report && <div className="report-facts">
+        <div><strong>{Number(report.summary.listening_minutes || 0).toLocaleString()}</strong><span>Listening minutes</span></div>
+        <div><strong>{Number(report.summary.average_per_day || 0)}</strong><span>Average per day</span></div>
+        <div><strong>{Number(report.summary.previous_period_scrobbles || 0).toLocaleString()}</strong><span>Previous period</span></div>
+      </div>}
+      {report && <div className="report-data-grid">
+        <BarTrendChart title="Scrobbles over time" points={report.charts.weekly_scrobbles} />
+        <ListeningClockChart points={report.charts.listening_clock} />
+      </div>}
+      {report && <div className="report-category-grid">
+        <LibraryRankList entries={report.artists.entries} kind="artists" token={session.accessToken} page={1} pageSize={10} totalCount={report.artists.entries.length} view="list" />
+        <LibraryRankList entries={report.albums.entries} kind="albums" token={session.accessToken} page={1} pageSize={10} totalCount={report.albums.entries.length} view="list" />
+        <LibraryRankList entries={report.tracks.entries} kind="tracks" token={session.accessToken} page={1} pageSize={10} totalCount={report.tracks.entries.length} view="list" />
+      </div>}
       <div className="report-grid">
         {REPORTS.map(([title, description]) => (
           <article className="report-card" key={title}>
-            <p className="section-kicker">Report</p>
+            <p className="section-kicker">Coming soon</p>
             <h2>{title}</h2>
             <p>{description}</p>
           </article>
         ))}
       </div>
-      {report && <div className="report-data-grid"><RankedReport title="Weekly scrobbles" entries={report.charts.weekly_scrobbles} /><RankedReport title="Listening clock" entries={report.charts.listening_clock} /></div>}
     </AnalyticsPage>
-  )
-}
-
-function RankedReport({ title, entries }) {
-  return (
-    <section className="report-card">
-      <p className="section-kicker">Live data</p>
-      <h2>{title}</h2>
-      {entries.length === 0 ? <p>No data available for this period.</p> : entries.map((entry) => <p key={entry.label}><strong>{entry.label}</strong> {entry.count} scrobbles</p>)}
-    </section>
   )
 }

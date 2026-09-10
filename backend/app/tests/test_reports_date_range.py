@@ -232,6 +232,8 @@ def test_reports_charts_returns_data_for_default_range():
     payload = response.json()
     assert payload["range"] == "last.month"
     assert payload["weekly_scrobbles"][0]["count"] == 3
+    assert len(payload["listening_clock"]) == 24
+    assert {point["label"] for point in payload["listening_clock"]} == {str(hour) for hour in range(24)}
 
 
 def test_reports_charts_rejects_unsupported_range():

@@ -252,6 +252,57 @@ def test_canonicalize_spotify_record_preserves_album_artwork():
     assert result["artwork_url"] == "https://i.scdn.co/image/test"
 
 
+def test_canonicalize_youtube_record_preserves_artwork_alias_and_raw_value():
+    artwork = "https://is1-ssl.mzstatic.com/image/thumb/Music211/example/600x600bb.jpg"
+    result = canonicalize_scrobble(user_id=1, source="youtube", raw_item={
+        "artist": "Sam Fender",
+        "song": "Something Heavy",
+        "album": "People Watching (Deluxe Edition)",
+        "artwork": artwork,
+        "time": "2026-02-11T10:20:01.839Z",
+    })
+
+    assert result["artwork_url"] == artwork
+    assert result["context"]["raw"]["artwork"] == artwork
+
+
+def test_canonicalize_youtube_record_rejects_no_artwork_sentinel():
+    result = canonicalize_scrobble(user_id=1, source="youtube", raw_item={
+        "artist": "KNEECAP",
+        "song": "Liars Tale",
+        "album": "Album Not Found",
+        "artwork": "No Artwork",
+        "time": "2026-01-29T09:07:14.385Z",
+    })
+
+    assert result["artwork_url"] is None
+
+
+def test_canonicalize_youtube_record_accepts_existing_artwork_url_alias():
+    artwork = "https://example.com/cover.jpg"
+    result = canonicalize_scrobble(user_id=1, source="youtube", raw_item={
+        "artist": "The Soft Pack",
+        "song": "Answer to Yourself",
+        "album": "The Soft Pack",
+        "artwork_url": artwork,
+        "time": "2026-01-20T17:51:30.062Z",
+    })
+
+    assert result["artwork_url"] == artwork
+
+
+def test_canonicalize_youtube_record_accepts_release_as_album_alias():
+    result = canonicalize_scrobble(user_id=1, source="youtube", raw_item={
+        "artist": "Foo Fighters",
+        "song": "Breakout",
+        "release": "There Is Nothing Left to Lose",
+        "artwork": "https://example.com/cover.jpg",
+        "time": "2026-02-11T10:20:00.874Z",
+    })
+
+    assert result["album_name"] == "There Is Nothing Left to Lose"
+
+
 def test_import_spotify_history_inserts_valid_tracks_and_skips_bad_rows():
     db = TestingSession()
     db.query(ListeningEvent).delete()
@@ -355,6 +406,27 @@ def test_import_youtube_history_inserts_valid_tracks_and_skips_bad_rows():
     assert db.query(ListeningEvent).filter(ListeningEvent.user_id == 1).count() == 1
     assert db.query(ListeningEvent).first().source == "youtube"
     assert db.query(ListeningEvent).first().album_name == "Hurry Up, We're Dreaming"
+    db.close()
+
+
+def test_import_youtube_history_persists_artwork_url():
+    db = TestingSession()
+    db.query(ListeningEvent).delete()
+    db.commit()
+
+    artwork = "https://example.com/sam-fender.jpg"
+    summary = import_youtube_history(db, 1, [{
+        "artist": "Sam Fender",
+        "song": "Something Heavy",
+        "album": "People Watching",
+        "artwork": artwork,
+        "time": "2026-02-11T10:20:01.839Z",
+    }])
+
+    event = db.query(ListeningEvent).filter(ListeningEvent.user_id == 1).one()
+    assert summary["inserted"] == 1
+    assert event.artwork_url == artwork
+    assert event.raw_metadata["artwork"] == artwork
     db.close()
 
 

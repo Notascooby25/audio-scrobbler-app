@@ -14,6 +14,7 @@ vi.mock('../api', () => ({
   fetchLikedTracks: vi.fn(),
   fetchReportsSummary: vi.fn(),
   fetchReportsCharts: vi.fn(),
+  fetchReportsEntity: vi.fn().mockResolvedValue({ entries: [] }),
   fetchUserSettings: vi.fn().mockResolvedValue({ default_date_range: 'last.week', default_page_size: 50, default_library_view: 'list', scrobbles_view: null, artists_view: null, albums_view: null, tracks_view: null, liked_tracks_view: null, show_artwork: true, show_source_badges: true, timestamp_mode: 'relative' }),
   syncLikedTracks: vi.fn(),
   backfillArtwork: vi.fn(),
@@ -24,6 +25,7 @@ import {
   fetchLibraryScrobbles,
   fetchLibraryTimeline,
   fetchReportsCharts,
+  fetchReportsEntity,
   fetchReportsSummary,
   fetchStatsChart,
   fetchStatsSummary,
@@ -73,6 +75,19 @@ describe('date filtering', () => {
 
     await waitFor(() => expect(screen.getByText(/42 scrobbles this period/)).toBeInTheDocument())
     expect(fetchReportsSummary).toHaveBeenLastCalledWith({ token: 'demo-token', dateRange: expect.objectContaining({ range: 'last.month' }) })
+  })
+
+  it('loads live artist, album, and track categories for Reports', async () => {
+    fetchReportsSummary.mockResolvedValue({ period_scrobbles: 8, comparison_percent: 2, listening_minutes: 40, average_per_day: 1, previous_period_scrobbles: 7 })
+    fetchReportsCharts.mockResolvedValue({ weekly_scrobbles: [], listening_clock: [] })
+    fetchReportsEntity.mockImplementation(({ entity }) => Promise.resolve({ entries: [{ label: entity, play_count: 1 }] }))
+
+    render(<MemoryRouter><ReportsPage /></MemoryRouter>)
+
+    await waitFor(() => expect(screen.getByText('artists')).toBeInTheDocument())
+    expect(screen.getByText('albums')).toBeInTheDocument()
+    expect(screen.getByText('tracks')).toBeInTheDocument()
+    expect(fetchReportsEntity).toHaveBeenCalledTimes(3)
   })
 
   it('does not refetch Reports data while a custom range is missing dates', async () => {

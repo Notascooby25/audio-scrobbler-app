@@ -252,10 +252,11 @@ def get_report_charts(
     else:
         scrobble_rows = db.execute(build_report_weekly_query(user_id, period_start, period_end)).all()
     clock_rows = db.execute(build_report_clock_query(user_id, period_start, period_end)).all()
+    clock_counts = {int(row.label): int(row.count) for row in clock_rows}
     return ReportChartsResponse(
         user_id=user_id,
         range=range_key,
         weekly_scrobbles=[ReportPoint(label=row.label, count=int(row.count)) for row in scrobble_rows],
-        listening_clock=[ReportPoint(label=str(int(row.label)), count=int(row.count)) for row in clock_rows],
+        listening_clock=[ReportPoint(label=str(hour), count=clock_counts.get(hour, 0)) for hour in range(24)],
         music_by_decade=[],
     )

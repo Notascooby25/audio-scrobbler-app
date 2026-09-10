@@ -1,4 +1,5 @@
 import LikeButton from './LikeButton'
+import Artwork from './Artwork'
 
 function countWidth(count, maximum) {
   return { width: `${Math.max(8, (count / maximum) * 100)}%` }
@@ -23,7 +24,7 @@ export default function LibraryRankList({ entries = [], kind, token, page, pageS
             <li className="library-rank-row" key={`${entry.label}-${entry.secondary || ''}`}>
               <div className="library-rank-media">
                 <span className="library-rank-number">{(page - 1) * pageSize + index + 1}</span>
-                {showArtwork && (entry.artwork_url ? <img className="library-row-artwork" src={entry.artwork_url} alt="" /> : <span className="library-row-artwork library-row-artwork-empty" aria-hidden="true" />)}
+                {showArtwork && <Artwork className="library-row-artwork" src={entry.artwork_url} label={entry.label} />}
               </div>
               <span className="library-row-copy">
                 <strong>{entry.label}</strong>

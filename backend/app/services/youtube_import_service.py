@@ -28,11 +28,16 @@ def import_youtube_history(db: Session, user_id: int, entries: list[dict[str, An
             skipped += 1
             continue
 
+        artwork_value = entry.get("artwork") if "artwork" in entry else entry.get("artwork_url")
+        album_value = entry.get("album") if isinstance(entry.get("album"), str) else entry.get("release")
         raw_item = {
             "title": title,
             "artist": artist,
-            "album": entry.get("album") if isinstance(entry.get("album"), str) else None,
+            "album": album_value if isinstance(album_value, str) else None,
+            "release": entry.get("release"),
             "time": time_value,
+            "artwork": artwork_value,
+            "artwork_url": artwork_value,
             "duration_ms": entry.get("duration_ms") if isinstance(entry.get("duration_ms"), int) else None,
             "context": entry.get("context") if isinstance(entry.get("context"), dict) else {"platform": "youtube"},
         }
