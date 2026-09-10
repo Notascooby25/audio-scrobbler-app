@@ -63,3 +63,47 @@ export async function submitImportScrobbles({ token, source, entries }) {
   })
   return parseResponse(response)
 }
+
+export async function followUser({ token, userId }) {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/follow`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return parseResponse(response)
+}
+
+export async function unfollowUser({ token, userId }) {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/follow`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return parseResponse(response)
+}
+
+export async function searchUsers({ token, query }) {
+  const params = new URLSearchParams({ q: query })
+  const response = await fetch(`${API_BASE_URL}/users/search?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return parseResponse(response)
+}
+
+export async function fetchUserProfile({ token, userId }) {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/profile`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return parseResponse(response)
+}
+
+export async function fetchUserCharts({ token, userId, entity, range, limit }) {
+  const params = new URLSearchParams()
+  if (entity) params.set('entity', entity)
+  if (range) params.set('range', range)
+  if (limit) params.set('limit', limit)
+
+  const query = params.toString()
+  const response = await fetch(`${API_BASE_URL}/analytics/charts/${userId}${query ? `?${query}` : ''}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return parseResponse(response)
+}
