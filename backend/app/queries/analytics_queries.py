@@ -91,7 +91,11 @@ def build_top_entities_query(
     else:
         raise ValueError(f"Unsupported chart entity: {entity!r}")
 
-    artwork_column = ListeningEvent.artist_artwork_url if entity == "artists" else ListeningEvent.artwork_url
+    artwork_column = (
+        func.coalesce(ListeningEvent.artist_artwork_url, ListeningEvent.artwork_url)
+        if entity == "artists"
+        else ListeningEvent.artwork_url
+    )
     selected_columns = [*group_columns, func.max(artwork_column).label("artwork_url"), func.count(ListeningEvent.id).label("play_count")]
     if entity == "tracks":
         selected_columns.append(func.max(ListeningEvent.track_id).label("spotify_track_id"))

@@ -157,6 +157,12 @@ def get_library_scrobbles(
 ) -> LibraryScrobbleResponse:
     rows = db.execute(build_library_scrobbles_query(user_id, limit, offset, start, end)).all()
     total_count = db.execute(build_library_count_query(user_id, start, end)).scalar_one()
+    liked_ids = set()
+    if hasattr(db, "query"):
+        liked_ids = {
+            record.spotify_track_id
+            for record in db.query(LikedTrack).filter(LikedTrack.user_id == user_id).all()
+        }
     scrobbles = [
         LibraryScrobbleEntry(
             id=row.id,
@@ -164,6 +170,9 @@ def get_library_scrobbles(
             artist_name=row.artist_name,
             source=row.source,
             played_at=row.played_at,
+            artwork_url=getattr(row, "artwork_url", None),
+            spotify_track_id=getattr(row, "spotify_track_id", None),
+            is_liked=getattr(row, "spotify_track_id", None) in liked_ids,
         )
         for row in rows
     ]

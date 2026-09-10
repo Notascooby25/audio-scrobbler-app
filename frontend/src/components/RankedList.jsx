@@ -1,3 +1,5 @@
+import Artwork from './Artwork'
+
 export default function RankedList({ title, entries = [], emptyMessage = 'No listening data yet.' }) {
   return (
     <section className="ranked-panel">
@@ -10,7 +12,7 @@ export default function RankedList({ title, entries = [], emptyMessage = 'No lis
           {entries.map((entry, index) => (
             <li key={`${entry.label}-${entry.secondary || ''}`}>
               <span className="rank-number">{index + 1}</span>
-              {entry.artwork_url && <img className="rank-artwork" src={entry.artwork_url} alt="" />}
+              <Artwork className="rank-artwork" src={entry.artwork_url} label={entry.label} />
               <span className="rank-copy">
                 <strong>{entry.label}</strong>
                 {entry.secondary && <small>{entry.secondary}</small>}
