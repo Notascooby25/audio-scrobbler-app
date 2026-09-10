@@ -79,6 +79,19 @@ class ListeningEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
+class BlockedItem(Base):
+    __tablename__ = "blocked_items"
+    __table_args__ = (
+        CheckConstraint("entity_type IN ('artist', 'album', 'track')", name="ck_blocked_items_entity_type"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    entity_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 class LikedTrack(Base):
     __tablename__ = "liked_tracks"
     __table_args__ = (

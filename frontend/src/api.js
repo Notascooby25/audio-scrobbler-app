@@ -191,3 +191,23 @@ export function fetchUserSettings({ token }) {
 export function updateUserSettings({ token, changes }) {
   return fetchAnalyticsResource('/users/me/settings', { token, method: 'PATCH', body: changes })
 }
+
+export function fetchBlocks({ token }) {
+  return fetchAnalyticsResource('/users/me/blocks', { token })
+}
+
+export function createBlock({ token, entityType, name }) {
+  return fetchAnalyticsResource('/users/me/blocks', { token, method: 'POST', body: { entity_type: entityType, name } })
+}
+
+export async function removeBlock({ token, blockId }) {
+  const response = await fetch(`${API_BASE_URL}/users/me/blocks/${blockId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!response.ok) throw new Error(`Request failed (${response.status})`)
+}
+
+export function deleteLibraryEntries({ token, entityType, name, secondary }) {
+  return fetchAnalyticsResource('/library/delete-entries', { token, method: 'POST', body: { entity_type: entityType, name, secondary } })
+}

@@ -15,6 +15,7 @@ from .api.ingestion import router as ingestion_router
 from .api.spotify_library import router as spotify_library_router
 from .api.users import router as users_router
 from .api.preferences import router as preferences_router
+from .api.blocks import router as blocks_router
 from .config import settings
 from .db import SessionLocal
 from .db import engine
@@ -38,6 +39,7 @@ app.include_router(ingestion_router)
 app.include_router(spotify_library_router)
 app.include_router(users_router)
 app.include_router(preferences_router)
+app.include_router(blocks_router)
 
 app.add_middleware(
     CORSMiddleware,

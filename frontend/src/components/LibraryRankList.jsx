@@ -1,11 +1,14 @@
 import LikeButton from './LikeButton'
 import Artwork from './Artwork'
+import EntryMenu from './EntryMenu'
 
 function countWidth(count, maximum) {
   return { width: `${Math.max(8, (count / maximum) * 100)}%` }
 }
 
-export default function LibraryRankList({ entries = [], kind, token, page, pageSize, totalCount = 0, view, showArtwork = true }) {
+const ENTITY_TYPES = { artists: 'artist', albums: 'album', tracks: 'track' }
+
+export default function LibraryRankList({ entries = [], kind, token, page, pageSize, totalCount = 0, view, showArtwork = true, onEntryChanged }) {
   const maximum = Math.max(...entries.map((entry) => entry.play_count), 1)
   const heading = kind === 'artists' ? 'Artists scrobbled' : kind === 'albums' ? 'Albums scrobbled' : 'Tracks scrobbled'
 
@@ -35,6 +38,16 @@ export default function LibraryRankList({ entries = [], kind, token, page, pageS
                 <span className="library-count-bar" style={countWidth(entry.play_count, maximum)}>
                   <span>{entry.play_count.toLocaleString()}{view === 'list' && ' scrobbles'}</span>
                 </span>
+                {onEntryChanged && ENTITY_TYPES[kind] && (
+                  <EntryMenu
+                    token={token}
+                    entityType={ENTITY_TYPES[kind]}
+                    name={entry.label}
+                    secondary={entry.secondary}
+                    playCount={entry.play_count}
+                    onChanged={onEntryChanged}
+                  />
+                )}
               </div>
             </li>
           ))}

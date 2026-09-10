@@ -334,6 +334,27 @@ button:disabled { cursor: wait; opacity: 0.65; }
 .settings-checkbox input { min-height: auto; }
 .settings-link { color: #a34e32; font: 700 0.8rem system-ui, sans-serif; text-transform: uppercase; }
 
+.settings-blocks { margin-top: 1.5rem; }
+.settings-blocks h2 { font-size: 1.2rem; margin: 0; }
+.blocked-list { display: grid; gap: 0.5rem; list-style: none; margin: 0; padding: 0; }
+.blocked-list li { align-items: center; border-top: 1px solid var(--color-border); display: flex; gap: 1rem; justify-content: space-between; padding: 0.55rem 0; }
+.blocked-copy { display: grid; gap: 0.1rem; min-width: 0; }
+.blocked-copy small { color: var(--color-muted); font: 0.72rem system-ui, sans-serif; text-transform: uppercase; }
+.blocked-unblock { background: transparent; border: 1px solid #b9c5b8; color: #46624d; min-height: 2.2rem; padding: 0.4rem 0.9rem; width: auto; }
+
+.entry-menu { position: relative; }
+.entry-menu-toggle { background: transparent; border: 0; color: var(--color-muted); font-size: 1.1rem; min-height: auto; padding: 0.2rem 0.45rem; }
+.entry-menu-toggle:hover { color: var(--color-ink); }
+.entry-menu-panel { background: var(--color-surface-raised); border: 1px solid var(--color-border); border-radius: 8px; box-shadow: 0 10px 28px rgba(24, 33, 29, 0.14); display: grid; gap: 0.2rem; min-width: 11rem; padding: 0.4rem; position: absolute; right: 0; top: 100%; z-index: 30; }
+.entry-menu-panel > button { background: transparent; border: 0; color: var(--color-ink); font: 600 0.8rem system-ui, sans-serif; min-height: auto; padding: 0.5rem 0.65rem; text-align: left; text-transform: none; width: 100%; }
+.entry-menu-panel > button:hover { background: rgba(163, 78, 50, 0.08); }
+.entry-menu-confirm { display: grid; gap: 0.5rem; padding: 0.4rem; }
+.entry-menu-confirm p { font: 0.78rem/1.4 system-ui, sans-serif; margin: 0; }
+.entry-menu-confirm-actions { display: flex; gap: 0.4rem; }
+.entry-menu-confirm-actions button { min-height: 2.1rem; padding: 0.35rem 0.7rem; width: auto; }
+.entry-menu-cancel { background: transparent !important; border: 1px solid var(--color-border) !important; color: var(--color-ink) !important; }
+.entry-menu-notice { color: #c4291e; font: 0.75rem system-ui, sans-serif; margin: 0; padding: 0 0.4rem 0.3rem; }
+
 .profile-card {
   background: #fffdf8;
   display: grid;

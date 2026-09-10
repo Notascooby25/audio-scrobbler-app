@@ -3,7 +3,26 @@ from __future__ import annotations
 from datetime import date, datetime, timedelta
 from sqlalchemy import func, select
 
-from ..models import ListeningEvent
+from ..models import BlockedItem, ListeningEvent
+
+
+def not_blocked_clause(user_id: int):
+    def blocked(entity_type: str, column):
+        return (
+            select(BlockedItem.id)
+            .where(
+                BlockedItem.user_id == user_id,
+                BlockedItem.entity_type == entity_type,
+                func.lower(BlockedItem.name) == func.lower(column),
+            )
+            .exists()
+        )
+
+    return (
+        ~blocked("artist", ListeningEvent.artist_name)
+        & ~blocked("album", func.coalesce(ListeningEvent.album_name, ""))
+        & ~blocked("track", ListeningEvent.track_name)
+    )
 
 
 def _parse_month(value: str | None) -> date | None:
@@ -40,6 +59,7 @@ def build_monthly_summary_query(
             func.coalesce(func.sum(ListeningEvent.duration_ms), 0).label("total_duration_ms"),
         )
         .where(ListeningEvent.user_id == user_id)
+        .where(not_blocked_clause(user_id))
         .where(ListeningEvent.played_at >= from_date)
         .where(ListeningEvent.played_at < _month_end(to_date))
         .group_by(month_expr)
@@ -59,6 +79,7 @@ def build_recent_scrobbles_query(user_id: int, limit: int, offset: int, start: d
             ListeningEvent.track_id.label("spotify_track_id"),
         )
         .where(ListeningEvent.user_id == user_id)
+        .where(not_blocked_clause(user_id))
     )
     if start is not None:
         statement = statement.where(ListeningEvent.played_at >= start)
@@ -101,7 +122,7 @@ def build_top_entities_query(
         selected_columns.append(func.max(ListeningEvent.track_id).label("spotify_track_id"))
     statement = select(*selected_columns).where(
         ListeningEvent.user_id == user_id
-    )
+    ).where(not_blocked_clause(user_id))
     if entity == "albums":
         statement = statement.where(ListeningEvent.album_name.isnot(None))
 
@@ -160,7 +181,7 @@ def build_report_monthly_query(user_id: int, start: datetime, end: datetime):
     month_expr = func.date_trunc("month", ListeningEvent.played_at)
     return (
         select(func.to_char(month_expr, "YYYY-MM").label("label"), func.count(ListeningEvent.id).label("count"))
-        .where(ListeningEvent.user_id == user_id, ListeningEvent.played_at >= start, ListeningEvent.played_at < end)
+        .where(ListeningEvent.user_id == user_id, not_blocked_clause(user_id), ListeningEvent.played_at >= start, ListeningEvent.played_at < end)
         .group_by(month_expr)
         .order_by(month_expr)
     )
@@ -170,7 +191,7 @@ def build_stats_summary_query(user_id: int):
     return select(
         func.count(ListeningEvent.id).label("total_scrobbles"),
         func.count(func.distinct(ListeningEvent.artist_name)).label("unique_artists"),
-    ).where(ListeningEvent.user_id == user_id)
+    ).where(ListeningEvent.user_id == user_id).where(not_blocked_clause(user_id))
 
 
 def build_library_scrobbles_query(user_id: int, limit: int, offset: int, start: datetime | None = None, end: datetime | None = None):
@@ -178,7 +199,7 @@ def build_library_scrobbles_query(user_id: int, limit: int, offset: int, start: 
 
 
 def build_library_count_query(user_id: int, start: datetime | None = None, end: datetime | None = None):
-    statement = select(func.count(ListeningEvent.id)).where(ListeningEvent.user_id == user_id)
+    statement = select(func.count(ListeningEvent.id)).where(ListeningEvent.user_id == user_id).where(not_blocked_clause(user_id))
     if start is not None:
         statement = statement.where(ListeningEvent.played_at >= start)
         if end is not None:
@@ -205,7 +226,7 @@ def build_library_entities_query(
 
     statement = select(*group_columns, func.max(ListeningEvent.artwork_url).label("artwork_url"), func.count(ListeningEvent.id).label("play_count")).where(
         ListeningEvent.user_id == user_id
-    )
+    ).where(not_blocked_clause(user_id))
     if entity == "albums":
         statement = statement.where(ListeningEvent.album_name.isnot(None))
 
@@ -237,7 +258,7 @@ def build_library_entity_count_query(
     else:
         raise ValueError(f"Unsupported library entity: {entity!r}")
 
-    statement = select(func.count(func.distinct(value))).where(ListeningEvent.user_id == user_id)
+    statement = select(func.count(func.distinct(value))).where(ListeningEvent.user_id == user_id).where(not_blocked_clause(user_id))
     if entity == "albums":
         statement = statement.where(value.isnot(None))
     if start is not None:
@@ -255,6 +276,7 @@ def build_scrobbles_timeline_query(user_id: int):
             func.count(ListeningEvent.id).label("count"),
         )
         .where(ListeningEvent.user_id == user_id)
+        .where(not_blocked_clause(user_id))
         .group_by(year_expr)
         .order_by(year_expr)
     )
@@ -266,6 +288,7 @@ def build_report_period_count_query(user_id: int, start: datetime, end: datetime
         func.coalesce(func.sum(ListeningEvent.duration_ms), 0).label("duration_ms"),
     ).where(
         ListeningEvent.user_id == user_id,
+        not_blocked_clause(user_id),
         ListeningEvent.played_at >= start,
         ListeningEvent.played_at < end,
     )
@@ -275,7 +298,7 @@ def build_report_weekly_query(user_id: int, start: datetime, end: datetime):
     day_expr = func.date_trunc("day", ListeningEvent.played_at)
     return (
         select(func.to_char(day_expr, "YYYY-MM-DD").label("label"), func.count(ListeningEvent.id).label("count"))
-        .where(ListeningEvent.user_id == user_id, ListeningEvent.played_at >= start, ListeningEvent.played_at < end)
+        .where(ListeningEvent.user_id == user_id, not_blocked_clause(user_id), ListeningEvent.played_at >= start, ListeningEvent.played_at < end)
         .group_by(day_expr)
         .order_by(day_expr)
     )
@@ -285,7 +308,7 @@ def build_report_clock_query(user_id: int, start: datetime, end: datetime):
     hour_expr = func.extract("hour", ListeningEvent.played_at)
     return (
         select(hour_expr.label("label"), func.count(ListeningEvent.id).label("count"))
-        .where(ListeningEvent.user_id == user_id, ListeningEvent.played_at >= start, ListeningEvent.played_at < end)
+        .where(ListeningEvent.user_id == user_id, not_blocked_clause(user_id), ListeningEvent.played_at >= start, ListeningEvent.played_at < end)
         .group_by(hour_expr)
         .order_by(hour_expr)
     )

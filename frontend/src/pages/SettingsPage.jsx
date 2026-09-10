@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AnalyticsPage from '../components/AnalyticsPage'
-import { fetchUserSettings, updateUserSettings } from '../api'
+import { fetchBlocks, fetchUserSettings, removeBlock, updateUserSettings } from '../api'
 import { readSession } from '../session'
 
 const VIEW_OPTIONS = [
@@ -17,6 +17,8 @@ export default function SettingsPage() {
   const session = readSession()
   const [settings, setSettings] = useState(null)
   const [status, setStatus] = useState('idle')
+  const [blocks, setBlocks] = useState([])
+  const [blocksError, setBlocksError] = useState('')
   const saveTimer = useRef(null)
 
   useEffect(() => {
@@ -28,6 +30,9 @@ export default function SettingsPage() {
         setStatus('ready')
       })
       .catch(() => setStatus('error'))
+    fetchBlocks({ token: session.accessToken })
+      .then((data) => setBlocks(data.blocks))
+      .catch(() => setBlocksError('Blocked items could not be loaded.'))
   }, [])
 
   useEffect(() => () => clearTimeout(saveTimer.current), [])
@@ -45,6 +50,16 @@ export default function SettingsPage() {
         })
         .catch(() => setStatus('error'))
     }, 350)
+  }
+
+  const unblock = async (blockId) => {
+    setBlocksError('')
+    try {
+      await removeBlock({ token: session.accessToken, blockId })
+      setBlocks((current) => current.filter((block) => block.id !== blockId))
+    } catch {
+      setBlocksError('Unblock failed. Try again.')
+    }
   }
 
   return (
@@ -95,6 +110,25 @@ export default function SettingsPage() {
           {status === 'saving' && <p role="status">Saving...</p>}
           {status === 'saved' && <p role="status">Saved</p>}
         </div>
+      )}
+      {session?.accessToken && (
+        <section className="settings-form settings-blocks" aria-labelledby="blocked-items-heading">
+          <h2 id="blocked-items-heading">Blocked items</h2>
+          {blocksError && <p className="notice notice-error" role="alert">{blocksError}</p>}
+          {blocks.length === 0 ? <p className="panel-meta">Nothing is blocked. Use the menu on Library entries to block artists, albums, or tracks.</p> : (
+            <ul className="blocked-list">
+              {blocks.map((block) => (
+                <li key={block.id}>
+                  <span className="blocked-copy">
+                    <strong>{block.name}</strong>
+                    <small>{block.entity_type}</small>
+                  </span>
+                  <button type="button" className="blocked-unblock" onClick={() => unblock(block.id)}>Unblock</button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       )}
       <p className="page-link"><Link to="/profile">Back to profile</Link></p>
     </AnalyticsPage>

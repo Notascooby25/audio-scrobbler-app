@@ -34,6 +34,8 @@ export default function LibraryPage() {
   const [timeline, setTimeline] = useState([])
   const [status, setStatus] = useState(session?.accessToken ? 'loading' : 'idle')
   const [error, setError] = useState('')
+  const [actionNotice, setActionNotice] = useState('')
+  const [refreshKey, setRefreshKey] = useState(0)
   const isDateFilterable = tab !== 'liked'
   const filterKeyRef = useRef(null)
 
@@ -84,7 +86,7 @@ export default function LibraryPage() {
         setError(requestError.message)
         setStatus('error')
       })
-  }, [tab, dateRange, pageSize, page, preferencesReady])
+  }, [tab, dateRange, pageSize, page, preferencesReady, refreshKey])
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
   const rankedEntries = data && loadedTab === tab && tab !== 'scrobbles'
@@ -108,11 +110,17 @@ export default function LibraryPage() {
 
   const activeView = settings?.[`${tab}_view`] || view
 
+  const handleEntryChanged = (message) => {
+    setActionNotice(message)
+    setRefreshKey((current) => current + 1)
+  }
+
   return (
     <AnalyticsPage eyebrow="Personal archive" title="Library">
       {!session?.accessToken && <p className="notice">Connect Spotify from the <a href="/connect">connection page</a> to browse your library.</p>}
       {status === 'loading' && <p className="notice">Loading your library...</p>}
       {status === 'error' && <p className="notice notice-error" role="alert">{error}</p>}
+      {actionNotice && <p className="notice" role="status">{actionNotice}</p>}
       {session?.accessToken && (
         <>
           <div className="library-tabs" role="tablist" aria-label="Library sections">
@@ -127,7 +135,7 @@ export default function LibraryPage() {
           <div className="library-layout">
             {tab === 'scrobbles'
               ? <LibraryScrobbleList scrobbles={data && loadedTab === tab ? data.scrobbles : []} token={session.accessToken} view={activeView} showArtwork={settings?.show_artwork !== false} showSourceBadges={settings?.show_source_badges !== false} timestampMode={settings?.timestamp_mode || 'relative'} />
-              : <LibraryRankList entries={rankedEntries} kind={tab === 'liked' ? 'tracks' : tab} token={session.accessToken} page={page} pageSize={pageSize} totalCount={totalCount} view={activeView} showArtwork={settings?.show_artwork !== false} />}
+              : <LibraryRankList entries={rankedEntries} kind={tab === 'liked' ? 'tracks' : tab} token={session.accessToken} page={page} pageSize={pageSize} totalCount={totalCount} view={activeView} showArtwork={settings?.show_artwork !== false} onEntryChanged={tab !== 'liked' ? handleEntryChanged : undefined} />}
             <TimelineChart entries={timeline} />
           </div>
           <div className="library-pagination-bar">
