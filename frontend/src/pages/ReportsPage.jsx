@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AnalyticsPage from '../components/AnalyticsPage'
+import DateRangeSelector from '../components/DateRangeSelector'
 import { fetchReportsCharts, fetchReportsSummary } from '../api'
+import { createDefaultDateRange, isValidDateRange } from '../dateRange'
 import { readSession } from '../session'
 
 const REPORTS = [
@@ -14,27 +16,30 @@ const REPORTS = [
 
 export default function ReportsPage() {
   const session = readSession()
+  const [dateRange, setDateRange] = useState(createDefaultDateRange())
   const [report, setReport] = useState(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
     if (!session?.accessToken) return
+    if (!isValidDateRange(dateRange)) return
     Promise.all([
-      fetchReportsSummary({ token: session.accessToken }),
-      fetchReportsCharts({ token: session.accessToken }),
+      fetchReportsSummary({ token: session.accessToken, dateRange }),
+      fetchReportsCharts({ token: session.accessToken, dateRange }),
     ]).then(([summary, charts]) => setReport({ summary, charts }))
       .catch((requestError) => setError(requestError.message))
-  }, [])
+  }, [dateRange])
 
   return (
     <AnalyticsPage eyebrow="Listening report" title="Reports">
       {!session?.accessToken && <p className="notice">Connect Spotify from the <Link to="/connect">connection page</Link> to see your listening report.</p>}
       {error && <p className="notice notice-error" role="alert">{error}</p>}
+      <DateRangeSelector value={dateRange} onChange={setDateRange} />
       <div className="report-banner">
         <div>
           <p className="section-kicker">Your listening story</p>
           <h2>Patterns worth returning to.</h2>
-          {report && <p>{report.summary.period_scrobbles.toLocaleString()} scrobbles this week, {report.summary.comparison_percent}% versus the previous period.</p>}
+          {report && <p>{report.summary.period_scrobbles.toLocaleString()} scrobbles this period, {report.summary.comparison_percent}% versus the previous period.</p>}
         </div>
         <Link to="/library">Browse the source history</Link>
       </div>

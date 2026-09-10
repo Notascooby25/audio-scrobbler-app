@@ -13,6 +13,8 @@ from ..security import decrypt_refresh_token, encrypt_refresh_token
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
 SPOTIFY_SAVED_TRACKS_URL = "https://api.spotify.com/v1/me/tracks"
 SPOTIFY_TRACKS_URL = "https://api.spotify.com/v1/tracks"
+SPOTIFY_ARTISTS_URL = "https://api.spotify.com/v1/artists"
+SPOTIFY_SAVED_TRACK_URL = "https://api.spotify.com/v1/me/tracks"
 
 
 def _request(method: str, url: str, **kwargs: Any) -> requests.Response:
@@ -48,6 +50,20 @@ def _artwork_url(track: dict[str, Any]) -> str | None:
     return None
 
 
+def _artist_artwork_url(artist: dict[str, Any]) -> str | None:
+    images = artist.get("images")
+    if not isinstance(images, list):
+        return None
+    for image in images:
+        if isinstance(image, dict) and isinstance(image.get("url"), str):
+            return image["url"]
+    return None
+
+
+def _spotify_track_id(value: str) -> str:
+    return value.rsplit(":", 1)[-1]
+
+
 def _parse_added_at(value: Any) -> datetime:
     if not isinstance(value, str):
         return datetime.utcnow()
@@ -61,6 +77,7 @@ def sync_liked_tracks(db: Session, user: User) -> dict[str, int]:
     fetched = 0
     inserted = 0
     updated = 0
+    artist_ids: dict[str, str] = {}
     while True:
         response = _request(
             "GET",
@@ -78,6 +95,7 @@ def sync_liked_tracks(db: Session, user: User) -> dict[str, int]:
             track_id = track["id"]
             artists = track.get("artists")
             artist_name = artists[0].get("name") if isinstance(artists, list) and artists and isinstance(artists[0], dict) else None
+            artist_id = artists[0].get("id") if isinstance(artists, list) and artists and isinstance(artists[0], dict) else None
             album = track.get("album")
             album_name = album.get("name") if isinstance(album, dict) else None
             if not isinstance(track.get("name"), str) or not isinstance(artist_name, str):
@@ -93,14 +111,45 @@ def sync_liked_tracks(db: Session, user: User) -> dict[str, int]:
             record.artist_name = artist_name
             record.album_name = album_name if isinstance(album_name, str) else None
             record.artwork_url = _artwork_url(track)
+            if isinstance(artist_id, str):
+                artist_ids[artist_name] = artist_id
             record.raw_metadata = item
             record.updated_at = datetime.utcnow()
             fetched += 1
         if len(items) < 50:
             break
         offset += 50
+
+    artist_artwork: dict[str, str] = {}
+    ids = list(artist_ids.values())
+    for start in range(0, len(ids), 50):
+        artists = _request(
+            "GET",
+            SPOTIFY_ARTISTS_URL,
+            headers=headers,
+            params={"ids": ",".join(ids[start:start + 50])},
+        ).json().get("artists", [])
+        for artist in artists:
+            if not isinstance(artist, dict) or not isinstance(artist.get("name"), str):
+                continue
+            artwork = _artist_artwork_url(artist)
+            if artwork:
+                artist_artwork[artist["name"]] = artwork
+
+    artwork_updated = 0
+    for artist_name, artwork in artist_artwork.items():
+        liked_records = db.query(LikedTrack).filter_by(user_id=user.id, artist_name=artist_name).all()
+        for record in liked_records:
+            record.artist_artwork_url = artwork
+            artwork_updated += 1
+        events = db.query(ListeningEvent).filter(
+            ListeningEvent.user_id == user.id,
+            ListeningEvent.artist_name == artist_name,
+        ).all()
+        for event in events:
+            event.artist_artwork_url = artwork
     db.commit()
-    return {"fetched": fetched, "inserted": inserted, "updated": updated, "artwork_updated": 0}
+    return {"fetched": fetched, "inserted": inserted, "updated": updated, "artwork_updated": artwork_updated}
 
 
 def backfill_scrobble_artwork(db: Session, user: User) -> dict[str, int]:
@@ -132,3 +181,35 @@ def backfill_scrobble_artwork(db: Session, user: User) -> dict[str, int]:
                 updated += 1
     db.commit()
     return {"fetched": len(missing), "inserted": 0, "updated": 0, "artwork_updated": updated}
+
+
+def set_track_liked(db: Session, user: User, track_id: str, liked: bool) -> dict[str, object]:
+    spotify_track_id = _spotify_track_id(track_id)
+    access_token = _refresh_access_token(db, user)
+    headers = {"Authorization": f"Bearer {access_token}"}
+    params = {"ids": spotify_track_id}
+    method = "PUT" if liked else "DELETE"
+    _request(method, SPOTIFY_SAVED_TRACK_URL, headers=headers, params=params)
+
+    record = db.query(LikedTrack).filter_by(user_id=user.id, spotify_track_id=spotify_track_id).first()
+    if liked and record is None:
+        event = db.query(ListeningEvent).filter(
+            ListeningEvent.user_id == user.id,
+            ListeningEvent.track_id.in_((spotify_track_id, f"spotify:track:{spotify_track_id}")),
+        ).order_by(ListeningEvent.played_at.desc()).first()
+        if event is not None:
+            record = LikedTrack(
+                user_id=user.id,
+                spotify_track_id=spotify_track_id,
+                track_name=event.track_name,
+                artist_name=event.artist_name,
+                album_name=event.album_name,
+                artwork_url=event.artwork_url,
+                added_at=datetime.utcnow(),
+                raw_metadata={"source": "library-toggle"},
+            )
+            db.add(record)
+    elif not liked and record is not None:
+        db.delete(record)
+    db.commit()
+    return {"spotify_track_id": spotify_track_id, "is_liked": liked}

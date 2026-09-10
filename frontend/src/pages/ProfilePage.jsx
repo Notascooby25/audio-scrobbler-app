@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { fetchUserProfile, followUser, redirectToAuthorization, requestSpotifyAuthorization, unfollowUser } from '../api'
 import FollowButton from '../components/FollowButton'
 
@@ -69,23 +70,13 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="app-shell">
-      <header className="topbar">
+    <section className="dashboard" aria-labelledby="profile-heading">
+      <div className="section-heading">
         <div>
-          <p className="eyebrow">Audio Scrobbler App</p>
-          <h1>Profile</h1>
+          <p className="section-kicker">Personal archive</p>
+          <h2 id="profile-heading">Profile</h2>
         </div>
-        <nav className="topbar-nav">
-          <Link to="/">Dashboard</Link>
-        </nav>
-      </header>
-      <section className="dashboard" aria-labelledby="profile-heading">
-        <div className="section-heading">
-          <div>
-            <p className="section-kicker">Personal archive</p>
-            <h2 id="profile-heading">Profile</h2>
-          </div>
-        </div>
+      </div>
 
         {!token && (
           <div className="profile-connect">
@@ -112,7 +103,10 @@ export default function ProfilePage() {
               <FollowButton isFollowing={profile.is_following} onToggle={toggleFollow} disabled={status === 'loading'} />
             )}
             {profile.is_self && (
-              <button type="button" onClick={connectSpotify}>Connect Spotify</button>
+              <>
+                <button type="button" onClick={connectSpotify}>Connect Spotify</button>
+                <Link className="settings-link" to="/settings">Settings</Link>
+              </>
             )}
             {profile.can_view_details && profile.last_scrobble && (
               <div className="last-scrobble">
@@ -120,10 +114,9 @@ export default function ProfilePage() {
                 <p><strong>{profile.last_scrobble.track_name}</strong> by {profile.last_scrobble.artist_name}</p>
               </div>
             )}
-            {!profile.can_view_details && <p className="notice">Follow this user to see their last scrobbled track.</p>}
-          </div>
-        )}
-      </section>
-    </main>
+          {!profile.can_view_details && <p className="notice">Follow this user to see their last scrobbled track.</p>}
+        </div>
+      )}
+    </section>
   )
 }

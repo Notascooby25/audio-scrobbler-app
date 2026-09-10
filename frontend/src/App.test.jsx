@@ -153,3 +153,39 @@ describe('App', () => {
     await waitFor(() => expect(submitImportScrobbles).toHaveBeenCalledWith({ token: 'demo-token', source: 'youtube', entries }))
   })
 })
+
+describe('Navigation', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  afterEach(() => {
+    cleanup()
+  })
+
+  function renderAtRoute(path) {
+    window.history.pushState({}, '', path)
+    return render(<App />)
+  }
+
+  it('shows the header navigation on every top-level page', () => {
+    ['/overview', '/library', '/reports', '/profile', '/connect'].forEach((path) => {
+      const { unmount } = renderAtRoute(path)
+      expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBeInTheDocument()
+      unmount()
+    })
+  })
+
+  it('highlights the active link for the current route', () => {
+    renderAtRoute('/reports')
+    expect(screen.getByRole('link', { name: 'Reports' })).toHaveClass('nav-link-active')
+  })
+
+  it('keeps the header visible after navigating to another page', () => {
+    renderAtRoute('/overview')
+    fireEvent.click(screen.getByRole('link', { name: 'Library' }))
+
+    expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Library' })).toBeInTheDocument()
+  })
+})

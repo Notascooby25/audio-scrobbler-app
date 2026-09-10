@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import requests
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from ..api.deps import get_current_user
 from ..db import get_db
 from ..models import LikedTrack, User
-from ..schemas.spotify_library import LikedTracksResponse, SpotifySyncResponse
-from ..services.spotify_library_service import backfill_scrobble_artwork, sync_liked_tracks
+from ..schemas.spotify_library import LikedTracksResponse, SpotifySyncResponse, TrackLikeResponse
+from ..services.spotify_library_service import backfill_scrobble_artwork, set_track_liked, sync_liked_tracks
 
 router = APIRouter(prefix="/spotify", tags=["spotify-library"])
 
@@ -19,7 +20,7 @@ def sync_spotify_liked_tracks(
 ) -> SpotifySyncResponse:
     try:
         return SpotifySyncResponse(**sync_liked_tracks(db, current_user))
-    except (KeyError, ValueError) as exc:
+    except (KeyError, ValueError, requests.RequestException) as exc:
         raise HTTPException(status_code=502, detail="Spotify liked-track sync failed") from exc
 
 
@@ -30,7 +31,7 @@ def backfill_artwork(
 ) -> SpotifySyncResponse:
     try:
         return SpotifySyncResponse(**backfill_scrobble_artwork(db, current_user))
-    except (KeyError, ValueError) as exc:
+    except (KeyError, ValueError, requests.RequestException) as exc:
         raise HTTPException(status_code=502, detail="Spotify artwork backfill failed") from exc
 
 
@@ -44,3 +45,27 @@ def list_liked_tracks(
     query = db.query(LikedTrack).filter(LikedTrack.user_id == current_user.id).order_by(LikedTrack.added_at.desc())
     total_count = query.count()
     return LikedTracksResponse(user_id=current_user.id, tracks=query.limit(limit).offset(offset).all(), total_count=total_count)
+
+
+@router.put("/tracks/{track_id}/like", response_model=TrackLikeResponse)
+def like_track(
+    track_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> TrackLikeResponse:
+    try:
+        return TrackLikeResponse(**set_track_liked(db, current_user, track_id, True))
+    except (KeyError, ValueError) as exc:
+        raise HTTPException(status_code=502, detail="Spotify like request failed") from exc
+
+
+@router.delete("/tracks/{track_id}/like", response_model=TrackLikeResponse)
+def unlike_track(
+    track_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> TrackLikeResponse:
+    try:
+        return TrackLikeResponse(**set_track_liked(db, current_user, track_id, False))
+    except (KeyError, ValueError) as exc:
+        raise HTTPException(status_code=502, detail="Spotify unlike request failed") from exc

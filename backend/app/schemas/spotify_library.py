@@ -12,6 +12,7 @@ class LikedTrackResponse(BaseModel):
     artist_name: str
     album_name: str | None
     artwork_url: str | None
+    artist_artwork_url: str | None = None
     added_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -21,6 +22,11 @@ class LikedTracksResponse(BaseModel):
     user_id: int
     tracks: list[LikedTrackResponse]
     total_count: int
+
+
+class TrackLikeResponse(BaseModel):
+    spotify_track_id: str
+    is_liked: bool
 
 
 class SpotifySyncResponse(BaseModel):

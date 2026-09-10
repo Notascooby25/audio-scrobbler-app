@@ -29,6 +29,8 @@ class ScrobbleListEntry(BaseModel):
     source: str
     played_at: datetime
     artwork_url: str | None = None
+    spotify_track_id: str | None = None
+    is_liked: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -47,6 +49,8 @@ class ChartEntry(BaseModel):
     secondary: str | None = None
     play_count: int
     artwork_url: str | None = None
+    spotify_track_id: str | None = None
+    is_liked: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -121,6 +125,7 @@ class TimelineResponse(BaseModel):
 
 class ReportSummaryResponse(BaseModel):
     user_id: int
+    range: str
     total_scrobbles: int
     period_scrobbles: int
     previous_period_scrobbles: int
@@ -136,6 +141,7 @@ class ReportPoint(BaseModel):
 
 class ReportChartsResponse(BaseModel):
     user_id: int
+    range: str
     weekly_scrobbles: list[ReportPoint]
     listening_clock: list[ReportPoint]
     music_by_decade: list[ReportPoint]

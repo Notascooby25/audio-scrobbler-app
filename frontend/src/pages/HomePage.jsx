@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { fetchMonthlySummary, fetchRecentScrobbles, redirectToAuthorization, requestDevelopmentToken, requestSpotifyAuthorization, submitImportScrobbles } from '../api'
 import ChartsPanel from '../components/ChartsPanel'
 import ImportSummaryPanel from '../components/ImportSummaryPanel'
@@ -159,26 +158,14 @@ export default function HomePage() {
   }, [])
 
   return (
-    <main className="app-shell">
-      <header className="topbar">
+    <section className="dashboard" aria-labelledby="summary-heading">
+      <div className="section-heading">
         <div>
-          <p className="eyebrow">Audio Scrobbler App</p>
-          <h1>Listening, month by month.</h1>
+          <p className="section-kicker">Personal archive</p>
+          <h2 id="summary-heading">Monthly summary</h2>
         </div>
-        <nav className="topbar-nav">
-          {token && <Link to="/profile">Profile</Link>}
-          <span className="status-mark" aria-label="Analytics dashboard">Live analytics</span>
-        </nav>
-      </header>
-
-      <section className="dashboard" aria-labelledby="summary-heading">
-        <div className="section-heading">
-          <div>
-            <p className="section-kicker">Personal archive</p>
-            <h2 id="summary-heading">Monthly summary</h2>
-          </div>
-          {summary && <p className="month-count">{summary.total_months} months found</p>}
-        </div>
+        {summary && <p className="month-count">{summary.total_months} months found</p>}
+      </div>
 
         <form className="filters" onSubmit={token ? loadSummary : signIn}>
           <label>
@@ -234,9 +221,8 @@ export default function HomePage() {
             ))}
           </div>
         )}
-        {status === 'ready' && <ChartsPanel token={token} userId={savedSession?.userId} />}
-        {status === 'ready' && <ScrobbleList scrobbles={scrobbles} />}
-      </section>
-    </main>
+      {status === 'ready' && <ChartsPanel token={token} userId={savedSession?.userId} />}
+      {status === 'ready' && <ScrobbleList scrobbles={scrobbles} />}
+    </section>
   )
 }

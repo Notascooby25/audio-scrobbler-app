@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from sqlalchemy.orm import Session
 
@@ -14,10 +14,12 @@ from ..queries.analytics_queries import (
     build_recent_scrobbles_query,
     build_scrobbles_timeline_query,
     build_report_clock_query,
+    build_report_monthly_query,
     build_report_period_count_query,
     build_report_weekly_query,
     build_stats_summary_query,
     build_top_entities_query,
+    resolve_date_range,
 )
 from ..schemas.analytics import (
     ChartEntry,
@@ -77,6 +79,12 @@ def get_recent_scrobbles(
 ) -> ScrobbleListResponse:
     statement = build_recent_scrobbles_query(user_id=user_id, limit=limit, offset=offset)
     rows = db.execute(statement).all()
+    liked_ids = set()
+    if hasattr(db, "query"):
+        liked_ids = {
+            record.spotify_track_id
+            for record in db.query(LikedTrack).filter(LikedTrack.user_id == user_id).all()
+        }
 
     scrobbles = [
         ScrobbleListEntry(
@@ -86,6 +94,8 @@ def get_recent_scrobbles(
             source=row.source,
             played_at=row.played_at,
             artwork_url=getattr(row, "artwork_url", None),
+            spotify_track_id=getattr(row, "spotify_track_id", None),
+            is_liked=getattr(row, "spotify_track_id", None) in liked_ids,
         )
         for row in rows
     ]
@@ -104,16 +114,23 @@ def get_user_charts(
     entity: str,
     range_key: str,
     limit: int = 10,
+    start: datetime | None = None,
+    end: datetime | None = None,
 ) -> ChartResponse:
-    statement = build_top_entities_query(user_id=user_id, entity=entity, range_key=range_key, limit=limit)
+    statement = build_top_entities_query(user_id=user_id, entity=entity, range_key=range_key, limit=limit, start=start, end=end)
     rows = db.execute(statement).all()
+    liked_ids = {
+        record.spotify_track_id
+        for record in db.query(LikedTrack).filter(LikedTrack.user_id == user_id).all()
+    }
 
     entries = []
     for row in rows:
         if entity == "artists":
             entries.append(ChartEntry(label=row.artist_name, secondary=None, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None)))
         elif entity == "tracks":
-            entries.append(ChartEntry(label=row.track_name, secondary=row.artist_name, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None)))
+            track_id = getattr(row, "spotify_track_id", None)
+            entries.append(ChartEntry(label=row.track_name, secondary=row.artist_name, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), spotify_track_id=track_id, is_liked=track_id in liked_ids))
         else:
             entries.append(ChartEntry(label=row.album_name, secondary=row.artist_name, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None)))
 
@@ -130,9 +147,16 @@ def get_stats_summary(db: Session, user_id: int) -> StatsResponse:
     )
 
 
-def get_library_scrobbles(db: Session, user_id: int, limit: int, offset: int) -> LibraryScrobbleResponse:
-    rows = db.execute(build_library_scrobbles_query(user_id, limit, offset)).all()
-    total_count = db.execute(build_library_count_query(user_id)).scalar_one()
+def get_library_scrobbles(
+    db: Session,
+    user_id: int,
+    limit: int,
+    offset: int,
+    start: datetime | None = None,
+    end: datetime | None = None,
+) -> LibraryScrobbleResponse:
+    rows = db.execute(build_library_scrobbles_query(user_id, limit, offset, start, end)).all()
+    total_count = db.execute(build_library_count_query(user_id, start, end)).scalar_one()
     scrobbles = [
         LibraryScrobbleEntry(
             id=row.id,
@@ -152,9 +176,17 @@ def get_library_scrobbles(db: Session, user_id: int, limit: int, offset: int) ->
     )
 
 
-def get_library_entities(db: Session, user_id: int, entity: str, limit: int, offset: int) -> LibraryResponse:
-    rows = db.execute(build_library_entities_query(user_id, entity, limit, offset)).all()
-    total_count = db.execute(build_library_entity_count_query(user_id, entity)).scalar_one()
+def get_library_entities(
+    db: Session,
+    user_id: int,
+    entity: str,
+    limit: int,
+    offset: int,
+    start: datetime | None = None,
+    end: datetime | None = None,
+) -> LibraryResponse:
+    rows = db.execute(build_library_entities_query(user_id, entity, limit, offset, start, end)).all()
+    total_count = db.execute(build_library_entity_count_query(user_id, entity, start, end)).scalar_one()
     entries = []
     for row in rows:
         if entity == "artists":
@@ -174,35 +206,56 @@ def get_scrobbles_timeline(db: Session, user_id: int) -> TimelineResponse:
     )
 
 
-def get_report_summary(db: Session, user_id: int) -> ReportSummaryResponse:
-    now = datetime.utcnow()
-    period_start = now - timedelta(days=7)
-    previous_start = period_start - timedelta(days=7)
+def get_report_summary(
+    db: Session,
+    user_id: int,
+    range_key: str = "last.month",
+    start_date: str | None = None,
+    end_date: str | None = None,
+    compare_to_previous: bool = True,
+) -> ReportSummaryResponse:
+    period_start, period_end, previous_start, previous_end, _granularity = resolve_date_range(range_key, start_date, end_date)
     total = db.execute(build_library_count_query(user_id)).scalar_one()
-    current = db.execute(build_report_period_count_query(user_id, period_start, now)).one()
-    previous = db.execute(build_report_period_count_query(user_id, previous_start, period_start)).one()
-    previous_count = int(previous.scrobble_count)
+    current = db.execute(build_report_period_count_query(user_id, period_start, period_end)).one()
     current_count = int(current.scrobble_count)
-    comparison = ((current_count - previous_count) / previous_count * 100) if previous_count else 0.0
+
+    previous_count = 0
+    comparison = 0.0
+    if compare_to_previous:
+        previous = db.execute(build_report_period_count_query(user_id, previous_start, previous_end)).one()
+        previous_count = int(previous.scrobble_count)
+        comparison = ((current_count - previous_count) / previous_count * 100) if previous_count else 0.0
+
+    days = max((period_end - period_start).days, 1)
     return ReportSummaryResponse(
         user_id=user_id,
+        range=range_key,
         total_scrobbles=int(total),
         period_scrobbles=current_count,
         previous_period_scrobbles=previous_count,
         comparison_percent=round(comparison, 1),
         listening_minutes=int(current.duration_ms // 60000),
-        average_per_day=round(current_count / 7, 1),
+        average_per_day=round(current_count / days, 1),
     )
 
 
-def get_report_charts(db: Session, user_id: int) -> ReportChartsResponse:
-    now = datetime.utcnow()
-    start = now - timedelta(days=7)
-    weekly_rows = db.execute(build_report_weekly_query(user_id, start, now)).all()
-    clock_rows = db.execute(build_report_clock_query(user_id, start, now)).all()
+def get_report_charts(
+    db: Session,
+    user_id: int,
+    range_key: str = "last.month",
+    start_date: str | None = None,
+    end_date: str | None = None,
+) -> ReportChartsResponse:
+    period_start, period_end, _previous_start, _previous_end, granularity = resolve_date_range(range_key, start_date, end_date)
+    if granularity == "month":
+        scrobble_rows = db.execute(build_report_monthly_query(user_id, period_start, period_end)).all()
+    else:
+        scrobble_rows = db.execute(build_report_weekly_query(user_id, period_start, period_end)).all()
+    clock_rows = db.execute(build_report_clock_query(user_id, period_start, period_end)).all()
     return ReportChartsResponse(
         user_id=user_id,
-        weekly_scrobbles=[ReportPoint(label=row.label, count=int(row.count)) for row in weekly_rows],
+        range=range_key,
+        weekly_scrobbles=[ReportPoint(label=row.label, count=int(row.count)) for row in scrobble_rows],
         listening_clock=[ReportPoint(label=str(int(row.label)), count=int(row.count)) for row in clock_rows],
         music_by_decade=[],
     )

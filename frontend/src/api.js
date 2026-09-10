@@ -1,3 +1,5 @@
+import { toQueryParams } from './dateRange'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
 async function parseResponse(response) {
@@ -108,14 +110,19 @@ export async function fetchUserCharts({ token, userId, entity, range, limit }) {
   return parseResponse(response)
 }
 
-async function fetchAnalyticsResource(path, { token, params = {} } = {}) {
+async function fetchAnalyticsResource(path, { token, method = 'GET', params = {}, body } = {}) {
   const query = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') query.set(key, value)
   })
   const suffix = query.toString() ? `?${query.toString()}` : ''
   const response = await fetch(`${API_BASE_URL}${path}${suffix}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
   })
   return parseResponse(response)
 }
@@ -124,32 +131,44 @@ export function fetchStatsSummary({ token }) {
   return fetchAnalyticsResource('/stats/summary', { token })
 }
 
-export function fetchStatsChart({ token, entity, limit }) {
-  return fetchAnalyticsResource(`/stats/top-${entity}`, { token, params: { limit } })
+export function fetchStatsChart({ token, entity, limit, dateRange }) {
+  const params = { limit, ...(dateRange ? toQueryParams(dateRange) : {}) }
+  return fetchAnalyticsResource(`/stats/top-${entity}`, { token, params })
 }
 
-export function fetchLibraryCollection({ token, entity, limit, offset }) {
-  return fetchAnalyticsResource(`/library/${entity}`, { token, params: { limit, offset } })
+export function fetchLibraryCollection({ token, entity, limit, offset, dateRange }) {
+  const params = { limit, offset, ...(dateRange ? toQueryParams(dateRange) : {}) }
+  return fetchAnalyticsResource(`/library/${entity}`, { token, params })
 }
 
-export function fetchLibraryScrobbles({ token, limit, offset }) {
-  return fetchLibraryCollection({ token, entity: 'scrobbles', limit, offset })
+export function fetchLibraryScrobbles({ token, limit, offset, dateRange }) {
+  return fetchLibraryCollection({ token, entity: 'scrobbles', limit, offset, dateRange })
 }
 
 export function fetchLibraryTimeline({ token }) {
   return fetchAnalyticsResource('/library/timeline', { token })
 }
 
-export function fetchReportsSummary({ token }) {
-  return fetchAnalyticsResource('/reports/summary', { token })
+export function fetchReportsSummary({ token, dateRange }) {
+  const params = dateRange ? toQueryParams(dateRange) : {}
+  return fetchAnalyticsResource('/reports/summary', { token, params })
 }
 
-export function fetchReportsCharts({ token }) {
-  return fetchAnalyticsResource('/reports/charts', { token })
+export function fetchReportsCharts({ token, dateRange }) {
+  const params = dateRange ? toQueryParams(dateRange) : {}
+  return fetchAnalyticsResource('/reports/charts', { token, params })
 }
 
 export function syncLikedTracks({ token }) {
   return fetchAnalyticsResource('/spotify/sync-liked-tracks', { token })
+}
+
+export function likeSpotifyTrack({ token, trackId }) {
+  return fetchAnalyticsResource(`/spotify/tracks/${encodeURIComponent(trackId)}/like`, { token, method: 'PUT' })
+}
+
+export function unlikeSpotifyTrack({ token, trackId }) {
+  return fetchAnalyticsResource(`/spotify/tracks/${encodeURIComponent(trackId)}/like`, { token, method: 'DELETE' })
 }
 
 export function backfillArtwork({ token }) {
@@ -158,4 +177,12 @@ export function backfillArtwork({ token }) {
 
 export function fetchLikedTracks({ token, limit, offset }) {
   return fetchAnalyticsResource('/spotify/liked-tracks', { token, params: { limit, offset } })
+}
+
+export function fetchUserSettings({ token }) {
+  return fetchAnalyticsResource('/users/me/settings', { token })
+}
+
+export function updateUserSettings({ token, changes }) {
+  return fetchAnalyticsResource('/users/me/settings', { token, method: 'PATCH', body: changes })
 }

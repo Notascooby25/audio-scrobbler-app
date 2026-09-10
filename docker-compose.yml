@@ -29,7 +29,7 @@ services:
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
       SPOTIFY_REDIRECT_URI: http://localhost:8000/auth/spotify/callback
-      SPOTIFY_SCOPES: user-read-recently-played user-library-read
+      SPOTIFY_SCOPES: user-read-recently-played user-library-read user-library-modify
       FRONTEND_AUTH_CALLBACK_URL: http://localhost:5173
       CORS_ORIGINS: http://localhost:5173
       DEV_USER_ID: 1

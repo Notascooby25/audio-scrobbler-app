@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from ..api.deps import get_current_user
 from ..db import get_db
 from ..models import User
-from ..queries.analytics_queries import CHART_ENTITIES, CHART_RANGES
+from ..queries.analytics_queries import CHART_ENTITIES, CHART_RANGES, DATE_RANGE_PRESETS, resolve_date_range
 from ..schemas.analytics import (
     ChartResponse,
     LegacyChartResponse,
@@ -92,45 +92,81 @@ def stats_summary(
     return get_stats_summary(db, current_user.id)
 
 
-def _top_stats(entity: str, limit: int, db: Session, current_user: User) -> ChartResponse:
-    return get_user_charts(db, current_user.id, entity, "overall", limit)
+def _resolve_optional_range(range_key: str | None, start_date: str | None, end_date: str | None) -> tuple[object | None, object | None]:
+    if range_key is None:
+        return None, None
+    if range_key not in DATE_RANGE_PRESETS:
+        raise HTTPException(status_code=400, detail=f"Unsupported range: {range_key!r}")
+    try:
+        period_start, period_end, _previous_start, _previous_end, _granularity = resolve_date_range(range_key, start_date, end_date)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return period_start, period_end
+
+
+def _top_stats(
+    entity: str,
+    limit: int,
+    db: Session,
+    current_user: User,
+    range: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+) -> ChartResponse:
+    period_start, period_end = _resolve_optional_range(range, start_date, end_date)
+    kwargs = {"start": period_start, "end": period_end} if period_start is not None else {}
+    return get_user_charts(db, current_user.id, entity, "overall", limit, **kwargs)
 
 
 @stats_router.get("/top-artists", response_model=ChartResponse)
 def top_artists(
     limit: int = Query(default=5, ge=1, le=50),
+    range: str | None = Query(default=None, description="Optional: last.week, last.month, last.year, custom"),
+    start_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
+    end_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ChartResponse:
-    return _top_stats("artists", limit, db, current_user)
+    return _top_stats("artists", limit, db, current_user, range, start_date, end_date)
 
 
 @stats_router.get("/top-albums", response_model=ChartResponse)
 def top_albums(
     limit: int = Query(default=5, ge=1, le=50),
+    range: str | None = Query(default=None, description="Optional: last.week, last.month, last.year, custom"),
+    start_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
+    end_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ChartResponse:
-    return _top_stats("albums", limit, db, current_user)
+    return _top_stats("albums", limit, db, current_user, range, start_date, end_date)
 
 
 @stats_router.get("/top-tracks", response_model=ChartResponse)
 def top_tracks(
     limit: int = Query(default=8, ge=1, le=50),
+    range: str | None = Query(default=None, description="Optional: last.week, last.month, last.year, custom"),
+    start_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
+    end_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ChartResponse:
-    return _top_stats("tracks", limit, db, current_user)
+    return _top_stats("tracks", limit, db, current_user, range, start_date, end_date)
 
 
 @library_router.get("/scrobbles", response_model=LibraryScrobbleResponse)
 def library_scrobbles(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
+    range: str | None = Query(default=None, description="Optional: last.week, last.month, last.year, custom"),
+    start_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
+    end_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> LibraryScrobbleResponse:
-    return get_library_scrobbles(db, current_user.id, limit, offset)
+    period_start, period_end = _resolve_optional_range(range, start_date, end_date)
+    kwargs = {"start": period_start, "end": period_end} if period_start is not None else {}
+    return get_library_scrobbles(db, current_user.id, limit, offset, **kwargs)
 
 
 @library_router.get("/{entity}", response_model=LibraryResponse | TimelineResponse)
@@ -138,6 +174,9 @@ def library_entities(
     entity: str,
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
+    range: str | None = Query(default=None, description="Optional: last.week, last.month, last.year, custom"),
+    start_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
+    end_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> LibraryResponse | TimelineResponse:
@@ -145,31 +184,59 @@ def library_entities(
         return get_scrobbles_timeline(db, current_user.id)
     if entity not in CHART_ENTITIES:
         raise HTTPException(status_code=404, detail="Library collection not found")
-    return get_library_entities(db, current_user.id, entity, limit, offset)
+    period_start, period_end = _resolve_optional_range(range, start_date, end_date)
+    kwargs = {"start": period_start, "end": period_end} if period_start is not None else {}
+    return get_library_entities(db, current_user.id, entity, limit, offset, **kwargs)
 
 
 @reports_router.get("/summary", response_model=ReportSummaryResponse)
 def reports_summary(
+    range: str = Query(default="last.month", description="One of: last.week, last.month, last.year, custom"),
+    start_date: str | None = Query(default=None, description="Required for range=custom (ISO date)."),
+    end_date: str | None = Query(default=None, description="Required for range=custom (ISO date)."),
+    compare_to_previous: bool = Query(default=True),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ReportSummaryResponse:
-    return get_report_summary(db, current_user.id)
+    if range not in DATE_RANGE_PRESETS:
+        raise HTTPException(status_code=400, detail=f"Unsupported range: {range!r}")
+    try:
+        return get_report_summary(db, current_user.id, range, start_date, end_date, compare_to_previous)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @reports_router.get("/charts", response_model=ReportChartsResponse)
 def reports_charts(
+    range: str = Query(default="last.month", description="One of: last.week, last.month, last.year, custom"),
+    start_date: str | None = Query(default=None, description="Required for range=custom (ISO date)."),
+    end_date: str | None = Query(default=None, description="Required for range=custom (ISO date)."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ReportChartsResponse:
-    return get_report_charts(db, current_user.id)
+    if range not in DATE_RANGE_PRESETS:
+        raise HTTPException(status_code=400, detail=f"Unsupported range: {range!r}")
+    try:
+        return get_report_charts(db, current_user.id, range, start_date, end_date)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @reports_router.get("/{entity}", response_model=ChartResponse)
 def reports_entities(
     entity: str,
+    range: str = Query(default="last.month", description="One of: last.week, last.month, last.year, custom"),
+    start_date: str | None = Query(default=None, description="Required for range=custom (ISO date)."),
+    end_date: str | None = Query(default=None, description="Required for range=custom (ISO date)."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ChartResponse:
     if entity not in CHART_ENTITIES:
         raise HTTPException(status_code=404, detail="Report collection not found")
-    return get_user_charts(db, current_user.id, entity, "overall", 10)
+    if range not in DATE_RANGE_PRESETS:
+        raise HTTPException(status_code=400, detail=f"Unsupported range: {range!r}")
+    try:
+        period_start, period_end, _previous_start, _previous_end, _granularity = resolve_date_range(range, start_date, end_date)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return get_user_charts(db, current_user.id, entity, "overall", 10, start=period_start, end=period_end)
