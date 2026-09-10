@@ -78,6 +78,20 @@ The frontend supports importing a local JSON export by choosing a Spotify or You
 The worker can also import history files unattended: enable `WORKER_FILE_IMPORT_ENABLED=true`, mount a host directory at `WORKER_IMPORT_DIR` (default `/data/imports`), and drop files named `user-<id>-<source>.json` (for example `user-1-spotify.json`). The worker submits each file's entries through a worker-token-authenticated `POST /import/internal/scrobbles` endpoint on its configured interval (`WORKER_FILE_IMPORT_INTERVAL_MINUTES`, default 10) and moves processed files into a `processed/` subfolder or failed files into a `failed/` subfolder. This is disabled by default.
 The worker's development fixture is disabled by default and can be enabled explicitly with `WORKER_FIXTURE_ENABLED=true`.
 
+## Social Profiles & Charts
+
+Every user gets a public `username` (generated automatically from their Spotify ID or display name, deduplicated on collision).
+`GET /users/search?q=`, `POST /users/{id}/follow`, and `DELETE /users/{id}/follow` let signed-in users find and follow each other.
+`GET /users/{id}/profile` returns username, display name, follower/following counts, and `is_following`/`is_self` for anyone signed in; the target user's last scrobbled track is only included when the viewer is the owner or an approved follower (`can_view_details`).
+`GET /analytics/charts/{id}?entity=artists|tracks|albums&range=7day|1month|12month|overall` returns last.fm-style top charts, gated by the same owner-or-follower rule.
+The frontend's `/profile` and `/profile/:userId` routes render follow controls, the gated last-scrobble, and the Spotify connect action; the dashboard (`/`) renders personal charts alongside the monthly summary.
+
+## Progressive Web App
+
+The frontend ships a web app manifest (`frontend/public/manifest.json`) and placeholder icons so it is installable ("Add to Home Screen") while running live against the deployed server.
+A minimal service worker (`frontend/public/service-worker.js`) caches the app shell (HTML/CSS/JS/manifest/icons) cache-first and never intercepts API requests (`/analytics`, `/auth`, `/import`, `/users`, `/ingestion`).
+Full offline data sync — IndexedDB-backed offline queues, Background Sync API replay, and push notifications — is documented in `docs/PWA_Offline_Behaviour_Specification...pdf` as future work and is not implemented yet.
+
 To stop the stack:
 
 ```bash
