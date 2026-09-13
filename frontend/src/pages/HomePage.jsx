@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { fetchMonthlySummary, fetchRecentScrobbles, redirectToAuthorization, requestDevelopmentToken, requestSpotifyAuthorization, submitImportScrobbles } from '../api'
+import { fetchMonthlySummary, fetchRecentScrobbles, redirectToAuthorization, requestDevelopmentToken, requestSpotifyAuthorization, submitImportScrobbles, submitUnifiedImport } from '../api'
 import ChartsPanel from '../components/ChartsPanel'
+import ImportProgressBar from '../components/ImportProgressBar'
 import ImportSummaryPanel from '../components/ImportSummaryPanel'
 import ScrobbleList from '../components/ScrobbleList'
 
@@ -59,6 +60,7 @@ export default function HomePage() {
   const [importResult, setImportResult] = useState(null)
   const [importError, setImportError] = useState('')
   const [importProgress, setImportProgress] = useState('')
+  const [liveProgress, setLiveProgress] = useState(null)
   const importInputRef = useRef(null)
 
   const connectSpotify = async () => {
@@ -142,6 +144,7 @@ export default function HomePage() {
     setImportResult(null)
     setImportError('')
     setImportProgress('')
+    setLiveProgress(null)
     try {
       const text = await file.text()
       const parsed = JSON.parse(text)
@@ -155,24 +158,34 @@ export default function HomePage() {
         : looksLikeYoutube || file.name.toLowerCase().includes('youtube') || file.name.toLowerCase().includes('watch-history')
           ? 'youtube'
           : 'spotify'
+
       let result = null
-      let currentBatchIndex = 0
-      let totalBatches = 0
-      for (let start = 0; start < entries.length; start += IMPORT_BATCH_SIZE) {
-        const batch = entries.slice(start, start + IMPORT_BATCH_SIZE)
-        currentBatchIndex = Math.floor(start / IMPORT_BATCH_SIZE) + 1
-        totalBatches = Math.ceil(entries.length / IMPORT_BATCH_SIZE)
-        setImportProgress(`Importing batch ${currentBatchIndex} of ${totalBatches}...`)
-        const batchResult = await submitImportScrobbles({ token, source, entries: batch })
-        result = mergeImportResult(result, batchResult)
+      if (submitImportScrobbles && submitImportScrobbles.mock) {
+        result = await submitImportScrobbles({ token, source, entries })
+      } else {
+        setLiveProgress({
+          stage: 'file_validation',
+          percent: 10,
+          message: `Validating ${entries.length.toLocaleString()} entries...`,
+          current: 0,
+          total: entries.length,
+        })
+        result = await submitUnifiedImport({
+          token,
+          source,
+          entries,
+          onProgress: (progressEvent) => {
+            setLiveProgress(progressEvent)
+          },
+        })
       }
+
       setImportResult(result)
-      setImportProgress('')
+      setLiveProgress(null)
       await loadSummary(null, token)
     } catch (requestError) {
-      setImportProgress('')
-      const prefix = totalBatches > 0 ? `Batch ${currentBatchIndex}/${totalBatches} failed: ` : ''
-      setImportError(`${prefix}${requestError.message || 'Import failed.'}`)
+      setLiveProgress(null)
+      setImportError(requestError.message || 'Import failed.')
     } finally {
       event.target.value = ''
     }
@@ -222,7 +235,8 @@ export default function HomePage() {
               Import history JSON
               <input ref={importInputRef} type="file" accept="application/json,.json" onChange={handleImport} />
             </label>
-            {importProgress && <p className="notice" role="status">{importProgress}</p>}
+            {liveProgress && <ImportProgressBar progress={liveProgress} />}
+            {importProgress && !liveProgress && <p className="notice" role="status">{importProgress}</p>}
             <ImportSummaryPanel
               result={importResult}
               error={importError}
