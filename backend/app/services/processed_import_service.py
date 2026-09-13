@@ -582,6 +582,7 @@ def backfill_artwork_stream(
     processed_count = 0
     updated_count = 0
     updated_track_names: list[str] = []
+    skipped_track_names: list[str] = []
     processed_track_ids = set()
 
     for idx, rec in enumerate(missing_records):
@@ -611,9 +612,11 @@ def backfill_artwork_stream(
                     updated_track_names.append(f"{rec.artist_name} - {rec.track_name}")
                 else:
                     db.merge(ArtworkCache(track_id=rec.track_id, artwork_url=""))
+                    skipped_track_names.append(f"{rec.artist_name} - {rec.track_name}")
             except Exception as exc:
                 logger.debug("Deezer/iTunes backfill exception for %s - %s: %s", rec.artist_name, rec.track_name, exc)
                 db.merge(ArtworkCache(track_id=rec.track_id, artwork_url=""))
+                skipped_track_names.append(f"{rec.artist_name} - {rec.track_name}")
 
         processed_count += 1
         
@@ -626,6 +629,7 @@ def backfill_artwork_stream(
                 message=f"Checking artwork ({processed_count}/{total_missing})...",
                 current=processed_count,
                 total=total_missing,
+                errors=list(skipped_track_names)
             )
 
     db.commit()
@@ -638,5 +642,6 @@ def backfill_artwork_stream(
         total=total_missing,
         summary=ImportScrobbleSummary(inserted=updated_count, skipped=total_missing-updated_count, duplicate=0),
         updated_tracks=updated_track_names,
+        errors=skipped_track_names
     )
 
