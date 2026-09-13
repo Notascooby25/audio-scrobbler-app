@@ -1,22 +1,29 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// In Docker, the backend is at http://backend:8000 (internal DNS).
+// For local dev (no Docker), the default of http://localhost:8000 is used.
+// Set BACKEND_PROXY_URL in the environment to override.
+const backendUrl = process.env.BACKEND_PROXY_URL || 'http://localhost:8000'
+
 export default defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',
     port: 5173,
     proxy: {
-      '/import': 'http://localhost:8000',
-      '/auth': 'http://localhost:8000',
-      '/analytics': 'http://localhost:8000',
-      '/stats': 'http://localhost:8000',
-      '/library': 'http://localhost:8000',
-      '/reports': 'http://localhost:8000',
-      '/spotify': 'http://localhost:8000',
-      '/users': 'http://localhost:8000',
-      '/preferences': 'http://localhost:8000',
-      '/blocks': 'http://localhost:8000',
+      '/import': { target: backendUrl, changeOrigin: true },
+      '/auth': { target: backendUrl, changeOrigin: true },
+      '/analytics': { target: backendUrl, changeOrigin: true },
+      '/stats': { target: backendUrl, changeOrigin: true },
+      '/library': { target: backendUrl, changeOrigin: true },
+      '/reports': { target: backendUrl, changeOrigin: true },
+      '/spotify': { target: backendUrl, changeOrigin: true },
+      '/users': { target: backendUrl, changeOrigin: true },
+      '/preferences': { target: backendUrl, changeOrigin: true },
+      '/blocks': { target: backendUrl, changeOrigin: true },
+      '/health': { target: backendUrl, changeOrigin: true },
+      '/readyz': { target: backendUrl, changeOrigin: true },
     },
   },
 })

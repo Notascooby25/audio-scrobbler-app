@@ -31,7 +31,7 @@ services:
       SPOTIFY_REDIRECT_URI: http://localhost:8000/auth/spotify/callback
       SPOTIFY_SCOPES: user-read-recently-played user-library-read user-library-modify
       FRONTEND_AUTH_CALLBACK_URL: http://localhost:5173
-      CORS_ORIGINS: http://localhost:5173
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
       DEV_USER_ID: 1
       DEV_USER_SPOTIFY_ID: development-user
       DEV_USER_DISPLAY_NAME: Development User
@@ -81,7 +81,7 @@ services:
     ports:
       - "5173:5173"
     environment:
-      VITE_API_BASE_URL: http://localhost:8000
+      BACKEND_PROXY_URL: http://backend:8000
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:5173', response => process.exit(response.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
       interval: 10s

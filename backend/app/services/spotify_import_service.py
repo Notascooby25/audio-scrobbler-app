@@ -25,6 +25,11 @@ def import_spotify_history(db: Session, user_id: int, entries: list[dict[str, An
             skipped += 1
             continue
 
+        # Skip audiobook entries (present in newer Spotify Extended Streaming History)
+        if entry.get("audiobook_uri") or entry.get("audiobook_title"):
+            skipped += 1
+            continue
+
         # Accept both the basic "Account Data" export field names and the
         # real "Extended Streaming History" export field names.
         track_name = entry.get("trackName") or entry.get("master_metadata_track_name")
