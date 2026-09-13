@@ -554,7 +554,7 @@ def backfill_artwork_stream(
         .filter(ListeningEvent.user_id == user_id)
         .filter((ListeningEvent.artwork_url == None) | (ListeningEvent.artwork_url == ""))
         .group_by(ListeningEvent.track_id, ListeningEvent.artist_name, ListeningEvent.track_name, ListeningEvent.album_name)
-        .limit(500)
+        .limit(75)
         .all()
     )
 
@@ -584,6 +584,7 @@ def backfill_artwork_stream(
 
     for idx, rec in enumerate(missing_records):
         if settings.enable_deezer_artwork_lookup:
+            time.sleep(0.5)  # Prevent overwhelming Deezer/iTunes rate limits
             try:
                 dz_track = deezer_search(rec.artist_name, rec.track_name, timeout=3.0)
                 resolved_art = deezer_artwork(dz_track) if dz_track else None
