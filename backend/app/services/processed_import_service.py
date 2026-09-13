@@ -582,8 +582,13 @@ def backfill_artwork_stream(
     processed_count = 0
     updated_count = 0
     updated_track_names: list[str] = []
+    processed_track_ids = set()
 
     for idx, rec in enumerate(missing_records):
+        if rec.track_id in processed_track_ids:
+            continue
+        processed_track_ids.add(rec.track_id)
+
         if settings.enable_deezer_artwork_lookup:
             time.sleep(0.5)  # Prevent overwhelming Deezer/iTunes rate limits
             try:
