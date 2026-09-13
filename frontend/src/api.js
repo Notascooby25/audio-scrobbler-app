@@ -55,15 +55,22 @@ export async function fetchRecentScrobbles({ token, limit, offset }) {
 }
 
 export async function submitImportScrobbles({ token, source, entries }) {
-  const response = await fetch(`${API_BASE_URL}/import/scrobbles`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ source, entries }),
-  })
-  return parseResponse(response)
+  try {
+    const response = await fetch(`${API_BASE_URL}/import/scrobbles`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ source, entries }),
+    })
+    return parseResponse(response)
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error('Could not reach the import API. Check that the backend server is running at http://localhost:8000 and that your session is active.')
+    }
+    throw error
+  }
 }
 
 export function deleteImportedScrobbles({ token, source }) {

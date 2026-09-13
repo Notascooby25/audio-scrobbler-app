@@ -4,6 +4,20 @@ import ChartsPanel from '../components/ChartsPanel'
 import ImportSummaryPanel from '../components/ImportSummaryPanel'
 import ScrobbleList from '../components/ScrobbleList'
 
+const IMPORT_BATCH_SIZE = 250
+
+function mergeImportResult(current, next) {
+  return {
+    source: next.source,
+    status: next.status,
+    summary: {
+      inserted: (current?.summary?.inserted || 0) + (next.summary?.inserted || 0),
+      skipped: (current?.summary?.skipped || 0) + (next.summary?.skipped || 0),
+      duplicate: (current?.summary?.duplicate || 0) + (next.summary?.duplicate || 0),
+    },
+  }
+}
+
 function readSavedSession() {
   try {
     return JSON.parse(localStorage.getItem('audio-scrobbler-session') || 'null')
@@ -44,6 +58,7 @@ export default function HomePage() {
   const [status, setStatus] = useState(callbackError ? 'error' : savedSession?.accessToken ? 'loading' : 'idle')
   const [importResult, setImportResult] = useState(null)
   const [importError, setImportError] = useState('')
+  const [importProgress, setImportProgress] = useState('')
   const importInputRef = useRef(null)
 
   const connectSpotify = async () => {
@@ -126,10 +141,12 @@ export default function HomePage() {
 
     setImportResult(null)
     setImportError('')
+    setImportProgress('')
     try {
       const text = await file.text()
       const parsed = JSON.parse(text)
       const entries = Array.isArray(parsed) ? parsed : parsed.history || parsed.entries || []
+      if (!entries.length) throw new Error('No history entries found in this JSON file.')
       const firstEntry = entries[0] || {}
       const looksLikeSpotify = 'trackUri' in firstEntry || 'endTime' in firstEntry || 'trackName' in firstEntry || 'spotify_track_uri' in firstEntry || 'master_metadata_track_name' in firstEntry
       const looksLikeYoutube = 'song' in firstEntry || 'subtitles' in firstEntry || 'titleUrl' in firstEntry
@@ -138,10 +155,20 @@ export default function HomePage() {
         : looksLikeYoutube || file.name.toLowerCase().includes('youtube') || file.name.toLowerCase().includes('watch-history')
           ? 'youtube'
           : 'spotify'
-      const result = await submitImportScrobbles({ token, source, entries })
+      let result = null
+      for (let start = 0; start < entries.length; start += IMPORT_BATCH_SIZE) {
+        const batch = entries.slice(start, start + IMPORT_BATCH_SIZE)
+        const batchNumber = Math.floor(start / IMPORT_BATCH_SIZE) + 1
+        const batchCount = Math.ceil(entries.length / IMPORT_BATCH_SIZE)
+        setImportProgress(`Importing batch ${batchNumber} of ${batchCount}...`)
+        const batchResult = await submitImportScrobbles({ token, source, entries: batch })
+        result = mergeImportResult(result, batchResult)
+      }
       setImportResult(result)
+      setImportProgress('')
       await loadSummary(null, token)
     } catch (requestError) {
+      setImportProgress('')
       setImportError(requestError.message || 'Import failed.')
     } finally {
       event.target.value = ''
@@ -192,6 +219,7 @@ export default function HomePage() {
               Import history JSON
               <input ref={importInputRef} type="file" accept="application/json,.json" onChange={handleImport} />
             </label>
+            {importProgress && <p className="notice" role="status">{importProgress}</p>}
             <ImportSummaryPanel
               result={importResult}
               error={importError}

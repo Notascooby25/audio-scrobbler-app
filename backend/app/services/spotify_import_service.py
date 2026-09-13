@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime
 from typing import Any
 
@@ -18,6 +19,12 @@ def import_spotify_history(db: Session, user_id: int, entries: list[dict[str, An
         if not isinstance(entry, dict):
             skipped += 1
             continue
+
+        # Skip podcast / non-music episodes
+        if entry.get("episode_name") or entry.get("spotify_episode_uri"):
+            skipped += 1
+            continue
+
         # Accept both the basic "Account Data" export field names and the
         # real "Extended Streaming History" export field names.
         track_name = entry.get("trackName") or entry.get("master_metadata_track_name")
@@ -28,12 +35,26 @@ def import_spotify_history(db: Session, user_id: int, entries: list[dict[str, An
         ms_played = entry.get("msPlayed") if isinstance(entry.get("msPlayed"), int) else entry.get("ms_played")
         platform = entry.get("platform") if isinstance(entry.get("platform"), str) else "spotify"
         country = entry.get("conn_country") if isinstance(entry.get("conn_country"), str) else None
-        if not isinstance(track_name, str) or not isinstance(artist_name, str) or not isinstance(end_time, str) or not isinstance(track_uri, str):
+
+        is_extended_format = "ts" in entry or "spotify_track_uri" in entry or "master_metadata_track_name" in entry
+
+        if not isinstance(track_name, str) or not isinstance(artist_name, str) or not isinstance(end_time, str):
             skipped += 1
             continue
-        if not track_name.strip() or not artist_name.strip() or not track_uri.strip() or not end_time.strip():
+        if not track_name.strip() or not artist_name.strip() or not end_time.strip():
             skipped += 1
             continue
+
+        # If track_uri is null/missing in extended streaming history (e.g. local file or unlinked track),
+        # generate a deterministic synthetic URI so valid music plays are not lost.
+        # For legacy "Account Data" exports that require a valid trackUri string, continue skipping if absent.
+        if not isinstance(track_uri, str) or not track_uri.strip():
+            if is_extended_format:
+                synth_id = hashlib.sha1(f"{artist_name.strip().lower()}:{track_name.strip().lower()}".encode("utf-8")).hexdigest()[:16]
+                track_uri = f"spotify:track:local-{synth_id}"
+            else:
+                skipped += 1
+                continue
 
         raw_item = {
             "play_id": f"{track_uri}:{end_time}",

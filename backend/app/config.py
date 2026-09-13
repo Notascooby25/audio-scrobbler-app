@@ -28,7 +28,10 @@ class Settings:
     spotify_redirect_uri: str = os.getenv("SPOTIFY_REDIRECT_URI", "http://localhost:8000/auth/spotify/callback")
     spotify_scopes: str = os.getenv("SPOTIFY_SCOPES", "user-read-recently-played user-library-read user-library-modify")
     frontend_auth_callback_url: str = os.getenv("FRONTEND_AUTH_CALLBACK_URL", "")
-    cors_origins: str = os.getenv("CORS_ORIGINS", "http://localhost:5173")
+    cors_origins: str = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000",
+)
 
     def allowed_cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

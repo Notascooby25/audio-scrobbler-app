@@ -603,3 +603,76 @@ def test_internal_import_route_imports_entries_for_active_user():
     assert response.status_code == 200
     assert response.json()["source"] == "youtube"
     assert response.json()["summary"]["inserted"] == 1
+
+
+def test_import_spotify_extended_streaming_history_with_exact_user_format():
+    db = TestingSession()
+    db.query(ListeningEvent).delete()
+    db.commit()
+
+    entries = [
+        {
+            "ts": "2016-09-23T19:57:18Z",
+            "username": "quiditchseeker",
+            "platform": "Windows 10 (10.0.14393; x64)",
+            "ms_played": 174573,
+            "conn_country": "US",
+            "ip_addr_decrypted": "174.104.24.96",
+            "user_agent_decrypted": "unknown",
+            "master_metadata_track_name": "Swallow It",
+            "master_metadata_album_artist_name": "Brandon Flowers",
+            "master_metadata_album_album_name": "Flamingo",
+            "spotify_track_uri": "spotify:track:46csPVtkWjABDOGMzdCpuG",
+            "episode_name": None,
+            "episode_show_name": None,
+            "spotify_episode_uri": None,
+            "reason_start": "trackdone",
+            "reason_end": "trackdone",
+            "shuffle": False,
+            "skipped": None,
+            "offline": False,
+            "offline_timestamp": 0,
+            "incognito_mode": False,
+            "city": None,
+            "region": None,
+            "metro_code": 0,
+            "longitude": 0,
+            "latitude": 0,
+        },
+        {
+            "ts": "2016-09-23T20:05:00Z",
+            "username": "quiditchseeker",
+            "ms_played": 200000,
+            "master_metadata_track_name": "Crossfire",
+            "master_metadata_album_artist_name": "Brandon Flowers",
+            "master_metadata_album_album_name": "Flamingo",
+            "spotify_track_uri": None,
+            "episode_name": None,
+            "spotify_episode_uri": None,
+        },
+        {
+            "ts": "2016-09-23T20:10:00Z",
+            "username": "quiditchseeker",
+            "ms_played": 10000,
+            "master_metadata_track_name": None,
+            "master_metadata_album_artist_name": None,
+            "episode_name": "Daily News Podcast",
+            "spotify_episode_uri": "spotify:episode:daily-news",
+        },
+    ]
+
+    summary = import_spotify_history(db, 1, entries)
+    assert summary["inserted"] == 2
+    assert summary["skipped"] == 1
+
+    events = db.query(ListeningEvent).filter(ListeningEvent.user_id == 1).order_by(ListeningEvent.played_at).all()
+    assert len(events) == 2
+    assert events[0].track_name == "Swallow It"
+    assert events[0].artist_name == "Brandon Flowers"
+    assert events[0].album_name == "Flamingo"
+    assert events[0].track_id == "spotify:track:46csPVtkWjABDOGMzdCpuG"
+
+    # Second entry had null spotify_track_uri and received synthetic local URI
+    assert events[1].track_name == "Crossfire"
+    assert events[1].track_id.startswith("spotify:track:local-")
+    db.close()
