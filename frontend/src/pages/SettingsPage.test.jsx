@@ -2,13 +2,14 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import SettingsPage from './SettingsPage'
-import { fetchBlocks, fetchUserSettings, removeBlock, updateUserSettings } from '../api'
+import { deleteImportedScrobbles, fetchBlocks, fetchUserSettings, removeBlock, updateUserSettings } from '../api'
 
 vi.mock('../api', () => ({
   fetchUserSettings: vi.fn(),
   updateUserSettings: vi.fn(),
   fetchBlocks: vi.fn(),
   removeBlock: vi.fn(),
+  deleteImportedScrobbles: vi.fn(),
 }))
 
 const settings = {
@@ -60,5 +61,17 @@ describe('SettingsPage', () => {
 
     await waitFor(() => expect(screen.queryByText('Football Weekly')).not.toBeInTheDocument())
     expect(removeBlock).toHaveBeenCalledWith({ token: 'token', blockId: 7 })
+  })
+
+  it('requires confirmation before deleting YouTube history', async () => {
+    deleteImportedScrobbles.mockResolvedValue({ deleted: 32 })
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    render(<MemoryRouter><SettingsPage /></MemoryRouter>)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete all YouTube history' }))
+
+    await waitFor(() => expect(deleteImportedScrobbles).toHaveBeenCalledWith({ token: 'token', source: 'youtube' }))
+    expect(window.confirm).toHaveBeenCalledWith('Delete all YouTube scrobbles from this account? This cannot be undone.')
   })
 })

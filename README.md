@@ -2,10 +2,22 @@
 
 ## Local Stack
 
-Start the PostgreSQL database, FastAPI backend, ingestion worker, and React frontend with:
+From the repository root, start the PostgreSQL database, FastAPI backend, ingestion worker, and React frontend in the background with:
 
 ```bash
-docker compose up --build
+docker compose up -d --build
+```
+
+Check that all services are running:
+
+```bash
+docker compose ps
+```
+
+Open the app at [http://localhost:5173](http://localhost:5173). To follow service logs while developing:
+
+```bash
+docker compose logs -f frontend backend worker
 ```
 
 The services are available at:
@@ -96,4 +108,10 @@ To stop the stack:
 
 ```bash
 docker compose down
+```
+
+To stop the stack and remove the local PostgreSQL volume as well:
+
+```bash
+docker compose down -v
 ```

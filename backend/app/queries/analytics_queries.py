@@ -67,7 +67,33 @@ def build_monthly_summary_query(
     )
 
 
-def build_recent_scrobbles_query(user_id: int, limit: int, offset: int, start: datetime | None = None, end: datetime | None = None):
+def _entity_filter(entity: str | None, name: str | None, secondary: str | None = None):
+    if not entity or not name:
+        return None
+    columns = {
+        "artist": ListeningEvent.artist_name,
+        "album": ListeningEvent.album_name,
+        "track": ListeningEvent.track_name,
+    }
+    column = columns.get(entity)
+    if column is None:
+        raise ValueError(f"Unsupported filter entity: {entity!r}")
+    clause = func.lower(column) == name.strip().lower()
+    if entity in ("album", "track") and secondary:
+        clause = clause & (func.lower(ListeningEvent.artist_name) == secondary.strip().lower())
+    return clause
+
+
+def build_recent_scrobbles_query(
+    user_id: int,
+    limit: int,
+    offset: int,
+    start: datetime | None = None,
+    end: datetime | None = None,
+    filter_entity: str | None = None,
+    filter_name: str | None = None,
+    filter_secondary: str | None = None,
+):
     statement = (
         select(
             ListeningEvent.id,
@@ -85,6 +111,9 @@ def build_recent_scrobbles_query(user_id: int, limit: int, offset: int, start: d
         statement = statement.where(ListeningEvent.played_at >= start)
         if end is not None:
             statement = statement.where(ListeningEvent.played_at < end)
+    entity_filter = _entity_filter(filter_entity, filter_name, filter_secondary)
+    if entity_filter is not None:
+        statement = statement.where(entity_filter)
     return statement.order_by(ListeningEvent.played_at.desc()).limit(limit).offset(offset)
 
 
@@ -194,16 +223,44 @@ def build_stats_summary_query(user_id: int):
     ).where(ListeningEvent.user_id == user_id).where(not_blocked_clause(user_id))
 
 
-def build_library_scrobbles_query(user_id: int, limit: int, offset: int, start: datetime | None = None, end: datetime | None = None):
-    return build_recent_scrobbles_query(user_id=user_id, limit=limit, offset=offset, start=start, end=end)
+def build_library_scrobbles_query(
+    user_id: int,
+    limit: int,
+    offset: int,
+    start: datetime | None = None,
+    end: datetime | None = None,
+    filter_entity: str | None = None,
+    filter_name: str | None = None,
+    filter_secondary: str | None = None,
+):
+    return build_recent_scrobbles_query(
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
+        start=start,
+        end=end,
+        filter_entity=filter_entity,
+        filter_name=filter_name,
+        filter_secondary=filter_secondary,
+    )
 
 
-def build_library_count_query(user_id: int, start: datetime | None = None, end: datetime | None = None):
+def build_library_count_query(
+    user_id: int,
+    start: datetime | None = None,
+    end: datetime | None = None,
+    filter_entity: str | None = None,
+    filter_name: str | None = None,
+    filter_secondary: str | None = None,
+):
     statement = select(func.count(ListeningEvent.id)).where(ListeningEvent.user_id == user_id).where(not_blocked_clause(user_id))
     if start is not None:
         statement = statement.where(ListeningEvent.played_at >= start)
         if end is not None:
             statement = statement.where(ListeningEvent.played_at < end)
+    entity_filter = _entity_filter(filter_entity, filter_name, filter_secondary)
+    if entity_filter is not None:
+        statement = statement.where(entity_filter)
     return statement
 
 

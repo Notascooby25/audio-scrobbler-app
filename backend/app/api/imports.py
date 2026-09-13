@@ -6,12 +6,13 @@ from sqlalchemy.orm import Session
 from ..api.deps import get_current_user
 from ..api.ingestion import require_worker_token
 from ..db import get_db
-from ..models import User
-from ..schemas.imports import ImportScrobbleRequest, ImportScrobbleResponse, WorkerImportScrobbleRequest
+from ..models import ListeningEvent, User
+from ..schemas.imports import DeleteImportResponse, ImportScrobbleRequest, ImportScrobbleResponse, WorkerImportScrobbleRequest
 from ..services.spotify_import_service import import_spotify_history
 from ..services.youtube_import_service import import_youtube_history
 
 router = APIRouter(tags=["imports"])
+IMPORT_SOURCES = ("spotify", "youtube")
 
 
 def _run_import(db: Session, user_id: int, source: str, entries: list[dict[str, object]]) -> ImportScrobbleResponse:
@@ -48,4 +49,20 @@ def import_scrobbles_internal(
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Active user not found")
     return _run_import(db, payload.user_id, payload.source, payload.entries)
+
+@router.delete("/import/scrobbles/{source}", response_model=DeleteImportResponse)
+def delete_imported_scrobbles(
+    source: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> DeleteImportResponse:
+    normalized_source = source.lower()
+    if normalized_source not in IMPORT_SOURCES:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported import source")
+    deleted = db.query(ListeningEvent).filter(
+        ListeningEvent.user_id == current_user.id,
+        ListeningEvent.source == normalized_source,
+    ).delete(synchronize_session=False)
+    db.commit()
+    return DeleteImportResponse(source=normalized_source, deleted=int(deleted))
 

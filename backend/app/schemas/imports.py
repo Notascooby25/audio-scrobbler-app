@@ -26,6 +26,11 @@ class ImportScrobbleResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class DeleteImportResponse(BaseModel):
+    source: str
+    deleted: int
+
+
 class WorkerImportScrobbleRequest(BaseModel):
     user_id: int = Field(..., ge=1)
     source: str = Field(..., min_length=1, max_length=32)

@@ -154,9 +154,12 @@ def get_library_scrobbles(
     offset: int,
     start: datetime | None = None,
     end: datetime | None = None,
+    filter_entity: str | None = None,
+    filter_name: str | None = None,
+    filter_secondary: str | None = None,
 ) -> LibraryScrobbleResponse:
-    rows = db.execute(build_library_scrobbles_query(user_id, limit, offset, start, end)).all()
-    total_count = db.execute(build_library_count_query(user_id, start, end)).scalar_one()
+    rows = db.execute(build_library_scrobbles_query(user_id, limit, offset, start, end, filter_entity, filter_name, filter_secondary)).all()
+    total_count = db.execute(build_library_count_query(user_id, start, end, filter_entity, filter_name, filter_secondary)).scalar_one()
     liked_ids = set()
     if hasattr(db, "query"):
         liked_ids = {

@@ -161,12 +161,21 @@ def library_scrobbles(
     range: str | None = Query(default=None, description="Optional: last.week, last.month, last.year, custom"),
     start_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
     end_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
+    filter_entity: str | None = Query(default=None, description="Optional filter: artist, album, or track."),
+    filter_name: str | None = Query(default=None),
+    filter_secondary: str | None = Query(default=None, description="Artist name for album or track filters."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> LibraryScrobbleResponse:
+    if filter_entity not in (None, "artist", "album", "track"):
+        raise HTTPException(status_code=400, detail="Unsupported filter entity")
+    if (filter_entity is None) != (filter_name is None):
+        raise HTTPException(status_code=400, detail="filter_entity and filter_name must be provided together")
     period_start, period_end = _resolve_optional_range(range, start_date, end_date)
     kwargs = {"start": period_start, "end": period_end} if period_start is not None else {}
-    return get_library_scrobbles(db, current_user.id, limit, offset, **kwargs)
+    if filter_entity is None:
+        return get_library_scrobbles(db, current_user.id, limit, offset, **kwargs)
+    return get_library_scrobbles(db, current_user.id, limit, offset, filter_entity=filter_entity, filter_name=filter_name, filter_secondary=filter_secondary, **kwargs)
 
 
 @library_router.get("/{entity}", response_model=LibraryResponse | TimelineResponse)

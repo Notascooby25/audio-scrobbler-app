@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AnalyticsPage from '../components/AnalyticsPage'
-import { fetchBlocks, fetchUserSettings, removeBlock, updateUserSettings } from '../api'
+import { deleteImportedScrobbles, fetchBlocks, fetchUserSettings, removeBlock, updateUserSettings } from '../api'
 import { readSession } from '../session'
 
 const VIEW_OPTIONS = [
@@ -19,6 +19,7 @@ export default function SettingsPage() {
   const [status, setStatus] = useState('idle')
   const [blocks, setBlocks] = useState([])
   const [blocksError, setBlocksError] = useState('')
+  const [youtubeDeleteState, setYoutubeDeleteState] = useState('idle')
   const saveTimer = useRef(null)
 
   useEffect(() => {
@@ -59,6 +60,16 @@ export default function SettingsPage() {
       setBlocks((current) => current.filter((block) => block.id !== blockId))
     } catch {
       setBlocksError('Unblock failed. Try again.')
+    }
+  }
+
+  const deleteYouTubeHistory = async () => {
+    setYoutubeDeleteState('deleting')
+    try {
+      const result = await deleteImportedScrobbles({ token: session.accessToken, source: 'youtube' })
+      setYoutubeDeleteState(`deleted:${result.deleted}`)
+    } catch {
+      setYoutubeDeleteState('error')
     }
   }
 
@@ -128,6 +139,20 @@ export default function SettingsPage() {
               ))}
             </ul>
           )}
+        </section>
+      )}
+      {session?.accessToken && (
+        <section className="settings-form settings-danger-zone" aria-labelledby="data-management-heading">
+          <h2 id="data-management-heading">Data management</h2>
+          <p className="notice notice-warning">Deleting YouTube history removes every YouTube scrobble in this account. This cannot be undone and does not affect Spotify history.</p>
+          {youtubeDeleteState === 'deleted:0' && <p role="status">No YouTube history was found.</p>}
+          {youtubeDeleteState.startsWith('deleted:') && youtubeDeleteState !== 'deleted:0' && <p role="status">YouTube history deleted.</p>}
+          {youtubeDeleteState === 'error' && <p className="notice notice-error" role="alert">YouTube history could not be deleted.</p>}
+          <button type="button" className="danger-button" disabled={youtubeDeleteState === 'deleting'} onClick={() => {
+            if (window.confirm('Delete all YouTube scrobbles from this account? This cannot be undone.')) deleteYouTubeHistory()
+          }}>
+            {youtubeDeleteState === 'deleting' ? 'Deleting...' : 'Delete all YouTube history'}
+          </button>
         </section>
       )}
       <p className="page-link"><Link to="/profile">Back to profile</Link></p>

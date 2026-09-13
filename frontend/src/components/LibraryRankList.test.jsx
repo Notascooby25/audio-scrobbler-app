@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it } from 'vitest'
 import LibraryRankList from './LibraryRankList'
 
@@ -7,7 +8,7 @@ describe('LibraryRankList', () => {
 
   it('renders track metadata, rank offset, count bars, and hearts', () => {
     const { container } = render(
-      <LibraryRankList
+      <MemoryRouter><LibraryRankList
         entries={[{
           label: 'Slow Show',
           secondary: 'The National',
@@ -22,7 +23,7 @@ describe('LibraryRankList', () => {
         pageSize={50}
         totalCount={61}
         view="list"
-      />,
+      /></MemoryRouter>,
     )
 
     expect(screen.getByText('61')).toBeInTheDocument()
@@ -30,12 +31,13 @@ describe('LibraryRankList', () => {
     expect(screen.getByText('The National')).toBeInTheDocument()
     expect(screen.getByText('51')).toBeInTheDocument()
     expect(screen.getByText('12 scrobbles')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Show 12 scrobbles for Slow Show' })).toHaveAttribute('href', '/library?filter_entity=track&filter_name=Slow%20Show&filter_secondary=The%20National')
     expect(screen.getByRole('button', { name: 'Remove from Spotify liked tracks' })).toBeInTheDocument()
   })
 
   it('uses artwork and count bars for artist rows without a track heart', () => {
     const { container } = render(
-      <LibraryRankList
+      <MemoryRouter><LibraryRankList
         entries={[{ label: 'M83', play_count: 4, artwork_url: '/artist.jpg' }]}
         kind="artists"
         token="token"
@@ -43,7 +45,7 @@ describe('LibraryRankList', () => {
         pageSize={50}
         totalCount={1}
         view="grid"
-      />,
+      /></MemoryRouter>,
     )
 
     expect(screen.getByText('Artists scrobbled')).toBeInTheDocument()
@@ -53,7 +55,7 @@ describe('LibraryRankList', () => {
 
   it('keeps long artist and album names in the card content', () => {
     render(
-      <LibraryRankList
+      <MemoryRouter><LibraryRankList
         entries={[{
           label: 'An Extremely Long Album Name That Must Stay Readable On A Phone',
           secondary: 'The Artist With A Long Name',
@@ -65,7 +67,7 @@ describe('LibraryRankList', () => {
         pageSize={50}
         totalCount={1}
         view="grid"
-      />,
+      /></MemoryRouter>,
     )
 
     expect(screen.getByText('An Extremely Long Album Name That Must Stay Readable On A Phone')).toBeInTheDocument()
