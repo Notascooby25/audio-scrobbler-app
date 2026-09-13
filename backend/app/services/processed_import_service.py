@@ -554,7 +554,7 @@ def backfill_artwork_stream(
         .filter(ListeningEvent.user_id == user_id)
         .filter((ListeningEvent.artwork_url == None) | (ListeningEvent.artwork_url == ""))
         .group_by(ListeningEvent.track_id, ListeningEvent.artist_name, ListeningEvent.track_name, ListeningEvent.album_name)
-        .limit(15)
+        .limit(100)
         .all()
     )
 
