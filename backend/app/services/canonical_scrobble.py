@@ -40,6 +40,7 @@ def canonicalize_scrobble(user_id: int, source: str, raw_item: dict[str, Any]) -
         if not isinstance(track, dict):
             raise ValueError("Spotify scrobble is missing a track payload")
         track_id = track.get("id")
+        raw_play_id = raw_item.get("play_id")
         track_name = track.get("name")
         artists = track.get("artists")
         if not isinstance(track_id, str) or not isinstance(track_name, str) or not isinstance(artists, list):
@@ -62,7 +63,7 @@ def canonicalize_scrobble(user_id: int, source: str, raw_item: dict[str, Any]) -
         return {
             "user_id": user_id,
             "source": "spotify",
-            "play_id": track_id,
+            "play_id": raw_play_id if isinstance(raw_play_id, str) and raw_play_id.strip() else track_id,
             "played_at": timestamp,
             "track_name": track_name,
             "artist_name": artist["name"],

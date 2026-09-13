@@ -13,6 +13,7 @@ from ..schemas.blocks import (
     BlockedItemsResponse,
     DeleteEntriesRequest,
     DeleteEntriesResponse,
+    DeleteScrobblesRequest,
 )
 from ..services import blocks_service
 
@@ -56,6 +57,19 @@ def delete_entries(
 ) -> DeleteEntriesResponse:
     try:
         deleted = blocks_service.delete_entries(db, current_user.id, payload.entity_type, payload.name, payload.secondary)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return DeleteEntriesResponse(deleted=deleted)
+
+
+@router.post("/library/delete-scrobbles", response_model=DeleteEntriesResponse)
+def delete_scrobbles(
+    payload: DeleteScrobblesRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> DeleteEntriesResponse:
+    try:
+        deleted = blocks_service.delete_scrobbles(db, current_user.id, payload.ids)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return DeleteEntriesResponse(deleted=deleted)

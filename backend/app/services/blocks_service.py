@@ -83,3 +83,16 @@ def delete_entries(
     deleted = query.delete(synchronize_session=False)
     db.commit()
     return int(deleted)
+
+
+def delete_scrobbles(db: Session, user_id: int, ids: list[int]) -> int:
+    cleaned_ids = sorted({int(value) for value in ids if int(value) > 0})
+    if not cleaned_ids:
+        raise ValueError("At least one scrobble ID is required")
+
+    deleted = db.query(ListeningEvent).filter(
+        ListeningEvent.user_id == user_id,
+        ListeningEvent.id.in_(cleaned_ids),
+    ).delete(synchronize_session=False)
+    db.commit()
+    return int(deleted)

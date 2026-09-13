@@ -26,6 +26,8 @@ def import_spotify_history(db: Session, user_id: int, entries: list[dict[str, An
         track_uri = entry.get("trackUri") or entry.get("spotify_track_uri")
         album_name = entry.get("albumName") or entry.get("master_metadata_album_album_name")
         ms_played = entry.get("msPlayed") if isinstance(entry.get("msPlayed"), int) else entry.get("ms_played")
+        platform = entry.get("platform") if isinstance(entry.get("platform"), str) else "spotify"
+        country = entry.get("conn_country") if isinstance(entry.get("conn_country"), str) else None
         if not isinstance(track_name, str) or not isinstance(artist_name, str) or not isinstance(end_time, str) or not isinstance(track_uri, str):
             skipped += 1
             continue
@@ -34,6 +36,7 @@ def import_spotify_history(db: Session, user_id: int, entries: list[dict[str, An
             continue
 
         raw_item = {
+            "play_id": f"{track_uri}:{end_time}",
             "played_at": end_time,
             "track": {
                 "id": track_uri,
@@ -43,8 +46,9 @@ def import_spotify_history(db: Session, user_id: int, entries: list[dict[str, An
                 "duration_ms": ms_played if isinstance(ms_played, int) else None,
             },
             "context": {
-                "platform": "spotify",
-                "country": "US",
+                "platform": platform,
+                "country": country,
+                "raw": entry,
             },
         }
 

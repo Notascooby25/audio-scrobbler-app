@@ -36,3 +36,7 @@ class DeleteEntriesRequest(BaseModel):
 
 class DeleteEntriesResponse(BaseModel):
     deleted: int
+
+
+class DeleteScrobblesRequest(BaseModel):
+    ids: list[int] = Field(min_length=1, max_length=500)

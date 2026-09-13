@@ -118,3 +118,31 @@ def test_delete_artist_entries_removes_all_matching():
 
     assert response.status_code == 200
     assert response.json()["deleted"] == 2
+
+
+def test_delete_selected_scrobbles_only_removes_current_user_rows():
+    db = TestingSession()
+    own_ids = [row.id for row in db.query(ListeningEvent).filter(ListeningEvent.user_id == 1).order_by(ListeningEvent.id).limit(2).all()]
+    db.add(ListeningEvent(
+        user_id=2,
+        track_id="other-user-track",
+        track_name="Other",
+        artist_name="Other Artist",
+        album_name="Other Album",
+        played_at=datetime.utcnow(),
+        source="spotify",
+        play_id="other-user-track",
+    ))
+    db.commit()
+    other_id = db.query(ListeningEvent).filter(ListeningEvent.user_id == 2).one().id
+    db.close()
+
+    response = client.post("/library/delete-scrobbles", json={"ids": [*own_ids, other_id]})
+
+    assert response.status_code == 200
+    assert response.json()["deleted"] == 2
+
+    db = TestingSession()
+    assert db.query(ListeningEvent).filter(ListeningEvent.id.in_(own_ids)).count() == 0
+    assert db.query(ListeningEvent).filter(ListeningEvent.id == other_id).count() == 1
+    db.close()

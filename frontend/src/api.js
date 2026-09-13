@@ -66,6 +66,10 @@ export async function submitImportScrobbles({ token, source, entries }) {
   return parseResponse(response)
 }
 
+export function deleteImportedScrobbles({ token, source }) {
+  return fetchAnalyticsResource(`/import/scrobbles/${encodeURIComponent(source)}`, { token, method: 'DELETE' })
+}
+
 export async function followUser({ token, userId }) {
   const response = await fetch(`${API_BASE_URL}/users/${userId}/follow`, {
     method: 'POST',
@@ -141,8 +145,18 @@ export function fetchLibraryCollection({ token, entity, limit, offset, dateRange
   return fetchAnalyticsResource(`/library/${entity}`, { token, params })
 }
 
-export function fetchLibraryScrobbles({ token, limit, offset, dateRange }) {
-  return fetchLibraryCollection({ token, entity: 'scrobbles', limit, offset, dateRange })
+export function fetchLibraryScrobbles({ token, limit, offset, dateRange, filterEntity, filterName, filterSecondary }) {
+  return fetchAnalyticsResource('/library/scrobbles', {
+    token,
+    params: {
+      limit,
+      offset,
+      filter_entity: filterEntity,
+      filter_name: filterName,
+      filter_secondary: filterSecondary,
+      ...(dateRange ? toQueryParams(dateRange) : {}),
+    },
+  })
 }
 
 export function fetchLibraryTimeline({ token }) {
@@ -210,4 +224,8 @@ export async function removeBlock({ token, blockId }) {
 
 export function deleteLibraryEntries({ token, entityType, name, secondary }) {
   return fetchAnalyticsResource('/library/delete-entries', { token, method: 'POST', body: { entity_type: entityType, name, secondary } })
+}
+
+export function deleteLibraryScrobbles({ token, ids }) {
+  return fetchAnalyticsResource('/library/delete-scrobbles', { token, method: 'POST', body: { ids } })
 }

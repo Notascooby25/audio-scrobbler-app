@@ -16,11 +16,17 @@ vi.mock('../api', () => ({
   fetchReportsCharts: vi.fn(),
   fetchReportsEntity: vi.fn().mockResolvedValue({ entries: [] }),
   fetchUserSettings: vi.fn().mockResolvedValue({ default_date_range: 'last.week', default_page_size: 50, default_library_view: 'list', scrobbles_view: null, artists_view: null, albums_view: null, tracks_view: null, liked_tracks_view: null, show_artwork: true, show_source_badges: true, timestamp_mode: 'relative' }),
+  createBlock: vi.fn(),
+  deleteLibraryEntries: vi.fn(),
+  deleteLibraryScrobbles: vi.fn(),
   syncLikedTracks: vi.fn(),
   backfillArtwork: vi.fn(),
 }))
 
 import {
+  createBlock,
+  deleteLibraryEntries,
+  deleteLibraryScrobbles,
   fetchLibraryCollection,
   fetchLibraryScrobbles,
   fetchLibraryTimeline,
@@ -192,5 +198,41 @@ describe('library pagination', () => {
 
     await waitFor(() => expect(screen.getByText('Solo Artist')).toBeInTheDocument())
     expect(screen.queryByRole('navigation', { name: 'Pagination' })).not.toBeInTheDocument()
+  })
+
+  it('deletes selected scrobbles from the Library bulk action bar', async () => {
+    fetchLibraryScrobbles.mockResolvedValue({
+      scrobbles: [{ id: 42, track_name: 'Slow Show', artist_name: 'The National', source: 'spotify', played_at: '2026-06-02T18:16:44Z' }],
+      total_count: 1,
+    })
+    fetchLibraryTimeline.mockResolvedValue({ entries: [] })
+    deleteLibraryScrobbles.mockResolvedValue({ deleted: 1 })
+
+    render(<MemoryRouter><LibraryPage /></MemoryRouter>)
+    await waitFor(() => expect(screen.getByText('Slow Show')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByLabelText('Select Slow Show'))
+    fireEvent.click(screen.getByRole('button', { name: 'Delete selected' }))
+
+    await waitFor(() => expect(deleteLibraryScrobbles).toHaveBeenCalledWith({ token: 'demo-token', ids: [42] }))
+    expect(screen.getByText('Deleted 1 selected scrobbles.')).toBeInTheDocument()
+  })
+
+  it('blocks selected artists from the Library bulk action bar', async () => {
+    fetchLibraryScrobbles.mockResolvedValue({ scrobbles: [], total_count: 0 })
+    fetchLibraryCollection.mockResolvedValue({ entries: [{ label: 'The National', secondary: null, play_count: 12 }], total_count: 1 })
+    fetchLibraryTimeline.mockResolvedValue({ entries: [] })
+    createBlock.mockResolvedValue({ block: { id: 1 }, hidden_count: 12 })
+
+    render(<MemoryRouter><LibraryPage /></MemoryRouter>)
+    fireEvent.click(screen.getByRole('tab', { name: 'Artists' }))
+    await waitFor(() => expect(screen.getByText('The National')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByLabelText('Select The National'))
+    fireEvent.click(screen.getByRole('button', { name: 'Block selected' }))
+
+    await waitFor(() => expect(createBlock).toHaveBeenCalledWith({ token: 'demo-token', entityType: 'artist', name: 'The National' }))
+    expect(screen.getByText('Blocked 1 selected entries.')).toBeInTheDocument()
+    expect(deleteLibraryEntries).not.toHaveBeenCalled()
   })
 })

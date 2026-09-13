@@ -355,6 +355,18 @@ def test_import_spotify_history_accepts_extended_streaming_history_fields():
             "reason_end": "trackdone",
         },
         {
+            "ts": "2026-06-02T18:18:44Z",
+            "platform": "android",
+            "ms_played": 120000,
+            "conn_country": "GB",
+            "master_metadata_track_name": "Slow Show",
+            "master_metadata_album_artist_name": "The National",
+            "master_metadata_album_album_name": "Trouble Will Find Me",
+            "spotify_track_uri": "spotify:track:slow-show",
+            "reason_start": "trackdone",
+            "reason_end": "endplay",
+        },
+        {
             "ts": "2026-06-02T18:20:00Z",
             "ms_played": 5000,
             "master_metadata_track_name": None,
@@ -366,14 +378,18 @@ def test_import_spotify_history_accepts_extended_streaming_history_fields():
 
     summary = import_spotify_history(db, 1, entries)
 
-    assert summary["inserted"] == 1
+    assert summary["inserted"] == 2
     assert summary["skipped"] == 1
-    event = db.query(ListeningEvent).filter(ListeningEvent.user_id == 1).first()
+    events = db.query(ListeningEvent).filter(ListeningEvent.user_id == 1).order_by(ListeningEvent.played_at).all()
+    event = events[0]
     assert event.track_name == "Slow Show"
     assert event.artist_name == "The National"
     assert event.album_name == "Trouble Will Find Me"
     assert event.duration_ms == 284000
     assert event.source == "spotify"
+    assert event.play_id == "spotify:track:slow-show:2026-06-02T18:16:44Z"
+    assert events[1].play_id == "spotify:track:slow-show:2026-06-02T18:18:44Z"
+    assert event.raw_metadata["raw"]["conn_country"] == "GB"
     db.close()
 
 
