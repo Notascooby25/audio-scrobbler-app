@@ -114,6 +114,26 @@ def deezer_artwork(track: dict[str, Any]) -> str:
     return artist.get("picture_big") or artist.get("picture_medium") or ""
 
 
+def itunes_artwork(artist: str, title: str, timeout: float = 3.0) -> str | None:
+    """Fallback search using the iTunes API for missing artwork."""
+    query = urllib.parse.quote(f"{artist} {clean_title(title)}")
+    url = f"https://itunes.apple.com/search?term={query}&entity=song&limit=1"
+    
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "music-parser-app/1.0"})
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            results = data.get("results", [])
+            if results:
+                art = results[0].get("artworkUrl100")
+                if art:
+                    # Upgrade 100x100 resolution to 600x600
+                    return art.replace("100x100bb", "600x600bb")
+    except Exception as exc:
+        logger.debug("iTunes lookup exception for %s - %s: %s", artist, title, exc)
+    return None
+
+
 # ─── Schema Normalization Helpers ─────────────────────────────────────────────
 
 def parse_iso_timestamp(raw_value: Any) -> datetime | None:
@@ -367,19 +387,25 @@ def process_unified_import_stream(
             else:
                 try:
                     dz_track = deezer_search(rec["artist_name"], rec["song_name"], timeout=3.0)
+                    resolved_art = None
                     if dz_track:
                         resolved_art = deezer_artwork(dz_track)
-                        if resolved_art:
-                            rec["artwork_url"] = resolved_art
-                            batch_art_cache[t_id] = resolved_art
-                            batch_art_cache[art_key] = resolved_art
-                            new_cached_entries.append(ArtworkCache(track_id=t_id, artwork_url=resolved_art))
                         if not rec.get("album_name") and dz_track.get("album", {}).get("title"):
                             rec["album_name"] = dz_track["album"]["title"]
+                    
+                    if not resolved_art:
+                        # Fallback to iTunes API
+                        resolved_art = itunes_artwork(rec["artist_name"], rec["song_name"])
+
+                    if resolved_art:
+                        rec["artwork_url"] = resolved_art
+                        batch_art_cache[t_id] = resolved_art
+                        batch_art_cache[art_key] = resolved_art
+                        new_cached_entries.append(ArtworkCache(track_id=t_id, artwork_url=resolved_art))
                     else:
                         batch_art_cache[art_key] = ""
                 except Exception as exc:
-                    logger.debug("Deezer lookup exception for %s - %s: %s", rec["artist_name"], rec["song_name"], exc)
+                    logger.debug("Deezer/iTunes lookup exception for %s - %s: %s", rec["artist_name"], rec["song_name"], exc)
                     batch_art_cache[art_key] = ""
 
         if (idx + 1) % max(1, total_norm // 5) == 0 or idx + 1 == total_norm:
@@ -553,40 +579,32 @@ def backfill_artwork_stream(
         total=total_missing,
     )
 
-    # Load known bad caches (where artwork_cache has an empty string)
-    all_missing_track_ids = {r.track_id for r in missing_records}
-    cached_db_items = db.query(ArtworkCache).filter(ArtworkCache.track_id.in_(all_missing_track_ids)).all() if all_missing_track_ids else []
-    known_empty = {item.track_id for item in cached_db_items if not item.artwork_url}
-
     processed_count = 0
     updated_count = 0
 
     for idx, rec in enumerate(missing_records):
-        if rec.track_id in known_empty:
-            processed_count += 1
-            continue
-            
         if settings.enable_deezer_artwork_lookup:
             try:
                 dz_track = deezer_search(rec.artist_name, rec.track_name, timeout=3.0)
-                if dz_track:
-                    resolved_art = deezer_artwork(dz_track)
-                    if resolved_art:
-                        # Update ArtworkCache
-                        db.merge(ArtworkCache(track_id=rec.track_id, artwork_url=resolved_art))
-                        # Update ListeningEvents
-                        db.query(ListeningEvent).filter(
-                            ListeningEvent.user_id == user_id,
-                            ListeningEvent.track_id == rec.track_id
-                        ).update({"artwork_url": resolved_art}, synchronize_session=False)
-                        
-                        updated_count += 1
-                    else:
-                        db.merge(ArtworkCache(track_id=rec.track_id, artwork_url=""))
+                resolved_art = deezer_artwork(dz_track) if dz_track else None
+                
+                if not resolved_art:
+                    resolved_art = itunes_artwork(rec.artist_name, rec.track_name)
+
+                if resolved_art:
+                    # Update ArtworkCache
+                    db.merge(ArtworkCache(track_id=rec.track_id, artwork_url=resolved_art))
+                    # Update ListeningEvents
+                    db.query(ListeningEvent).filter(
+                        ListeningEvent.user_id == user_id,
+                        ListeningEvent.track_id == rec.track_id
+                    ).update({"artwork_url": resolved_art}, synchronize_session=False)
+                    
+                    updated_count += 1
                 else:
                     db.merge(ArtworkCache(track_id=rec.track_id, artwork_url=""))
             except Exception as exc:
-                logger.debug("Deezer backfill exception for %s - %s: %s", rec.artist_name, rec.track_name, exc)
+                logger.debug("Deezer/iTunes backfill exception for %s - %s: %s", rec.artist_name, rec.track_name, exc)
                 db.merge(ArtworkCache(track_id=rec.track_id, artwork_url=""))
 
         processed_count += 1
