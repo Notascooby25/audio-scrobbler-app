@@ -156,11 +156,13 @@ export default function HomePage() {
           ? 'youtube'
           : 'spotify'
       let result = null
+      let currentBatchIndex = 0
+      let totalBatches = 0
       for (let start = 0; start < entries.length; start += IMPORT_BATCH_SIZE) {
         const batch = entries.slice(start, start + IMPORT_BATCH_SIZE)
-        const batchNumber = Math.floor(start / IMPORT_BATCH_SIZE) + 1
-        const batchCount = Math.ceil(entries.length / IMPORT_BATCH_SIZE)
-        setImportProgress(`Importing batch ${batchNumber} of ${batchCount}...`)
+        currentBatchIndex = Math.floor(start / IMPORT_BATCH_SIZE) + 1
+        totalBatches = Math.ceil(entries.length / IMPORT_BATCH_SIZE)
+        setImportProgress(`Importing batch ${currentBatchIndex} of ${totalBatches}...`)
         const batchResult = await submitImportScrobbles({ token, source, entries: batch })
         result = mergeImportResult(result, batchResult)
       }
@@ -169,7 +171,8 @@ export default function HomePage() {
       await loadSummary(null, token)
     } catch (requestError) {
       setImportProgress('')
-      setImportError(requestError.message || 'Import failed.')
+      const prefix = totalBatches > 0 ? `Batch ${currentBatchIndex}/${totalBatches} failed: ` : ''
+      setImportError(`${prefix}${requestError.message || 'Import failed.'}`)
     } finally {
       event.target.value = ''
     }

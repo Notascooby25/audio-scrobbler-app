@@ -4,9 +4,23 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
 async function parseResponse(response) {
   if (!response.ok) {
-    const body = await response.json().catch(() => null)
-    const error = new Error(body?.detail || `Request failed (${response.status})`)
+    let detail = ''
+    if (typeof response.text === 'function') {
+      const text = await response.text().catch(() => '')
+      try {
+        const parsed = JSON.parse(text)
+        detail = parsed?.detail || parsed?.message || ''
+      } catch {
+        detail = text.slice(0, 300)
+      }
+    } else if (typeof response.json === 'function') {
+      const body = await response.json().catch(() => null)
+      detail = body?.detail || body?.message || ''
+    }
+    const message = detail ? `HTTP ${response.status}: ${detail}` : `Request failed with HTTP ${response.status} (${response.statusText || 'Error'})`
+    const error = new Error(message)
     error.status = response.status
+    error.detail = detail
     throw error
   }
   return response.json()
@@ -55,6 +69,11 @@ export async function fetchRecentScrobbles({ token, limit, offset }) {
 }
 
 export async function submitImportScrobbles({ token, source, entries }) {
+  if (!token) {
+    const noTokenErr = new Error('You are not signed in. Please sign in with a Development User ID (e.g. 1) before importing.')
+    noTokenErr.status = 401
+    throw noTokenErr
+  }
   try {
     const response = await fetch(`${API_BASE_URL}/import/scrobbles`, {
       method: 'POST',
@@ -64,10 +83,10 @@ export async function submitImportScrobbles({ token, source, entries }) {
       },
       body: JSON.stringify({ source, entries }),
     })
-    return parseResponse(response)
+    return await parseResponse(response)
   } catch (error) {
     if (error instanceof TypeError) {
-      throw new Error('Could not reach the import API. Check that the backend server is running at http://localhost:8000 and that your session is active.')
+      throw new Error(`Network failure (fetch failed): Unable to reach the backend at "${API_BASE_URL || window.location.origin}". Ensure the backend container is running and healthy. Details: ${error.message}`)
     }
     throw error
   }
