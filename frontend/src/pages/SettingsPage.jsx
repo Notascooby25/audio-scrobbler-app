@@ -76,18 +76,34 @@ export default function SettingsPage() {
     }
   }
 
+  const abortBackfillRef = useRef(null)
+
   const triggerArtworkBackfill = async () => {
     setBackfillState('running')
     setBackfillProgress(null)
+    abortBackfillRef.current = new AbortController()
+    
     try {
       const result = await startArtworkBackfill({
         token: session.accessToken,
-        onProgress: (progress) => setBackfillProgress(progress)
+        onProgress: (progress) => setBackfillProgress(progress),
+        signal: abortBackfillRef.current.signal
       })
       setBackfillState('complete')
       setBackfillProgress(result)
-    } catch {
-      setBackfillState('error')
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        setBackfillState('idle')
+        setBackfillProgress(null)
+      } else {
+        setBackfillState('error')
+      }
+    }
+  }
+
+  const cancelBackfill = () => {
+    if (abortBackfillRef.current) {
+      abortBackfillRef.current.abort()
     }
   }
 
@@ -189,9 +205,16 @@ export default function SettingsPage() {
             {backfillState === 'error' && (
               <p className="notice notice-error" role="alert" style={{ marginBottom: '1rem' }}>An error occurred during backfill.</p>
             )}
-            <button type="button" className="secondary-button" disabled={backfillState === 'running'} onClick={triggerArtworkBackfill}>
-              {backfillState === 'running' ? 'Backfilling...' : 'Backfill Missing Artwork'}
-            </button>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button type="button" className="secondary-button" disabled={backfillState === 'running'} onClick={triggerArtworkBackfill}>
+                {backfillState === 'running' ? 'Backfilling...' : 'Backfill Missing Artwork'}
+              </button>
+              {backfillState === 'running' && (
+                <button type="button" className="danger-button" onClick={cancelBackfill}>
+                  Cancel
+                </button>
+              )}
+            </div>
           </div>
 
           <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Delete YouTube History</h3>

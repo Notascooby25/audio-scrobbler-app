@@ -168,7 +168,7 @@ export function fetchCachedArtwork({ trackId }) {
   return fetch(`${API_BASE_URL}/artwork/cache/${encodeURIComponent(trackId)}`).then(parseResponse)
 }
 
-export async function startArtworkBackfill({ token, onProgress }) {
+export async function startArtworkBackfill({ token, onProgress, signal }) {
   if (!token) {
     const noTokenErr = new Error('You are not signed in. Please sign in with a Development User ID (e.g. 1) before importing.')
     noTokenErr.status = 401
@@ -180,6 +180,7 @@ export async function startArtworkBackfill({ token, onProgress }) {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      signal,
     })
 
     if (!response.ok) {
