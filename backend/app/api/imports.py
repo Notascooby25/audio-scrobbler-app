@@ -120,6 +120,30 @@ def import_unified_internal(
 
 # ─── Artwork Cache Lookup Endpoint ───────────────────────────────────────────
 
+@router.post("/artwork/backfill", status_code=status.HTTP_200_OK)
+def backfill_missing_artwork(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Scans the user's library for missing artwork and attempts to backfill from Deezer using SSE streaming."""
+    from ..services.processed_import_service import backfill_artwork_stream
+    
+    def _generate_backfill_stream():
+        for event in backfill_artwork_stream(db, current_user.id):
+            event_type = "complete" if event.stage == "completion" else "progress"
+            yield _format_sse(event_type, event.model_dump())
+
+    return StreamingResponse(
+        _generate_backfill_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
 @router.get("/artwork/cache/{track_id}", status_code=status.HTTP_200_OK)
 def get_cached_artwork(
     track_id: str,

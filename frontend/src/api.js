@@ -168,6 +168,70 @@ export function fetchCachedArtwork({ trackId }) {
   return fetch(`${API_BASE_URL}/artwork/cache/${encodeURIComponent(trackId)}`).then(parseResponse)
 }
 
+export async function startArtworkBackfill({ token, onProgress }) {
+  if (!token) {
+    const noTokenErr = new Error('You are not signed in. Please sign in with a Development User ID (e.g. 1) before importing.')
+    noTokenErr.status = 401
+    throw noTokenErr
+  }
+  try {
+    const response = await fetch(`${API_BASE_URL}/artwork/backfill`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    if (!response.ok) {
+      return await parseResponse(response)
+    }
+
+    if (!response.body || typeof response.body.getReader !== 'function') {
+      return await response.json()
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let finalResult = null
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n\n')
+      buffer = lines.pop() || ''
+
+      for (const block of lines) {
+        if (!block.trim()) continue
+        const eventMatch = block.match(/^event:\s*(\w+)/m)
+        const dataMatch = block.match(/^data:\s*(.+)$/m)
+        if (dataMatch) {
+          try {
+            const parsedData = JSON.parse(dataMatch[1])
+            if (onProgress && typeof onProgress === 'function') {
+              onProgress(parsedData)
+            }
+            if ((eventMatch && eventMatch[1] === 'complete') || parsedData.stage === 'completion') {
+              finalResult = parsedData
+            }
+          } catch {
+            // Ignore parse errors on partial chunks
+          }
+        }
+      }
+    }
+
+    return finalResult || { status: 'ok', summary: { inserted: 0, skipped: 0, duplicate: 0 } }
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error(`Network failure (fetch failed): Unable to reach the backend at "${API_BASE_URL || window.location.origin}". Ensure the backend container is running and healthy. Details: ${error.message}`)
+    }
+    throw error
+  }
+}
+
+
 export function deleteImportedScrobbles({ token, source }) {
   return fetchAnalyticsResource(`/import/scrobbles/${encodeURIComponent(source)}`, { token, method: 'DELETE' })
 }

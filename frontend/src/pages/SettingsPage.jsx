@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AnalyticsPage from '../components/AnalyticsPage'
-import { deleteImportedScrobbles, fetchBlocks, fetchUserSettings, removeBlock, updateUserSettings } from '../api'
+import { deleteImportedScrobbles, fetchBlocks, fetchUserSettings, removeBlock, updateUserSettings, startArtworkBackfill } from '../api'
 import { readSession } from '../session'
+import ImportProgressBar from '../components/ImportProgressBar'
 
 const VIEW_OPTIONS = [
   ['default_library_view', 'Default Library view'],
@@ -20,6 +21,8 @@ export default function SettingsPage() {
   const [blocks, setBlocks] = useState([])
   const [blocksError, setBlocksError] = useState('')
   const [youtubeDeleteState, setYoutubeDeleteState] = useState('idle')
+  const [backfillState, setBackfillState] = useState('idle')
+  const [backfillProgress, setBackfillProgress] = useState(null)
   const saveTimer = useRef(null)
 
   useEffect(() => {
@@ -70,6 +73,21 @@ export default function SettingsPage() {
       setYoutubeDeleteState(`deleted:${result.deleted}`)
     } catch {
       setYoutubeDeleteState('error')
+    }
+  }
+
+  const triggerArtworkBackfill = async () => {
+    setBackfillState('running')
+    setBackfillProgress(null)
+    try {
+      const result = await startArtworkBackfill({
+        token: session.accessToken,
+        onProgress: (progress) => setBackfillProgress(progress)
+      })
+      setBackfillState('complete')
+      setBackfillProgress(result)
+    } catch {
+      setBackfillState('error')
     }
   }
 
@@ -144,10 +162,31 @@ export default function SettingsPage() {
       {session?.accessToken && (
         <section className="settings-form settings-danger-zone" aria-labelledby="data-management-heading">
           <h2 id="data-management-heading">Data management</h2>
-          <p className="notice notice-warning">Deleting YouTube history removes every YouTube scrobble in this account. This cannot be undone and does not affect Spotify history.</p>
-          {youtubeDeleteState === 'deleted:0' && <p role="status">No YouTube history was found.</p>}
-          {youtubeDeleteState.startsWith('deleted:') && youtubeDeleteState !== 'deleted:0' && <p role="status">YouTube history deleted.</p>}
-          {youtubeDeleteState === 'error' && <p className="notice notice-error" role="alert">YouTube history could not be deleted.</p>}
+          
+          <div style={{ marginBottom: '2rem' }}>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Backfill Missing Artwork</h3>
+            <p className="notice" style={{ marginBottom: '1rem' }}>Scan your library for missing artwork and attempt to fill it in from Deezer.</p>
+            {backfillState === 'running' && backfillProgress && (
+              <ImportProgressBar progress={backfillProgress} />
+            )}
+            {backfillState === 'complete' && backfillProgress?.summary && (
+              <p role="status" style={{ color: 'var(--color-primary)', marginBottom: '1rem', fontWeight: 500 }}>
+                Backfill complete! Updated {backfillProgress.summary.inserted} tracks. (Skipped {backfillProgress.summary.skipped} not found)
+              </p>
+            )}
+            {backfillState === 'error' && (
+              <p className="notice notice-error" role="alert" style={{ marginBottom: '1rem' }}>An error occurred during backfill.</p>
+            )}
+            <button type="button" className="secondary-button" disabled={backfillState === 'running'} onClick={triggerArtworkBackfill}>
+              {backfillState === 'running' ? 'Backfilling...' : 'Backfill Missing Artwork'}
+            </button>
+          </div>
+
+          <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Delete YouTube History</h3>
+          <p className="notice notice-warning" style={{ marginBottom: '1rem' }}>Deleting YouTube history removes every YouTube scrobble in this account. This cannot be undone and does not affect Spotify history.</p>
+          {youtubeDeleteState === 'deleted:0' && <p role="status" style={{ marginBottom: '1rem' }}>No YouTube history was found.</p>}
+          {youtubeDeleteState.startsWith('deleted:') && youtubeDeleteState !== 'deleted:0' && <p role="status" style={{ marginBottom: '1rem' }}>YouTube history deleted.</p>}
+          {youtubeDeleteState === 'error' && <p className="notice notice-error" role="alert" style={{ marginBottom: '1rem' }}>YouTube history could not be deleted.</p>}
           <button type="button" className="danger-button" disabled={youtubeDeleteState === 'deleting'} onClick={() => {
             if (window.confirm('Delete all YouTube scrobbles from this account? This cannot be undone.')) deleteYouTubeHistory()
           }}>

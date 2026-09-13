@@ -506,3 +506,110 @@ def process_unified_import(
         "summary": summary_data.model_dump(),
         "errors": last_event.errors if last_event else [],
     }
+
+
+def backfill_artwork_stream(
+    db: Session,
+    user_id: int,
+) -> Iterator[UnifiedImportProgressEvent]:
+    """Scans the user's library for missing artwork and attempts to backfill from Deezer."""
+    
+    yield UnifiedImportProgressEvent(
+        stage="validation",
+        percent=10,
+        message="Scanning library for missing artwork...",
+        current=0,
+        total=1,
+    )
+
+    # Find unique track names without artwork
+    missing_records = (
+        db.query(ListeningEvent.track_id, ListeningEvent.artist_name, ListeningEvent.track_name, ListeningEvent.album_name)
+        .filter(ListeningEvent.user_id == user_id)
+        .filter((ListeningEvent.artwork_url == None) | (ListeningEvent.artwork_url == ""))
+        .group_by(ListeningEvent.track_id, ListeningEvent.artist_name, ListeningEvent.track_name, ListeningEvent.album_name)
+        .limit(500)
+        .all()
+    )
+
+    if not missing_records:
+        yield UnifiedImportProgressEvent(
+            stage="completion",
+            percent=100,
+            message="No missing artwork found.",
+            current=0,
+            total=0,
+            summary=ImportScrobbleSummary(inserted=0, skipped=0, duplicate=0)
+        )
+        return
+
+    total_missing = len(missing_records)
+    
+    yield UnifiedImportProgressEvent(
+        stage="artwork_caching",
+        percent=20,
+        message=f"Found {total_missing} missing tracks. Starting backfill...",
+        current=0,
+        total=total_missing,
+    )
+
+    # Load known bad caches (where artwork_cache has an empty string)
+    all_missing_track_ids = {r.track_id for r in missing_records}
+    cached_db_items = db.query(ArtworkCache).filter(ArtworkCache.track_id.in_(all_missing_track_ids)).all() if all_missing_track_ids else []
+    known_empty = {item.track_id for item in cached_db_items if not item.artwork_url}
+
+    processed_count = 0
+    updated_count = 0
+
+    for idx, rec in enumerate(missing_records):
+        if rec.track_id in known_empty:
+            processed_count += 1
+            continue
+            
+        if settings.enable_deezer_artwork_lookup:
+            try:
+                dz_track = deezer_search(rec.artist_name, rec.track_name, timeout=3.0)
+                if dz_track:
+                    resolved_art = deezer_artwork(dz_track)
+                    if resolved_art:
+                        # Update ArtworkCache
+                        db.merge(ArtworkCache(track_id=rec.track_id, artwork_url=resolved_art))
+                        # Update ListeningEvents
+                        db.query(ListeningEvent).filter(
+                            ListeningEvent.user_id == user_id,
+                            ListeningEvent.track_id == rec.track_id
+                        ).update({"artwork_url": resolved_art}, synchronize_session=False)
+                        
+                        updated_count += 1
+                    else:
+                        db.merge(ArtworkCache(track_id=rec.track_id, artwork_url=""))
+                else:
+                    db.merge(ArtworkCache(track_id=rec.track_id, artwork_url=""))
+            except Exception as exc:
+                logger.debug("Deezer backfill exception for %s - %s: %s", rec.artist_name, rec.track_name, exc)
+                db.merge(ArtworkCache(track_id=rec.track_id, artwork_url=""))
+
+        processed_count += 1
+        
+        if processed_count % 5 == 0 or processed_count == total_missing:
+            db.commit()
+            pct = 20 + int((processed_count / total_missing) * 75)
+            yield UnifiedImportProgressEvent(
+                stage="artwork_caching",
+                percent=pct,
+                message=f"Checking artwork ({processed_count}/{total_missing})...",
+                current=processed_count,
+                total=total_missing,
+            )
+
+    db.commit()
+
+    yield UnifiedImportProgressEvent(
+        stage="completion",
+        percent=100,
+        message=f"Backfill complete! Updated {updated_count} tracks.",
+        current=processed_count,
+        total=total_missing,
+        summary=ImportScrobbleSummary(inserted=updated_count, skipped=total_missing-updated_count, duplicate=0)
+    )
+
