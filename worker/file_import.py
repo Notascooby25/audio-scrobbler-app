@@ -6,12 +6,13 @@ import re
 import shutil
 import time
 from pathlib import Path
+from typing import Any
 
 import requests
 
 logger = logging.getLogger("audio-scrobbler-worker")
 
-FILENAME_PATTERN = re.compile(r"^user-(?P<user_id>\d+)-(?P<source>[a-zA-Z]+)\.json$")
+FILENAME_PATTERN = re.compile(r"^user-(?P<user_id>\d+)(?:-(?P<source>[a-zA-Z]+))?\.json$")
 
 
 def parse_entries(raw_text: str) -> list[dict[str, object]]:
@@ -25,6 +26,26 @@ def parse_entries(raw_text: str) -> list[dict[str, object]]:
     raise ValueError("Import file does not contain a recognizable entries list")
 
 
+def detect_source_from_entries(entries: list[dict[str, Any]]) -> str:
+    """Auto-detect whether export is YouTube or Spotify based on entry shape."""
+    for entry in entries[:20]:
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("header") == "YouTube Music" or entry.get("subtitles") or "titleUrl" in entry:
+            return "youtube"
+        if "song" in entry and ("artist" in entry or "release" in entry):
+            return "youtube"
+        if (
+            "master_metadata_track_name" in entry
+            or "spotify_track_uri" in entry
+            or "trackUri" in entry
+            or "trackName" in entry
+            or "endTime" in entry
+        ):
+            return "spotify"
+    return "spotify"
+
+
 def submit_import_with_retries(
     backend_url: str,
     worker_token: str,
@@ -33,17 +54,29 @@ def submit_import_with_retries(
     entries: list[dict[str, object]],
 ) -> dict[str, object]:
     for attempt in range(3):
-        response = requests.post(
-            f"{backend_url}/import/internal/scrobbles",
-            json={"user_id": user_id, "source": source, "entries": entries},
-            headers={"X-Worker-Token": worker_token},
-            timeout=30,
-        )
-        if response.status_code in (429, 500, 502, 503, 504) and attempt < 2:
+        try:
+            response = requests.post(
+                f"{backend_url}/import/internal/unified",
+                json={"user_id": user_id, "source": source, "entries": entries},
+                headers={"X-Worker-Token": worker_token},
+                timeout=30,
+            )
+            if response.status_code == 404:
+                response = requests.post(
+                    f"{backend_url}/import/internal/scrobbles",
+                    json={"user_id": user_id, "source": source, "entries": entries},
+                    headers={"X-Worker-Token": worker_token},
+                    timeout=30,
+                )
+            if response.status_code in (429, 500, 502, 503, 504) and attempt < 2:
+                time.sleep(2 ** attempt)
+                continue
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException:
+            if attempt == 2:
+                raise
             time.sleep(2 ** attempt)
-            continue
-        response.raise_for_status()
-        return response.json()
     raise requests.HTTPError("Backend import failed after retries")
 
 
@@ -68,10 +101,12 @@ def process_import_directory(import_dir: str, backend_url: str, worker_token: st
             continue
 
         user_id = int(match.group("user_id"))
-        source = match.group("source").lower()
+        raw_source = match.group("source")
 
         try:
             entries = parse_entries(file_path.read_text())
+            source = raw_source.lower() if raw_source else detect_source_from_entries(entries)
+            logger.info("Processing import file %s for user %s (source=%s, %s entries)", file_path.name, user_id, source, len(entries))
             submit_import_with_retries(backend_url, worker_token, user_id, source, entries)
         except Exception:
             logger.exception("Failed to import file %s", file_path.name)
