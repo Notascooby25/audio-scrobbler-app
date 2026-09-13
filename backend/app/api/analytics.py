@@ -53,7 +53,7 @@ def monthly_summary(
 
 @router.get("/recent-scrobbles")
 def recent_scrobbles(
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -156,7 +156,7 @@ def top_tracks(
 
 @library_router.get("/scrobbles", response_model=LibraryScrobbleResponse)
 def library_scrobbles(
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     range: str | None = Query(default=None, description="Optional: last.week, last.month, last.year, custom"),
     start_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
@@ -181,7 +181,7 @@ def library_scrobbles(
 @library_router.get("/{entity}", response_model=LibraryResponse | TimelineResponse)
 def library_entities(
     entity: str,
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     range: str | None = Query(default=None, description="Optional: last.week, last.month, last.year, custom"),
     start_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),

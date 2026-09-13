@@ -1,4 +1,4 @@
-const PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 150, 200, 250]
 
 export default function PageSizeSelect({ value, onChange }) {
   return (

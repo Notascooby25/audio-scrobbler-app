@@ -34,7 +34,7 @@ class UserPreferences(Base):
     __tablename__ = "user_preferences"
     __table_args__ = (
         UniqueConstraint("user_id", name="uq_user_preferences_user_id"),
-        CheckConstraint("default_page_size IN (10, 25, 50, 100)", name="ck_user_preferences_page_size"),
+        CheckConstraint("default_page_size IN (10, 25, 50, 100, 150, 200, 250)", name="ck_user_preferences_page_size"),
         CheckConstraint("default_library_view IN ('list', 'grid')", name="ck_user_preferences_library_view"),
     )
 

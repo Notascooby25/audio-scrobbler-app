@@ -125,7 +125,7 @@ export default function SettingsPage() {
           <label>
             Default page size
             <select value={settings.default_page_size} onChange={(event) => changeSetting('default_page_size', Number(event.target.value))}>
-              {[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
+              {[10, 25, 50, 100, 150, 200, 250].map((size) => <option key={size} value={size}>{size}</option>)}
             </select>
           </label>
           {VIEW_OPTIONS.map(([key, label]) => (

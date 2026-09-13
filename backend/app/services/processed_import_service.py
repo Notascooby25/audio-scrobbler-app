@@ -438,8 +438,19 @@ def process_unified_import_stream(
 
     inserted_count = 0
     duplicate_count = 0
+    skipped_count = 0
+
+    seen_identities = set()
 
     for idx, rec in enumerate(normalized_records):
+        # 1) Check in-memory duplicates
+        ident = (rec["track_id"], rec["played_at"].isoformat() if isinstance(rec["played_at"], datetime) else rec["played_at"])
+        play_ident = rec["play_id"]
+        if ident in seen_identities or play_ident in seen_identities:
+            duplicate_count += 1
+            continue
+        
+        # 2) Check database
         existing = (
             db.query(ListeningEvent)
             .filter(
@@ -463,6 +474,8 @@ def process_unified_import_stream(
         if existing is not None:
             duplicate_count += 1
         else:
+            seen_identities.add(ident)
+            seen_identities.add(play_ident)
             new_event = ListeningEvent(
                 user_id=user_id,
                 track_id=rec["track_id"],
