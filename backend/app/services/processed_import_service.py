@@ -554,7 +554,7 @@ def backfill_artwork_stream(
         .filter(ListeningEvent.user_id == user_id)
         .filter((ListeningEvent.artwork_url == None) | (ListeningEvent.artwork_url == ""))
         .group_by(ListeningEvent.track_id, ListeningEvent.artist_name, ListeningEvent.track_name, ListeningEvent.album_name)
-        .limit(75)
+        .limit(15)
         .all()
     )
 
@@ -581,6 +581,7 @@ def backfill_artwork_stream(
 
     processed_count = 0
     updated_count = 0
+    updated_track_names: list[str] = []
 
     for idx, rec in enumerate(missing_records):
         if settings.enable_deezer_artwork_lookup:
@@ -602,6 +603,7 @@ def backfill_artwork_stream(
                     ).update({"artwork_url": resolved_art}, synchronize_session=False)
                     
                     updated_count += 1
+                    updated_track_names.append(f"{rec.artist_name} - {rec.track_name}")
                 else:
                     db.merge(ArtworkCache(track_id=rec.track_id, artwork_url=""))
             except Exception as exc:
@@ -629,6 +631,7 @@ def backfill_artwork_stream(
         message=f"Backfill complete! Updated {updated_count} tracks.",
         current=processed_count,
         total=total_missing,
-        summary=ImportScrobbleSummary(inserted=updated_count, skipped=total_missing-updated_count, duplicate=0)
+        summary=ImportScrobbleSummary(inserted=updated_count, skipped=total_missing-updated_count, duplicate=0),
+        updated_tracks=updated_track_names,
     )
 

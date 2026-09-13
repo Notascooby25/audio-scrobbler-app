@@ -165,14 +165,26 @@ export default function SettingsPage() {
           
           <div style={{ marginBottom: '2rem' }}>
             <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Backfill Missing Artwork</h3>
-            <p className="notice" style={{ marginBottom: '1rem' }}>Scan your library for missing artwork and attempt to fill it in from Deezer.</p>
+            <p className="notice" style={{ marginBottom: '1rem' }}>Scan your library for missing artwork and attempt to fill it in from Deezer and iTunes.</p>
             {backfillState === 'running' && backfillProgress && (
               <ImportProgressBar progress={backfillProgress} />
             )}
             {backfillState === 'complete' && backfillProgress?.summary && (
-              <p role="status" style={{ color: 'var(--color-primary)', marginBottom: '1rem', fontWeight: 500 }}>
-                Backfill complete! Updated {backfillProgress.summary.inserted} tracks. (Skipped {backfillProgress.summary.skipped} not found)
-              </p>
+              <div style={{ marginBottom: '1rem' }}>
+                <p role="status" style={{ color: 'var(--color-primary)', marginBottom: '0.5rem', fontWeight: 500 }}>
+                  Backfill complete! Updated {backfillProgress.summary.inserted} tracks. (Skipped {backfillProgress.summary.skipped} not found)
+                </p>
+                {backfillProgress.updated_tracks && backfillProgress.updated_tracks.length > 0 && (
+                  <details className="import-errors-details">
+                    <summary>View {backfillProgress.updated_tracks.length} updated tracks</summary>
+                    <ul className="import-errors-list">
+                      {backfillProgress.updated_tracks.map((track, i) => (
+                        <li key={i}>{track}</li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </div>
             )}
             {backfillState === 'error' && (
               <p className="notice notice-error" role="alert" style={{ marginBottom: '1rem' }}>An error occurred during backfill.</p>

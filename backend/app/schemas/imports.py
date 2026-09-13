@@ -74,6 +74,7 @@ class UnifiedImportProgressEvent(BaseModel):
     total: int = 0
     summary: ImportScrobbleSummary | None = None
     errors: list[str] = Field(default_factory=list)
+    updated_tracks: list[str] = Field(default_factory=list)
 
 
 class UnifiedImportResponse(BaseModel):
@@ -81,5 +82,6 @@ class UnifiedImportResponse(BaseModel):
     source: str
     summary: ImportScrobbleSummary
     errors: list[str] = Field(default_factory=list)
+    updated_tracks: list[str] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
