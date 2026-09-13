@@ -191,10 +191,20 @@ export default function SettingsPage() {
                   Backfill complete! Updated {backfillProgress.summary.inserted} tracks. (Skipped {backfillProgress.summary.skipped} not found)
                 </p>
                 {backfillProgress.updated_tracks && backfillProgress.updated_tracks.length > 0 && (
-                  <details className="import-errors-details">
+                  <details className="import-errors-details" style={{ marginBottom: '0.5rem' }}>
                     <summary>View {backfillProgress.updated_tracks.length} updated tracks</summary>
                     <ul className="import-errors-list">
                       {backfillProgress.updated_tracks.map((track, i) => (
+                        <li key={i}>{track}</li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+                {backfillProgress.errors && backfillProgress.errors.length > 0 && (
+                  <details className="import-errors-details">
+                    <summary>View {backfillProgress.errors.length} skipped tracks</summary>
+                    <ul className="import-errors-list">
+                      {backfillProgress.errors.map((track, i) => (
                         <li key={i}>{track}</li>
                       ))}
                     </ul>
