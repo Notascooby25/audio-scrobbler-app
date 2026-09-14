@@ -11,6 +11,7 @@ import TimelineChart from '../components/TimelineChart'
 import { createBlock, deleteLibraryEntries, deleteLibraryScrobbles, fetchLikedTracks, fetchLibraryCollection, fetchLibraryScrobbles, fetchLibraryTimeline, fetchUserSettings } from '../api'
 import { createDefaultDateRange, isValidDateRange } from '../dateRange'
 import { readSession } from '../session'
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
 
 const TABS = [
   ['scrobbles', 'Scrobbles'],
@@ -49,6 +50,7 @@ export default function LibraryPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeSearchQuery, setActiveSearchQuery] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const isDateFilterable = tab !== 'liked'
   const filterKeyRef = useRef(null)
 
@@ -179,7 +181,11 @@ export default function LibraryPage() {
     setSelectedEntries(allSelected ? new Map() : new Map(visibleEntries.map((entry) => [entry.key, entry])))
   }
 
-  const bulkDelete = async () => {
+  const promptBulkDelete = () => {
+    setConfirmDeleteOpen(true)
+  }
+
+  const executeBulkDelete = async () => {
     setBulkBusy(true)
     setBulkError('')
     try {
@@ -198,8 +204,10 @@ export default function LibraryPage() {
         handleEntryChanged(`Deleted ${deleted} scrobbles for ${entries.length} selected entries.`)
       }
       clearSelection()
+      setConfirmDeleteOpen(false)
     } catch (requestError) {
       setBulkError(requestError.message || 'Bulk delete failed')
+      setConfirmDeleteOpen(false)
     } finally {
       setBulkBusy(false)
     }
@@ -250,7 +258,7 @@ export default function LibraryPage() {
             <div className="bulk-action-bar" role="status">
               <strong>{selectedCount.toLocaleString()} selected</strong>
               <button type="button" disabled={bulkBusy} onClick={toggleVisibleSelection}>Select visible</button>
-              <button type="button" disabled={bulkBusy} onClick={bulkDelete}>Delete selected</button>
+              <button type="button" disabled={bulkBusy} onClick={promptBulkDelete}>Delete selected</button>
               {tab !== 'scrobbles' && tab !== 'liked' && <button type="button" disabled={bulkBusy} onClick={bulkBlock}>Block selected</button>}
               <button type="button" className="bulk-action-secondary" disabled={bulkBusy} onClick={clearSelection}>Clear</button>
               {bulkError && <span role="alert">{bulkError}</span>}
@@ -266,6 +274,22 @@ export default function LibraryPage() {
             <PageSizeSelect value={pageSize} onChange={setPageSize} />
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           </div>
+
+          <ConfirmDeleteModal
+            isOpen={confirmDeleteOpen}
+            title={tab === 'scrobbles' ? 'Delete Selected Scrobbles' : 'Delete Selected Entries'}
+            description={
+              tab === 'scrobbles'
+                ? `You are about to permanently delete ${selectedScrobbleIds.size.toLocaleString()} selected scrobbles.`
+                : `You are about to permanently delete all scrobbles associated with the ${selectedEntries.size.toLocaleString()} selected ${tab}.`
+            }
+            warningText="This action is permanent and cannot be undone."
+            confirmWord="DELETE"
+            confirmButtonText="Delete permanently"
+            isBusy={bulkBusy}
+            onConfirm={executeBulkDelete}
+            onCancel={() => setConfirmDeleteOpen(false)}
+          />
         </>
       )}
     </AnalyticsPage>

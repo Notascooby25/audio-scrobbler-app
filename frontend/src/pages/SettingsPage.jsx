@@ -4,6 +4,7 @@ import AnalyticsPage from '../components/AnalyticsPage'
 import { deleteImportedScrobbles, fetchBlocks, fetchUserSettings, removeBlock, updateUserSettings, startArtworkBackfill, fetchImportBatches, advancedDeleteImports } from '../api'
 import { readSession } from '../session'
 import ImportProgressBar from '../components/ImportProgressBar'
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
 
 const VIEW_OPTIONS = [
   ['default_library_view', 'Default Library view'],
@@ -73,6 +74,10 @@ export default function SettingsPage() {
     }
   }
 
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false)
+  const [deletePendingParams, setDeletePendingParams] = useState(null)
+  const [deletePendingDesc, setDeletePendingDesc] = useState('')
+
   useEffect(() => {
     if (!session?.accessToken) return
     fetchImportBatches({ token: session.accessToken })
@@ -80,45 +85,51 @@ export default function SettingsPage() {
       .catch(err => console.error("Could not fetch batches", err))
   }, [session?.accessToken])
 
-  const executeAdvancedDelete = async () => {
-    setAdvancedDeleteState('deleting')
+  const promptAdvancedDelete = () => {
     setAdvancedDeleteError('')
     
     let source = null, startDate = null, endDate = null, batchTime = null
+    let desc = ''
     
     if (deleteMode === 'source') {
       source = deleteSource
+      desc = `You are about to permanently delete all ${deleteSource.toUpperCase()} scrobbles from your library.`
     } else if (deleteMode === 'date') {
       startDate = deleteStartDate ? new Date(deleteStartDate).toISOString() : null
       endDate = deleteEndDate ? new Date(deleteEndDate).toISOString() : null
       if (!startDate && !endDate) {
         setAdvancedDeleteError('Please specify at least one date.')
-        setAdvancedDeleteState('idle')
         return
       }
+      desc = `You are about to permanently delete all scrobbles between ${deleteStartDate || 'the beginning'} and ${deleteEndDate || 'today'}.`
     } else if (deleteMode === 'batch') {
       batchTime = deleteBatch
       if (!batchTime) {
         setAdvancedDeleteError('Please select a batch.')
-        setAdvancedDeleteState('idle')
         return
       }
+      const matchedBatch = importBatches.find(b => b.batch_time === batchTime)
+      desc = `You are about to permanently delete scrobbles from the import batch on ${new Date(batchTime).toLocaleString()}${matchedBatch ? ` (${matchedBatch.count} scrobbles)` : ''}.`
     }
 
-    if (!window.confirm('Are you sure you want to delete these scrobbles? This cannot be undone.')) {
-      setAdvancedDeleteState('idle')
-      return
-    }
+    setDeletePendingParams({ source, startDate, endDate, batchTime })
+    setDeletePendingDesc(desc)
+    setConfirmModalOpen(true)
+  }
+
+  const executeConfirmedDelete = async () => {
+    if (!deletePendingParams) return
+    setAdvancedDeleteState('deleting')
+    setAdvancedDeleteError('')
 
     try {
       const result = await advancedDeleteImports({
         token: session.accessToken,
-        source,
-        startDate,
-        endDate,
-        batchTime
+        ...deletePendingParams
       })
       setAdvancedDeleteState(`deleted:${result.deleted}`)
+      setConfirmModalOpen(false)
+      setDeletePendingParams(null)
       
       // Refresh batches
       fetchImportBatches({ token: session.accessToken })
@@ -127,6 +138,7 @@ export default function SettingsPage() {
     } catch (err) {
       setAdvancedDeleteError(err.message || 'Failed to delete scrobbles.')
       setAdvancedDeleteState('error')
+      setConfirmModalOpen(false)
     }
   }
 
@@ -341,9 +353,24 @@ export default function SettingsPage() {
           {advancedDeleteError && <p className="notice notice-error" role="alert" style={{ marginBottom: '1rem' }}>{advancedDeleteError}</p>}
           {advancedDeleteState.startsWith('deleted:') && <p role="status" style={{ marginBottom: '1rem', color: 'var(--color-primary)' }}>Deleted {advancedDeleteState.split(':')[1]} scrobbles successfully.</p>}
 
-          <button type="button" className="danger-button" disabled={advancedDeleteState === 'deleting'} onClick={executeAdvancedDelete}>
+          <button type="button" className="danger-button" disabled={advancedDeleteState === 'deleting'} onClick={promptAdvancedDelete}>
             {advancedDeleteState === 'deleting' ? 'Deleting...' : 'Delete Scrobbles'}
           </button>
+
+          <ConfirmDeleteModal
+            isOpen={confirmModalOpen}
+            title="Permanently Delete Scrobbles"
+            description={deletePendingDesc}
+            warningText="This action is permanent and cannot be undone. All matching scrobbles will be permanently removed from your library."
+            confirmWord="DELETE"
+            confirmButtonText="Delete Scrobbles"
+            isBusy={advancedDeleteState === 'deleting'}
+            onConfirm={executeConfirmedDelete}
+            onCancel={() => {
+              setConfirmModalOpen(false)
+              setDeletePendingParams(null)
+            }}
+          />
         </section>
       )}
       <p className="page-link"><Link to="/profile">Back to profile</Link></p>

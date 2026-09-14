@@ -644,7 +644,118 @@ dl {
 dl div { display: flex; justify-content: space-between; }
 dt, dd { font-size: 0.78rem; margin: 0; }
 dt { color: #657268; }
-dd { color: #18211d; font-weight: 700; }
+
+/* ─── Modal Dialogs ────────────────────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(24, 33, 29, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-dialog {
+  background: var(--color-surface-raised, #ffffff);
+  border: 1px solid var(--color-border, #dce2d9);
+  border-top: 5px solid #b73530;
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(24, 33, 29, 0.28);
+  max-width: 480px;
+  width: 100%;
+  padding: 1.75rem;
+  animation: modal-appear 150ms ease-out;
+}
+
+@keyframes modal-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-title {
+  color: #9f2f2b;
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.75rem;
+}
+
+.modal-description {
+  color: var(--color-ink, #18211d);
+  font: 0.9rem/1.5 system-ui, sans-serif;
+  margin: 0 0 1rem;
+}
+
+.modal-input-label {
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  margin-bottom: 1.25rem;
+  color: #18211d;
+  text-transform: none;
+}
+
+.modal-input-label strong {
+  color: #9f2f2b;
+  letter-spacing: 0.05em;
+}
+
+.modal-input {
+  width: 100%;
+  border: 2px solid #b9c5b8;
+  border-radius: 6px;
+  padding: 0.65rem 0.85rem;
+  font: 600 1rem monospace;
+  background: #fffdf8;
+  color: #18211d;
+  box-sizing: border-box;
+}
+
+.modal-input:focus {
+  border-color: #9f2f2b;
+  outline: none;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.modal-cancel-button {
+  background: transparent;
+  border: 1px solid var(--color-border, #dce2d9);
+  color: var(--color-ink, #18211d);
+  font: 600 0.8rem system-ui, sans-serif;
+  padding: 0.65rem 1.25rem;
+  border-radius: 6px;
+  min-height: auto;
+  cursor: pointer;
+  text-transform: none;
+}
+
+.modal-cancel-button:hover:not(:disabled) {
+  background: rgba(24, 33, 29, 0.06);
+}
+
+.modal-confirm-button {
+  border-radius: 6px;
+  font: 600 0.8rem system-ui, sans-serif;
+  padding: 0.65rem 1.25rem;
+  min-height: auto;
+  text-transform: none;
+}
 
 @media (max-width: 760px) {
   .app-shell { padding: 2rem 1rem 3rem; }

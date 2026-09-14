@@ -214,6 +214,10 @@ describe('library pagination', () => {
     fireEvent.click(screen.getByLabelText('Select Slow Show'))
     fireEvent.click(screen.getByRole('button', { name: 'Delete selected' }))
 
+    // Type DELETE in confirmation modal and click confirm
+    fireEvent.change(screen.getByPlaceholderText('DELETE'), { target: { value: 'DELETE' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Delete permanently' }))
+
     await waitFor(() => expect(deleteLibraryScrobbles).toHaveBeenCalledWith({ token: 'demo-token', ids: [42] }))
     expect(screen.getByText('Deleted 1 selected scrobbles.')).toBeInTheDocument()
   })
