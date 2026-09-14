@@ -557,40 +557,45 @@ button:disabled {
 .segmented-tabs {
   display: inline-flex;
   align-items: center;
-  background: #f0f0f0;
+  background: transparent;
   border: 0.5px solid var(--color-border);
   border-radius: var(--radius-sm);
   padding: 2px;
   gap: 2px;
   max-width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .segmented-tab {
   background: transparent;
   border: 0;
-  border-radius: calc(var(--radius-sm) - 2px);
+  border-radius: var(--radius-sm);
   color: var(--color-muted);
-  font: 500 0.8rem inherit, sans-serif;
-  min-height: 34px;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  min-height: 32px;
   padding: 0.35rem 0.75rem;
   cursor: pointer;
-  text-transform: none;
-  letter-spacing: normal;
   white-space: nowrap;
   transition: background-color 120ms ease, color 120ms ease;
   box-shadow: none;
+  flex: 0 0 auto;
+  width: auto;
 }
 
 .segmented-tab:hover:not(.active):not(:disabled) {
   color: var(--color-ink);
-  background: rgba(0, 0, 0, 0.04);
+  background: #f0f0f0;
 }
 
 .segmented-tab.active {
   background: var(--color-accent);
   color: #ffffff;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .visually-hidden-accessible {
@@ -2314,15 +2319,19 @@ dd {
     flex-direction: column;
   }
   .library-tabs,
-  .settings-tabs {
+  .settings-tabs,
+  .segmented-tabs {
     flex-wrap: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 2px;
   }
   .library-tabs button,
-  .settings-tabs button {
+  .settings-tabs button,
+  .segmented-tab,
+  .segmented-tabs button {
     flex: 0 0 auto;
+    width: auto;
     white-space: nowrap;
   }
   .scrobble-row {

@@ -74,4 +74,28 @@ describe('DateRangeSelector', () => {
     fireEvent.click(pillBtn)
     expect(screen.getByLabelText('Start date')).toBeInTheDocument()
   })
+
+  it('maintains strict single active button hierarchy in segmented range filter', () => {
+    const onChange = vi.fn()
+    const value = { range: 'last.month', start_date: null, end_date: null }
+    render(<DateRangeSelector value={value} onChange={onChange} />)
+
+    const tabs = screen.getAllByRole('tab')
+    expect(tabs.length).toBe(4)
+
+    const activeTabs = tabs.filter((tab) => tab.classList.contains('active'))
+    expect(activeTabs).toHaveLength(1)
+    expect(activeTabs[0]).toHaveTextContent('Last month')
+    expect(activeTabs[0]).toHaveAttribute('aria-selected', 'true')
+
+    const inactiveTabs = tabs.filter((tab) => !tab.classList.contains('active'))
+    expect(inactiveTabs).toHaveLength(3)
+    inactiveTabs.forEach((tab) => {
+      expect(tab).toHaveAttribute('aria-selected', 'false')
+    })
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Last year' }))
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ range: 'last.year' }))
+  })
 })
+
