@@ -169,12 +169,20 @@ h2 {
 }
 
 /* ─── Panels & Cards ────────────────────────────────────────────────────────── */
+.card {
+  background: var(--color-surface);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: none;
+  padding: 16px;
+}
+
 .dashboard {
   background: var(--color-surface);
   border: 0.5px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: none;
-  padding: 1.75rem;
+  padding: 16px;
 }
 
 .section-heading {
@@ -242,7 +250,7 @@ h2 {
 
 .date-range-pill.active {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 1px var(--color-accent);
+  box-shadow: none;
 }
 
 .date-range-pill .calendar-icon {
@@ -267,8 +275,8 @@ h2 {
   background: var(--color-surface);
   border: 0.5px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  padding: 1rem;
+  box-shadow: none;
+  padding: 16px;
   width: 320px;
   max-width: 90vw;
 }
@@ -628,12 +636,13 @@ button:disabled {
 }
 
 .import-summary {
-  background: #f0f0f0;
+  background: var(--color-surface);
   border: 0.5px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
+  box-shadow: none;
   font: 0.85rem inherit, sans-serif;
   margin-top: 1rem;
-  padding: 1rem;
+  padding: 16px;
 }
 
 .import-summary-error {
@@ -682,8 +691,13 @@ button:disabled {
 
 /* ─── Scrobbles & Lists ─────────────────────────────────────────────────────── */
 .scrobble-list {
+  background: var(--color-surface);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: none;
   font: 0.85rem inherit, sans-serif;
   margin-top: 1.5rem;
+  padding: 16px;
 }
 
 .scrobble-list h3 {
@@ -752,8 +766,13 @@ button:disabled {
 }
 
 .profile-connect {
+  background: var(--color-surface);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: none;
   display: grid;
   gap: 0.85rem;
+  padding: 16px;
 }
 
 /* ─── Settings Page ─────────────────────────────────────────────────────────── */
@@ -765,7 +784,7 @@ button:disabled {
   display: grid;
   gap: 1rem;
   max-width: 38rem;
-  padding: 1.5rem;
+  padding: 16px;
 }
 
 .settings-form select {
@@ -832,8 +851,9 @@ button:disabled {
 .settings-danger-zone {
   border: 0.5px solid rgba(211, 47, 47, 0.4);
   border-radius: var(--radius-md);
+  box-shadow: none;
   margin-top: 0;
-  padding: 1.5rem;
+  padding: 16px;
   background: var(--color-surface);
 }
 
@@ -1011,7 +1031,7 @@ button:disabled {
   box-shadow: none;
   display: grid;
   gap: 1rem;
-  padding: 1.5rem;
+  padding: 16px;
 }
 
 .profile-username {
@@ -1066,7 +1086,7 @@ button:disabled {
   border: 0.5px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: none;
-  padding: 1.5rem;
+  padding: 16px;
 }
 
 .charts-controls {
@@ -1138,22 +1158,18 @@ button:disabled {
 
 .stats-bar {
   display: grid;
-  gap: 1px;
+  gap: 1rem;
   grid-template-columns: repeat(3, 1fr);
-  background: var(--color-border);
-  border: 0.5px solid var(--color-border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
 }
 
 .stat-block {
   background: var(--color-surface);
-  border: 0;
-  border-radius: 0;
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-md);
   box-shadow: none;
   display: grid;
   gap: 0.35rem;
-  padding: 1.5rem;
+  padding: 16px;
 }
 
 .stat-block strong {
@@ -1186,7 +1202,7 @@ button:disabled {
   border: 0.5px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: none;
-  padding: 1.25rem;
+  padding: 16px;
   transition: border-color 140ms ease;
 }
 
@@ -1317,7 +1333,7 @@ button:disabled {
   border: 0.5px solid var(--color-border);
   border-radius: var(--radius-md);
   margin: 0;
-  padding: 1.25rem;
+  padding: 16px;
   box-shadow: none;
 }
 
@@ -1452,7 +1468,7 @@ button:disabled {
   border: 0.5px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: none;
-  padding: clamp(1rem, 3vw, 1.25rem);
+  padding: 16px;
 }
 
 .library-rank-heading {
@@ -1894,7 +1910,7 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.75rem;
+  padding: 16px;
 }
 
 .report-banner h2 {
@@ -1916,7 +1932,7 @@ button:disabled {
   border: 0.5px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: none;
-  padding: 1.25rem;
+  padding: 16px;
 }
 
 .chart-panel h2 {
@@ -2007,19 +2023,18 @@ button:disabled {
 
 .report-facts {
   display: grid;
-  gap: 1px;
+  gap: 1rem;
   grid-template-columns: repeat(3, 1fr);
-  background: var(--color-border);
-  border: 0.5px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
 }
 
 .report-facts div {
   background: var(--color-surface);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: none;
   display: grid;
   gap: 0.3rem;
-  padding: 1rem;
+  padding: 16px;
 }
 
 .report-facts strong {
@@ -2064,20 +2079,16 @@ button:disabled {
 
 .summary-grid {
   display: grid;
-  gap: 1px;
+  gap: 1rem;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  background: var(--color-border);
-  border: 0.5px solid var(--color-border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
 }
 
 .month-card {
   background: var(--color-surface);
-  border: 0;
-  border-radius: 0;
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-md);
   box-shadow: none;
-  padding: 1.25rem;
+  padding: 16px;
 }
 
 .month-label {
@@ -2258,7 +2269,7 @@ dd {
     margin-bottom: 2.5rem;
   }
   .dashboard {
-    padding: 1.25rem;
+    padding: 16px;
   }
   .filters {
     grid-template-columns: 1fr;
