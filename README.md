@@ -1,5 +1,9 @@
 # Audio Scrobbler App
 
+A self-hosted, full-stack application for tracking, analyzing, and sharing your music listening history. It seamlessly imports your "scrobbles" from sources like Spotify and YouTube, offering deep insights into your listening habits while providing social features to follow friends and compare tastes.
+
+For a detailed breakdown of features, architecture, and benefits, please see [OVERVIEW.md](./OVERVIEW.md).
+
 ## Local Stack
 
 From the repository root, start the PostgreSQL database, FastAPI backend, ingestion worker, and React frontend in the background with:
