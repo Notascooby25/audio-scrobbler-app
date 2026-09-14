@@ -46,3 +46,4 @@ The Audio Scrobbler App is a comprehensive platform for tracking, analyzing, and
 * **Database:** PostgreSQL
 * **Background Worker:** Python (for background data ingestion and syncing)
 * **Infrastructure:** Docker, Docker Compose, GitHub Actions, Prometheus, Alertmanager
+
