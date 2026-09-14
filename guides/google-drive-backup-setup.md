@@ -2,7 +2,9 @@
 
 This guide explains how to set up `rclone` to authenticate with Google Drive so that your database backups are automatically uploaded by the `backup_database.sh` script.
 
-## 1. Install rclone
+> **Note for Existing Setups:** If you already have `rclone` installed and configured on your server (e.g., your NUC), you can skip to **Step 3**.
+
+## 1. Install rclone (If not already installed)
 
 `rclone` is a command-line program to manage files on cloud storage.
 
@@ -17,9 +19,9 @@ On macOS (using Homebrew):
 brew install rclone
 ```
 
-## 2. Configure rclone for Google Drive
+## 2. Configure rclone for Google Drive (If not already configured)
 
-We need to create a new remote named **`gdrive`**. Run the following command:
+We need to create a new remote. By default, the script looks for one named **`gdrive`**. Run the following command:
 
 ```bash
 rclone config
@@ -28,7 +30,7 @@ rclone config
 You will see an interactive prompt. Follow these steps:
 
 1. **`e/n/d/r/c/s/q>`**: Type **`n`** for "New remote".
-2. **`name>`**: Type **`gdrive`**. (This name must match exactly what's used in the `backup_database.sh` script).
+2. **`name>`**: Type **`gdrive`**.
 3. **`Storage>`**: Look for Google Drive in the list of providers (it is usually numbered, e.g., `18`). Type **`drive`** or the corresponding number.
 4. **`client_id>`**: Leave blank and press **Enter**.
 5. **`client_secret>`**: Leave blank and press **Enter**.
@@ -41,9 +43,21 @@ You will see an interactive prompt. Follow these steps:
 12. **`y/e/d>`**: Type **`y`** to confirm the configuration.
 13. **`e/n/d/r/c/s/q>`**: Type **`q`** to quit the config wizard.
 
-## 3. Verify the Configuration
+## 3. Verify Your Configuration & Remote Name
 
-Test that `rclone` can connect to your Google Drive by listing the root directory:
+If you already had `rclone` set up, you might have named your Google Drive remote something other than `gdrive`. You can check your existing remotes with:
+
+```bash
+rclone listremotes
+```
+
+If your remote is named something else (e.g., `my_drive:`), you don't need to rename it! You can simply tell the backup script to use your existing remote by setting this environment variable in your `.env` or `.env.production` file:
+
+```env
+GDRIVE_REMOTE_NAME=my_drive
+```
+
+Test that `rclone` can connect to your Google Drive by listing the root directory (replace `gdrive:` with your remote name if different):
 
 ```bash
 rclone ls gdrive:
@@ -68,3 +82,4 @@ By default, the script retains backups on Google Drive for 14 days. To change th
 ```env
 GDRIVE_RETENTION_DAYS=30
 ```
+

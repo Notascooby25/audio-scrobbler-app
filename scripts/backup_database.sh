@@ -4,6 +4,7 @@ set -euo pipefail
 backup_dir=${BACKUP_DIR:-backups}
 retention_days=${BACKUP_RETENTION_DAYS:-3}
 gdrive_retention_days=${GDRIVE_RETENTION_DAYS:-14}
+gdrive_remote=${GDRIVE_REMOTE_NAME:-gdrive}
 
 if [[ -n "${ENV_FILE:-}" ]]; then
   env_file="$ENV_FILE"
@@ -46,13 +47,13 @@ find "$backup_dir" -type f -name 'scrobbler-*.dump' -mtime "+$retention_days" -d
 
 if command -v rclone &> /dev/null; then
   echo "Uploading backup to Google Drive..."
-  rclone copy "$backup_file" "gdrive:AudioScrobblerBackups/"
+  rclone copy "$backup_file" "${gdrive_remote}:AudioScrobblerBackups/"
   
   echo "Cleaning up backups older than $gdrive_retention_days days on Google Drive..."
-  rclone delete "gdrive:AudioScrobblerBackups/" --min-age "${gdrive_retention_days}d" || true
+  rclone delete "${gdrive_remote}:AudioScrobblerBackups/" --min-age "${gdrive_retention_days}d" || true
 else
   echo "Note: 'rclone' is not installed or in PATH."
-  echo "To enable Google Drive backups, install rclone and configure a remote named 'gdrive'."
+  echo "To enable Google Drive backups, install rclone and configure a remote named '${gdrive_remote}'."
 fi
 
 printf '%s\n' "$backup_file"
