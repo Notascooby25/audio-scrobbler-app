@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-14T15:02:00Z",
+  "title": "Design System: Audio Scrobbler App",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Blue Accent", "canonical": "#0066FF" },
+      "neutral-bg": { "role": "neutral", "displayName": "Off-White Background", "canonical": "#F7F7F7" },
+      "surface": { "role": "neutral", "displayName": "White Surface", "canonical": "#FFFFFF" },
+      "border": { "role": "neutral", "displayName": "Hairline Border", "canonical": "#E5E5E5" },
+      "text-primary": { "role": "neutral", "displayName": "Primary Text", "canonical": "#111111" },
+      "text-secondary": { "role": "neutral", "displayName": "Secondary Text", "canonical": "#888888" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Page titles and primary charts." },
+      "body": { "displayName": "Body", "purpose": "General interface text and list rows." }
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action button.",
+      "html": "<button class=\"ds-btn-primary\">Action</button>",
+      "css": ".ds-btn-primary { background: #0066FF; color: #FFFFFF; padding: 8px 16px; border: none; border-radius: 8px; font-weight: 500; font-size: 14px; cursor: pointer; transition: opacity 0.2s; } .ds-btn-primary:hover { opacity: 0.9; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Standard content container.",
+      "html": "<div class=\"ds-card\"><h3>Title</h3><p>Content goes here.</p></div>",
+      "css": ".ds-card { background: #FFFFFF; border: 0.5px solid #E5E5E5; border-radius: 12px; padding: 16px; font-size: 14px; color: #111111; } .ds-card h3 { font-size: 20px; font-weight: 500; margin: 0 0 8px 0; } .ds-card p { color: #888888; margin: 0; }"
+    },
+    {
+      "name": "Segmented Tab",
+      "kind": "nav",
+      "refersTo": "segmented-tab",
+      "description": "Navigation tabs.",
+      "html": "<div class=\"ds-segmented-control\"><button class=\"active\">Artists</button><button>Albums</button><button>Tracks</button></div>",
+      "css": ".ds-segmented-control { display: inline-flex; background: #F7F7F7; border: 0.5px solid #E5E5E5; border-radius: 8px; padding: 2px; } .ds-segmented-control button { background: transparent; border: none; border-radius: 6px; padding: 4px 12px; font-size: 14px; color: #888888; cursor: pointer; } .ds-segmented-control button.active { background: #FFFFFF; color: #111111; border: 0.5px solid #E5E5E5; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Focused Utility",
+    "overview": "A highly functional, data-dense interface inspired by productivity tools like Linear, Notion, and iOS Settings. The aesthetic is strictly flat and utilitarian, prioritizing clarity, information density, and speed over decoration.",
+    "keyCharacteristics": [
+      "Strictly flat design with no shadows or gradients.",
+      "Off-white backgrounds with white cards and hairline 0.5px borders.",
+      "Utilitarian geometric shapes with 8-12px rounded corners.",
+      "A single blue accent used very sparingly.",
+      "Compact list rows and segmented tabs."
+    ],
+    "rules": [
+      { "name": "The One Voice Rule", "body": "The blue accent is used sparingly (≤5% of any screen). Its rarity is the point, signalling only actionable elements or primary data points.", "section": "colors" },
+      { "name": "The Flat-By-Default Rule", "body": "Shadows and gradients are strictly prohibited. Depth is conveyed via structural borders.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use segmented tabs for view switching.",
+      "Do use outline icons for all iconography.",
+      "Do keep list rows compact to show more scrobbles at once.",
+      "Do use a 0.5px border for dividing content and framing cards."
+    ],
+    "donts": [
+      "Don't use any box-shadows or drop-shadows.",
+      "Don't use gradients anywhere in the UI.",
+      "Don't use dropdown menus for primary navigation or filtering where segmented tabs could fit."
+    ]
+  }
+}
+

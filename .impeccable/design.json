@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-14T15:08:00Z",
+  "title": "Design System: Audio Scrobbler App (Legacy)",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Terracotta Rust", "canonical": "#a34e32" },
+      "focus": { "role": "secondary", "displayName": "Forest Focus", "canonical": "#46624d" },
+      "neutral-bg": { "role": "neutral", "displayName": "Cream Background", "canonical": "#efe9dd" },
+      "surface": { "role": "neutral", "displayName": "Warm Surface", "canonical": "#fffdf8" },
+      "surface-raised": { "role": "neutral", "displayName": "Bright Surface", "canonical": "#ffffff" },
+      "border": { "role": "neutral", "displayName": "Sage Border", "canonical": "#dce2d9" },
+      "text-primary": { "role": "neutral", "displayName": "Deep Forest Black", "canonical": "#18211d" },
+      "text-secondary": { "role": "neutral", "displayName": "Slate Green", "canonical": "#657268" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero sections and major dashboard numbers." },
+      "headline": { "displayName": "Headline", "purpose": "Section headers and report banners." },
+      "body": { "displayName": "Body", "purpose": "Standard list rows and descriptive text." },
+      "label": { "displayName": "Label", "purpose": "Eyebrows, kickers, and table headers." }
+    },
+    "shadows": [
+      { "name": "ambient-container", "value": "0 18px 45px rgba(24, 33, 29, 0.07)", "purpose": "The main dashboard wrapper." },
+      { "name": "hover-lift", "value": "0 10px 28px rgba(24, 33, 29, 0.08)", "purpose": "Interactive report cards on hover." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action button.",
+      "html": "<button class=\"ds-btn-primary\">ACTION</button>",
+      "css": ".ds-btn-primary { background: #a34e32; color: #fffaf1; padding: 0.75rem 1rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; cursor: pointer; transition: filter 140ms ease; } .ds-btn-primary:hover { filter: brightness(1.08); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Standard content container.",
+      "html": "<div class=\"ds-card\"><h3>Title</h3><p>Content goes here.</p></div>",
+      "css": ".ds-card { background: #fffdf8; border: 1px solid #dce2d9; border-radius: 12px; padding: 1.25rem; font-size: 0.85rem; color: #18211d; } .ds-card h3 { font-size: 1.35rem; font-weight: 500; margin: 0 0 1rem 0; } .ds-card p { color: #657268; margin: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Warm Utility",
+    "overview": "An inviting, organic interface defined by warm earthy tones and functional structure. The aesthetic relies on natural color pairings (terracotta and sage), soft ambient shadows, and legible sans-serif typography. Overall, the component execution feels somewhat uninspiring, serving as a functional wrapper rather than a distinct design statement.",
+    "keyCharacteristics": [
+      "Layered and soft with large, diffuse drop shadows.",
+      "Earthy, botanical palette (terracotta, cream, sage).",
+      "Rounded corners (12-14px for cards).",
+      "A mix of Avenir Next and system fonts with Georgia for inputs."
+    ],
+    "rules": [
+      { "name": "The Organic Canvas Rule", "body": "Backgrounds and surfaces avoid pure white and stark gray, leaning entirely on warm, paper-like creams and botanical greens.", "section": "colors" }
+    ],
+    "dos": [
+      "Do use uppercase, tracked-out text for kickers and small labels.",
+      "Do use the terracotta accent for primary actions and highlights."
+    ],
+    "donts": [
+      "Don't use pure black (#000000) for text; always use Deep Forest Black.",
+      "Don't use sharp corners on cards or buttons (inputs are the exception)."
+    ]
+  }
+}
+
