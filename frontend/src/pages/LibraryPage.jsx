@@ -241,18 +241,21 @@ export default function LibraryPage() {
               <button key={value} type="button" role="tab" aria-selected={tab === value} className={tab === value ? 'active' : ''} onClick={() => { setTab(value); setSearchParams({}) }}>{label}</button>
             ))}
           </div>
-          {isDateFilterable && <DateRangeSelector value={dateRange} onChange={setDateRange} />}
-          <div className="library-toolbar">
-            <form onSubmit={(e) => { e.preventDefault(); setActiveSearchQuery(searchQuery); }} className="library-search-form">
-              <input
-                type="search"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onBlur={() => setActiveSearchQuery(searchQuery)}
-              />
-            </form>
-            <LibraryViewToggle view={activeView} onChange={changeView} />
+          <div className="library-controls-bar">
+            {isDateFilterable && <DateRangeSelector value={dateRange} onChange={setDateRange} showCompare={false} />}
+            <div className="library-toolbar">
+              <form onSubmit={(e) => { e.preventDefault(); setActiveSearchQuery(searchQuery); }} className="library-search-form">
+                <input
+                  type="search"
+                  placeholder="Search library..."
+                  aria-label="Search library tracks, artists, or albums"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onBlur={() => setActiveSearchQuery(searchQuery)}
+                />
+              </form>
+              <LibraryViewToggle view={activeView} onChange={changeView} />
+            </div>
           </div>
           {selectedCount > 0 && (
             <div className="bulk-action-bar" role="status">

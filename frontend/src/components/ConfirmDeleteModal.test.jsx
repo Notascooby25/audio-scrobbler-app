@@ -63,3 +63,4 @@ describe('ConfirmDeleteModal', () => {
     expect(onCancel).toHaveBeenCalledTimes(2)
   })
 })
+

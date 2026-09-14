@@ -1,6 +1,6 @@
 import { DATE_RANGE_LABELS, DATE_RANGE_PRESETS } from '../dateRange'
 
-export default function DateRangeSelector({ value, onChange }) {
+export default function DateRangeSelector({ value, onChange, showCompare = true }) {
   const handlePresetChange = (event) => {
     const range = event.target.value
     if (range === 'custom') {
@@ -44,10 +44,12 @@ export default function DateRangeSelector({ value, onChange }) {
           </label>
         </>
       )}
-      <label className="date-range-compare">
-        <input type="checkbox" checked={Boolean(value.compare_to_previous)} onChange={handleCompareToggle} />
-        Compare to previous period
-      </label>
+      {showCompare && (
+        <label className="date-range-compare">
+          <input type="checkbox" checked={Boolean(value.compare_to_previous)} onChange={handleCompareToggle} />
+          Compare to previous period
+        </label>
+      )}
     </div>
   )
 }
