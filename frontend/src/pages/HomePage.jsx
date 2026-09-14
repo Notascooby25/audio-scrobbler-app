@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { fetchMonthlySummary, fetchRecentScrobbles, redirectToAuthorization, requestDevelopmentToken, requestSpotifyAuthorization, submitImportScrobbles, submitUnifiedImport } from '../api'
 import ChartsPanel from '../components/ChartsPanel'
+import CustomDateField from '../components/CustomDateField'
 import ImportProgressBar from '../components/ImportProgressBar'
 import ImportSummaryPanel from '../components/ImportSummaryPanel'
 import ScrobbleList from '../components/ScrobbleList'
@@ -217,11 +218,23 @@ export default function HomePage() {
           </label>
           <label>
             From
-            <input type="month" value={fromMonth} onChange={(event) => setFromMonth(event.target.value)} />
+            <CustomDateField
+              id="connect-from-month"
+              type="month"
+              value={fromMonth}
+              onChange={(e) => setFromMonth(e.target.value)}
+              placeholder="Any date"
+            />
           </label>
           <label>
             To
-            <input type="month" value={toMonth} onChange={(event) => setToMonth(event.target.value)} />
+            <CustomDateField
+              id="connect-to-month"
+              type="month"
+              value={toMonth}
+              onChange={(e) => setToMonth(e.target.value)}
+              placeholder="Any date"
+            />
           </label>
           <button type="submit" disabled={status === 'loading'}>
             {status === 'loading' ? 'Loading...' : token ? 'Refresh summary' : 'Sign in'}
