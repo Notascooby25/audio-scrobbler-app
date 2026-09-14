@@ -524,6 +524,30 @@ button:disabled {
   text-decoration: none;
 }
 
+.settings-tabs {
+  margin-bottom: 1.5rem;
+}
+
+.settings-tab {
+  white-space: nowrap;
+}
+
+.settings-tab.destructive {
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.4);
+}
+
+.settings-tab.destructive.active {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #FFFFFF;
+}
+
+.settings-tab.destructive:hover:not(.active):not(:disabled) {
+  background: rgba(220, 38, 38, 0.06);
+  border-color: #dc2626;
+}
+
 .settings-blocks {
   margin-top: 1.5rem;
 }
@@ -536,7 +560,7 @@ button:disabled {
 .settings-danger-zone {
   border: 0.5px solid rgba(211, 47, 47, 0.4);
   border-radius: var(--radius-md);
-  margin-top: 1.5rem;
+  margin-top: 0;
   padding: 1.5rem;
   background: var(--color-surface);
 }
@@ -2012,8 +2036,17 @@ dd {
     align-items: flex-start;
     flex-direction: column;
   }
-  .library-tabs button {
-    flex: 1;
+  .library-tabs,
+  .settings-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+  .library-tabs button,
+  .settings-tabs button {
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
   .scrobble-row {
     align-items: flex-start;
