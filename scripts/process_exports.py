@@ -107,12 +107,13 @@ def process_export_file(input_path: str, output_path: str, platform_type: str):
     
     if not os.path.exists(input_path):
         print(f"  -> File not found: {input_path}. Skipping.")
-        return
+        return [], []
 
     with open(input_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
 
     songs = []
+    skipped_list = []
     skipped = 0
     cache = {}
     total = len(data)
@@ -124,6 +125,7 @@ def process_export_file(input_path: str, output_path: str, platform_type: str):
             start_index = state.get('last_index', 0)
             songs = state.get('songs', [])
             skipped = state.get('skipped', 0)
+            skipped_list = state.get('skipped_list', [])
             cache = state.get('cache', {})
         print(f"  -> Resuming from item {start_index} out of {total}...")
     else:
@@ -141,14 +143,17 @@ def process_export_file(input_path: str, output_path: str, platform_type: str):
             if platform_type == 'youtube':
                 if entry.get('header') != 'YouTube Music':
                     skipped += 1
+                    skipped_list.append(f"[{platform_type.upper()}] Non-Music Header: {entry.get('header', 'Unknown')}")
                     continue
                 subtitles = entry.get('subtitles', [])
                 if not subtitles:
                     skipped += 1
+                    skipped_list.append(f"[{platform_type.upper()}] Missing Subtitles Entry index {i}")
                     continue
                 channel = subtitles[0].get('name', '')
                 if not channel.endswith('- Topic'):
                     skipped += 1
+                    skipped_list.append(f"[{platform_type.upper()}] Non-Topic Channel: {channel}")
                     continue
                 raw_title = entry.get('title', '').replace('Watched ', '', 1)
                 artist = channel.replace(' - Topic', '')
@@ -157,9 +162,11 @@ def process_export_file(input_path: str, output_path: str, platform_type: str):
             elif platform_type == 'spotify':
                 if 'master_metadata_track_name' not in entry or not entry.get('master_metadata_track_name'):
                     skipped += 1
+                    skipped_list.append(f"[{platform_type.upper()}] Missing Track Name Entry index {i}")
                     continue
                 if entry.get('episode_name') is not None:  # Skip podcasts
                     skipped += 1
+                    skipped_list.append(f"[{platform_type.upper()}] Podcast Episode: {entry.get('episode_name')}")
                     continue
                 raw_title = entry.get('master_metadata_track_name')
                 artist = entry.get('master_metadata_album_artist_name')
@@ -168,6 +175,7 @@ def process_export_file(input_path: str, output_path: str, platform_type: str):
 
             if not raw_title or not artist:
                 skipped += 1
+                skipped_list.append(f"[{platform_type.upper()}] Empty Title or Artist at index {i}")
                 continue
 
             cache_key = f'{artist}|||{raw_title}'
@@ -176,6 +184,7 @@ def process_export_file(input_path: str, output_path: str, platform_type: str):
                 cached_data = cache[cache_key]
                 if cached_data is None:
                     skipped += 1
+                    skipped_list.append(f"[{platform_type.upper()}] Cached Skip: {artist} - {raw_title}")
                 else:
                     songs.append({
                         'artist': artist,
@@ -184,8 +193,6 @@ def process_export_file(input_path: str, output_path: str, platform_type: str):
                         'artwork': cached_data['artwork'],
                         'time': time_str,
                     })
-                    art_status = '✓' if cached_data['artwork'] else '✗'
-                    print(f'[{i+1}/{total}] [{platform_type}] (Cached) ♪ {artist} - {raw_title} [Art: {art_status}]')
                 continue
 
             # Query Deezer API
@@ -209,19 +216,15 @@ def process_export_file(input_path: str, output_path: str, platform_type: str):
                 'time': time_str,
             })
 
-            art_status = '✓' if artwork else '✗'
-            album_str = f' ({release})' if release else ''
-            print(f'[{i+1}/{total}] [{platform_type}] ♪ {artist} - {raw_title}{album_str} [Art: {art_status}]')
-
             # Save periodic progress every 25 items
             if (i + 1) % 25 == 0:
                 with open(progress_file, 'w', encoding='utf-8') as pf:
-                    json.dump({'last_index': i + 1, 'songs': songs, 'skipped': skipped, 'cache': cache}, pf)
+                    json.dump({'last_index': i + 1, 'songs': songs, 'skipped': skipped, 'skipped_list': skipped_list, 'cache': cache}, pf)
 
     except KeyboardInterrupt:
         print("\nProcess interrupted! Saving progress...")
         with open(progress_file, 'w', encoding='utf-8') as pf:
-            json.dump({'last_index': i, 'songs': songs, 'skipped': skipped, 'cache': cache}, pf)
+            json.dump({'last_index': i, 'songs': songs, 'skipped': skipped, 'skipped_list': skipped_list, 'cache': cache}, pf)
         sys.exit(0)
 
     # Save final sheet
@@ -232,28 +235,15 @@ def process_export_file(input_path: str, output_path: str, platform_type: str):
         os.remove(progress_file)
 
     print(f"  -> Finished! Kept {len(songs)} tracks, skipped {skipped}. Saved to {output_path}")
+    return songs, skipped_list
 
 
 # ─── Summary Generator ─────────────────────────────────────────────────────────
 
-def generate_summary_report():
+def generate_summary_report(yt_songs, yt_skipped, sp_songs, sp_skipped):
     print("\nGenerating consolidated summary report...")
-    all_songs = []
-    yt_count = 0
-    spotify_count = 0
-
-    if os.path.exists('songs_youtube.json'):
-        with open('songs_youtube.json', 'r', encoding='utf-8') as f:
-            yt_data = json.load(f)
-            yt_count = len(yt_data)
-            all_songs.extend(yt_data)
-
-    if os.path.exists('song_spotify.json'):
-        with open('song_spotify.json', 'r', encoding='utf-8') as f:
-            sp_data = json.load(f)
-            spotify_count = len(sp_data)
-            all_songs.extend(sp_data)
-
+    
+    all_songs = yt_songs + sp_songs
     total_plays = len(all_songs)
     if total_plays == 0:
         print("No processed tracks found to summarise.")
@@ -263,10 +253,11 @@ def generate_summary_report():
     unique_artists = len(set(s['artist'].lower().strip() for s in all_songs))
     unique_albums = len(set(s['release'].lower().strip() for s in all_songs if s.get('release')))
     
-    missing_art = sum(1 for s in all_songs if not s.get('artwork') or s.get('artwork') == 'No Artwork')
-    art_success_rate = ((total_plays - missing_art) / total_plays) * 100 if total_plays > 0 else 0
+    # Track missing artwork details
+    missing_artwork_items = [f"{s['artist']} - {s['song']}" for s in all_songs if not s.get('artwork')]
+    missing_art_count = len(missing_artwork_items)
+    art_success_rate = ((total_plays - missing_art_count) / total_plays) * 100 if total_plays > 0 else 0
 
-    # Extract timestamps to find date range
     timestamps = [s.get('time') for s in all_songs if s.get('time')]
     earliest = min(timestamps) if timestamps else 'N/A'
     latest = max(timestamps) if timestamps else 'N/A'
@@ -275,16 +266,31 @@ def generate_summary_report():
         UNIFIED MUSIC EXPORT SUMMARY REPORT
 ==================================================
 - Total Plays Processed      : {total_plays}
-- YouTube Music Plays        : {yt_count}
-- Spotify Plays              : {spotify_count}
+- YouTube Music Plays        : {len(yt_songs)}
+- Spotify Plays              : {len(sp_songs)}
 - Total Unique Songs         : {unique_songs}
 - Total Unique Artists       : {unique_artists}
 - Total Unique Albums/Releases: {unique_albums}
-- Missing Artwork Count      : {missing_art} ({art_success_rate:.1f}% success rate)
+- Missing Artwork Count      : {missing_art_count} ({art_success_rate:.1f}% success rate)
 - Earliest Play Timestamp    : {earliest}
 - Latest Play Timestamp      : {latest}
 ==================================================
+
+--------------------------------------------------
+MISSING ARTWORK TRACKS ({missing_art_count}):
+--------------------------------------------------
 """
+    for item in missing_artwork_items:
+        report_text += f"• {item}\n"
+
+    all_skipped = yt_skipped + sp_skipped
+    report_text += f"""
+--------------------------------------------------
+SKIPPED SONGS / ENTRIES ({len(all_skipped)}):
+--------------------------------------------------
+"""
+    for item in all_skipped:
+        report_text += f"• {item}\n"
 
     summary_filename = 'listening_summary.txt'
     with open(summary_filename, 'w', encoding='utf-8') as sf:
@@ -302,20 +308,22 @@ def run_all():
         print(f"Error: Directory '{input_dir}' does not exist. Please create it and add your files.")
         return
 
+    yt_songs, yt_skipped = [], []
+    sp_songs, sp_skipped = [], []
+
     for filename in os.listdir(input_dir):
         if filename.endswith('.json'):
             file_lower = filename.lower()
             full_path = os.path.join(input_dir, filename)
             
             if 'youtube' in file_lower or 'watch-history' in file_lower:
-                process_export_file(full_path, 'songs_youtube.json', 'youtube')
+                yt_songs, yt_skipped = process_export_file(full_path, 'songs_youtube.json', 'youtube')
             elif 'spotify' in file_lower or 'streaming_history' in file_lower or 'audio' in file_lower:
-                process_export_file(full_path, 'song_spotify.json', 'spotify')
+                sp_songs, sp_skipped = process_export_file(full_path, 'song_spotify.json', 'spotify')
             else:
                 print(f"Skipping unknown file format: {filename}")
 
-    # Automatically generate the summary text file once files are processed
-    generate_summary_report()
+    generate_summary_report(yt_songs, yt_skipped, sp_songs, sp_skipped)
     print("\nAll export and summary tasks completed successfully.")
 
 

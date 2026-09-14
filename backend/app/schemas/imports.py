@@ -85,3 +85,19 @@ class UnifiedImportResponse(BaseModel):
     updated_tracks: list[str] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
+
+class ImportBatch(BaseModel):
+    batch_time: str
+    source: str
+    count: int
+    min_played_at: str | None = None
+    max_played_at: str | None = None
+
+class ImportBatchesResponse(BaseModel):
+    batches: list[ImportBatch]
+
+class AdvancedDeleteRequest(BaseModel):
+    source: str | None = None
+    start_date: str | None = None
+    end_date: str | None = None
+    batch_time: str | None = None

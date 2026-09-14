@@ -486,7 +486,10 @@ button:disabled { cursor: wait; opacity: 0.65; }
 .library-layout .scrobble-list { background: #fffdf8; margin: 0; padding: 1.25rem; }
 .library-sync { align-items: center; display: flex; gap: 1rem; }
 
-.library-toolbar { display: flex; justify-content: flex-end; }
+.library-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.library-search-form { flex: 1; max-width: 300px; display: flex; }
+.library-search-form input { flex: 1; width: 100%; border: 1px solid #b9c5b8; border-radius: 4px; padding: 0.4rem 0.6rem; font: 0.9rem system-ui, sans-serif; background: transparent; }
+.library-search-form input:focus { border-color: #a34e32; outline: none; }
 .library-view-toggle { display: inline-flex; gap: 0.25rem; }
 .library-view-toggle button { background: transparent; border: 1px solid #b9c5b8; color: #46624d; min-height: 2.3rem; }
 .library-view-toggle button.active { background: #18211d; border-color: #18211d; color: #fffaf1; }

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
-from sqlalchemy import func, select
+from sqlalchemy import func, select, or_
 
 from ..models import BlockedItem, ListeningEvent
 
@@ -93,6 +93,7 @@ def build_recent_scrobbles_query(
     filter_entity: str | None = None,
     filter_name: str | None = None,
     filter_secondary: str | None = None,
+    search_query: str | None = None,
 ):
     statement = (
         select(
@@ -114,6 +115,15 @@ def build_recent_scrobbles_query(
     entity_filter = _entity_filter(filter_entity, filter_name, filter_secondary)
     if entity_filter is not None:
         statement = statement.where(entity_filter)
+    if search_query:
+        search_term = f"%{search_query}%"
+        statement = statement.where(
+            or_(
+                ListeningEvent.track_name.ilike(search_term),
+                ListeningEvent.artist_name.ilike(search_term),
+                ListeningEvent.album_name.ilike(search_term)
+            )
+        )
     return statement.order_by(ListeningEvent.played_at.desc()).limit(limit).offset(offset)
 
 
@@ -232,6 +242,7 @@ def build_library_scrobbles_query(
     filter_entity: str | None = None,
     filter_name: str | None = None,
     filter_secondary: str | None = None,
+    search_query: str | None = None,
 ):
     return build_recent_scrobbles_query(
         user_id=user_id,
@@ -242,6 +253,7 @@ def build_library_scrobbles_query(
         filter_entity=filter_entity,
         filter_name=filter_name,
         filter_secondary=filter_secondary,
+        search_query=search_query,
     )
 
 
@@ -252,6 +264,7 @@ def build_library_count_query(
     filter_entity: str | None = None,
     filter_name: str | None = None,
     filter_secondary: str | None = None,
+    search_query: str | None = None,
 ):
     statement = select(func.count(ListeningEvent.id)).where(ListeningEvent.user_id == user_id).where(not_blocked_clause(user_id))
     if start is not None:
@@ -261,6 +274,15 @@ def build_library_count_query(
     entity_filter = _entity_filter(filter_entity, filter_name, filter_secondary)
     if entity_filter is not None:
         statement = statement.where(entity_filter)
+    if search_query:
+        search_term = f"%{search_query}%"
+        statement = statement.where(
+            or_(
+                ListeningEvent.track_name.ilike(search_term),
+                ListeningEvent.artist_name.ilike(search_term),
+                ListeningEvent.album_name.ilike(search_term)
+            )
+        )
     return statement
 
 
@@ -271,6 +293,7 @@ def build_library_entities_query(
     offset: int,
     start: datetime | None = None,
     end: datetime | None = None,
+    search_query: str | None = None,
 ):
     if entity == "artists":
         group_columns = [ListeningEvent.artist_name]
@@ -292,6 +315,25 @@ def build_library_entities_query(
         if end is not None:
             statement = statement.where(ListeningEvent.played_at < end)
 
+    if search_query:
+        search_term = f"%{search_query}%"
+        if entity == "artists":
+            statement = statement.where(ListeningEvent.artist_name.ilike(search_term))
+        elif entity == "albums":
+            statement = statement.where(
+                or_(
+                    ListeningEvent.album_name.ilike(search_term),
+                    ListeningEvent.artist_name.ilike(search_term)
+                )
+            )
+        elif entity == "tracks":
+            statement = statement.where(
+                or_(
+                    ListeningEvent.track_name.ilike(search_term),
+                    ListeningEvent.artist_name.ilike(search_term)
+                )
+            )
+
     return (
         statement.group_by(*group_columns)
         .order_by(func.count(ListeningEvent.id).desc())
@@ -305,6 +347,7 @@ def build_library_entity_count_query(
     entity: str,
     start: datetime | None = None,
     end: datetime | None = None,
+    search_query: str | None = None,
 ):
     if entity == "artists":
         value = ListeningEvent.artist_name
@@ -322,6 +365,26 @@ def build_library_entity_count_query(
         statement = statement.where(ListeningEvent.played_at >= start)
         if end is not None:
             statement = statement.where(ListeningEvent.played_at < end)
+
+    if search_query:
+        search_term = f"%{search_query}%"
+        if entity == "artists":
+            statement = statement.where(ListeningEvent.artist_name.ilike(search_term))
+        elif entity == "albums":
+            statement = statement.where(
+                or_(
+                    ListeningEvent.album_name.ilike(search_term),
+                    ListeningEvent.artist_name.ilike(search_term)
+                )
+            )
+        elif entity == "tracks":
+            statement = statement.where(
+                or_(
+                    ListeningEvent.track_name.ilike(search_term),
+                    ListeningEvent.artist_name.ilike(search_term)
+                )
+            )
+
     return statement
 
 

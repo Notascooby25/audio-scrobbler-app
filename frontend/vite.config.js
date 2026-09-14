@@ -22,6 +22,7 @@ export default defineConfig({
       '/users': { target: backendUrl, changeOrigin: true },
       '/preferences': { target: backendUrl, changeOrigin: true },
       '/blocks': { target: backendUrl, changeOrigin: true },
+      '/artwork': { target: backendUrl, changeOrigin: true },
       '/health': { target: backendUrl, changeOrigin: true },
       '/readyz': { target: backendUrl, changeOrigin: true },
     },

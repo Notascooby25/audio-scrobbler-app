@@ -20,6 +20,8 @@ from ..schemas.imports import (
     UnifiedImportResponse,
     WorkerImportScrobbleRequest,
     WorkerUnifiedImportRequest,
+    ImportBatchesResponse,
+    AdvancedDeleteRequest,
 )
 from ..services.processed_import_service import process_unified_import, process_unified_import_stream
 
@@ -198,3 +200,67 @@ def delete_imported_scrobbles(
     ).delete(synchronize_session=False)
     db.commit()
     return DeleteImportResponse(source=normalized_source, deleted=int(deleted))
+
+from sqlalchemy import func
+from datetime import datetime
+
+@router.get("/import/batches", response_model=ImportBatchesResponse)
+def list_import_batches(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    batch_time_expr = func.date_trunc('hour', ListeningEvent.created_at)
+    query = (
+        db.query(
+            batch_time_expr.label("batch_time"),
+            ListeningEvent.source,
+            func.count(ListeningEvent.id).label("count"),
+            func.min(ListeningEvent.played_at).label("min_played_at"),
+            func.max(ListeningEvent.played_at).label("max_played_at"),
+        )
+        .filter(ListeningEvent.user_id == current_user.id)
+        .group_by(batch_time_expr, ListeningEvent.source)
+        .order_by(batch_time_expr.desc())
+    )
+    
+    batches = []
+    for row in query.all():
+        batches.append({
+            "batch_time": row.batch_time.isoformat() if hasattr(row.batch_time, 'isoformat') else str(row.batch_time),
+            "source": row.source,
+            "count": row.count,
+            "min_played_at": row.min_played_at.isoformat() if row.min_played_at else None,
+            "max_played_at": row.max_played_at.isoformat() if row.max_played_at else None,
+        })
+    return ImportBatchesResponse(batches=batches)
+
+
+@router.post("/import/advanced-delete")
+def advanced_delete_imports(
+    payload: AdvancedDeleteRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    query = db.query(ListeningEvent).filter(ListeningEvent.user_id == current_user.id)
+    
+    if payload.source:
+        query = query.filter(ListeningEvent.source == payload.source)
+        
+    if payload.start_date:
+        start = datetime.fromisoformat(payload.start_date.replace("Z", "+00:00"))
+        query = query.filter(ListeningEvent.played_at >= start)
+        
+    if payload.end_date:
+        end = datetime.fromisoformat(payload.end_date.replace("Z", "+00:00"))
+        query = query.filter(ListeningEvent.played_at <= end)
+        
+    if payload.batch_time:
+        batch_start = datetime.fromisoformat(payload.batch_time.replace("Z", "+00:00"))
+        # Add 1 hour to get the batch range since we truncate by hour
+        from datetime import timedelta
+        batch_end = batch_start + timedelta(hours=1)
+        query = query.filter(ListeningEvent.created_at >= batch_start, ListeningEvent.created_at < batch_end)
+
+    deleted = query.delete(synchronize_session=False)
+    db.commit()
+    return {"deleted": deleted}

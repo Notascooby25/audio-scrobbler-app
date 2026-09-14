@@ -43,7 +43,7 @@ def test_stats_routes_use_expected_paths(monkeypatch):
 
 
 def test_library_scrobbles_route_uses_expected_path(monkeypatch):
-    monkeypatch.setattr(analytics_module, "get_library_scrobbles", lambda db, user_id, limit, offset: LibraryScrobbleResponse(
+    monkeypatch.setattr(analytics_module, "get_library_scrobbles", lambda db, user_id, limit, offset, **kwargs: LibraryScrobbleResponse(
         user_id=user_id, scrobbles=[], limit=limit, offset=offset, total_count=0
     ))
 
@@ -55,7 +55,7 @@ def test_library_scrobbles_route_uses_expected_path(monkeypatch):
 
 
 def test_library_entity_route_uses_expected_path(monkeypatch):
-    monkeypatch.setattr(analytics_module, "get_library_entities", lambda db, user_id, entity, limit, offset: LibraryResponse(
+    monkeypatch.setattr(analytics_module, "get_library_entities", lambda db, user_id, entity, limit, offset, **kwargs: LibraryResponse(
         user_id=user_id, entries=[], limit=limit, offset=offset, total_count=0
     ))
 

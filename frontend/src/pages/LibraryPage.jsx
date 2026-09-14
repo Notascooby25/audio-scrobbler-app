@@ -46,6 +46,8 @@ export default function LibraryPage() {
     name: searchParams.get('filter_name') || null,
     secondary: searchParams.get('filter_secondary') || null,
   }))
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeSearchQuery, setActiveSearchQuery] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
   const isDateFilterable = tab !== 'liked'
   const filterKeyRef = useRef(null)
@@ -78,7 +80,7 @@ export default function LibraryPage() {
     if (!preferencesReady) return
     if (isDateFilterable && !isValidDateRange(dateRange)) return
 
-    const filterKey = `${tab}|${JSON.stringify(dateRange)}|${pageSize}`
+    const filterKey = `${tab}|${JSON.stringify(dateRange)}|${pageSize}|${activeSearchQuery}`
     if (filterKeyRef.current !== null && filterKeyRef.current !== filterKey && page !== 1) {
       filterKeyRef.current = filterKey
       setPage(1)
@@ -91,10 +93,10 @@ export default function LibraryPage() {
     const offset = (page - 1) * pageSize
     const rangeArg = isDateFilterable ? dateRange : undefined
     const request = tab === 'scrobbles'
-      ? fetchLibraryScrobbles({ token: session.accessToken, limit: pageSize, offset, dateRange: rangeArg, filterEntity: scrobbleFilter.entity, filterName: scrobbleFilter.name, filterSecondary: scrobbleFilter.secondary })
+      ? fetchLibraryScrobbles({ token: session.accessToken, limit: pageSize, offset, dateRange: rangeArg, filterEntity: scrobbleFilter.entity, filterName: scrobbleFilter.name, filterSecondary: scrobbleFilter.secondary, search: activeSearchQuery || undefined })
       : tab === 'liked'
-        ? fetchLikedTracks({ token: session.accessToken, limit: pageSize, offset })
-      : fetchLibraryCollection({ token: session.accessToken, entity: tab, limit: pageSize, offset, dateRange: rangeArg })
+        ? fetchLikedTracks({ token: session.accessToken, limit: pageSize, offset, search: activeSearchQuery || undefined })
+      : fetchLibraryCollection({ token: session.accessToken, entity: tab, limit: pageSize, offset, dateRange: rangeArg, search: activeSearchQuery || undefined })
     Promise.all([request, fetchLibraryTimeline({ token: session.accessToken })])
       .then(([result, chart]) => {
         setData(result)
@@ -107,7 +109,7 @@ export default function LibraryPage() {
         setError(requestError.message)
         setStatus('error')
       })
-  }, [tab, dateRange, pageSize, page, preferencesReady, refreshKey, scrobbleFilter])
+  }, [tab, dateRange, pageSize, page, preferencesReady, refreshKey, scrobbleFilter, activeSearchQuery])
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
   const rankedEntries = data && loadedTab === tab && tab !== 'scrobbles'
@@ -233,6 +235,15 @@ export default function LibraryPage() {
           </div>
           {isDateFilterable && <DateRangeSelector value={dateRange} onChange={setDateRange} />}
           <div className="library-toolbar">
+            <form onSubmit={(e) => { e.preventDefault(); setActiveSearchQuery(searchQuery); }} className="library-search-form">
+              <input
+                type="search"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onBlur={() => setActiveSearchQuery(searchQuery)}
+              />
+            </form>
             <LibraryViewToggle view={activeView} onChange={changeView} />
           </div>
           {selectedCount > 0 && (

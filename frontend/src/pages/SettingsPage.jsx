@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AnalyticsPage from '../components/AnalyticsPage'
-import { deleteImportedScrobbles, fetchBlocks, fetchUserSettings, removeBlock, updateUserSettings, startArtworkBackfill } from '../api'
+import { deleteImportedScrobbles, fetchBlocks, fetchUserSettings, removeBlock, updateUserSettings, startArtworkBackfill, fetchImportBatches, advancedDeleteImports } from '../api'
 import { readSession } from '../session'
 import ImportProgressBar from '../components/ImportProgressBar'
 
@@ -20,7 +20,14 @@ export default function SettingsPage() {
   const [status, setStatus] = useState('idle')
   const [blocks, setBlocks] = useState([])
   const [blocksError, setBlocksError] = useState('')
-  const [youtubeDeleteState, setYoutubeDeleteState] = useState('idle')
+  const [deleteMode, setDeleteMode] = useState('source')
+  const [deleteSource, setDeleteSource] = useState('youtube')
+  const [deleteStartDate, setDeleteStartDate] = useState('')
+  const [deleteEndDate, setDeleteEndDate] = useState('')
+  const [deleteBatch, setDeleteBatch] = useState('')
+  const [importBatches, setImportBatches] = useState([])
+  const [advancedDeleteState, setAdvancedDeleteState] = useState('idle')
+  const [advancedDeleteError, setAdvancedDeleteError] = useState('')
   const [backfillState, setBackfillState] = useState('idle')
   const [backfillProgress, setBackfillProgress] = useState(null)
   const saveTimer = useRef(null)
@@ -66,13 +73,60 @@ export default function SettingsPage() {
     }
   }
 
-  const deleteYouTubeHistory = async () => {
-    setYoutubeDeleteState('deleting')
+  useEffect(() => {
+    if (!session?.accessToken) return
+    fetchImportBatches({ token: session.accessToken })
+      .then(res => setImportBatches(res.batches || []))
+      .catch(err => console.error("Could not fetch batches", err))
+  }, [session?.accessToken])
+
+  const executeAdvancedDelete = async () => {
+    setAdvancedDeleteState('deleting')
+    setAdvancedDeleteError('')
+    
+    let source = null, startDate = null, endDate = null, batchTime = null
+    
+    if (deleteMode === 'source') {
+      source = deleteSource
+    } else if (deleteMode === 'date') {
+      startDate = deleteStartDate ? new Date(deleteStartDate).toISOString() : null
+      endDate = deleteEndDate ? new Date(deleteEndDate).toISOString() : null
+      if (!startDate && !endDate) {
+        setAdvancedDeleteError('Please specify at least one date.')
+        setAdvancedDeleteState('idle')
+        return
+      }
+    } else if (deleteMode === 'batch') {
+      batchTime = deleteBatch
+      if (!batchTime) {
+        setAdvancedDeleteError('Please select a batch.')
+        setAdvancedDeleteState('idle')
+        return
+      }
+    }
+
+    if (!window.confirm('Are you sure you want to delete these scrobbles? This cannot be undone.')) {
+      setAdvancedDeleteState('idle')
+      return
+    }
+
     try {
-      const result = await deleteImportedScrobbles({ token: session.accessToken, source: 'youtube' })
-      setYoutubeDeleteState(`deleted:${result.deleted}`)
-    } catch {
-      setYoutubeDeleteState('error')
+      const result = await advancedDeleteImports({
+        token: session.accessToken,
+        source,
+        startDate,
+        endDate,
+        batchTime
+      })
+      setAdvancedDeleteState(`deleted:${result.deleted}`)
+      
+      // Refresh batches
+      fetchImportBatches({ token: session.accessToken })
+        .then(res => setImportBatches(res.batches || []))
+        .catch(err => console.error(err))
+    } catch (err) {
+      setAdvancedDeleteError(err.message || 'Failed to delete scrobbles.')
+      setAdvancedDeleteState('error')
     }
   }
 
@@ -227,15 +281,68 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Delete YouTube History</h3>
-          <p className="notice notice-warning" style={{ marginBottom: '1rem' }}>Deleting YouTube history removes every YouTube scrobble in this account. This cannot be undone and does not affect Spotify history.</p>
-          {youtubeDeleteState === 'deleted:0' && <p role="status" style={{ marginBottom: '1rem' }}>No YouTube history was found.</p>}
-          {youtubeDeleteState.startsWith('deleted:') && youtubeDeleteState !== 'deleted:0' && <p role="status" style={{ marginBottom: '1rem' }}>YouTube history deleted.</p>}
-          {youtubeDeleteState === 'error' && <p className="notice notice-error" role="alert" style={{ marginBottom: '1rem' }}>YouTube history could not be deleted.</p>}
-          <button type="button" className="danger-button" disabled={youtubeDeleteState === 'deleting'} onClick={() => {
-            if (window.confirm('Delete all YouTube scrobbles from this account? This cannot be undone.')) deleteYouTubeHistory()
-          }}>
-            {youtubeDeleteState === 'deleting' ? 'Deleting...' : 'Delete all YouTube history'}
+          <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Delete Scrobbles</h3>
+          <p className="notice notice-warning" style={{ marginBottom: '1rem' }}>Deleting scrobbles removes them permanently from your library. This cannot be undone.</p>
+          
+          <div style={{ marginBottom: '1rem' }}>
+            <label>
+              <input type="radio" name="deleteMode" value="source" checked={deleteMode === 'source'} onChange={() => setDeleteMode('source')} />
+              By Source
+            </label>
+            <label style={{ marginLeft: '1rem' }}>
+              <input type="radio" name="deleteMode" value="date" checked={deleteMode === 'date'} onChange={() => setDeleteMode('date')} />
+              By Date Range
+            </label>
+            <label style={{ marginLeft: '1rem' }}>
+              <input type="radio" name="deleteMode" value="batch" checked={deleteMode === 'batch'} onChange={() => setDeleteMode('batch')} />
+              By Import Batch
+            </label>
+          </div>
+
+          <div style={{ marginBottom: '1rem' }}>
+            {deleteMode === 'source' && (
+              <label>
+                Select Source:
+                <select value={deleteSource} onChange={e => setDeleteSource(e.target.value)} style={{ marginLeft: '0.5rem' }}>
+                  <option value="youtube">YouTube</option>
+                  <option value="spotify">Spotify</option>
+                </select>
+              </label>
+            )}
+
+            {deleteMode === 'date' && (
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <label>
+                  Start Date:
+                  <input type="date" value={deleteStartDate} onChange={e => setDeleteStartDate(e.target.value)} style={{ marginLeft: '0.5rem' }} />
+                </label>
+                <label>
+                  End Date:
+                  <input type="date" value={deleteEndDate} onChange={e => setDeleteEndDate(e.target.value)} style={{ marginLeft: '0.5rem' }} />
+                </label>
+              </div>
+            )}
+
+            {deleteMode === 'batch' && (
+              <label>
+                Select Batch:
+                <select value={deleteBatch} onChange={e => setDeleteBatch(e.target.value)} style={{ marginLeft: '0.5rem', width: '100%' }}>
+                  <option value="">-- Select a batch --</option>
+                  {importBatches.map(b => (
+                    <option key={b.batch_time + b.source} value={b.batch_time}>
+                      {b.source} - {b.count} scrobbles ({new Date(b.batch_time).toLocaleString()})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </div>
+
+          {advancedDeleteError && <p className="notice notice-error" role="alert" style={{ marginBottom: '1rem' }}>{advancedDeleteError}</p>}
+          {advancedDeleteState.startsWith('deleted:') && <p role="status" style={{ marginBottom: '1rem', color: 'var(--color-primary)' }}>Deleted {advancedDeleteState.split(':')[1]} scrobbles successfully.</p>}
+
+          <button type="button" className="danger-button" disabled={advancedDeleteState === 'deleting'} onClick={executeAdvancedDelete}>
+            {advancedDeleteState === 'deleting' ? 'Deleting...' : 'Delete Scrobbles'}
           </button>
         </section>
       )}

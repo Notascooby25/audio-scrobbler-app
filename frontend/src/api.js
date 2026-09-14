@@ -307,12 +307,12 @@ export function fetchStatsChart({ token, entity, limit, dateRange }) {
   return fetchAnalyticsResource(`/stats/top-${entity}`, { token, params })
 }
 
-export function fetchLibraryCollection({ token, entity, limit, offset, dateRange }) {
-  const params = { limit, offset, ...(dateRange ? toQueryParams(dateRange) : {}) }
+export function fetchLibraryCollection({ token, entity, limit, offset, dateRange, search }) {
+  const params = { limit, offset, search, ...(dateRange ? toQueryParams(dateRange) : {}) }
   return fetchAnalyticsResource(`/library/${entity}`, { token, params })
 }
 
-export function fetchLibraryScrobbles({ token, limit, offset, dateRange, filterEntity, filterName, filterSecondary }) {
+export function fetchLibraryScrobbles({ token, limit, offset, dateRange, filterEntity, filterName, filterSecondary, search }) {
   return fetchAnalyticsResource('/library/scrobbles', {
     token,
     params: {
@@ -321,6 +321,7 @@ export function fetchLibraryScrobbles({ token, limit, offset, dateRange, filterE
       filter_entity: filterEntity,
       filter_name: filterName,
       filter_secondary: filterSecondary,
+      search,
       ...(dateRange ? toQueryParams(dateRange) : {}),
     },
   })
@@ -361,8 +362,8 @@ export function backfillArtwork({ token }) {
   return fetchAnalyticsResource('/spotify/backfill-artwork', { token })
 }
 
-export function fetchLikedTracks({ token, limit, offset }) {
-  return fetchAnalyticsResource('/spotify/liked-tracks', { token, params: { limit, offset } })
+export function fetchLikedTracks({ token, limit, offset, search }) {
+  return fetchAnalyticsResource('/spotify/liked-tracks', { token, params: { limit, offset, search } })
 }
 
 export function fetchUserSettings({ token }) {
@@ -395,4 +396,20 @@ export function deleteLibraryEntries({ token, entityType, name, secondary }) {
 
 export function deleteLibraryScrobbles({ token, ids }) {
   return fetchAnalyticsResource('/library/delete-scrobbles', { token, method: 'POST', body: { ids } })
+}
+export function fetchImportBatches({ token }) {
+  return fetchAnalyticsResource('/import/batches', { token })
+}
+
+export function advancedDeleteImports({ token, source, startDate, endDate, batchTime }) {
+  return fetchAnalyticsResource('/import/advanced-delete', {
+    token,
+    method: 'POST',
+    body: {
+      source: source || null,
+      start_date: startDate || null,
+      end_date: endDate || null,
+      batch_time: batchTime || null,
+    }
+  })
 }

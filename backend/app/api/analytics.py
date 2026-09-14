@@ -164,6 +164,7 @@ def library_scrobbles(
     filter_entity: str | None = Query(default=None, description="Optional filter: artist, album, or track."),
     filter_name: str | None = Query(default=None),
     filter_secondary: str | None = Query(default=None, description="Artist name for album or track filters."),
+    search: str | None = Query(default=None, description="Search query for track, artist, or album name."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> LibraryScrobbleResponse:
@@ -174,8 +175,8 @@ def library_scrobbles(
     period_start, period_end = _resolve_optional_range(range, start_date, end_date)
     kwargs = {"start": period_start, "end": period_end} if period_start is not None else {}
     if filter_entity is None:
-        return get_library_scrobbles(db, current_user.id, limit, offset, **kwargs)
-    return get_library_scrobbles(db, current_user.id, limit, offset, filter_entity=filter_entity, filter_name=filter_name, filter_secondary=filter_secondary, **kwargs)
+        return get_library_scrobbles(db, current_user.id, limit, offset, search_query=search, **kwargs)
+    return get_library_scrobbles(db, current_user.id, limit, offset, filter_entity=filter_entity, filter_name=filter_name, filter_secondary=filter_secondary, search_query=search, **kwargs)
 
 
 @library_router.get("/{entity}", response_model=LibraryResponse | TimelineResponse)
@@ -186,6 +187,7 @@ def library_entities(
     range: str | None = Query(default=None, description="Optional: last.week, last.month, last.year, custom"),
     start_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
     end_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
+    search: str | None = Query(default=None, description="Search query for name."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> LibraryResponse | TimelineResponse:
@@ -195,7 +197,7 @@ def library_entities(
         raise HTTPException(status_code=404, detail="Library collection not found")
     period_start, period_end = _resolve_optional_range(range, start_date, end_date)
     kwargs = {"start": period_start, "end": period_end} if period_start is not None else {}
-    return get_library_entities(db, current_user.id, entity, limit, offset, **kwargs)
+    return get_library_entities(db, current_user.id, entity, limit, offset, search_query=search, **kwargs)
 
 
 @reports_router.get("/summary", response_model=ReportSummaryResponse)
