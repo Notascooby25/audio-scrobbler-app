@@ -1,3 +1,0 @@
-# HELP audio_scrobbler_backup_last_verified_timestamp_seconds Last successful backup verification time.
-# TYPE audio_scrobbler_backup_last_verified_timestamp_seconds gauge
-audio_scrobbler_backup_last_verified_timestamp_seconds 1789318840

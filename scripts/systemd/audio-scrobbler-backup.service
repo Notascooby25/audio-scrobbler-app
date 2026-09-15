@@ -1,0 +1,10 @@
+[Unit]
+Description=Audio Scrobbler App: database backup and restore verification
+
+[Service]
+Type=oneshot
+WorkingDirectory=__DEPLOY_PATH__
+EnvironmentFile=-__DEPLOY_PATH__/scripts/systemd/audio-scrobbler-backup.env
+Environment=ENV_FILE=.env.production
+Environment=COMPOSE_FILE=docker-compose.prod.yml
+ExecStart=__DEPLOY_PATH__/scripts/backup_and_verify.sh

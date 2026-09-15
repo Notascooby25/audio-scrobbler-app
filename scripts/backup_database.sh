@@ -2,6 +2,7 @@
 set -euo pipefail
 
 backup_dir=${BACKUP_DIR:-backups}
+metrics_dir=${BACKUP_METRICS_DIR:-monitoring}
 retention_days=${BACKUP_RETENTION_DAYS:-3}
 gdrive_retention_days=${GDRIVE_RETENTION_DAYS:-14}
 gdrive_remote=${GDRIVE_REMOTE_NAME:-gdrive}
@@ -47,7 +48,12 @@ find "$backup_dir" -type f -name 'scrobbler-*.dump' -mtime "+$retention_days" -d
 
 if command -v rclone &> /dev/null; then
   echo "Uploading backup to Google Drive..." >&2
-  rclone copy "$backup_file" "${gdrive_remote}:AudioScrobblerBackups/"
+  if rclone copy "$backup_file" "${gdrive_remote}:AudioScrobblerBackups/"; then
+    mkdir -p "$metrics_dir"
+    printf '# HELP audio_scrobbler_backup_last_offsite_timestamp_seconds Last successful offsite (Google Drive) backup upload time.\n# TYPE audio_scrobbler_backup_last_offsite_timestamp_seconds gauge\naudio_scrobbler_backup_last_offsite_timestamp_seconds %s\n' "$(date +%s)" > "$metrics_dir/backup_offsite.prom"
+  else
+    echo "Warning: offsite upload to Google Drive failed; local backup was still created." >&2
+  fi
 
   echo "Cleaning up backups older than $gdrive_retention_days days on Google Drive..." >&2
   rclone delete "${gdrive_remote}:AudioScrobblerBackups/" --min-age "${gdrive_retention_days}d" || true

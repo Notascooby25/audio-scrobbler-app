@@ -1,3 +1,12 @@
+# NOTE: break-glass only. This workflow has never completed a run — the
+# `production` GitHub environment has no secrets configured, and even with
+# secrets set, GitHub-hosted runners cannot reach the deployment host's LAN
+# address without an additional Tailscale (or similar) step, which does not
+# exist here. The live delivery path is Watchtower polling GHCR's `:latest`
+# tag directly from the host (see the `watchtower` service in
+# docker-compose.prod.yml) — no GitHub-initiated deploy is required for a
+# normal release. Keep this workflow only for a deliberate pinned
+# rollback/rollforward once host reachability is solved.
 name: Deploy production
 
 on:
