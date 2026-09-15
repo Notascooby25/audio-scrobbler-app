@@ -19,7 +19,7 @@ services:
       - com.centurylinklabs.watchtower.enable=true
       - com.centurylinklabs.watchtower.scope=audio-scrobbler-app
     ports:
-      - "8000:8000"
+      - "${BACKEND_HOST_PORT:-8000}:8000"
     environment:
       APP_ENV: production
       APP_VERSION: ${IMAGE_TAG}
@@ -84,6 +84,7 @@ services:
     environment:
       BACKEND_PROXY_URL: http://backend:8000
       VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+      VITE_ALLOWED_HOSTS: ${VITE_ALLOWED_HOSTS:-}
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:5173', response => process.exit(response.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
       interval: 10s
