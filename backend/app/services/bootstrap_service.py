@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from ..config import settings
@@ -26,4 +27,14 @@ def bootstrap_development_user(db: Session) -> User | None:
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # Inserting an explicit id bypasses the id sequence, leaving it behind
+    # MAX(id) so the next auto-generated insert collides with this row.
+    db.execute(
+        text(
+            "SELECT setval(pg_get_serial_sequence('users', 'id'), "
+            "(SELECT COALESCE(MAX(id), 1) FROM users))"
+        )
+    )
+    db.commit()
     return user

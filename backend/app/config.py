@@ -25,7 +25,7 @@ class Settings:
     dev_user_display_name: str = os.getenv("DEV_USER_DISPLAY_NAME", "Development User")
     spotify_client_id: str = os.getenv("SPOTIFY_CLIENT_ID", "")
     spotify_client_secret: str = os.getenv("SPOTIFY_CLIENT_SECRET", "")
-    spotify_redirect_uri: str = os.getenv("SPOTIFY_REDIRECT_URI", "http://localhost:8000/auth/spotify/callback")
+    spotify_redirect_uri: str = os.getenv("SPOTIFY_REDIRECT_URI", "http://127.0.0.1:8000/auth/spotify/callback")
     spotify_scopes: str = os.getenv("SPOTIFY_SCOPES", "user-read-recently-played user-library-read user-library-modify")
     frontend_auth_callback_url: str = os.getenv("FRONTEND_AUTH_CALLBACK_URL", "")
     enable_deezer_artwork_lookup: bool = os.getenv("ENABLE_DEEZER_LOOKUP", "true").lower() == "true"
