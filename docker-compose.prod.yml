@@ -159,6 +159,11 @@ services:
       WATCHTOWER_CLEANUP: "true"
       WATCHTOWER_LABEL_ENABLE: "true"
       WATCHTOWER_ROLLING_RESTART: "true"
+      # Without this, watchtower's bundled Docker client negotiates down to
+      # a very old API version that modern Docker daemons reject outright
+      # ("client version 1.25 is too old"). Matches the working pin used by
+      # this NUC's other watchtower-based deployments.
+      DOCKER_API_VERSION: ${WATCHTOWER_DOCKER_API_VERSION:-1.41}
 
 volumes:
   postgres_data:
