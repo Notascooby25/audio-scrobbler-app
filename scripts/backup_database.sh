@@ -46,14 +46,14 @@ docker compose "${compose_args[@]}" exec -T db \
 find "$backup_dir" -type f -name 'scrobbler-*.dump' -mtime "+$retention_days" -delete
 
 if command -v rclone &> /dev/null; then
-  echo "Uploading backup to Google Drive..."
+  echo "Uploading backup to Google Drive..." >&2
   rclone copy "$backup_file" "${gdrive_remote}:AudioScrobblerBackups/"
-  
-  echo "Cleaning up backups older than $gdrive_retention_days days on Google Drive..."
+
+  echo "Cleaning up backups older than $gdrive_retention_days days on Google Drive..." >&2
   rclone delete "${gdrive_remote}:AudioScrobblerBackups/" --min-age "${gdrive_retention_days}d" || true
 else
-  echo "Note: 'rclone' is not installed or in PATH."
-  echo "To enable Google Drive backups, install rclone and configure a remote named '${gdrive_remote}'."
+  echo "Note: 'rclone' is not installed or in PATH." >&2
+  echo "To enable Google Drive backups, install rclone and configure a remote named '${gdrive_remote}'." >&2
 fi
 
 printf '%s\n' "$backup_file"
