@@ -6,11 +6,19 @@ import react from '@vitejs/plugin-react'
 // Set BACKEND_PROXY_URL in the environment to override.
 const backendUrl = process.env.BACKEND_PROXY_URL || 'http://localhost:8000'
 
+// Vite rejects requests whose Host header isn't recognized (DNS-rebinding
+// protection). Set VITE_ALLOWED_HOSTS (comma-separated) to allow a
+// reverse-proxied or tunneled hostname, e.g. a Tailscale Funnel domain.
+const allowedHosts = process.env.VITE_ALLOWED_HOSTS
+  ? process.env.VITE_ALLOWED_HOSTS.split(',').map((host) => host.trim())
+  : undefined
+
 export default defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',
     port: 5173,
+    allowedHosts,
     proxy: {
       '/import': { target: backendUrl, changeOrigin: true },
       '/auth': { target: backendUrl, changeOrigin: true },
