@@ -187,7 +187,10 @@ jobs:
           VITE_API_BASE_URL: https://example.com/api
           ALERTMANAGER_CRITICAL_WEBHOOK_URL: http://127.0.0.1:65535/disabled
           ALERTMANAGER_WARNING_WEBHOOK_URL: http://127.0.0.1:65535/disabled
+          DOCKER_CONFIG_DIR: /tmp/ci-docker-config
         run: |
+          mkdir -p /tmp/ci-docker-config
+          echo '{}' > /tmp/ci-docker-config/config.json
           docker build -t ci-audio-scrobbler-backend ./backend
           docker build -t ci-audio-scrobbler-worker ./worker
           docker build -t ci-audio-scrobbler-frontend ./frontend
