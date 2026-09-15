@@ -73,4 +73,69 @@ describe('LibraryRankList', () => {
     expect(screen.getByText('An Extremely Long Album Name That Must Stay Readable On A Phone')).toBeInTheDocument()
     expect(screen.getByText('The Artist With A Long Name')).toBeInTheDocument()
   })
+
+  it('renders full-bleed grid cards without checkboxes or menus in default grid mode', () => {
+    const onToggleSelection = () => {}
+    const onEntryChanged = () => {}
+    const { container } = render(
+      <MemoryRouter><LibraryRankList
+        entries={[
+          { label: 'In Rainbows', secondary: 'Radiohead', play_count: 100, artwork_url: '/in-rainbows.jpg' },
+          { label: 'OK Computer', secondary: 'Radiohead', play_count: 50, artwork_url: '/ok-computer.jpg' },
+        ]}
+        kind="albums"
+        token="test-token"
+        page={1}
+        pageSize={50}
+        totalCount={2}
+        view="grid"
+        selectMode={false}
+        onToggleSelection={onToggleSelection}
+        onEntryChanged={onEntryChanged}
+      /></MemoryRouter>,
+    )
+
+    // Checkbox should NOT be present when selectMode is false
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+
+    // Three-dot menu button should NOT be present in grid mode
+    expect(screen.queryByLabelText(/Actions for/)).not.toBeInTheDocument()
+
+    // Rank, title, artist, count should be present
+    expect(screen.getByText('1.')).toBeInTheDocument()
+    expect(screen.getByText('In Rainbows')).toBeInTheDocument()
+    expect(screen.getByText('2.')).toBeInTheDocument()
+    expect(screen.getByText('OK Computer')).toBeInTheDocument()
+    expect(screen.getByText('100 scrobbles')).toBeInTheDocument()
+    expect(screen.getByText('50 scrobbles')).toBeInTheDocument()
+
+    // Relative proportion bars: max count is 100 -> first is 100%, second is 50%
+    const bars = container.querySelectorAll('[data-testid="grid-card-bar-fill"]')
+    expect(bars).toHaveLength(2)
+    expect(bars[0]).toHaveStyle({ width: '100%' })
+    expect(bars[1]).toHaveStyle({ width: '50%' })
+  })
+
+  it('renders checkbox overlays with scrim when selectMode is enabled in grid mode', () => {
+    const onToggleSelection = () => {}
+    render(
+      <MemoryRouter><LibraryRankList
+        entries={[
+          { label: 'Kid A', secondary: 'Radiohead', play_count: 30, artwork_url: '/kid-a.jpg' },
+        ]}
+        kind="albums"
+        token="test-token"
+        page={1}
+        pageSize={50}
+        totalCount={1}
+        view="grid"
+        selectMode={true}
+        onToggleSelection={onToggleSelection}
+      /></MemoryRouter>,
+    )
+
+    const checkbox = screen.getByRole('checkbox', { name: 'Select Kid A' })
+    expect(checkbox).toBeInTheDocument()
+    expect(checkbox.closest('label')).toHaveClass('grid-select-scrim')
+  })
 })

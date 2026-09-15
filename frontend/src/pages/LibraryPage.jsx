@@ -51,6 +51,7 @@ export default function LibraryPage() {
   const [activeSearchQuery, setActiveSearchQuery] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [selectMode, setSelectMode] = useState(false)
   const isDateFilterable = tab !== 'liked'
   const filterKeyRef = useRef(null)
 
@@ -254,7 +255,12 @@ export default function LibraryPage() {
                   onBlur={() => setActiveSearchQuery(searchQuery)}
                 />
               </form>
-              <LibraryViewToggle view={activeView} onChange={changeView} />
+              <LibraryViewToggle
+                view={activeView}
+                onChange={changeView}
+                selectMode={selectMode}
+                onToggleSelectMode={() => setSelectMode((prev) => !prev)}
+              />
             </div>
           </div>
           {selectedCount > 0 && (
@@ -269,8 +275,8 @@ export default function LibraryPage() {
           )}
           <div className="library-layout">
             {tab === 'scrobbles'
-              ? <LibraryScrobbleList scrobbles={visibleScrobbles} token={session.accessToken} view={activeView} showArtwork={settings?.show_artwork !== false} showSourceBadges={settings?.show_source_badges !== false} timestampMode={settings?.timestamp_mode || 'relative'} filterLabel={scrobbleFilter.name} selectedIds={selectedScrobbleIds} onToggleSelection={toggleScrobbleSelection} />
-              : <LibraryRankList entries={rankedEntries} kind={tab === 'liked' ? 'tracks' : tab} token={session.accessToken} page={page} pageSize={pageSize} totalCount={totalCount} view={activeView} showArtwork={settings?.show_artwork !== false} selectedKeys={selectedEntries} onToggleSelection={tab !== 'liked' ? toggleEntrySelection : undefined} onEntryChanged={tab !== 'liked' ? handleEntryChanged : undefined} />}
+              ? <LibraryScrobbleList scrobbles={visibleScrobbles} token={session.accessToken} view={activeView} showArtwork={settings?.show_artwork !== false} showSourceBadges={settings?.show_source_badges !== false} timestampMode={settings?.timestamp_mode || 'relative'} filterLabel={scrobbleFilter.name} selectedIds={selectedScrobbleIds} onToggleSelection={toggleScrobbleSelection} selectMode={selectMode} />
+              : <LibraryRankList entries={rankedEntries} kind={tab === 'liked' ? 'tracks' : tab} token={session.accessToken} page={page} pageSize={pageSize} totalCount={totalCount} view={activeView} showArtwork={settings?.show_artwork !== false} selectedKeys={selectedEntries} onToggleSelection={tab !== 'liked' ? toggleEntrySelection : undefined} onEntryChanged={tab !== 'liked' ? handleEntryChanged : undefined} selectMode={selectMode} />}
             <TimelineChart entries={timeline} />
           </div>
           <div className="library-pagination-bar">

@@ -12,7 +12,18 @@ function dayLabel(value) {
   return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-export default function LibraryScrobbleList({ scrobbles = [], token, view, showSourceBadges = true, showArtwork = true, timestampMode = 'relative', filterLabel = null, selectedIds = new Set(), onToggleSelection }) {
+export default function LibraryScrobbleList({
+  scrobbles = [],
+  token,
+  view,
+  showSourceBadges = true,
+  showArtwork = true,
+  timestampMode = 'relative',
+  filterLabel = null,
+  selectedIds = new Set(),
+  onToggleSelection,
+  selectMode = false,
+}) {
   const groups = scrobbles.reduce((result, scrobble) => {
     const label = dayLabel(scrobble.played_at)
     result[label] = [...(result[label] || []), scrobble]
@@ -29,7 +40,7 @@ export default function LibraryScrobbleList({ scrobbles = [], token, view, showS
           <ul className="library-scrobble-list">
             {entries.map((scrobble) => (
               <li className="library-scrobble-row" key={scrobble.id}>
-                {onToggleSelection && (
+                {onToggleSelection && (view !== 'grid' || selectMode) && (
                   <label className="bulk-select-control scrobble-grid-select">
                     <input type="checkbox" checked={selectedIds.has(scrobble.id)} onChange={() => onToggleSelection(scrobble.id)} />
                     <span>Select {scrobble.track_name}</span>
