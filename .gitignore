@@ -23,3 +23,11 @@ worker/node_modules/
 *.log
 .DS_Store
 backups/
+
+# Runtime metrics written by scripts/backup_database.sh and
+# scripts/verify_database_backup.sh — host-local state, not source.
+monitoring/backup.prom
+monitoring/backup_offsite.prom
+
+# Host-specific systemd env file (may carry a private heartbeat URL).
+scripts/systemd/audio-scrobbler-backup.env

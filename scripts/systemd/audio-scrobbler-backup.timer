@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Audio Scrobbler App database backup every 6 hours
+
+[Timer]
+OnCalendar=*-*-* 00/6:00:00
+RandomizedDelaySec=5m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

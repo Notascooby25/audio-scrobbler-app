@@ -56,3 +56,19 @@ groups:
           severity: critical
         annotations:
           summary: No database backup has ever been verified on this host
+
+      - alert: AudioScrobblerOffsiteBackupStale
+        expr: time() - audio_scrobbler_backup_last_offsite_timestamp_seconds > 43200
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Offsite (Google Drive) backup upload is stale
+
+      - alert: AudioScrobblerOffsiteBackupNeverRan
+        expr: absent(audio_scrobbler_backup_last_offsite_timestamp_seconds)
+        for: 7h
+        labels:
+          severity: warning
+        annotations:
+          summary: No offsite backup upload has ever succeeded on this host

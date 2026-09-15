@@ -22,7 +22,13 @@ services:
       - "${BACKEND_HOST_PORT:-8000}:8000"
     environment:
       APP_ENV: production
-      APP_VERSION: ${IMAGE_TAG}
+      # Cosmetic only — set to a commit SHA in .env.production if you want
+      # /readyz to report something other than "latest". Deliberately not
+      # tied to IMAGE_TAG: with watchtower as the delivery path, IMAGE_TAG is
+      # pinned to the literal string "latest", which is meaningless as a
+      # reported version. The authoritative record of what's actually
+      # running is `docker inspect` against the image digest, not this value.
+      APP_VERSION: ${APP_VERSION:-latest}
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       JWT_SECRET: ${JWT_SECRET}
       REFRESH_TOKEN_KEY: ${REFRESH_TOKEN_KEY}
@@ -149,9 +155,13 @@ services:
       timeout: 5s
       retries: 10
 
-  # Polls GHCR for new :latest images and auto-updates backend/worker/frontend
-  # (only containers labeled com.centurylinklabs.watchtower.enable=true — db
-  # and the monitoring stack are deliberately excluded). Needs the host
+  # The sole delivery path from GitHub to this host: polls GHCR for new
+  # :latest images and auto-updates backend/worker/frontend (only containers
+  # labeled com.centurylinklabs.watchtower.enable=true — db and the
+  # monitoring stack are deliberately excluded). IMAGE_TAG must stay
+  # "latest" for this to do anything — pinning it to an immutable sha-<...>
+  # tag makes watchtower a permanent no-op, since it only re-resolves the
+  # tag a container was originally started with. Needs the host
   # already logged in via `docker login ghcr.io` so DOCKER_CONFIG_DIR/
   # config.json carries GHCR credentials through for pulling private images.
   #

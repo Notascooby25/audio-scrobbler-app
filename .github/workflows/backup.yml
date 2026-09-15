@@ -1,8 +1,17 @@
+# NOTE: this workflow has never completed a run — the `production` GitHub
+# environment has no secrets configured, and even with secrets set,
+# GitHub-hosted runners cannot reach the deployment host's LAN address
+# without an additional Tailscale (or similar) step, which does not exist
+# here. Scheduled database backup + restore verification now runs directly
+# on the deployment host via a systemd timer — see scripts/systemd/. The
+# scheduled trigger below is disabled so this doesn't show up as a
+# permanently-failing daily run; workflow_dispatch is kept for a future
+# Tailscale-enabled version of this workflow.
 name: Verify production backup
 
 on:
-  schedule:
-    - cron: '17 2 * * *'
+  # schedule:
+  #   - cron: '17 2 * * *'
   workflow_dispatch:
 
 jobs:
