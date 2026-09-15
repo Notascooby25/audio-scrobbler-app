@@ -22,10 +22,11 @@
   --radius-sm: 8px;
   --radius-md: 12px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: var(--color-ink);
+  color: #111111;
   background: var(--color-canvas);
   line-height: 1.5;
   font-weight: 400;
+  font-size: 14px;
 }
 
 * {
@@ -36,8 +37,13 @@ body {
   margin: 0;
   min-height: 100vh;
   background: var(--color-canvas);
-  color: var(--color-ink);
+  color: #111111;
   font-family: inherit;
+  font-size: 14px;
+}
+
+p {
+  color: #111111;
 }
 
 #root {
@@ -141,6 +147,10 @@ body {
   margin: 0 0 0.5rem;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  color: #111111;
+}
+
 h1 {
   max-width: 650px;
   font-size: clamp(2rem, 5vw, 3.5rem);
@@ -148,7 +158,7 @@ h1 {
   font-weight: 600;
   letter-spacing: -0.02em;
   margin: 0;
-  color: var(--color-ink);
+  color: #111111;
 }
 
 h2 {
@@ -156,7 +166,14 @@ h2 {
   font-weight: 600;
   letter-spacing: -0.02em;
   margin: 0;
-  color: var(--color-ink);
+  color: #111111;
+}
+
+h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  color: #111111;
 }
 
 .status-mark {
@@ -498,22 +515,23 @@ h2 {
 }
 
 label {
-  color: var(--color-muted);
+  color: #111111;
   display: flex;
   flex-direction: column;
-  font-size: 0.75rem;
-  font-weight: 600;
-  gap: 0.4rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 4px;
+  letter-spacing: normal;
 }
 
-input {
+input,
+select,
+textarea {
   background: var(--color-surface);
   border: 0.5px solid var(--color-border);
   border-radius: var(--radius-sm);
-  color: var(--color-ink);
-  font: 0.95rem inherit, system-ui, sans-serif;
+  color: #111111;
+  font: 14px inherit, system-ui, sans-serif;
   min-height: 2.5rem;
   padding: 0.5rem 0.75rem;
 }
