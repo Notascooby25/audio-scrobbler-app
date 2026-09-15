@@ -138,4 +138,62 @@ describe('LibraryRankList', () => {
     expect(checkbox).toBeInTheDocument()
     expect(checkbox.closest('label')).toHaveClass('grid-select-scrim')
   })
+
+  it('renders source attribution badges in grid mode including split badge for multi-source', () => {
+    render(
+      <MemoryRouter><LibraryRankList
+        entries={[
+          { label: 'In Rainbows', secondary: 'Radiohead', play_count: 100, artwork_url: '/in-rainbows.jpg', sources: ['spotify', 'youtube'] },
+          { label: 'OK Computer', secondary: 'Radiohead', play_count: 50, artwork_url: '/ok-computer.jpg', sources: ['spotify'] },
+        ]}
+        kind="albums"
+        token="test-token"
+        page={1}
+        pageSize={50}
+        totalCount={2}
+        view="grid"
+      /></MemoryRouter>,
+    )
+
+    expect(screen.getByRole('img', { name: 'Scrobbled via Spotify and YouTube' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Scrobbled via Spotify' })).toBeInTheDocument()
+  })
+
+  it('renders source attribution badges in list mode', () => {
+    render(
+      <MemoryRouter><LibraryRankList
+        entries={[
+          { label: 'Videotape', secondary: 'Radiohead', play_count: 80, artwork_url: '/videotape.jpg', sources: ['youtube'] },
+        ]}
+        kind="tracks"
+        token="test-token"
+        page={1}
+        pageSize={50}
+        totalCount={1}
+        view="list"
+      /></MemoryRouter>,
+    )
+
+    expect(screen.getByRole('img', { name: 'Scrobbled via YouTube Music' })).toBeInTheDocument()
+  })
+
+  it('respects showSourceBadges=false', () => {
+    render(
+      <MemoryRouter><LibraryRankList
+        entries={[
+          { label: 'Videotape', secondary: 'Radiohead', play_count: 80, artwork_url: '/videotape.jpg', sources: ['youtube'] },
+        ]}
+        kind="tracks"
+        token="test-token"
+        page={1}
+        pageSize={50}
+        totalCount={1}
+        view="list"
+        showSourceBadges={false}
+      /></MemoryRouter>,
+    )
+
+    expect(screen.queryByRole('img', { name: 'Scrobbled via YouTube Music' })).not.toBeInTheDocument()
+  })
 })
+

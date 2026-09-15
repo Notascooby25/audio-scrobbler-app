@@ -176,3 +176,38 @@ def test_charts_are_visible_to_owner_without_following():
         db.close()
 
     assert response.status_code == 200
+
+
+class TargetUser:
+    id = 2
+    spotify_user_id = "target"
+
+
+def test_charts_aggregates_sources():
+    db = TestingSession()
+    _seed(db)
+    db.add(
+        ListeningEvent(
+            user_id=2,
+            track_id="track-yt-1",
+            track_name="Sea of Love",
+            artist_name="The National",
+            album_name="Trouble Will Find Me",
+            played_at=datetime(2026, 1, 15, 13, 0),
+            source="youtube",
+            play_id="track-yt-1",
+        )
+    )
+    db.commit()
+    app.dependency_overrides[analytics_module.get_db] = lambda: db
+    app.dependency_overrides[analytics_module.get_current_user] = lambda: TargetUser()
+    try:
+        response = client.get("/stats/top-artists", headers={"Authorization": "Bearer test"})
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+
+    assert response.status_code == 200
+    entries = response.json()["entries"]
+    nat = next(e for e in entries if e["label"] == "The National")
+    assert set(nat["sources"]) == {"spotify", "youtube"}

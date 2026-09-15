@@ -1,6 +1,7 @@
 import LikeButton from './LikeButton'
 import Artwork from './Artwork'
 import EntryMenu from './EntryMenu'
+import SourceBadge from './SourceBadge'
 import { Link } from 'react-router-dom'
 
 function countWidth(count, maximum) {
@@ -18,6 +19,7 @@ export default function LibraryRankList({
   totalCount = 0,
   view,
   showArtwork = true,
+  showSourceBadges = true,
   selectedKeys = new Set(),
   onToggleSelection,
   onEntryChanged,
@@ -62,6 +64,9 @@ export default function LibraryRankList({
                       <Link to={entityUrl} tabIndex={-1} aria-hidden="true" className="grid-card-artwork-link">
                         <Artwork className="grid-card-artwork" src={entry.artwork_url} label={entry.label} />
                       </Link>
+                      {showSourceBadges && entry.sources && entry.sources.length > 0 && (
+                        <SourceBadge sources={entry.sources} size="grid" />
+                      )}
                       {kind === 'tracks' && (
                         <div className="grid-card-like">
                           <LikeButton token={token} trackId={entry.spotify_track_id} initialLiked={entry.is_liked} />
@@ -79,6 +84,9 @@ export default function LibraryRankList({
                       >
                         {entry.label}
                       </Link>
+                      {!showArtwork && showSourceBadges && entry.sources && entry.sources.length > 0 && (
+                        <SourceBadge sources={entry.sources} size="sm" />
+                      )}
                     </div>
                     {entry.secondary && (
                       <span className="grid-card-artist" title={entry.secondary}>{entry.secondary}</span>
@@ -123,7 +131,12 @@ export default function LibraryRankList({
                 </div>
                 <span className="library-row-copy">
                   <strong>{entry.label}</strong>
-                  {entry.secondary && <small>{entry.secondary}</small>}
+                  <span className="library-row-subtitle">
+                    {entry.secondary && <small>{entry.secondary}</small>}
+                    {showSourceBadges && entry.sources && entry.sources.length > 0 && (
+                      <SourceBadge sources={entry.sources} size="sm" />
+                    )}
+                  </span>
                 </span>
                 <div className="library-rank-actions">
                   {kind === 'tracks' && <LikeButton token={token} trackId={entry.spotify_track_id} initialLiked={entry.is_liked} />}

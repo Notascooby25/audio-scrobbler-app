@@ -742,22 +742,47 @@ button:disabled {
 }
 
 .source-badge {
-  border-radius: var(--radius-sm);
-  font-size: 0.68rem;
-  font-weight: 600;
-  padding: 0.2rem 0.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 0.5px #E5E5E5;
+  overflow: hidden;
+  flex-shrink: 0;
+  line-height: 0;
+  user-select: none;
 }
 
-.source-badge-spotify {
-  background: var(--color-spotify-bg);
-  color: var(--color-spotify);
+.source-badge svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
-.source-badge-youtube {
-  background: var(--color-youtube-bg);
-  color: var(--color-youtube);
+.source-badge-grid {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #FFFFFF;
+  z-index: 5;
+}
+
+.source-badge-list,
+.source-badge-sm {
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #FFFFFF;
+  vertical-align: middle;
+}
+
+.library-row-subtitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 
 .scrobble-track {

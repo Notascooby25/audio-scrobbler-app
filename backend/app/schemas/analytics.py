@@ -51,6 +51,7 @@ class ChartEntry(BaseModel):
     artwork_url: str | None = None
     spotify_track_id: str | None = None
     is_liked: bool = False
+    sources: list[str] = []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -91,6 +92,7 @@ class LibraryEntry(BaseModel):
     secondary: str | None = None
     play_count: int
     artwork_url: str | None = None
+    sources: list[str] = []
 
 
 class LibraryResponse(BaseModel):

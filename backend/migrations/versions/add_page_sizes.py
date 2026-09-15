@@ -14,19 +14,35 @@ branch_labels = None
 depends_on = None
 
 def upgrade() -> None:
-    # Drop old constraint
-    op.drop_constraint('ck_user_preferences_page_size', 'user_preferences', type_='check')
-    # Add new constraint
-    op.create_check_constraint(
-        'ck_user_preferences_page_size',
-        'user_preferences',
-        "default_page_size IN (10, 25, 50, 100, 150, 200, 250)"
-    )
+    bind = op.get_bind()
+    if bind.dialect.name == "sqlite":
+        with op.batch_alter_table('user_preferences') as batch_op:
+            batch_op.drop_constraint('ck_user_preferences_page_size', type_='check')
+            batch_op.create_check_constraint(
+                'ck_user_preferences_page_size',
+                "default_page_size IN (10, 25, 50, 100, 150, 200, 250)"
+            )
+    else:
+        op.drop_constraint('ck_user_preferences_page_size', 'user_preferences', type_='check')
+        op.create_check_constraint(
+            'ck_user_preferences_page_size',
+            'user_preferences',
+            "default_page_size IN (10, 25, 50, 100, 150, 200, 250)"
+        )
 
 def downgrade() -> None:
-    op.drop_constraint('ck_user_preferences_page_size', 'user_preferences', type_='check')
-    op.create_check_constraint(
-        'ck_user_preferences_page_size',
-        'user_preferences',
-        "default_page_size IN (10, 25, 50, 100)"
-    )
+    bind = op.get_bind()
+    if bind.dialect.name == "sqlite":
+        with op.batch_alter_table('user_preferences') as batch_op:
+            batch_op.drop_constraint('ck_user_preferences_page_size', type_='check')
+            batch_op.create_check_constraint(
+                'ck_user_preferences_page_size',
+                "default_page_size IN (10, 25, 50, 100)"
+            )
+    else:
+        op.drop_constraint('ck_user_preferences_page_size', 'user_preferences', type_='check')
+        op.create_check_constraint(
+            'ck_user_preferences_page_size',
+            'user_preferences',
+            "default_page_size IN (10, 25, 50, 100)"
+        )

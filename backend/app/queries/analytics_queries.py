@@ -2,8 +2,27 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta
 from sqlalchemy import func, select, or_
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql.expression import FunctionElement
 
 from ..models import BlockedItem, ListeningEvent
+
+
+class group_concat_distinct(FunctionElement):
+    name = "group_concat_distinct"
+    inherit_cache = True
+
+
+@compiles(group_concat_distinct, "sqlite")
+def sqlite_group_concat(element, compiler, **kw):
+    arg = compiler.process(element.clauses.clauses[0], **kw)
+    return f"group_concat(DISTINCT {arg})"
+
+
+@compiles(group_concat_distinct, "postgresql")
+def pg_group_concat(element, compiler, **kw):
+    arg = compiler.process(element.clauses.clauses[0], **kw)
+    return f"string_agg(DISTINCT {arg}, ',')"
 
 
 def not_blocked_clause(user_id: int):
@@ -156,7 +175,12 @@ def build_top_entities_query(
         if entity == "artists"
         else ListeningEvent.artwork_url
     )
-    selected_columns = [*group_columns, func.max(artwork_column).label("artwork_url"), func.count(ListeningEvent.id).label("play_count")]
+    selected_columns = [
+        *group_columns,
+        func.max(artwork_column).label("artwork_url"),
+        func.count(ListeningEvent.id).label("play_count"),
+        group_concat_distinct(ListeningEvent.source).label("sources"),
+    ]
     if entity == "tracks":
         selected_columns.append(func.max(ListeningEvent.track_id).label("spotify_track_id"))
     statement = select(*selected_columns).where(
@@ -304,7 +328,12 @@ def build_library_entities_query(
     else:
         raise ValueError(f"Unsupported library entity: {entity!r}")
 
-    statement = select(*group_columns, func.max(ListeningEvent.artwork_url).label("artwork_url"), func.count(ListeningEvent.id).label("play_count")).where(
+    statement = select(
+        *group_columns,
+        func.max(ListeningEvent.artwork_url).label("artwork_url"),
+        func.count(ListeningEvent.id).label("play_count"),
+        group_concat_distinct(ListeningEvent.source).label("sources"),
+    ).where(
         ListeningEvent.user_id == user_id
     ).where(not_blocked_clause(user_id))
     if entity == "albums":

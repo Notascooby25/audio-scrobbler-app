@@ -1,5 +1,6 @@
 import LikeButton from './LikeButton'
 import Artwork from './Artwork'
+import SourceBadge from './SourceBadge'
 import { formatScrobbleTime } from '../timeFormatting'
 
 function dayLabel(value) {
@@ -52,7 +53,7 @@ export default function LibraryScrobbleList({
                   <strong>{scrobble.track_name}</strong>
                   <small>{scrobble.artist_name}</small>
                 </span>
-                {showSourceBadges && <span className={`source-badge source-badge-${scrobble.source} scrobble-grid-source`}>{scrobble.source}</span>}
+                {showSourceBadges && <SourceBadge source={scrobble.source} size="sm" className="scrobble-grid-source" />}
                 <time className="scrobble-grid-time" dateTime={scrobble.played_at}>{formatScrobbleTime(scrobble.played_at, Date.now(), timestampMode)}</time>
               </li>
             ))}

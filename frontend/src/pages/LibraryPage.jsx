@@ -124,6 +124,7 @@ export default function LibraryPage() {
         artwork_url: track.artwork_url,
         spotify_track_id: track.spotify_track_id,
         is_liked: true,
+        sources: ['spotify'],
       }))
       : data.entries)
     : []
@@ -276,7 +277,7 @@ export default function LibraryPage() {
           <div className="library-layout">
             {tab === 'scrobbles'
               ? <LibraryScrobbleList scrobbles={visibleScrobbles} token={session.accessToken} view={activeView} showArtwork={settings?.show_artwork !== false} showSourceBadges={settings?.show_source_badges !== false} timestampMode={settings?.timestamp_mode || 'relative'} filterLabel={scrobbleFilter.name} selectedIds={selectedScrobbleIds} onToggleSelection={toggleScrobbleSelection} selectMode={selectMode} />
-              : <LibraryRankList entries={rankedEntries} kind={tab === 'liked' ? 'tracks' : tab} token={session.accessToken} page={page} pageSize={pageSize} totalCount={totalCount} view={activeView} showArtwork={settings?.show_artwork !== false} selectedKeys={selectedEntries} onToggleSelection={tab !== 'liked' ? toggleEntrySelection : undefined} onEntryChanged={tab !== 'liked' ? handleEntryChanged : undefined} selectMode={selectMode} />}
+              : <LibraryRankList entries={rankedEntries} kind={tab === 'liked' ? 'tracks' : tab} token={session.accessToken} page={page} pageSize={pageSize} totalCount={totalCount} view={activeView} showArtwork={settings?.show_artwork !== false} showSourceBadges={settings?.show_source_badges !== false} selectedKeys={selectedEntries} onToggleSelection={tab !== 'liked' ? toggleEntrySelection : undefined} onEntryChanged={tab !== 'liked' ? handleEntryChanged : undefined} selectMode={selectMode} />}
             <TimelineChart entries={timeline} />
           </div>
           <div className="library-pagination-bar">
