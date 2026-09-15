@@ -208,9 +208,12 @@ jobs:
 
       - name: Wait for production monitoring health
         run: |
+          # 8 services carry a healthcheck: db, backend, worker, frontend,
+          # prometheus, alertmanager, node-exporter, and watchtower (its
+          # image ships its own built-in HEALTHCHECK).
           for attempt in {1..30}; do
             healthy="$(docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml ps --format json | grep -c '"Health":"healthy"' || true)"
-            if [ "$healthy" -ge 6 ]; then break; fi
+            if [ "$healthy" -ge 8 ]; then break; fi
             sleep 5
           done
           docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml ps
