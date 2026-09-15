@@ -1,4 +1,4 @@
-const CACHE_NAME = 'audio-scrobbler-shell-v1'
+const CACHE_NAME = 'audio-scrobbler-shell-v3'
 const APP_SHELL_URLS = ['/', '/index.html', '/manifest.json']
 const API_PATH_PREFIXES = ['/analytics', '/auth', '/import', '/users', '/ingestion']
 

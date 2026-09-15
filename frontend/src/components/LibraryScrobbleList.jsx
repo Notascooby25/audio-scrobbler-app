@@ -1,5 +1,6 @@
 import LikeButton from './LikeButton'
 import Artwork from './Artwork'
+import SourceBadge from './SourceBadge'
 import { formatScrobbleTime } from '../timeFormatting'
 
 function dayLabel(value) {
@@ -12,7 +13,18 @@ function dayLabel(value) {
   return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-export default function LibraryScrobbleList({ scrobbles = [], token, view, showSourceBadges = true, showArtwork = true, timestampMode = 'relative', filterLabel = null, selectedIds = new Set(), onToggleSelection }) {
+export default function LibraryScrobbleList({
+  scrobbles = [],
+  token,
+  view,
+  showSourceBadges = true,
+  showArtwork = true,
+  timestampMode = 'relative',
+  filterLabel = null,
+  selectedIds = new Set(),
+  onToggleSelection,
+  selectMode = false,
+}) {
   const groups = scrobbles.reduce((result, scrobble) => {
     const label = dayLabel(scrobble.played_at)
     result[label] = [...(result[label] || []), scrobble]
@@ -29,7 +41,7 @@ export default function LibraryScrobbleList({ scrobbles = [], token, view, showS
           <ul className="library-scrobble-list">
             {entries.map((scrobble) => (
               <li className="library-scrobble-row" key={scrobble.id}>
-                {onToggleSelection && (
+                {onToggleSelection && (view !== 'grid' || selectMode) && (
                   <label className="bulk-select-control scrobble-grid-select">
                     <input type="checkbox" checked={selectedIds.has(scrobble.id)} onChange={() => onToggleSelection(scrobble.id)} />
                     <span>Select {scrobble.track_name}</span>
@@ -41,7 +53,7 @@ export default function LibraryScrobbleList({ scrobbles = [], token, view, showS
                   <strong>{scrobble.track_name}</strong>
                   <small>{scrobble.artist_name}</small>
                 </span>
-                {showSourceBadges && <span className={`source-badge source-badge-${scrobble.source} scrobble-grid-source`}>{scrobble.source}</span>}
+                {showSourceBadges && <SourceBadge source={scrobble.source} size="sm" className="scrobble-grid-source" />}
                 <time className="scrobble-grid-time" dateTime={scrobble.played_at}>{formatScrobbleTime(scrobble.played_at, Date.now(), timestampMode)}</time>
               </li>
             ))}

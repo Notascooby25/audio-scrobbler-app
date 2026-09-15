@@ -19,6 +19,8 @@ export default function Artwork({ src, label, className = '', sizes }) {
       src={src}
       alt={`${label || 'Artwork'} artwork`}
       sizes={sizes}
+      loading="lazy"
+      decoding="async"
       onError={() => setFailed(true)}
     />
   ) : (

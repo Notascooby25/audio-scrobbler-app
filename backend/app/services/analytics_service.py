@@ -108,6 +108,12 @@ def get_recent_scrobbles(
     )
 
 
+def _parse_sources(val: str | None) -> list[str]:
+    if not val:
+        return []
+    return [s.strip() for s in str(val).split(",") if s.strip()]
+
+
 def get_user_charts(
     db: Session,
     user_id: int,
@@ -126,13 +132,14 @@ def get_user_charts(
 
     entries = []
     for row in rows:
+        row_sources = _parse_sources(getattr(row, "sources", None))
         if entity == "artists":
-            entries.append(ChartEntry(label=row.artist_name, secondary=None, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None)))
+            entries.append(ChartEntry(label=row.artist_name, secondary=None, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), sources=row_sources))
         elif entity == "tracks":
             track_id = getattr(row, "spotify_track_id", None)
-            entries.append(ChartEntry(label=row.track_name, secondary=row.artist_name, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), spotify_track_id=track_id, is_liked=track_id in liked_ids))
+            entries.append(ChartEntry(label=row.track_name, secondary=row.artist_name, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), spotify_track_id=track_id, is_liked=track_id in liked_ids, sources=row_sources))
         else:
-            entries.append(ChartEntry(label=row.album_name, secondary=row.artist_name, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None)))
+            entries.append(ChartEntry(label=row.album_name, secondary=row.artist_name, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), sources=row_sources))
 
     return ChartResponse(user_id=user_id, entity=entity, range=range_key, entries=entries)
 
@@ -154,9 +161,13 @@ def get_library_scrobbles(
     offset: int,
     start: datetime | None = None,
     end: datetime | None = None,
+    filter_entity: str | None = None,
+    filter_name: str | None = None,
+    filter_secondary: str | None = None,
+    search_query: str | None = None,
 ) -> LibraryScrobbleResponse:
-    rows = db.execute(build_library_scrobbles_query(user_id, limit, offset, start, end)).all()
-    total_count = db.execute(build_library_count_query(user_id, start, end)).scalar_one()
+    rows = db.execute(build_library_scrobbles_query(user_id, limit, offset, start, end, filter_entity, filter_name, filter_secondary, search_query)).all()
+    total_count = db.execute(build_library_count_query(user_id, start, end, filter_entity, filter_name, filter_secondary, search_query)).scalar_one()
     liked_ids = set()
     if hasattr(db, "query"):
         liked_ids = {
@@ -193,17 +204,19 @@ def get_library_entities(
     offset: int,
     start: datetime | None = None,
     end: datetime | None = None,
+    search_query: str | None = None,
 ) -> LibraryResponse:
-    rows = db.execute(build_library_entities_query(user_id, entity, limit, offset, start, end)).all()
-    total_count = db.execute(build_library_entity_count_query(user_id, entity, start, end)).scalar_one()
+    rows = db.execute(build_library_entities_query(user_id, entity, limit, offset, start, end, search_query)).all()
+    total_count = db.execute(build_library_entity_count_query(user_id, entity, start, end, search_query)).scalar_one()
     entries = []
     for row in rows:
+        row_sources = _parse_sources(getattr(row, "sources", None))
         if entity == "artists":
-            entries.append(LibraryEntry(label=row.artist_name, play_count=int(row.play_count), artwork_url=getattr(row, "artwork_url", None)))
+            entries.append(LibraryEntry(label=row.artist_name, play_count=int(row.play_count), artwork_url=getattr(row, "artwork_url", None), sources=row_sources))
         elif entity == "albums":
-            entries.append(LibraryEntry(label=row.album_name, secondary=row.artist_name, play_count=int(row.play_count), artwork_url=getattr(row, "artwork_url", None)))
+            entries.append(LibraryEntry(label=row.album_name, secondary=row.artist_name, play_count=int(row.play_count), artwork_url=getattr(row, "artwork_url", None), sources=row_sources))
         else:
-            entries.append(LibraryEntry(label=row.track_name, secondary=row.artist_name, play_count=int(row.play_count), artwork_url=getattr(row, "artwork_url", None)))
+            entries.append(LibraryEntry(label=row.track_name, secondary=row.artist_name, play_count=int(row.play_count), artwork_url=getattr(row, "artwork_url", None), sources=row_sources))
     return LibraryResponse(user_id=user_id, entries=entries, limit=limit, offset=offset, total_count=int(total_count))
 
 

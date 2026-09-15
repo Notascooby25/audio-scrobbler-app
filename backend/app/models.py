@@ -34,7 +34,7 @@ class UserPreferences(Base):
     __tablename__ = "user_preferences"
     __table_args__ = (
         UniqueConstraint("user_id", name="uq_user_preferences_user_id"),
-        CheckConstraint("default_page_size IN (10, 25, 50, 100)", name="ck_user_preferences_page_size"),
+        CheckConstraint("default_page_size IN (10, 25, 50, 100, 150, 200, 250)", name="ck_user_preferences_page_size"),
         CheckConstraint("default_library_view IN ('list', 'grid')", name="ck_user_preferences_library_view"),
     )
 
@@ -130,3 +130,12 @@ class IngestionCheckpoint(Base):
     user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     last_played_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class ArtworkCache(Base):
+    __tablename__ = "artwork_cache"
+
+    track_id: Mapped[str] = mapped_column(String(255), primary_key=True, index=True)
+    artwork_url: Mapped[str] = mapped_column(Text, nullable=False)
+    cached_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+

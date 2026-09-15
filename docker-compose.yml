@@ -28,15 +28,17 @@ services:
       ACCESS_TOKEN_TTL_SECONDS: 3600
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
-      SPOTIFY_REDIRECT_URI: http://localhost:8000/auth/spotify/callback
+      SPOTIFY_REDIRECT_URI: http://127.0.0.1:8000/auth/spotify/callback
       SPOTIFY_SCOPES: user-read-recently-played user-library-read user-library-modify
-      FRONTEND_AUTH_CALLBACK_URL: http://localhost:5173
+      FRONTEND_AUTH_CALLBACK_URL: http://localhost:5173/connect
       CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
       DEV_USER_ID: 1
       DEV_USER_SPOTIFY_ID: development-user
       DEV_USER_DISPLAY_NAME: Development User
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-scrobbler}:${POSTGRES_PASSWORD:-scrobbler}@db:5432/${POSTGRES_DB:-scrobbler}
       WORKER_INGESTION_TOKEN: ${WORKER_INGESTION_TOKEN:-dev-worker-token}
+      REFRESH_TOKEN_KEY: ${REFRESH_TOKEN_KEY:-0123456789abcdef0123456789abcdef}
+      JWT_SECRET: ${JWT_SECRET:-change-me}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz')"]
       interval: 10s

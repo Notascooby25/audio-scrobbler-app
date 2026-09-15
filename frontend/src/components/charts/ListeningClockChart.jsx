@@ -26,7 +26,7 @@ export default function ListeningClockChart({ points = [], emptyMessage = 'No da
     <section className="chart-panel" aria-label="Listening clock chart">
       <p className="section-kicker">Live data</p>
       <h2>Listening clock</h2>
-      <svg className="listening-clock-chart" viewBox="0 0 100 100" role="img" aria-label={`Listening clock: busiest hour ${peakHour.label}:00`}>
+      <svg className="listening-clock-chart" viewBox="-8 -8 116 116" role="img" aria-label={`Listening clock: busiest hour ${peakHour.label}:00`}>
         <circle className="clock-ring" cx={CENTER} cy={CENTER} r={INNER_RADIUS - 2} />
         {points.map((point) => {
           const hour = Number(point.label)

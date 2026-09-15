@@ -11,6 +11,7 @@ import TimelineChart from '../components/TimelineChart'
 import { createBlock, deleteLibraryEntries, deleteLibraryScrobbles, fetchLikedTracks, fetchLibraryCollection, fetchLibraryScrobbles, fetchLibraryTimeline, fetchUserSettings } from '../api'
 import { createDefaultDateRange, isValidDateRange } from '../dateRange'
 import { readSession } from '../session'
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
 
 const TABS = [
   ['scrobbles', 'Scrobbles'],
@@ -46,7 +47,11 @@ export default function LibraryPage() {
     name: searchParams.get('filter_name') || null,
     secondary: searchParams.get('filter_secondary') || null,
   }))
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeSearchQuery, setActiveSearchQuery] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [selectMode, setSelectMode] = useState(false)
   const isDateFilterable = tab !== 'liked'
   const filterKeyRef = useRef(null)
 
@@ -78,7 +83,7 @@ export default function LibraryPage() {
     if (!preferencesReady) return
     if (isDateFilterable && !isValidDateRange(dateRange)) return
 
-    const filterKey = `${tab}|${JSON.stringify(dateRange)}|${pageSize}`
+    const filterKey = `${tab}|${JSON.stringify(dateRange)}|${pageSize}|${activeSearchQuery}`
     if (filterKeyRef.current !== null && filterKeyRef.current !== filterKey && page !== 1) {
       filterKeyRef.current = filterKey
       setPage(1)
@@ -91,10 +96,10 @@ export default function LibraryPage() {
     const offset = (page - 1) * pageSize
     const rangeArg = isDateFilterable ? dateRange : undefined
     const request = tab === 'scrobbles'
-      ? fetchLibraryScrobbles({ token: session.accessToken, limit: pageSize, offset, dateRange: rangeArg, filterEntity: scrobbleFilter.entity, filterName: scrobbleFilter.name, filterSecondary: scrobbleFilter.secondary })
+      ? fetchLibraryScrobbles({ token: session.accessToken, limit: pageSize, offset, dateRange: rangeArg, filterEntity: scrobbleFilter.entity, filterName: scrobbleFilter.name, filterSecondary: scrobbleFilter.secondary, search: activeSearchQuery || undefined })
       : tab === 'liked'
-        ? fetchLikedTracks({ token: session.accessToken, limit: pageSize, offset })
-      : fetchLibraryCollection({ token: session.accessToken, entity: tab, limit: pageSize, offset, dateRange: rangeArg })
+        ? fetchLikedTracks({ token: session.accessToken, limit: pageSize, offset, search: activeSearchQuery || undefined })
+      : fetchLibraryCollection({ token: session.accessToken, entity: tab, limit: pageSize, offset, dateRange: rangeArg, search: activeSearchQuery || undefined })
     Promise.all([request, fetchLibraryTimeline({ token: session.accessToken })])
       .then(([result, chart]) => {
         setData(result)
@@ -107,7 +112,7 @@ export default function LibraryPage() {
         setError(requestError.message)
         setStatus('error')
       })
-  }, [tab, dateRange, pageSize, page, preferencesReady, refreshKey, scrobbleFilter])
+  }, [tab, dateRange, pageSize, page, preferencesReady, refreshKey, scrobbleFilter, activeSearchQuery])
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
   const rankedEntries = data && loadedTab === tab && tab !== 'scrobbles'
@@ -119,6 +124,7 @@ export default function LibraryPage() {
         artwork_url: track.artwork_url,
         spotify_track_id: track.spotify_track_id,
         is_liked: true,
+        sources: ['spotify'],
       }))
       : data.entries)
     : []
@@ -129,7 +135,7 @@ export default function LibraryPage() {
     localStorage.setItem('audio-scrobbler-library-view', nextView)
   }
 
-  const activeView = settings?.[`${tab}_view`] || view
+  const activeView = tab === 'scrobbles' ? 'list' : (settings?.[`${tab}_view`] || view)
   const visibleScrobbles = data && loadedTab === tab && tab === 'scrobbles' ? data.scrobbles : []
   const selectedCount = tab === 'scrobbles' ? selectedScrobbleIds.size : selectedEntries.size
 
@@ -177,7 +183,11 @@ export default function LibraryPage() {
     setSelectedEntries(allSelected ? new Map() : new Map(visibleEntries.map((entry) => [entry.key, entry])))
   }
 
-  const bulkDelete = async () => {
+  const promptBulkDelete = () => {
+    setConfirmDeleteOpen(true)
+  }
+
+  const executeBulkDelete = async () => {
     setBulkBusy(true)
     setBulkError('')
     try {
@@ -196,8 +206,10 @@ export default function LibraryPage() {
         handleEntryChanged(`Deleted ${deleted} scrobbles for ${entries.length} selected entries.`)
       }
       clearSelection()
+      setConfirmDeleteOpen(false)
     } catch (requestError) {
       setBulkError(requestError.message || 'Bulk delete failed')
+      setConfirmDeleteOpen(false)
     } finally {
       setBulkBusy(false)
     }
@@ -231,15 +243,33 @@ export default function LibraryPage() {
               <button key={value} type="button" role="tab" aria-selected={tab === value} className={tab === value ? 'active' : ''} onClick={() => { setTab(value); setSearchParams({}) }}>{label}</button>
             ))}
           </div>
-          {isDateFilterable && <DateRangeSelector value={dateRange} onChange={setDateRange} />}
-          <div className="library-toolbar">
-            <LibraryViewToggle view={activeView} onChange={changeView} />
+          <div className="library-controls-bar">
+            {isDateFilterable && <DateRangeSelector value={dateRange} onChange={setDateRange} showCompare={false} />}
+            <div className="library-toolbar">
+              <form onSubmit={(e) => { e.preventDefault(); setActiveSearchQuery(searchQuery); }} className="library-search-form">
+                <input
+                  type="search"
+                  placeholder="Search library..."
+                  aria-label="Search library tracks, artists, or albums"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onBlur={() => setActiveSearchQuery(searchQuery)}
+                />
+              </form>
+              <LibraryViewToggle
+                view={activeView}
+                onChange={changeView}
+                selectMode={selectMode}
+                onToggleSelectMode={() => setSelectMode((prev) => !prev)}
+                allowGrid={tab !== 'scrobbles'}
+              />
+            </div>
           </div>
           {selectedCount > 0 && (
             <div className="bulk-action-bar" role="status">
               <strong>{selectedCount.toLocaleString()} selected</strong>
               <button type="button" disabled={bulkBusy} onClick={toggleVisibleSelection}>Select visible</button>
-              <button type="button" disabled={bulkBusy} onClick={bulkDelete}>Delete selected</button>
+              <button type="button" disabled={bulkBusy} onClick={promptBulkDelete}>Delete selected</button>
               {tab !== 'scrobbles' && tab !== 'liked' && <button type="button" disabled={bulkBusy} onClick={bulkBlock}>Block selected</button>}
               <button type="button" className="bulk-action-secondary" disabled={bulkBusy} onClick={clearSelection}>Clear</button>
               {bulkError && <span role="alert">{bulkError}</span>}
@@ -247,14 +277,30 @@ export default function LibraryPage() {
           )}
           <div className="library-layout">
             {tab === 'scrobbles'
-              ? <LibraryScrobbleList scrobbles={visibleScrobbles} token={session.accessToken} view={activeView} showArtwork={settings?.show_artwork !== false} showSourceBadges={settings?.show_source_badges !== false} timestampMode={settings?.timestamp_mode || 'relative'} filterLabel={scrobbleFilter.name} selectedIds={selectedScrobbleIds} onToggleSelection={toggleScrobbleSelection} />
-              : <LibraryRankList entries={rankedEntries} kind={tab === 'liked' ? 'tracks' : tab} token={session.accessToken} page={page} pageSize={pageSize} totalCount={totalCount} view={activeView} showArtwork={settings?.show_artwork !== false} selectedKeys={selectedEntries} onToggleSelection={tab !== 'liked' ? toggleEntrySelection : undefined} onEntryChanged={tab !== 'liked' ? handleEntryChanged : undefined} />}
+              ? <LibraryScrobbleList scrobbles={visibleScrobbles} token={session.accessToken} view={activeView} showArtwork={settings?.show_artwork !== false} showSourceBadges={settings?.show_source_badges !== false} timestampMode={settings?.timestamp_mode || 'relative'} filterLabel={scrobbleFilter.name} selectedIds={selectedScrobbleIds} onToggleSelection={toggleScrobbleSelection} selectMode={selectMode} />
+              : <LibraryRankList entries={rankedEntries} kind={tab === 'liked' ? 'tracks' : tab} token={session.accessToken} page={page} pageSize={pageSize} totalCount={totalCount} view={activeView} showArtwork={settings?.show_artwork !== false} showSourceBadges={settings?.show_source_badges !== false} selectedKeys={selectedEntries} onToggleSelection={tab !== 'liked' ? toggleEntrySelection : undefined} onEntryChanged={tab !== 'liked' ? handleEntryChanged : undefined} selectMode={selectMode} />}
             <TimelineChart entries={timeline} />
           </div>
           <div className="library-pagination-bar">
             <PageSizeSelect value={pageSize} onChange={setPageSize} />
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           </div>
+
+          <ConfirmDeleteModal
+            isOpen={confirmDeleteOpen}
+            title={tab === 'scrobbles' ? 'Delete Selected Scrobbles' : 'Delete Selected Entries'}
+            description={
+              tab === 'scrobbles'
+                ? `You are about to permanently delete ${selectedScrobbleIds.size.toLocaleString()} selected scrobbles.`
+                : `You are about to permanently delete all scrobbles associated with the ${selectedEntries.size.toLocaleString()} selected ${tab}.`
+            }
+            warningText="This action is permanent and cannot be undone."
+            confirmWord="DELETE"
+            confirmButtonText="Delete permanently"
+            isBusy={bulkBusy}
+            onConfirm={executeBulkDelete}
+            onCancel={() => setConfirmDeleteOpen(false)}
+          />
         </>
       )}
     </AnalyticsPage>

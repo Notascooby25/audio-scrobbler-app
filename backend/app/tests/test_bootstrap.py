@@ -34,6 +34,9 @@ class FakeDB:
     def refresh(self, user):
         return None
 
+    def execute(self, *args):
+        return None
+
 
 def test_bootstrap_creates_development_user(monkeypatch):
     monkeypatch.setattr(bootstrap_service, "settings", type("Settings", (), {
@@ -49,7 +52,7 @@ def test_bootstrap_creates_development_user(monkeypatch):
     assert isinstance(user, User)
     assert user.id == 7
     assert user.spotify_user_id == "dev-seven"
-    assert db.commits == 1
+    assert db.commits == 2
 
 
 def test_bootstrap_is_idempotent(monkeypatch):

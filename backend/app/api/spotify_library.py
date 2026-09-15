@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import requests
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from ..api.deps import get_current_user
@@ -37,12 +38,23 @@ def backfill_artwork(
 
 @router.get("/liked-tracks", response_model=LikedTracksResponse)
 def list_liked_tracks(
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
+    search: str | None = Query(default=None, description="Search query for track, artist, or album name."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> LikedTracksResponse:
-    query = db.query(LikedTrack).filter(LikedTrack.user_id == current_user.id).order_by(LikedTrack.added_at.desc())
+    query = db.query(LikedTrack).filter(LikedTrack.user_id == current_user.id)
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            or_(
+                LikedTrack.track_name.ilike(search_term),
+                LikedTrack.artist_name.ilike(search_term),
+                LikedTrack.album_name.ilike(search_term)
+            )
+        )
+    query = query.order_by(LikedTrack.added_at.desc())
     total_count = query.count()
     return LikedTracksResponse(user_id=current_user.id, tracks=query.limit(limit).offset(offset).all(), total_count=total_count)
 

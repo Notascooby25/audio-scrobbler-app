@@ -139,6 +139,22 @@ describe('date filtering', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Liked tracks' }))
     expect(screen.queryByLabelText('Range')).not.toBeInTheDocument()
   })
+
+  it('hides the Grid view option on the Scrobbles tab but allows it on Artists', async () => {
+    fetchLibraryCollection.mockResolvedValue({ entries: [] })
+    fetchLibraryScrobbles.mockResolvedValue({ scrobbles: [] })
+    fetchLibraryTimeline.mockResolvedValue({ entries: [] })
+
+    render(<MemoryRouter><LibraryPage /></MemoryRouter>)
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'Scrobbles' })).toHaveAttribute('aria-selected', 'true'))
+    expect(screen.queryByRole('button', { name: 'Grid' })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Artists' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Grid' })).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Scrobbles' }))
+    expect(screen.queryByRole('button', { name: 'Grid' })).not.toBeInTheDocument()
+  })
 })
 
 describe('library pagination', () => {
@@ -213,6 +229,10 @@ describe('library pagination', () => {
 
     fireEvent.click(screen.getByLabelText('Select Slow Show'))
     fireEvent.click(screen.getByRole('button', { name: 'Delete selected' }))
+
+    // Type DELETE in confirmation modal and click confirm
+    fireEvent.change(screen.getByPlaceholderText('DELETE'), { target: { value: 'DELETE' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Delete permanently' }))
 
     await waitFor(() => expect(deleteLibraryScrobbles).toHaveBeenCalledWith({ token: 'demo-token', ids: [42] }))
     expect(screen.getByText('Deleted 1 selected scrobbles.')).toBeInTheDocument()

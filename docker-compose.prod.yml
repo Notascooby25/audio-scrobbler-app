@@ -15,6 +15,8 @@ services:
 
   backend:
     image: ghcr.io/${GHCR_OWNER}/audio-scrobbler-app-backend:${IMAGE_TAG}
+    labels:
+      - com.centurylabs.watchtower.enable=true
     ports:
       - "8000:8000"
     environment:
@@ -42,6 +44,8 @@ services:
 
   worker:
     image: ghcr.io/${GHCR_OWNER}/audio-scrobbler-app-worker:${IMAGE_TAG}
+    labels:
+      - com.centurylabs.watchtower.enable=true
     environment:
       WORKER_BACKEND_URL: http://backend:8000
       WORKER_INGESTION_TOKEN: ${WORKER_INGESTION_TOKEN}
@@ -70,6 +74,8 @@ services:
 
   frontend:
     image: ghcr.io/${GHCR_OWNER}/audio-scrobbler-app-frontend:${IMAGE_TAG}
+    labels:
+      - com.centurylabs.watchtower.enable=true
     ports:
       - "5173:5173"
     environment:
@@ -117,9 +123,8 @@ services:
       ALERTMANAGER_WARNING_WEBHOOK_URL: ${ALERTMANAGER_WARNING_WEBHOOK_URL:-http://127.0.0.1:65535/disabled}
     volumes:
       - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-    command:
-      - --config.file=/etc/alertmanager/alertmanager.yml
-      - --config.expand-env
+      - ./monitoring/alertmanager-entrypoint.sh:/alertmanager-entrypoint.sh:ro
+    entrypoint: ["sh", "/alertmanager-entrypoint.sh"]
     healthcheck:
       test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:9093/-/ready"]
       interval: 10s
@@ -138,6 +143,22 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+
+  # Polls GHCR for new :latest images and auto-updates backend/worker/frontend
+  # (only containers labeled com.centurylabs.watchtower.enable=true — db and
+  # the monitoring stack are deliberately excluded). Needs the host already
+  # logged in via `docker login ghcr.io` so DOCKER_CONFIG_DIR/config.json
+  # carries GHCR credentials through for pulling private images.
+  watchtower:
+    image: containrrr/watchtower:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DOCKER_CONFIG_DIR}/config.json:/config.json:ro
+    environment:
+      WATCHTOWER_POLL_INTERVAL: ${WATCHTOWER_POLL_INTERVAL:-300}
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_ROLLING_RESTART: "true"
 
 volumes:
   postgres_data:

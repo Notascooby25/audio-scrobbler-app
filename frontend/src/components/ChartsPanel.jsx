@@ -47,22 +47,66 @@ export default function ChartsPanel({ token, userId }) {
         </div>
       </div>
       <div className="charts-controls">
-        <label>
-          Chart
-          <select value={entity} onChange={(event) => setEntity(event.target.value)}>
+        <div className="charts-control-group">
+          <label htmlFor="charts-entity-select" className="charts-control-label">
+            Chart
+          </label>
+          <div className="segmented-tabs" role="tablist" aria-label="Chart options">
+            {ENTITIES.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="tab"
+                aria-selected={entity === option.value}
+                className={`segmented-tab ${entity === option.value ? 'active' : ''}`}
+                onClick={() => setEntity(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <select
+            id="charts-entity-select"
+            aria-label="Chart"
+            value={entity}
+            onChange={(event) => setEntity(event.target.value)}
+            className="visually-hidden-accessible"
+          >
             {ENTITIES.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
-        </label>
-        <label>
-          Range
-          <select value={range} onChange={(event) => setRange(event.target.value)}>
+        </div>
+        <div className="charts-control-group">
+          <label htmlFor="charts-range-select" className="charts-control-label">
+            Range
+          </label>
+          <div className="segmented-tabs" role="tablist" aria-label="Range options">
+            {RANGES.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="tab"
+                aria-selected={range === option.value}
+                className={`segmented-tab ${range === option.value ? 'active' : ''}`}
+                onClick={() => setRange(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <select
+            id="charts-range-select"
+            aria-label="Range"
+            value={range}
+            onChange={(event) => setRange(event.target.value)}
+            className="visually-hidden-accessible"
+          >
             {RANGES.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
-        </label>
+        </div>
       </div>
       {status === 'error' && <p className="notice notice-error" role="alert">{error}</p>}
       {status === 'ready' && entries.length === 0 && <p className="notice">No plays found for this range.</p>}

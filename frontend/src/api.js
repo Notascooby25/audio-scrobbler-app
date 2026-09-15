@@ -92,6 +92,147 @@ export async function submitImportScrobbles({ token, source, entries }) {
   }
 }
 
+export async function submitUnifiedImport({ token, entries, source, onProgress }) {
+  if (!token) {
+    const noTokenErr = new Error('You are not signed in. Please sign in with a Development User ID (e.g. 1) before importing.')
+    noTokenErr.status = 401
+    throw noTokenErr
+  }
+  try {
+    const response = await fetch(`${API_BASE_URL}/import/unified?stream=true`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ entries, source: source || null }),
+    })
+
+    if (!response.ok) {
+      return await parseResponse(response)
+    }
+
+    if (!response.body || typeof response.body.getReader !== 'function') {
+      return await response.json()
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let finalResult = null
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n\n')
+      buffer = lines.pop() || ''
+
+      for (const block of lines) {
+        if (!block.trim()) continue
+        const eventMatch = block.match(/^event:\s*(\w+)/m)
+        const dataMatch = block.match(/^data:\s*(.+)$/m)
+        if (dataMatch) {
+          try {
+            const parsedData = JSON.parse(dataMatch[1])
+            if (onProgress && typeof onProgress === 'function') {
+              onProgress(parsedData)
+            }
+            if ((eventMatch && eventMatch[1] === 'complete') || parsedData.stage === 'completion') {
+              finalResult = parsedData
+            }
+          } catch {
+            // Ignore parse errors on partial chunks
+          }
+        }
+      }
+    }
+
+    if (!finalResult) {
+      finalResult = {
+        status: 'ok',
+        source: source || 'auto',
+        summary: { inserted: entries.length, skipped: 0, duplicate: 0 },
+      }
+    }
+    return finalResult
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error(`Network failure (fetch failed): Unable to reach the backend at "${API_BASE_URL || window.location.origin}". Ensure the backend container is running and healthy. Details: ${error.message}`)
+    }
+    throw error
+  }
+}
+
+export function fetchCachedArtwork({ trackId }) {
+  return fetch(`${API_BASE_URL}/artwork/cache/${encodeURIComponent(trackId)}`).then(parseResponse)
+}
+
+export async function startArtworkBackfill({ token, onProgress, signal }) {
+  if (!token) {
+    const noTokenErr = new Error('You are not signed in. Please sign in with a Development User ID (e.g. 1) before importing.')
+    noTokenErr.status = 401
+    throw noTokenErr
+  }
+  try {
+    const response = await fetch(`${API_BASE_URL}/artwork/backfill`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      signal,
+    })
+
+    if (!response.ok) {
+      return await parseResponse(response)
+    }
+
+    if (!response.body || typeof response.body.getReader !== 'function') {
+      return await response.json()
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let finalResult = null
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n\n')
+      buffer = lines.pop() || ''
+
+      for (const block of lines) {
+        if (!block.trim()) continue
+        const eventMatch = block.match(/^event:\s*(\w+)/m)
+        const dataMatch = block.match(/^data:\s*(.+)$/m)
+        if (dataMatch) {
+          try {
+            const parsedData = JSON.parse(dataMatch[1])
+            if (onProgress && typeof onProgress === 'function') {
+              onProgress(parsedData)
+            }
+            if ((eventMatch && eventMatch[1] === 'complete') || parsedData.stage === 'completion') {
+              finalResult = parsedData
+            }
+          } catch {
+            // Ignore parse errors on partial chunks
+          }
+        }
+      }
+    }
+
+    return finalResult || { status: 'ok', summary: { inserted: 0, skipped: 0, duplicate: 0 } }
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error(`Network failure (fetch failed): Unable to reach the backend at "${API_BASE_URL || window.location.origin}". Ensure the backend container is running and healthy. Details: ${error.message}`)
+    }
+    throw error
+  }
+}
+
+
 export function deleteImportedScrobbles({ token, source }) {
   return fetchAnalyticsResource(`/import/scrobbles/${encodeURIComponent(source)}`, { token, method: 'DELETE' })
 }
@@ -166,12 +307,12 @@ export function fetchStatsChart({ token, entity, limit, dateRange }) {
   return fetchAnalyticsResource(`/stats/top-${entity}`, { token, params })
 }
 
-export function fetchLibraryCollection({ token, entity, limit, offset, dateRange }) {
-  const params = { limit, offset, ...(dateRange ? toQueryParams(dateRange) : {}) }
+export function fetchLibraryCollection({ token, entity, limit, offset, dateRange, search }) {
+  const params = { limit, offset, search, ...(dateRange ? toQueryParams(dateRange) : {}) }
   return fetchAnalyticsResource(`/library/${entity}`, { token, params })
 }
 
-export function fetchLibraryScrobbles({ token, limit, offset, dateRange, filterEntity, filterName, filterSecondary }) {
+export function fetchLibraryScrobbles({ token, limit, offset, dateRange, filterEntity, filterName, filterSecondary, search }) {
   return fetchAnalyticsResource('/library/scrobbles', {
     token,
     params: {
@@ -180,6 +321,7 @@ export function fetchLibraryScrobbles({ token, limit, offset, dateRange, filterE
       filter_entity: filterEntity,
       filter_name: filterName,
       filter_secondary: filterSecondary,
+      search,
       ...(dateRange ? toQueryParams(dateRange) : {}),
     },
   })
@@ -220,8 +362,8 @@ export function backfillArtwork({ token }) {
   return fetchAnalyticsResource('/spotify/backfill-artwork', { token })
 }
 
-export function fetchLikedTracks({ token, limit, offset }) {
-  return fetchAnalyticsResource('/spotify/liked-tracks', { token, params: { limit, offset } })
+export function fetchLikedTracks({ token, limit, offset, search }) {
+  return fetchAnalyticsResource('/spotify/liked-tracks', { token, params: { limit, offset, search } })
 }
 
 export function fetchUserSettings({ token }) {
@@ -254,4 +396,20 @@ export function deleteLibraryEntries({ token, entityType, name, secondary }) {
 
 export function deleteLibraryScrobbles({ token, ids }) {
   return fetchAnalyticsResource('/library/delete-scrobbles', { token, method: 'POST', body: { ids } })
+}
+export function fetchImportBatches({ token }) {
+  return fetchAnalyticsResource('/import/batches', { token })
+}
+
+export function advancedDeleteImports({ token, source, startDate, endDate, batchTime }) {
+  return fetchAnalyticsResource('/import/advanced-delete', {
+    token,
+    method: 'POST',
+    body: {
+      source: source || null,
+      start_date: startDate || null,
+      end_date: endDate || null,
+      batch_time: batchTime || null,
+    }
+  })
 }
