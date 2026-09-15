@@ -28,10 +28,10 @@ services:
       ACCESS_TOKEN_TTL_SECONDS: 3600
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
-      SPOTIFY_REDIRECT_URI: http://127.0.0.1:8000/auth/spotify/callback
+      SPOTIFY_REDIRECT_URI: ${SPOTIFY_REDIRECT_URI:-http://127.0.0.1:8000/auth/spotify/callback}
       SPOTIFY_SCOPES: user-read-recently-played user-library-read user-library-modify
-      FRONTEND_AUTH_CALLBACK_URL: http://localhost:5173/connect
-      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      FRONTEND_AUTH_CALLBACK_URL: ${FRONTEND_AUTH_CALLBACK_URL:-http://localhost:5173/connect}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
       DEV_USER_ID: 1
       DEV_USER_SPOTIFY_ID: development-user
       DEV_USER_DISPLAY_NAME: Development User
