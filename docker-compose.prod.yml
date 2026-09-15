@@ -16,7 +16,8 @@ services:
   backend:
     image: ghcr.io/${GHCR_OWNER}/audio-scrobbler-app-backend:${IMAGE_TAG}
     labels:
-      - com.centurylabs.watchtower.enable=true
+      - com.centurylinklabs.watchtower.enable=true
+      - com.centurylinklabs.watchtower.scope=audio-scrobbler-app
     ports:
       - "8000:8000"
     environment:
@@ -45,7 +46,8 @@ services:
   worker:
     image: ghcr.io/${GHCR_OWNER}/audio-scrobbler-app-worker:${IMAGE_TAG}
     labels:
-      - com.centurylabs.watchtower.enable=true
+      - com.centurylinklabs.watchtower.enable=true
+      - com.centurylinklabs.watchtower.scope=audio-scrobbler-app
     environment:
       WORKER_BACKEND_URL: http://backend:8000
       WORKER_INGESTION_TOKEN: ${WORKER_INGESTION_TOKEN}
@@ -75,10 +77,12 @@ services:
   frontend:
     image: ghcr.io/${GHCR_OWNER}/audio-scrobbler-app-frontend:${IMAGE_TAG}
     labels:
-      - com.centurylabs.watchtower.enable=true
+      - com.centurylinklabs.watchtower.enable=true
+      - com.centurylinklabs.watchtower.scope=audio-scrobbler-app
     ports:
       - "5173:5173"
     environment:
+      BACKEND_PROXY_URL: http://backend:8000
       VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:5173', response => process.exit(response.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
@@ -145,10 +149,18 @@ services:
       retries: 10
 
   # Polls GHCR for new :latest images and auto-updates backend/worker/frontend
-  # (only containers labeled com.centurylabs.watchtower.enable=true — db and
-  # the monitoring stack are deliberately excluded). Needs the host already
-  # logged in via `docker login ghcr.io` so DOCKER_CONFIG_DIR/config.json
-  # carries GHCR credentials through for pulling private images.
+  # (only containers labeled com.centurylinklabs.watchtower.enable=true — db
+  # and the monitoring stack are deliberately excluded). Needs the host
+  # already logged in via `docker login ghcr.io` so DOCKER_CONFIG_DIR/
+  # config.json carries GHCR credentials through for pulling private images.
+  #
+  # WATCHTOWER_SCOPE matters on any host that already runs another watchtower
+  # instance for a different app: on startup, an *unscoped* watchtower stops
+  # every other watchtower container it finds, scoped or not — only a scoped
+  # instance limits itself to same-scope peers. Any sibling watchtower on a
+  # shared host must be at least set to scope "none" (not left fully unset)
+  # for the two to coexist safely; see containrrr.dev/watchtower docs on
+  # running multiple instances.
   watchtower:
     image: containrrr/watchtower:latest
     volumes:
@@ -159,6 +171,12 @@ services:
       WATCHTOWER_CLEANUP: "true"
       WATCHTOWER_LABEL_ENABLE: "true"
       WATCHTOWER_ROLLING_RESTART: "true"
+      WATCHTOWER_SCOPE: audio-scrobbler-app
+      # Without this, watchtower's bundled Docker client negotiates down to
+      # a very old API version that modern Docker daemons reject outright
+      # ("client version 1.25 is too old"). Matches the working pin used by
+      # this NUC's other watchtower-based deployments.
+      DOCKER_API_VERSION: ${WATCHTOWER_DOCKER_API_VERSION:-1.41}
 
 volumes:
   postgres_data:
