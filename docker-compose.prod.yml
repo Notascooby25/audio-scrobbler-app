@@ -117,9 +117,14 @@ services:
       ALERTMANAGER_WARNING_WEBHOOK_URL: ${ALERTMANAGER_WARNING_WEBHOOK_URL:-http://127.0.0.1:65535/disabled}
     volumes:
       - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    entrypoint: ["sh", "-c"]
     command:
-      - --config.file=/etc/alertmanager/alertmanager.yml
-      - --config.expand-env
+      - >
+        sed
+        -e "s|\${ALERTMANAGER_CRITICAL_WEBHOOK_URL}|$$ALERTMANAGER_CRITICAL_WEBHOOK_URL|g"
+        -e "s|\${ALERTMANAGER_WARNING_WEBHOOK_URL}|$$ALERTMANAGER_WARNING_WEBHOOK_URL|g"
+        /etc/alertmanager/alertmanager.yml > /tmp/alertmanager.yml &&
+        exec alertmanager --config.file=/tmp/alertmanager.yml
     healthcheck:
       test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:9093/-/ready"]
       interval: 10s
