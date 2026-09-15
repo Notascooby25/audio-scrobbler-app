@@ -23,7 +23,7 @@ def test_normalize_recent_item_maps_spotify_fields():
 
     assert event["user_id"] == 4
     assert event["track_id"] == "track-1"
-    assert event["play_id"] == "track-1"
+    assert event["play_id"] == f"track-1:{ITEM['played_at']}"
     assert event["artist_name"] == "Artist One"
     assert event["album_name"] is None
     assert event["duration_ms"] == 210000
