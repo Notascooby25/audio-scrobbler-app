@@ -14,7 +14,7 @@ const SETTINGS_TABS = [
 ]
 
 const VIEW_OPTIONS = [
-  ['default_library_view', 'Default Library view'],
+  ['default_library_view', 'Default library view'],
   ['scrobbles_view', 'Scrobbles view'],
   ['artists_view', 'Artists view'],
   ['albums_view', 'Albums view'],

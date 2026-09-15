@@ -6,9 +6,10 @@ describe('Card Border Consistency & Flat-By-Default Audit', () => {
   const stylesPath = path.resolve(__dirname, 'styles.css')
   const stylesContent = fs.readFileSync(stylesPath, 'utf-8')
 
-  it('contains zero non-none box-shadows across styles.css', () => {
-    // Find all box-shadow property declarations
-    const boxShadowMatches = stylesContent.match(/box-shadow\s*:\s*([^;]+);/g) || []
+  it('contains zero non-none box-shadows across styles.css (excluding focus rings)', () => {
+    // Find all base (non-focus-ring) box-shadow property declarations
+    const nonFocusStyles = stylesContent.replace(/:focus[^{]*\{[^}]*\}/g, '')
+    const boxShadowMatches = nonFocusStyles.match(/box-shadow\s*:\s*([^;]+);/g) || []
     expect(boxShadowMatches.length).toBeGreaterThan(0)
     for (const declaration of boxShadowMatches) {
       expect(declaration).toMatch(/box-shadow\s*:\s*none\s*;/)

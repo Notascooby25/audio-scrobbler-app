@@ -54,3 +54,4 @@ describe('LibraryViewToggle', () => {
     expect(selectBtn).toHaveAttribute('aria-pressed', 'true')
   })
 })
+
