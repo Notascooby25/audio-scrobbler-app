@@ -135,7 +135,7 @@ export default function LibraryPage() {
     localStorage.setItem('audio-scrobbler-library-view', nextView)
   }
 
-  const activeView = settings?.[`${tab}_view`] || view
+  const activeView = tab === 'scrobbles' ? 'list' : (settings?.[`${tab}_view`] || view)
   const visibleScrobbles = data && loadedTab === tab && tab === 'scrobbles' ? data.scrobbles : []
   const selectedCount = tab === 'scrobbles' ? selectedScrobbleIds.size : selectedEntries.size
 
@@ -261,6 +261,7 @@ export default function LibraryPage() {
                 onChange={changeView}
                 selectMode={selectMode}
                 onToggleSelectMode={() => setSelectMode((prev) => !prev)}
+                allowGrid={tab !== 'scrobbles'}
               />
             </div>
           </div>

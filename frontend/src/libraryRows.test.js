@@ -33,12 +33,12 @@ describe('Library List Row Density per DESIGN.md', () => {
     )
   })
 
-  it('styles title as 20px headline (#111111, 500) and subtitle as 12px label (#888888)', () => {
+  it('styles title as 15px bold (#111111, 600) and subtitle as 12px label (#888888)', () => {
     expect(stylesContent).toMatch(
-      /\.library-row-copy strong\s*\{[^}]*font-size:\s*20px/
+      /\.library-row-copy strong\s*\{[^}]*font-size:\s*15px/
     )
     expect(stylesContent).toMatch(
-      /\.library-row-copy strong\s*\{[^}]*font-weight:\s*500/
+      /\.library-row-copy strong\s*\{[^}]*font-weight:\s*600/
     )
     expect(stylesContent).toMatch(
       /\.library-row-copy strong\s*\{[^}]*color:\s*#111111/

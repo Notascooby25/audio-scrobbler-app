@@ -58,3 +58,4 @@ describe('SourceBadge', () => {
     expect(badge).toHaveClass('source-badge-import')
   })
 })
+

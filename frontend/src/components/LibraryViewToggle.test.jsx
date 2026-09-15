@@ -53,5 +53,13 @@ describe('LibraryViewToggle', () => {
     expect(selectBtn).toHaveClass('active')
     expect(selectBtn).toHaveAttribute('aria-pressed', 'true')
   })
+
+  it('hides the Grid button when allowGrid is false', () => {
+    const onChange = vi.fn()
+    render(<LibraryViewToggle view="list" onChange={onChange} allowGrid={false} />)
+
+    expect(screen.getByRole('button', { name: 'List' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Grid' })).not.toBeInTheDocument()
+  })
 })
 

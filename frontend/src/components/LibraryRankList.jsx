@@ -146,7 +146,7 @@ export default function LibraryRankList({
                     to={entityUrl}
                     aria-label={`Show ${entry.play_count.toLocaleString()} scrobbles for ${entry.label}`}
                   >
-                    <span>{entry.play_count.toLocaleString()}{view === 'list' && ' scrobbles'}</span>
+                    <span>{entry.play_count.toLocaleString()}{view === 'list' && <span className="library-count-suffix"> scrobbles</span>}</span>
                   </Link>
                   {onEntryChanged && entityType && (
                     <EntryMenu

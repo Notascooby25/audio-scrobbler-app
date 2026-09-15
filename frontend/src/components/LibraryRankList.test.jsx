@@ -30,8 +30,9 @@ describe('LibraryRankList', () => {
     expect(screen.getByText('Slow Show')).toBeInTheDocument()
     expect(screen.getByText('The National')).toBeInTheDocument()
     expect(screen.getByText('51')).toBeInTheDocument()
-    expect(screen.getByText('12 scrobbles')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Show 12 scrobbles for Slow Show' })).toHaveAttribute('href', '/library?filter_entity=track&filter_name=Slow%20Show&filter_secondary=The%20National')
+    const countLink = screen.getByRole('link', { name: 'Show 12 scrobbles for Slow Show' })
+    expect(countLink).toHaveTextContent('12 scrobbles')
+    expect(countLink).toHaveAttribute('href', '/library?filter_entity=track&filter_name=Slow%20Show&filter_secondary=The%20National')
     expect(screen.getByRole('button', { name: 'Remove from Spotify liked tracks' })).toBeInTheDocument()
   })
 

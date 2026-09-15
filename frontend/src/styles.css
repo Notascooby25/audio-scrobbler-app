@@ -96,6 +96,11 @@ p {
   color: #ffffff !important;
 }
 
+.nav-link-active:hover {
+  background: var(--color-accent);
+  color: #ffffff !important;
+}
+
 .nav-link:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
@@ -114,6 +119,7 @@ p {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    align-self: center;
     min-height: 44px;
     min-width: 44px;
     font: 600 0.75rem inherit, sans-serif;
@@ -700,11 +706,24 @@ button:disabled {
 .import-summary-dismiss {
   background: transparent;
   border: 0;
+  border-radius: var(--radius-sm);
   color: var(--color-accent);
   min-height: auto;
-  padding: 0.35rem 0;
+  padding: 0.35rem 0.5rem;
+  margin-left: -0.5rem;
   text-decoration: underline;
   cursor: pointer;
+}
+
+.import-summary-dismiss:hover:not(:disabled),
+.import-summary-dismiss:focus-visible {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--color-ink);
+}
+
+.import-summary-dismiss:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 /* ─── Scrobbles & Lists ─────────────────────────────────────────────────────── */
@@ -1244,6 +1263,7 @@ button:disabled {
 .analytics-page {
   display: grid;
   gap: 1.5rem;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .analytics-page > .section-kicker {
@@ -1283,6 +1303,7 @@ button:disabled {
 
 .overview-grid,
 .report-grid {
+  align-items: stretch;
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1298,6 +1319,11 @@ button:disabled {
   box-shadow: none;
   padding: 16px;
   transition: border-color 140ms ease;
+}
+
+.ranked-panel {
+  display: flex;
+  flex-direction: column;
 }
 
 .report-card:hover {
@@ -1319,6 +1345,7 @@ button:disabled {
 }
 
 .ranked-list {
+  flex: 1;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -1496,6 +1523,17 @@ button:disabled {
   color: #ffffff;
 }
 
+.library-view-toggle button:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--color-ink);
+}
+
+.library-view-toggle button.active:hover:not(:disabled) {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: #ffffff;
+}
+
 .bulk-action-bar {
   align-items: center;
   background: var(--color-ink);
@@ -1663,9 +1701,9 @@ button:disabled {
 
 .library-row-copy strong {
   color: #111111;
-  font-size: 20px;
-  font-weight: 500;
-  line-height: 1.25;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .library-row-copy small {
@@ -1814,6 +1852,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 0;
+  height: auto;
   min-height: auto;
   overflow: hidden;
   padding: 0;
@@ -2028,7 +2067,8 @@ button:disabled {
   grid-template-areas: "select art copy time" "select art source heart";
   grid-template-columns: 2.5rem 2.7rem minmax(0, 1fr) auto;
   grid-template-rows: minmax(2rem, auto) auto;
-  min-height: 5.2rem;
+  row-gap: 6px;
+  min-height: 5.6rem;
   border-radius: var(--radius-sm);
   padding-inline: 0.5rem;
   box-shadow: none;
@@ -2370,12 +2410,57 @@ button:disabled {
 }
 
 .report-category-grid .library-rank-row {
-  min-height: 3.2rem;
+  display: grid;
+  grid-template-areas: "media copy" "media actions";
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 8px;
+  row-gap: 4px;
+  align-items: start;
+  height: auto;
+  min-height: 100px;
+}
+
+.report-category-grid .library-rank-media {
+  grid-area: media;
+  align-self: start;
+}
+
+.report-category-grid .library-row-copy {
+  grid-area: copy;
+  min-width: 0;
+}
+
+.report-category-grid .library-rank-actions {
+  grid-area: actions;
+  justify-content: flex-end;
+  margin-left: 0;
 }
 
 .report-category-grid .library-row-artwork {
   height: 2.4rem;
   width: 2.4rem;
+}
+
+.report-category-grid .library-row-copy strong {
+  font-size: 13px;
+  white-space: normal;
+  overflow-wrap: break-word;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.report-category-grid .library-row-copy small {
+  font-size: 10.5px;
+  white-space: normal;
+  overflow-wrap: break-word;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.report-category-grid .library-count-bar {
+  min-width: 2rem;
+  padding: 3px 6px;
+  font-size: 11px;
 }
 
 .summary-grid {
@@ -2573,11 +2658,16 @@ dd {
     padding: 16px;
   }
   .filters {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .date-range-selector {
     flex-direction: column;
+    flex-wrap: nowrap;
     align-items: stretch;
+    min-width: 0;
+  }
+  .date-range-segmented-group {
+    min-width: 0;
   }
   .date-range-popover {
     position: static;
@@ -2588,40 +2678,121 @@ dd {
     width: 100%;
     justify-content: center;
   }
-  button {
+  .filters button {
     width: 100%;
   }
   .stats-bar,
   .overview-grid,
   .report-grid,
   .library-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .report-category-grid,
   .report-facts,
   .report-data-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .library-rank-panel-grid .library-rank-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
   }
   .library-rank-panel:not(.library-rank-panel-grid) .library-rank-row {
-    align-items: center;
-    flex-wrap: nowrap;
-    height: 64px;
-    min-height: 64px;
+    display: grid;
+    grid-template-areas: "media copy" "media actions";
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 10px;
+    row-gap: 4px;
+    align-items: start;
+    height: auto;
+    min-height: auto;
+  }
+  .library-rank-panel:not(.library-rank-panel-grid) .library-rank-media {
+    grid-area: media;
+    align-self: start;
   }
   .library-rank-panel:not(.library-rank-panel-grid) .library-row-copy {
-    flex: 1 1 auto;
+    grid-area: copy;
     min-width: 0;
   }
   .library-rank-panel:not(.library-rank-panel-grid) .library-rank-actions {
-    flex: 0 1 auto;
+    grid-area: actions;
     justify-content: flex-end;
+    margin-left: 0;
   }
-  .library-scrobble-row time {
+  .library-scrobble-row {
+    display: grid;
+    grid-template-areas: "art copy time" "art source heart";
+    grid-template-columns: 2.7rem minmax(0, 1fr) auto;
+    column-gap: 10px;
+    row-gap: 4px;
+    align-items: start;
+    height: auto;
+    min-height: auto;
+  }
+  .library-scrobble-row .scrobble-grid-artwork {
+    grid-area: art;
+    align-self: start;
+  }
+  .library-scrobble-row .library-row-copy {
+    grid-area: copy;
+  }
+  .library-scrobble-row .scrobble-grid-time {
+    grid-area: time;
+    justify-self: end;
     min-width: auto;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .library-scrobble-row .scrobble-grid-source {
+    grid-area: source;
+    justify-self: start;
+    align-self: start;
+    margin-top: 2px;
+  }
+  .library-scrobble-row .like-button {
+    grid-area: heart;
+    justify-self: end;
+    align-self: start;
+    margin-left: 0;
+  }
+  .library-row-copy strong {
+    font-size: 13px;
+    white-space: normal;
+    overflow-wrap: break-word;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  .library-row-copy small {
+    font-size: 10.5px;
+    white-space: normal;
+    overflow-wrap: break-word;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  .library-select-toggle {
+    display: none;
+  }
+  .library-rank-panel:not(.library-rank-panel-grid) .bulk-select-control,
+  .library-scrobble-row .bulk-select-control {
+    display: none;
+  }
+  .library-count-suffix {
+    display: none;
+  }
+  .library-count-bar {
+    min-width: 2rem;
+    padding: 3px 6px;
+    font-size: 11px;
+  }
+  .entry-menu-toggle {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0.25rem;
+  }
+  .library-row-artwork {
+    flex-basis: 40px;
+    height: 40px;
+    width: 40px;
   }
   .report-banner {
     align-items: flex-start;
@@ -2631,6 +2802,7 @@ dd {
   .settings-tabs,
   .segmented-tabs {
     flex-wrap: nowrap;
+    min-width: 0;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 2px;
