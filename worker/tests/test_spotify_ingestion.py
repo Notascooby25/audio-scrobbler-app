@@ -3,8 +3,15 @@ from __future__ import annotations
 from datetime import datetime
 
 import pytest
+import requests
 
-from spotify_ingestion import CheckpointRecord, UserRecord, normalize_recent_item, sync_user
+from spotify_ingestion import (
+    CheckpointRecord,
+    UserRecord,
+    normalize_recent_item,
+    sync_liked_tracks_and_artwork,
+    sync_user,
+)
 
 
 ITEM = {
@@ -114,3 +121,55 @@ def test_sync_does_not_commit_when_backend_submission_fails(monkeypatch):
         sync_user(session, user, FakeClient(), "http://backend", "worker-token")
 
     assert session.commits == 0
+
+
+class FakeInternalResponse:
+    def __init__(self, status_code, headers=None, payload=None):
+        self.status_code = status_code
+        self.headers = headers or {}
+        self._payload = payload or {}
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise requests.HTTPError(f"status {self.status_code}")
+
+    def json(self):
+        return self._payload
+
+
+def test_sync_liked_tracks_and_artwork_calls_both_internal_endpoints(monkeypatch):
+    calls = []
+
+    def fake_post(url, json, headers, timeout):
+        calls.append((url, json, headers))
+        return FakeInternalResponse(200, payload={"fetched": 1, "inserted": 1, "updated": 0, "artwork_updated": 0})
+
+    monkeypatch.setattr("spotify_ingestion.requests.post", fake_post)
+
+    sync_liked_tracks_and_artwork("http://backend", "worker-token", 4)
+
+    assert [call[0] for call in calls] == [
+        "http://backend/spotify/internal/sync-liked-tracks",
+        "http://backend/spotify/internal/backfill-artwork",
+    ]
+    assert all(call[1] == {"user_id": 4} for call in calls)
+    assert all(call[2] == {"X-Worker-Token": "worker-token"} for call in calls)
+
+
+def test_sync_liked_tracks_and_artwork_retries_on_429(monkeypatch):
+    responses = iter([
+        FakeInternalResponse(429, headers={"Retry-After": "0"}),
+        FakeInternalResponse(200, payload={"fetched": 0, "inserted": 0, "updated": 0, "artwork_updated": 0}),
+        FakeInternalResponse(200, payload={"fetched": 0, "inserted": 0, "updated": 0, "artwork_updated": 0}),
+    ])
+    monkeypatch.setattr("spotify_ingestion.requests.post", lambda *a, **k: next(responses))
+    monkeypatch.setattr("spotify_ingestion.time.sleep", lambda seconds: None)
+
+    sync_liked_tracks_and_artwork("http://backend", "worker-token", 4)
+
+
+def test_sync_liked_tracks_and_artwork_raises_when_first_call_fails(monkeypatch):
+    monkeypatch.setattr("spotify_ingestion.requests.post", lambda *a, **k: FakeInternalResponse(401))
+
+    with pytest.raises(requests.HTTPError):
+        sync_liked_tracks_and_artwork("http://backend", "worker-token", 4)

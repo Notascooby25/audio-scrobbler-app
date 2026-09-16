@@ -358,10 +358,6 @@ export function unlikeSpotifyTrack({ token, trackId }) {
   return fetchAnalyticsResource(`/spotify/tracks/${encodeURIComponent(trackId)}/like`, { token, method: 'DELETE' })
 }
 
-export function backfillArtwork({ token }) {
-  return fetchAnalyticsResource('/spotify/backfill-artwork', { token, method: 'POST' })
-}
-
 export function fetchLikedTracks({ token, limit, offset, search }) {
   return fetchAnalyticsResource('/spotify/liked-tracks', { token, params: { limit, offset, search } })
 }
