@@ -52,16 +52,7 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: monitoring/prometheus.yml,monitoring/alerts.yml,monitoring/alertmanager.yml
-          target: ${{ secrets.DEPLOY_PATH }}
-
-      - name: Upload monitoring configuration
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: monitoring/prometheus.yml,monitoring/alerts.yml
+          source: monitoring/prometheus.yml,monitoring/alerts.yml,monitoring/alertmanager.yml,monitoring/alertmanager-entrypoint.sh
           target: ${{ secrets.DEPLOY_PATH }}
 
       - name: Deploy immutable image tag
@@ -100,17 +91,25 @@ jobs:
             printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USERNAME" --password-stdin
             GHCR_OWNER="$GHCR_OWNER" IMAGE_TAG="$IMAGE_TAG" docker compose -f docker-compose.prod.yml --env-file .env.production pull
             GHCR_OWNER="$GHCR_OWNER" IMAGE_TAG="$IMAGE_TAG" docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+            # Poll container health rather than curling host ports: backend
+            # and frontend are the only services that publish one at all
+            # (worker, prometheus, alertmanager, node-exporter never did),
+            # and even backend's port is host-configurable via
+            # BACKEND_HOST_PORT, so a hardcoded "localhost:8000" silently
+            # stops meaning anything the moment that changes. All 8 services
+            # in docker-compose.prod.yml carry a healthcheck; this is the
+            # same "count healthy containers" pattern ci.yml's own
+            # production-monitoring-smoke job already uses successfully.
             for attempt in $(seq 1 30); do
-              backend_status="$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:8000/readyz || true)"
-              worker_status="$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:8001/readyz || true)"
-              frontend_status="$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:5173/ || true)"
-              if [ "$backend_status" = "200" ] && [ "$worker_status" = "200" ] && [ "$frontend_status" = "200" ]; then
+              healthy="$(docker compose -f docker-compose.prod.yml --env-file .env.production ps --format json | grep -c '"Health":"healthy"' || true)"
+              if [ "$healthy" -ge 8 ]; then
                 printf '%s\n' "$IMAGE_TAG" > .deployed-image-tag
                 trap - EXIT
                 exit 0
               fi
               sleep 5
             done
+            docker compose -f docker-compose.prod.yml --env-file .env.production ps
             exit 1
 
       - name: Verify monitoring deployment
@@ -123,21 +122,27 @@ jobs:
           script: |
             set -eu
             cd '${{ secrets.DEPLOY_PATH }}'
-            curl --fail --silent http://localhost:9090/-/ready >/dev/null
-            targets="$(curl --fail --silent http://localhost:9090/api/v1/targets)"
+            # prometheus/alertmanager publish no host ports, so this has to
+            # run from inside the containers — a curl against
+            # "localhost:9090" on the host would have hit whatever else is
+            # already listening there (Cockpit, on this NUC), silently
+            # checking the wrong service entirely. Matches the pattern
+            # ci.yml's production-monitoring-smoke job already uses.
+            docker compose -f docker-compose.prod.yml --env-file .env.production exec -T prometheus wget --spider --quiet http://localhost:9090/-/ready
+            targets="$(docker compose -f docker-compose.prod.yml --env-file .env.production exec -T prometheus wget -qO- http://localhost:9090/api/v1/targets)"
             printf '%s' "$targets" | grep -q '"job":"backend".*"health":"up"'
             printf '%s' "$targets" | grep -q '"job":"worker".*"health":"up"'
             printf '%s' "$targets" | grep -q '"job":"backup".*"health":"up"'
-            curl --fail --silent http://localhost:9090/api/v1/rules | grep -q 'AudioScrobbler'
-            curl --fail --silent http://localhost:9093/-/ready >/dev/null
+            docker compose -f docker-compose.prod.yml --env-file .env.production exec -T prometheus wget -qO- http://localhost:9090/api/v1/rules | grep -q 'AudioScrobbler'
+            docker compose -f docker-compose.prod.yml --env-file .env.production exec -T alertmanager wget --spider --quiet http://localhost:9093/-/ready
 
       - name: Write deployment summary
         if: success()
         run: |
           {
             echo "### Production deployment"
-            echo "- Image tag: `${{ inputs.image_tag }}`"
-            echo "- Target: `${{ secrets.DEPLOY_HOST }}`"
+            echo "- Image tag: \`${{ inputs.image_tag }}\`"
+            echo "- Target: \`${{ secrets.DEPLOY_HOST }}\`"
             echo "- Database backup and restore verification: passed"
             echo "- Backend, worker, and frontend health checks passed"
           } >> "$GITHUB_STEP_SUMMARY"
