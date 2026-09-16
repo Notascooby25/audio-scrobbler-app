@@ -97,7 +97,16 @@ services:
     ports:
       - "5173:5173"
     healthcheck:
-      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:5173/"]
+      # 127.0.0.1, not localhost: this custom nginx.conf only listens
+      # on IPv4 (nginx's stock IPv6-listen auto-injection skips any
+      # conf.d file it does not recognize as its packaged default,
+      # logged as "differs from the packaged version"), but busybox
+      # wget resolves "localhost" to ::1 first inside this image and
+      # gets connection-refused there. This healthcheck failed
+      # permanently despite the app serving traffic completely
+      # normally over IPv4 (verified: external curls all succeeded
+      # while this reported unhealthy).
+      test: ["CMD", "wget", "--spider", "--quiet", "http://127.0.0.1:5173/"]
       interval: 10s
       timeout: 5s
       retries: 10
