@@ -20,6 +20,8 @@ worker/node_modules/
 !.vscode/extensions.json
 !.vscode/settings.json
 
+.claude/
+
 *.log
 .DS_Store
 backups/
