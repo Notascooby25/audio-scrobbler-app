@@ -93,3 +93,46 @@ def test_callback_persists_encrypted_refresh_token(monkeypatch):
     assert isinstance(db.user, User)
     assert decrypt_refresh_token(db.user.refresh_token_cipher) == "spotify-refresh"
     assert db.commits == 1
+
+def test_callback_rejects_spotify_id_not_on_allowlist(monkeypatch):
+    monkeypatch.setattr(type(settings), "allowed_spotify_ids", lambda self: ["someone-else"])
+    responses = iter([
+        FakeResponse({"access_token": "spotify-access", "refresh_token": "spotify-refresh"}),
+        FakeResponse({"id": "spotify-user", "display_name": "Spotify User"}),
+    ])
+    monkeypatch.setattr(spotify_oauth_service.requests, "post", lambda *args, **kwargs: next(responses))
+    monkeypatch.setattr(spotify_oauth_service.requests, "get", lambda *args, **kwargs: next(responses))
+    db = FakeDB()
+
+    try:
+        spotify_oauth_service.complete_spotify_callback(
+            db,
+            "authorization-code",
+            spotify_oauth_service.create_oauth_state(),
+        )
+    except spotify_oauth_service.SpotifyAccessDeniedError:
+        pass
+    else:
+        raise AssertionError("Non-allowlisted Spotify account was not rejected")
+    assert db.commits == 0
+    assert db.user is None
+
+
+def test_callback_allows_spotify_id_on_allowlist(monkeypatch):
+    monkeypatch.setattr(type(settings), "allowed_spotify_ids", lambda self: ["spotify-user"])
+    responses = iter([
+        FakeResponse({"access_token": "spotify-access", "refresh_token": "spotify-refresh"}),
+        FakeResponse({"id": "spotify-user", "display_name": "Spotify User"}),
+    ])
+    monkeypatch.setattr(spotify_oauth_service.requests, "post", lambda *args, **kwargs: next(responses))
+    monkeypatch.setattr(spotify_oauth_service.requests, "get", lambda *args, **kwargs: next(responses))
+    db = FakeDB()
+
+    token, user_id = spotify_oauth_service.complete_spotify_callback(
+        db,
+        "authorization-code",
+        spotify_oauth_service.create_oauth_state(),
+    )
+
+    assert user_id == 17
+    assert isinstance(db.user, User)

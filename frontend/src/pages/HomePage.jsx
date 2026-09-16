@@ -47,6 +47,10 @@ function readCallbackSession() {
 export default function HomePage() {
   const callbackSession = readCallbackSession()
   const callbackError = callbackSession?.authError
+  const callbackErrorMessage =
+    callbackError === 'account_not_allowed'
+      ? 'This Spotify account is not authorized to use this app.'
+      : 'Spotify authorization was cancelled.'
   if (callbackError) localStorage.removeItem('audio-scrobbler-session')
   if (callbackSession) localStorage.setItem('audio-scrobbler-session', JSON.stringify(callbackSession))
   const savedSession = callbackSession?.accessToken ? callbackSession : readSavedSession()
@@ -56,7 +60,7 @@ export default function HomePage() {
   const [toMonth, setToMonth] = useState('')
   const [summary, setSummary] = useState(null)
   const [scrobbles, setScrobbles] = useState([])
-  const [error, setError] = useState(callbackError ? 'Spotify authorization was cancelled.' : '')
+  const [error, setError] = useState(callbackError ? callbackErrorMessage : '')
   const [status, setStatus] = useState(callbackError ? 'error' : savedSession?.accessToken ? 'loading' : 'idle')
   const [importResult, setImportResult] = useState(null)
   const [importError, setImportError] = useState('')

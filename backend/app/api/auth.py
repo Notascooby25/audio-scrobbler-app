@@ -12,7 +12,12 @@ from ..models import User
 from ..schemas.auth import AccessTokenResponse, DevTokenRequest
 from ..schemas.spotify import SpotifyAuthorizeResponse, SpotifyCallbackResponse
 from ..services.auth_service import create_access_token
-from ..services.spotify_oauth_service import build_authorization_url, complete_spotify_callback, create_oauth_state
+from ..services.spotify_oauth_service import (
+    SpotifyAccessDeniedError,
+    build_authorization_url,
+    complete_spotify_callback,
+    create_oauth_state,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -40,6 +45,10 @@ def spotify_callback(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Spotify authorization code is missing")
     try:
         access_token, user_id = complete_spotify_callback(db, code, state)
+    except SpotifyAccessDeniedError as exc:
+        if settings.frontend_auth_callback_url:
+            return RedirectResponse(f"{settings.frontend_auth_callback_url}#auth_error=account_not_allowed")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This Spotify account is not authorized to use this app") from exc
     except (ValueError, jwt.InvalidTokenError) as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OAuth state") from exc
     except requests.RequestException as exc:
