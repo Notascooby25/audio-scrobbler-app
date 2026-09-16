@@ -1,4 +1,3 @@
-import LikeButton from './LikeButton'
 import Artwork from './Artwork'
 import SourceBadge from './SourceBadge'
 import { formatScrobbleTime } from '../timeFormatting'
@@ -48,7 +47,6 @@ export default function LibraryScrobbleList({
                   </label>
                 )}
                 {showArtwork && <Artwork className="library-row-artwork scrobble-grid-artwork" src={scrobble.artwork_url} label={scrobble.track_name} />}
-                <LikeButton token={token} trackId={scrobble.spotify_track_id} initialLiked={scrobble.is_liked} />
                 <span className="library-row-copy">
                   <strong>{scrobble.track_name}</strong>
                   <small>{scrobble.artist_name}</small>

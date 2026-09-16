@@ -8,7 +8,7 @@ import LibraryViewToggle from '../components/LibraryViewToggle'
 import PageSizeSelect from '../components/PageSizeSelect'
 import Pagination from '../components/Pagination'
 import TimelineChart from '../components/TimelineChart'
-import { createBlock, deleteLibraryEntries, deleteLibraryScrobbles, fetchLikedTracks, fetchLibraryCollection, fetchLibraryScrobbles, fetchLibraryTimeline, fetchUserSettings } from '../api'
+import { createBlock, deleteLibraryEntries, deleteLibraryScrobbles, fetchLibraryCollection, fetchLibraryScrobbles, fetchLibraryTimeline, fetchUserSettings } from '../api'
 import { createDefaultDateRange, isValidDateRange } from '../dateRange'
 import { readSession } from '../session'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
@@ -18,7 +18,6 @@ const TABS = [
   ['artists', 'Artists'],
   ['albums', 'Albums'],
   ['tracks', 'Tracks'],
-  ['liked', 'Liked tracks'],
 ]
 
 export default function LibraryPage() {
@@ -52,7 +51,6 @@ export default function LibraryPage() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [selectMode, setSelectMode] = useState(false)
-  const isDateFilterable = tab !== 'liked'
   const filterKeyRef = useRef(null)
 
   useEffect(() => {
@@ -81,7 +79,7 @@ export default function LibraryPage() {
   useEffect(() => {
     if (!session?.accessToken) return
     if (!preferencesReady) return
-    if (isDateFilterable && !isValidDateRange(dateRange)) return
+    if (!isValidDateRange(dateRange)) return
 
     const filterKey = `${tab}|${JSON.stringify(dateRange)}|${pageSize}|${activeSearchQuery}`
     if (filterKeyRef.current !== null && filterKeyRef.current !== filterKey && page !== 1) {
@@ -94,11 +92,9 @@ export default function LibraryPage() {
     setStatus('loading')
     setData(null)
     const offset = (page - 1) * pageSize
-    const rangeArg = isDateFilterable ? dateRange : undefined
+    const rangeArg = dateRange
     const request = tab === 'scrobbles'
       ? fetchLibraryScrobbles({ token: session.accessToken, limit: pageSize, offset, dateRange: rangeArg, filterEntity: scrobbleFilter.entity, filterName: scrobbleFilter.name, filterSecondary: scrobbleFilter.secondary, search: activeSearchQuery || undefined })
-      : tab === 'liked'
-        ? fetchLikedTracks({ token: session.accessToken, limit: pageSize, offset, search: activeSearchQuery || undefined })
       : fetchLibraryCollection({ token: session.accessToken, entity: tab, limit: pageSize, offset, dateRange: rangeArg, search: activeSearchQuery || undefined })
     Promise.all([request, fetchLibraryTimeline({ token: session.accessToken })])
       .then(([result, chart]) => {
@@ -115,19 +111,7 @@ export default function LibraryPage() {
   }, [tab, dateRange, pageSize, page, preferencesReady, refreshKey, scrobbleFilter, activeSearchQuery])
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
-  const rankedEntries = data && loadedTab === tab && tab !== 'scrobbles'
-    ? (tab === 'liked'
-      ? data.tracks.map((track) => ({
-        label: track.track_name,
-        secondary: track.artist_name,
-        play_count: 1,
-        artwork_url: track.artwork_url,
-        spotify_track_id: track.spotify_track_id,
-        is_liked: true,
-        sources: ['spotify'],
-      }))
-      : data.entries)
-    : []
+  const rankedEntries = data && loadedTab === tab && tab !== 'scrobbles' ? data.entries : []
 
   const changeView = (nextView) => {
     setView(nextView)
@@ -244,7 +228,7 @@ export default function LibraryPage() {
             ))}
           </div>
           <div className="library-controls-bar">
-            {isDateFilterable && <DateRangeSelector value={dateRange} onChange={setDateRange} showCompare={false} />}
+            <DateRangeSelector value={dateRange} onChange={setDateRange} showCompare={false} />
             <div className="library-toolbar">
               <form onSubmit={(e) => { e.preventDefault(); setActiveSearchQuery(searchQuery); }} className="library-search-form">
                 <input
@@ -270,7 +254,7 @@ export default function LibraryPage() {
               <strong>{selectedCount.toLocaleString()} selected</strong>
               <button type="button" disabled={bulkBusy} onClick={toggleVisibleSelection}>Select visible</button>
               <button type="button" disabled={bulkBusy} onClick={promptBulkDelete}>Delete selected</button>
-              {tab !== 'scrobbles' && tab !== 'liked' && <button type="button" disabled={bulkBusy} onClick={bulkBlock}>Block selected</button>}
+              {tab !== 'scrobbles' && <button type="button" disabled={bulkBusy} onClick={bulkBlock}>Block selected</button>}
               <button type="button" className="bulk-action-secondary" disabled={bulkBusy} onClick={clearSelection}>Clear</button>
               {bulkError && <span role="alert">{bulkError}</span>}
             </div>
@@ -278,7 +262,7 @@ export default function LibraryPage() {
           <div className="library-layout">
             {tab === 'scrobbles'
               ? <LibraryScrobbleList scrobbles={visibleScrobbles} token={session.accessToken} view={activeView} showArtwork={settings?.show_artwork !== false} showSourceBadges={settings?.show_source_badges !== false} timestampMode={settings?.timestamp_mode || 'relative'} filterLabel={scrobbleFilter.name} selectedIds={selectedScrobbleIds} onToggleSelection={toggleScrobbleSelection} selectMode={selectMode} />
-              : <LibraryRankList entries={rankedEntries} kind={tab === 'liked' ? 'tracks' : tab} token={session.accessToken} page={page} pageSize={pageSize} totalCount={totalCount} view={activeView} showArtwork={settings?.show_artwork !== false} showSourceBadges={settings?.show_source_badges !== false} selectedKeys={selectedEntries} onToggleSelection={tab !== 'liked' ? toggleEntrySelection : undefined} onEntryChanged={tab !== 'liked' ? handleEntryChanged : undefined} selectMode={selectMode} />}
+              : <LibraryRankList entries={rankedEntries} kind={tab} token={session.accessToken} page={page} pageSize={pageSize} totalCount={totalCount} view={activeView} showArtwork={settings?.show_artwork !== false} showSourceBadges={settings?.show_source_badges !== false} selectedKeys={selectedEntries} onToggleSelection={toggleEntrySelection} onEntryChanged={handleEntryChanged} selectMode={selectMode} />}
             <TimelineChart entries={timeline} />
           </div>
           <div className="library-pagination-bar">

@@ -1,4 +1,3 @@
-import LikeButton from './LikeButton'
 import Artwork from './Artwork'
 import EntryMenu from './EntryMenu'
 import SourceBadge from './SourceBadge'
@@ -67,11 +66,6 @@ export default function LibraryRankList({
                       {showSourceBadges && entry.sources && entry.sources.length > 0 && (
                         <SourceBadge sources={entry.sources} size="grid" />
                       )}
-                      {kind === 'tracks' && (
-                        <div className="grid-card-like">
-                          <LikeButton token={token} trackId={entry.spotify_track_id} initialLiked={entry.is_liked} />
-                        </div>
-                      )}
                     </div>
                   )}
                   <div className="grid-card-body">
@@ -139,7 +133,6 @@ export default function LibraryRankList({
                   </span>
                 </span>
                 <div className="library-rank-actions">
-                  {kind === 'tracks' && <LikeButton token={token} trackId={entry.spotify_track_id} initialLiked={entry.is_liked} />}
                   <Link
                     className="library-count-bar"
                     style={countWidth(entry.play_count, maximum)}

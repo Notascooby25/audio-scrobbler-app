@@ -1,4 +1,9 @@
-"""Add artwork metadata and Spotify liked tracks."""
+"""Add artwork metadata and Spotify liked tracks.
+
+NOTE: The liked_tracks table created by this migration is no longer used by the
+application as of 2026-09-16, but was deliberately left in place to preserve
+data in case the feature is revived. See docs/RUNBOOK.md under "Dormant data".
+"""
 
 from alembic import op
 import sqlalchemy as sa

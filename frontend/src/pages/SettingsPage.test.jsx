@@ -9,7 +9,6 @@ import {
   fetchImportBatches,
   fetchUserSettings,
   removeBlock,
-  syncLikedTracks,
   updateUserSettings,
 } from '../api'
 
@@ -22,7 +21,6 @@ vi.mock('../api', () => ({
   fetchImportBatches: vi.fn(),
   advancedDeleteImports: vi.fn(),
   startArtworkBackfill: vi.fn(),
-  syncLikedTracks: vi.fn(),
 }))
 
 const settings = {
@@ -34,7 +32,6 @@ const settings = {
   artists_view: null,
   albums_view: null,
   tracks_view: null,
-  liked_tracks_view: null,
   show_artwork: true,
   show_source_badges: true,
   timestamp_mode: 'relative',
@@ -109,7 +106,6 @@ describe('SettingsPage', () => {
     // Switch to Data tab
     fireEvent.click(dataTab)
     expect(dataTab).toHaveClass('active')
-    expect(screen.getByRole('button', { name: 'Sync Liked Tracks' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Backfill Missing Artwork' })).toBeInTheDocument()
 
     // Switch to Danger Zone tab
@@ -117,30 +113,6 @@ describe('SettingsPage', () => {
     expect(dangerTab).toHaveClass('active')
     expect(screen.getByText('Deleting scrobbles removes them permanently from your library. This cannot be undone.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Delete Scrobbles' })).toBeInTheDocument()
-  })
-
-  it('syncs liked tracks on demand from the Data tab', async () => {
-    syncLikedTracks.mockResolvedValue({ fetched: 5, inserted: 3, updated: 2, artwork_updated: 0 })
-
-    render(<MemoryRouter><SettingsPage /></MemoryRouter>)
-
-    fireEvent.click(await screen.findByRole('tab', { name: 'Data' }))
-    const button = screen.getByRole('button', { name: 'Sync Liked Tracks' })
-    fireEvent.click(button)
-
-    expect(syncLikedTracks).toHaveBeenCalledWith({ token: 'token' })
-    await waitFor(() => expect(screen.getByText('Synced! 3 new, 2 updated.')).toBeInTheDocument())
-  })
-
-  it('shows an error if the liked tracks sync fails', async () => {
-    syncLikedTracks.mockRejectedValue(new Error('HTTP 502: Spotify liked-track sync failed'))
-
-    render(<MemoryRouter><SettingsPage /></MemoryRouter>)
-
-    fireEvent.click(await screen.findByRole('tab', { name: 'Data' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Sync Liked Tracks' }))
-
-    await waitFor(() => expect(screen.getByText('Liked tracks sync failed. Try again.')).toBeInTheDocument())
   })
 
   it('preserves form state when switching tabs', async () => {

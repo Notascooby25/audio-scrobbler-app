@@ -41,22 +41,6 @@ groups:
         annotations:
           summary: Spotify sync has not completed successfully
 
-      - alert: AudioScrobblerLikedTracksSyncFailures
-        expr: audio_scrobbler_worker_liked_tracks_sync_failures > 0
-        for: 15m
-        labels:
-          severity: warning
-        annotations:
-          summary: Spotify liked-tracks sync failures detected
-
-      - alert: AudioScrobblerNoRecentLikedTracksSync
-        expr: audio_scrobbler_worker_liked_tracks_sync_success == 0 and audio_scrobbler_worker_liked_tracks_sync_users > 0
-        for: 30m
-        labels:
-          severity: warning
-        annotations:
-          summary: Spotify liked-tracks sync has not completed successfully
-
       - alert: AudioScrobblerBackupStale
         expr: time() - audio_scrobbler_backup_last_verified_timestamp_seconds > 43200
         for: 15m

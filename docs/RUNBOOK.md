@@ -112,6 +112,20 @@ curl -s http://localhost:8010/readyz
 
 ---
 
+## Dormant data
+
+The "Liked Tracks" feature (sync, heart buttons, Liked Tracks library tab, Loved tracks stat) was removed from the application on 2026-09-16, but the underlying database table and columns were deliberately left in place (no migration was run to drop them) so the data isn't lost if the feature is revived later.
+
+The following remain unused in the database:
+
+- `liked_tracks` table (created by migration `0007_add_artwork_and_liked_tracks.py`)
+- `user_preferences.liked_tracks_view` column (created by migration `0009_add_user_preferences.py`)
+- `liked_tracks.artist_artwork_url` column (created by migration `0008_add_artist_artwork.py`)
+
+If you need to clean these up in the future, these migrations added them and can serve as a reference for the drop operations.
+
+---
+
 ## Check backup health
 
 ```bash

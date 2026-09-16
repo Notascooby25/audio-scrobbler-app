@@ -1,31 +1,26 @@
 from __future__ import annotations
 
 import time
-from datetime import datetime
 from typing import Any
 
 import requests
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..config import settings
-from ..models import LikedTrack, ListeningEvent, User
+from ..models import ListeningEvent, User
 from ..security import decrypt_refresh_token, encrypt_refresh_token
 
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
-SPOTIFY_SAVED_TRACKS_URL = "https://api.spotify.com/v1/me/tracks"
 SPOTIFY_TRACKS_URL = "https://api.spotify.com/v1/tracks"
-SPOTIFY_ARTISTS_URL = "https://api.spotify.com/v1/artists"
-SPOTIFY_SAVED_TRACK_URL = "https://api.spotify.com/v1/me/tracks"
 
 
 def _request(method: str, url: str, **kwargs: Any) -> requests.Response:
-    # sync_liked_tracks pages through /me/tracks 50 at a time and then
-    # batches /v1/artists lookups — a large liked-songs library means many
-    # sequential calls with no gap between them, which Spotify's rate
-    # limiter (HTTP 429) is happy to interrupt partway through. Mirrors the
-    # worker's SpotifyClient._request retry/backoff (spotify_ingestion.py),
-    # which this service never had despite making the same kind of calls.
+    # backfill_scrobble_artwork batches /v1/tracks lookups 50 at a time — a
+    # large batch of missing artwork means many sequential calls with no gap
+    # between them, which Spotify's rate limiter (HTTP 429) is happy to
+    # interrupt partway through. Mirrors the worker's SpotifyClient._request
+    # retry/backoff (spotify_ingestion.py), which this service never had
+    # despite making the same kind of calls.
     for attempt in range(3):
         response = requests.request(method, url, timeout=15, **kwargs)
         if response.status_code == 429 and attempt < 2:
@@ -67,135 +62,6 @@ def _artwork_url(track: dict[str, Any]) -> str | None:
     return None
 
 
-def _artist_artwork_url(artist: dict[str, Any]) -> str | None:
-    images = artist.get("images")
-    if not isinstance(images, list):
-        return None
-    for image in images:
-        if isinstance(image, dict) and isinstance(image.get("url"), str):
-            return image["url"]
-    return None
-
-
-def _spotify_track_id(value: str) -> str:
-    return value.rsplit(":", 1)[-1]
-
-
-def _parse_added_at(value: Any) -> datetime:
-    if not isinstance(value, str):
-        return datetime.utcnow()
-    return datetime.fromisoformat(value.replace("Z", "+00:00")).replace(tzinfo=None)
-
-
-def sync_liked_tracks(db: Session, user: User) -> dict[str, int]:
-    access_token = _refresh_access_token(db, user)
-    headers = {"Authorization": f"Bearer {access_token}"}
-    # /me/tracks returns items newest-added-first (Spotify's documented
-    # order for Saved Tracks). Every liked track we already have is stored
-    # locally with its added_at, so the newest one we've already seen is a
-    # watermark: paginate from the top and stop as soon as an item is
-    # older than it, instead of re-fetching the whole Saved Tracks list on
-    # every call. On a brand-new user (no local rows yet) this is None, so
-    # the first sync naturally still walks the full library once.
-    #
-    # This intentionally never reconciles the other direction — a track
-    # unliked directly in Spotify (not through this app) stays in our
-    # local liked_tracks table, since nothing here ever sees it "missing"
-    # from a page it never fetches. That was already true before this
-    # change too: the old full re-fetch only ever upserted what it saw and
-    # never deleted local rows absent from the response.
-    since = db.query(func.max(LikedTrack.added_at)).filter(LikedTrack.user_id == user.id).scalar()
-    offset = 0
-    fetched = 0
-    inserted = 0
-    updated = 0
-    artist_ids: dict[str, str] = {}
-    reached_watermark = False
-    while not reached_watermark:
-        response = _request(
-            "GET",
-            SPOTIFY_SAVED_TRACKS_URL,
-            headers=headers,
-            params={"limit": 50, "offset": offset},
-        ).json()
-        items = response.get("items", [])
-        if not isinstance(items, list) or not items:
-            break
-        for item in items:
-            track = item.get("track") if isinstance(item, dict) else None
-            if not isinstance(track, dict) or not isinstance(track.get("id"), str):
-                continue
-            added_at = _parse_added_at(item.get("added_at"))
-            if since is not None and added_at < since:
-                # Everything from here on is even older (descending order),
-                # so nothing later in this page or any later page is new.
-                reached_watermark = True
-                break
-            track_id = track["id"]
-            artists = track.get("artists")
-            artist_name = artists[0].get("name") if isinstance(artists, list) and artists and isinstance(artists[0], dict) else None
-            artist_id = artists[0].get("id") if isinstance(artists, list) and artists and isinstance(artists[0], dict) else None
-            album = track.get("album")
-            album_name = album.get("name") if isinstance(album, dict) else None
-            if not isinstance(track.get("name"), str) or not isinstance(artist_name, str):
-                continue
-            record = db.query(LikedTrack).filter_by(user_id=user.id, spotify_track_id=track_id).first()
-            if record is None:
-                record = LikedTrack(user_id=user.id, spotify_track_id=track_id, added_at=added_at)
-                db.add(record)
-                inserted += 1
-            else:
-                updated += 1
-            record.track_name = track["name"]
-            record.artist_name = artist_name
-            record.album_name = album_name if isinstance(album_name, str) else None
-            record.artwork_url = _artwork_url(track)
-            if isinstance(artist_id, str):
-                artist_ids[artist_name] = artist_id
-            record.raw_metadata = item
-            record.updated_at = datetime.utcnow()
-            fetched += 1
-        if reached_watermark or len(items) < 50:
-            break
-        offset += 50
-
-    # artist_ids only holds artists touched by tracks processed above, so
-    # this refresh is now scoped to newly-synced tracks rather than
-    # re-fetching and re-applying artwork for every artist in the whole
-    # liked library on every call. Trade-off: an artist's photo changing on
-    # Spotify won't be picked up again for a track that's already synced.
-    artist_artwork: dict[str, str] = {}
-    ids = list(artist_ids.values())
-    for start in range(0, len(ids), 50):
-        artists = _request(
-            "GET",
-            SPOTIFY_ARTISTS_URL,
-            headers=headers,
-            params={"ids": ",".join(ids[start:start + 50])},
-        ).json().get("artists", [])
-        for artist in artists:
-            if not isinstance(artist, dict) or not isinstance(artist.get("name"), str):
-                continue
-            artwork = _artist_artwork_url(artist)
-            if artwork:
-                artist_artwork[artist["name"]] = artwork
-
-    artwork_updated = 0
-    for artist_name, artwork in artist_artwork.items():
-        liked_records = db.query(LikedTrack).filter_by(user_id=user.id, artist_name=artist_name).all()
-        for record in liked_records:
-            record.artist_artwork_url = artwork
-            artwork_updated += 1
-        events = db.query(ListeningEvent).filter(
-            ListeningEvent.user_id == user.id,
-            ListeningEvent.artist_name == artist_name,
-        ).all()
-        for event in events:
-            event.artist_artwork_url = artwork
-    db.commit()
-    return {"fetched": fetched, "inserted": inserted, "updated": updated, "artwork_updated": artwork_updated}
-
-
 def backfill_scrobble_artwork(db: Session, user: User) -> dict[str, int]:
     access_token = _refresh_access_token(db, user)
     headers = {"Authorization": f"Bearer {access_token}"}
@@ -225,35 +91,3 @@ def backfill_scrobble_artwork(db: Session, user: User) -> dict[str, int]:
                 updated += 1
     db.commit()
     return {"fetched": len(missing), "inserted": 0, "updated": 0, "artwork_updated": updated}
-
-
-def set_track_liked(db: Session, user: User, track_id: str, liked: bool) -> dict[str, object]:
-    spotify_track_id = _spotify_track_id(track_id)
-    access_token = _refresh_access_token(db, user)
-    headers = {"Authorization": f"Bearer {access_token}"}
-    params = {"ids": spotify_track_id}
-    method = "PUT" if liked else "DELETE"
-    _request(method, SPOTIFY_SAVED_TRACK_URL, headers=headers, params=params)
-
-    record = db.query(LikedTrack).filter_by(user_id=user.id, spotify_track_id=spotify_track_id).first()
-    if liked and record is None:
-        event = db.query(ListeningEvent).filter(
-            ListeningEvent.user_id == user.id,
-            ListeningEvent.track_id.in_((spotify_track_id, f"spotify:track:{spotify_track_id}")),
-        ).order_by(ListeningEvent.played_at.desc()).first()
-        if event is not None:
-            record = LikedTrack(
-                user_id=user.id,
-                spotify_track_id=spotify_track_id,
-                track_name=event.track_name,
-                artist_name=event.artist_name,
-                album_name=event.album_name,
-                artwork_url=event.artwork_url,
-                added_at=datetime.utcnow(),
-                raw_metadata={"source": "library-toggle"},
-            )
-            db.add(record)
-    elif not liked and record is not None:
-        db.delete(record)
-    db.commit()
-    return {"spotify_track_id": spotify_track_id, "is_liked": liked}

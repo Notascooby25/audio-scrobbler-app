@@ -11,11 +11,10 @@ vi.mock('../api', () => ({
   fetchLibraryScrobbles: vi.fn(),
   fetchLibraryCollection: vi.fn(),
   fetchLibraryTimeline: vi.fn(),
-  fetchLikedTracks: vi.fn(),
   fetchReportsSummary: vi.fn(),
   fetchReportsCharts: vi.fn(),
   fetchReportsEntity: vi.fn().mockResolvedValue({ entries: [] }),
-  fetchUserSettings: vi.fn().mockResolvedValue({ default_date_range: 'last.week', default_page_size: 50, default_library_view: 'list', scrobbles_view: null, artists_view: null, albums_view: null, tracks_view: null, liked_tracks_view: null, show_artwork: true, show_source_badges: true, timestamp_mode: 'relative' }),
+  fetchUserSettings: vi.fn().mockResolvedValue({ default_date_range: 'last.week', default_page_size: 50, default_library_view: 'list', scrobbles_view: null, artists_view: null, albums_view: null, tracks_view: null, show_artwork: true, show_source_badges: true, timestamp_mode: 'relative' }),
   createBlock: vi.fn(),
   deleteLibraryEntries: vi.fn(),
   deleteLibraryScrobbles: vi.fn(),
@@ -107,7 +106,7 @@ describe('date filtering', () => {
   })
 
   it('refetches Overview top artists when the date range changes', async () => {
-    fetchStatsSummary.mockResolvedValue({ total_scrobbles: 10, unique_artists: 2, loved_tracks: 1 })
+    fetchStatsSummary.mockResolvedValue({ total_scrobbles: 10, unique_artists: 2 })
     fetchStatsChart.mockImplementation(({ entity, dateRange }) => Promise.resolve({
       entries: entity === 'artists' ? [{ label: dateRange.range, secondary: null, play_count: 1 }] : [],
     }))
@@ -120,7 +119,7 @@ describe('date filtering', () => {
     await waitFor(() => expect(screen.getByText('last.year')).toBeInTheDocument())
   })
 
-  it('refetches the Library entity tab on date range change and hides the selector on Liked tracks', async () => {
+  it('refetches the Library entity tab on date range change', async () => {
     fetchLibraryCollection.mockImplementation(({ dateRange }) => Promise.resolve({
       entries: [{ label: dateRange.range, secondary: null, play_count: 1 }],
     }))
@@ -133,9 +132,6 @@ describe('date filtering', () => {
 
     fireEvent.change(screen.getByLabelText('Range'), { target: { value: 'last.month' } })
     await waitFor(() => expect(screen.getByText('last.month')).toBeInTheDocument())
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Liked tracks' }))
-    expect(screen.queryByLabelText('Range')).not.toBeInTheDocument()
   })
 
   it('hides the Grid view option on the Scrobbles tab but allows it on Artists', async () => {

@@ -17,7 +17,6 @@ class UserPreferencesResponse(BaseModel):
     artists_view: str | None
     albums_view: str | None
     tracks_view: str | None
-    liked_tracks_view: str | None
     show_artwork: bool
     show_source_badges: bool
     timestamp_mode: str
@@ -33,7 +32,6 @@ class UserPreferencesUpdate(BaseModel):
     artists_view: str | None = None
     albums_view: str | None = None
     tracks_view: str | None = None
-    liked_tracks_view: str | None = None
     show_artwork: bool | None = None
     show_source_badges: bool | None = None
     timestamp_mode: str | None = None

@@ -2,7 +2,6 @@ export default function SummaryStatsBar({ stats }) {
   const values = [
     ['Scrobbles', stats?.total_scrobbles],
     ['Artists', stats?.unique_artists],
-    ['Loved tracks', stats?.loved_tracks],
   ]
 
   return (

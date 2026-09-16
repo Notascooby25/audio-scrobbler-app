@@ -1,32 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
-
-from pydantic import BaseModel, ConfigDict, Field
-
-
-class LikedTrackResponse(BaseModel):
-    id: int
-    spotify_track_id: str
-    track_name: str
-    artist_name: str
-    album_name: str | None
-    artwork_url: str | None
-    artist_artwork_url: str | None = None
-    added_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class LikedTracksResponse(BaseModel):
-    user_id: int
-    tracks: list[LikedTrackResponse]
-    total_count: int
-
-
-class TrackLikeResponse(BaseModel):
-    spotify_track_id: str
-    is_liked: bool
+from pydantic import BaseModel, Field
 
 
 class SpotifySyncResponse(BaseModel):
@@ -36,5 +10,5 @@ class SpotifySyncResponse(BaseModel):
     artwork_updated: int
 
 
-class WorkerLikedTrackSyncRequest(BaseModel):
+class WorkerBackfillArtworkRequest(BaseModel):
     user_id: int = Field(gt=0)

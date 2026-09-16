@@ -30,7 +30,7 @@ def teardown_function():
 
 def test_stats_routes_use_expected_paths(monkeypatch):
     monkeypatch.setattr(analytics_module, "get_stats_summary", lambda db, user_id: StatsResponse(
-        user_id=user_id, total_scrobbles=4, unique_artists=2, loved_tracks=0
+        user_id=user_id, total_scrobbles=4, unique_artists=2
     ))
     monkeypatch.setattr(analytics_module, "get_user_charts", lambda db, user_id, entity, range_key, limit: ChartResponse(
         user_id=user_id, entity=entity, range=range_key, entries=[]

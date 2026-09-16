@@ -6,7 +6,7 @@ import LibraryRankList from './LibraryRankList'
 describe('LibraryRankList', () => {
   afterEach(() => cleanup())
 
-  it('renders track metadata, rank offset, count bars, and hearts', () => {
+  it('renders track metadata, rank offset, and count bars', () => {
     const { container } = render(
       <MemoryRouter><LibraryRankList
         entries={[{
@@ -15,7 +15,6 @@ describe('LibraryRankList', () => {
           play_count: 12,
           artwork_url: '/cover.jpg',
           spotify_track_id: 'track-1',
-          is_liked: true,
         }]}
         kind="tracks"
         token="token"
@@ -33,10 +32,9 @@ describe('LibraryRankList', () => {
     const countLink = screen.getByRole('link', { name: 'Show 12 scrobbles for Slow Show' })
     expect(countLink).toHaveTextContent('12 scrobbles')
     expect(countLink).toHaveAttribute('href', '/library?filter_entity=track&filter_name=Slow%20Show&filter_secondary=The%20National')
-    expect(screen.getByRole('button', { name: 'Remove from Spotify liked tracks' })).toBeInTheDocument()
   })
 
-  it('uses artwork and count bars for artist rows without a track heart', () => {
+  it('uses artwork and count bars for artist rows', () => {
     const { container } = render(
       <MemoryRouter><LibraryRankList
         entries={[{ label: 'M83', play_count: 4, artwork_url: '/artist.jpg' }]}
@@ -51,7 +49,6 @@ describe('LibraryRankList', () => {
 
     expect(screen.getByText('Artists scrobbled')).toBeInTheDocument()
     expect(container.querySelector('img')).toHaveAttribute('src', '/artist.jpg')
-    expect(screen.queryByRole('button', { name: /Spotify liked tracks/ })).not.toBeInTheDocument()
   })
 
   it('keeps long artist and album names in the card content', () => {

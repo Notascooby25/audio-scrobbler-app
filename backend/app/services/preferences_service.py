@@ -14,7 +14,6 @@ DEFAULTS = {
     "artists_view": None,
     "albums_view": None,
     "tracks_view": None,
-    "liked_tracks_view": None,
     "show_artwork": True,
     "show_source_badges": True,
     "timestamp_mode": "relative",

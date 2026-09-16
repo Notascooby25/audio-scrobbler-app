@@ -47,7 +47,6 @@ class UserPreferences(Base):
     artists_view: Mapped[str | None] = mapped_column(String(16), nullable=True)
     albums_view: Mapped[str | None] = mapped_column(String(16), nullable=True)
     tracks_view: Mapped[str | None] = mapped_column(String(16), nullable=True)
-    liked_tracks_view: Mapped[str | None] = mapped_column(String(16), nullable=True)
     show_artwork: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     show_source_badges: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     timestamp_mode: Mapped[str] = mapped_column(String(16), nullable=False, default="relative")
@@ -90,25 +89,6 @@ class BlockedItem(Base):
     entity_type: Mapped[str] = mapped_column(String(16), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-
-
-class LikedTrack(Base):
-    __tablename__ = "liked_tracks"
-    __table_args__ = (
-        UniqueConstraint("user_id", "spotify_track_id", name="uq_liked_track_user_spotify_id"),
-    )
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
-    spotify_track_id: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
-    track_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    artist_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    album_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    artwork_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    artist_artwork_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    added_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    raw_metadata: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 class Follow(Base):

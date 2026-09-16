@@ -346,22 +346,6 @@ export function fetchReportsEntity({ token, entity, dateRange }) {
   return fetchAnalyticsResource(`/reports/${entity}`, { token, params })
 }
 
-export function syncLikedTracks({ token }) {
-  return fetchAnalyticsResource('/spotify/sync-liked-tracks', { token, method: 'POST' })
-}
-
-export function likeSpotifyTrack({ token, trackId }) {
-  return fetchAnalyticsResource(`/spotify/tracks/${encodeURIComponent(trackId)}/like`, { token, method: 'PUT' })
-}
-
-export function unlikeSpotifyTrack({ token, trackId }) {
-  return fetchAnalyticsResource(`/spotify/tracks/${encodeURIComponent(trackId)}/like`, { token, method: 'DELETE' })
-}
-
-export function fetchLikedTracks({ token, limit, offset, search }) {
-  return fetchAnalyticsResource('/spotify/liked-tracks', { token, params: { limit, offset, search } })
-}
-
 export function fetchUserSettings({ token }) {
   return fetchAnalyticsResource('/users/me/settings', { token })
 }

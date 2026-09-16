@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.app.db import Base
-from backend.app.models import LikedTrack, User
+from backend.app.models import User
 from backend.app.services import spotify_library_service
 
 engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
@@ -113,18 +113,6 @@ def _make_user(db, user_id):
     return user
 
 
-def _track_item(track_id, name, artist, added_at):
-    return {
-        "added_at": added_at,
-        "track": {
-            "id": track_id,
-            "name": name,
-            "artists": [{"id": f"artist-id-{artist}", "name": artist}],
-            "album": {"name": "Album", "images": []},
-        },
-    }
-
-
 class FakeJsonResponse:
     def __init__(self, payload):
         self._payload = payload
@@ -133,100 +121,33 @@ class FakeJsonResponse:
         return self._payload
 
 
-def test_sync_liked_tracks_walks_full_library_on_first_sync(monkeypatch):
+def test_backfill_scrobble_artwork_updates_events_missing_artwork(monkeypatch):
+    from backend.app.models import ListeningEvent
+
     db = TestingSession()
-    user = _make_user(db, 101)
-    monkeypatch.setattr(spotify_library_service, "_refresh_access_token", lambda db, user: "access-token")
-
-    page = [_track_item(f"track-{i}", f"Track {i}", "Artist", "2026-01-05T00:00:00Z") for i in range(50)]
-    saved_track_calls = []
-
-    def fake_request(method, url, **kwargs):
-        if url == spotify_library_service.SPOTIFY_SAVED_TRACKS_URL:
-            saved_track_calls.append(kwargs["params"]["offset"])
-            return FakeJsonResponse({"items": page if kwargs["params"]["offset"] == 0 else []})
-        return FakeJsonResponse({"artists": []})
-
-    monkeypatch.setattr(spotify_library_service, "_request", fake_request)
-
-    result = spotify_library_service.sync_liked_tracks(db, user)
-
-    assert result == {"fetched": 50, "inserted": 50, "updated": 0, "artwork_updated": 0}
-    # One full page (50, the limit) plus one more to confirm the list ended.
-    assert saved_track_calls == [0, 50]
-    db.close()
-
-
-def test_sync_liked_tracks_stops_once_watermark_reached_without_extra_pages(monkeypatch):
-    db = TestingSession()
-    user = _make_user(db, 102)
-    db.add(LikedTrack(
+    user = _make_user(db, 104)
+    event = ListeningEvent(
         user_id=user.id,
-        spotify_track_id="already-known",
-        track_name="Already Known",
-        artist_name="Known Artist",
-        added_at=datetime(2026, 1, 1, 0, 0, 0),
-    ))
+        track_id="spotify:track:track-1",
+        track_name="Track One",
+        artist_name="Artist One",
+        played_at=datetime.utcnow(),
+        source="spotify",
+        play_id="track-1:1",
+    )
+    db.add(event)
     db.commit()
     monkeypatch.setattr(spotify_library_service, "_refresh_access_token", lambda db, user: "access-token")
 
-    # Spotify returns newest-first: two tracks liked after the watermark,
-    # then the already-known one (a same-timestamp boundary item, still
-    # reprocessed rather than skipped), then something genuinely older.
-    page = [
-        _track_item("new-1", "New One", "Artist A", "2026-01-05T00:00:00Z"),
-        _track_item("new-2", "New Two", "Artist B", "2026-01-03T00:00:00Z"),
-        _track_item("already-known", "Already Known", "Known Artist", "2026-01-01T00:00:00Z"),
-        _track_item("older", "Older", "Artist C", "2025-12-01T00:00:00Z"),
-    ]
-    saved_track_calls = []
-
     def fake_request(method, url, **kwargs):
-        if url == spotify_library_service.SPOTIFY_SAVED_TRACKS_URL:
-            saved_track_calls.append(kwargs["params"]["offset"])
-            return FakeJsonResponse({"items": page})
-        return FakeJsonResponse({"artists": []})
+        assert url == spotify_library_service.SPOTIFY_TRACKS_URL
+        return FakeJsonResponse({"tracks": [{"id": "track-1", "album": {"images": [{"url": "https://example.com/art.jpg"}]}}]})
 
     monkeypatch.setattr(spotify_library_service, "_request", fake_request)
 
-    result = spotify_library_service.sync_liked_tracks(db, user)
+    result = spotify_library_service.backfill_scrobble_artwork(db, user)
 
-    assert result["inserted"] == 2
-    assert result["updated"] == 1
-    assert result["fetched"] == 3
-    # Never requests a second page, and "older" is never touched: the
-    # in-progress page's first below-watermark item stops everything.
-    assert saved_track_calls == [0]
-    assert db.query(LikedTrack).filter_by(user_id=user.id, spotify_track_id="older").first() is None
-    db.close()
-
-
-def test_sync_liked_tracks_makes_a_single_request_when_nothing_new(monkeypatch):
-    db = TestingSession()
-    user = _make_user(db, 103)
-    db.add(LikedTrack(
-        user_id=user.id,
-        spotify_track_id="already-known",
-        track_name="Already Known",
-        artist_name="Known Artist",
-        added_at=datetime(2026, 2, 1, 0, 0, 0),
-    ))
-    db.commit()
-    monkeypatch.setattr(spotify_library_service, "_refresh_access_token", lambda db, user: "access-token")
-
-    page = [_track_item("already-known", "Already Known", "Known Artist", "2026-01-05T00:00:00Z")]
-    saved_track_calls = []
-
-    def fake_request(method, url, **kwargs):
-        if url == spotify_library_service.SPOTIFY_SAVED_TRACKS_URL:
-            saved_track_calls.append(kwargs["params"]["offset"])
-            return FakeJsonResponse({"items": page})
-        return FakeJsonResponse({"artists": []})
-
-    monkeypatch.setattr(spotify_library_service, "_request", fake_request)
-
-    result = spotify_library_service.sync_liked_tracks(db, user)
-
-    assert result == {"fetched": 0, "inserted": 0, "updated": 0, "artwork_updated": 0}
-    assert saved_track_calls == [0]
+    assert result == {"fetched": 1, "inserted": 0, "updated": 0, "artwork_updated": 1}
+    db.refresh(event)
+    assert event.artwork_url == "https://example.com/art.jpg"
     db.close()
