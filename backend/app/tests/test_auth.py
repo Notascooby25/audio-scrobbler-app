@@ -13,6 +13,7 @@ from backend.app.config import settings
 from backend.app.db import get_db
 from backend.app.main import app
 from backend.app.services.auth_service import create_access_token, decode_access_token
+from backend.app.services import spotify_oauth_service as spotify_oauth_service_module
 
 
 client = TestClient(app)
@@ -109,3 +110,27 @@ def test_cors_origins_are_parsed_and_wildcards_rejected_in_production():
     )
     with pytest.raises(ValueError, match="CORS_ORIGINS"):
         production.validate()
+
+
+def test_allowed_spotify_ids_are_parsed_and_empty_means_unrestricted():
+    unrestricted = type(settings)(allowed_spotify_user_ids="")
+    assert unrestricted.allowed_spotify_ids() == []
+
+    restricted = type(settings)(allowed_spotify_user_ids="andy46, 1127785962")
+    assert restricted.allowed_spotify_ids() == ["andy46", "1127785962"]
+
+
+def test_spotify_callback_denies_non_allowlisted_account():
+    def deny(*args, **kwargs):
+        raise spotify_oauth_service_module.SpotifyAccessDeniedError("someone-else")
+
+    app.dependency_overrides[auth_module.get_db] = lambda: FakeDB(ActiveUser())
+    monkeypatch_target = auth_module.complete_spotify_callback
+    auth_module.complete_spotify_callback = deny
+    try:
+        response = client.get("/auth/spotify/callback?state=valid-state&code=some-code")
+    finally:
+        auth_module.complete_spotify_callback = monkeypatch_target
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 403

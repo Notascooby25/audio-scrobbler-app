@@ -28,6 +28,12 @@ class Settings:
     spotify_redirect_uri: str = os.getenv("SPOTIFY_REDIRECT_URI", "http://127.0.0.1:8000/auth/spotify/callback")
     spotify_scopes: str = os.getenv("SPOTIFY_SCOPES", "user-read-recently-played user-library-read user-library-modify")
     frontend_auth_callback_url: str = os.getenv("FRONTEND_AUTH_CALLBACK_URL", "")
+    # Comma-separated Spotify user IDs allowed to sign up or log in.
+    # Empty (the default) means unrestricted — matches pre-existing
+    # behavior for dev/CI. Set on any host reachable from outside the
+    # tailnet/LAN, since Spotify OAuth alone does not vet who's allowed
+    # to create an account, only that they have a Spotify login.
+    allowed_spotify_user_ids: str = os.getenv("ALLOWED_SPOTIFY_USER_IDS", "")
     enable_deezer_artwork_lookup: bool = os.getenv("ENABLE_DEEZER_LOOKUP", "true").lower() == "true"
     cors_origins: str = os.getenv(
     "CORS_ORIGINS",
@@ -36,6 +42,9 @@ class Settings:
 
     def allowed_cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    def allowed_spotify_ids(self) -> list[str]:
+        return [uid.strip() for uid in self.allowed_spotify_user_ids.split(",") if uid.strip()]
 
     def validate(self) -> None:
         if self.environment.lower() == "production":

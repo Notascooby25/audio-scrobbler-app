@@ -193,7 +193,7 @@ jobs:
           echo '{}' > /tmp/ci-docker-config/config.json
           docker build -t ci-audio-scrobbler-backend ./backend
           docker build -t ci-audio-scrobbler-worker ./worker
-          docker build -t ci-audio-scrobbler-frontend ./frontend
+          docker build -f frontend/Dockerfile.prod -t ci-audio-scrobbler-frontend ./frontend
           cat > /tmp/ci-prod-override.yml <<'EOF'
           services:
             backend:
@@ -248,10 +248,15 @@ jobs:
         include:
           - name: backend
             context: ./backend
+            dockerfile: ./backend/Dockerfile
           - name: worker
             context: ./worker
+            dockerfile: ./worker/Dockerfile
           - name: frontend
             context: ./frontend
+            # The static nginx production build, not frontend/Dockerfile
+            # (the dev server local dev / docker-compose.yml uses).
+            dockerfile: ./frontend/Dockerfile.prod
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -281,6 +286,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

@@ -18,6 +18,10 @@ SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
 SPOTIFY_PROFILE_URL = "https://api.spotify.com/v1/me"
 
 
+class SpotifyAccessDeniedError(Exception):
+    """Raised when a Spotify account is not on the allowlist, if one is configured."""
+
+
 def create_oauth_state() -> str:
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
     return jwt.encode({"purpose": "spotify-oauth", "exp": expires_at}, settings.jwt_secret, algorithm="HS256")
@@ -62,6 +66,9 @@ def complete_spotify_callback(db: Session, code: str, state: str) -> tuple[str, 
     profile_response.raise_for_status()
     profile = profile_response.json()
     spotify_user_id = profile["id"]
+    allowed_ids = settings.allowed_spotify_ids()
+    if allowed_ids and spotify_user_id not in allowed_ids:
+        raise SpotifyAccessDeniedError(spotify_user_id)
     user = db.query(User).filter(User.spotify_user_id == spotify_user_id).first()
     if user is None:
         user = User(
