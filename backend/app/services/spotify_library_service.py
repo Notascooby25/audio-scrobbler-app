@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from datetime import datetime
 from typing import Any
 
@@ -18,9 +19,24 @@ SPOTIFY_SAVED_TRACK_URL = "https://api.spotify.com/v1/me/tracks"
 
 
 def _request(method: str, url: str, **kwargs: Any) -> requests.Response:
-    response = requests.request(method, url, timeout=15, **kwargs)
-    response.raise_for_status()
-    return response
+    # sync_liked_tracks pages through /me/tracks 50 at a time and then
+    # batches /v1/artists lookups — a large liked-songs library means many
+    # sequential calls with no gap between them, which Spotify's rate
+    # limiter (HTTP 429) is happy to interrupt partway through. Mirrors the
+    # worker's SpotifyClient._request retry/backoff (spotify_ingestion.py),
+    # which this service never had despite making the same kind of calls.
+    for attempt in range(3):
+        response = requests.request(method, url, timeout=15, **kwargs)
+        if response.status_code == 429 and attempt < 2:
+            retry_after = min(float(response.headers.get("Retry-After", "1")), 30)
+            time.sleep(retry_after)
+            continue
+        if response.status_code >= 500 and attempt < 2:
+            time.sleep(2 ** attempt)
+            continue
+        response.raise_for_status()
+        return response
+    raise requests.HTTPError(f"Spotify request failed after retries: {url}")
 
 
 def _refresh_access_token(db: Session, user: User) -> str:

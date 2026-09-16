@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 import requests
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import or_
@@ -12,6 +14,7 @@ from ..schemas.spotify_library import LikedTracksResponse, SpotifySyncResponse, 
 from ..services.spotify_library_service import backfill_scrobble_artwork, set_track_liked, sync_liked_tracks
 
 router = APIRouter(prefix="/spotify", tags=["spotify-library"])
+logger = logging.getLogger("audio-scrobbler-api")
 
 
 @router.post("/sync-liked-tracks", response_model=SpotifySyncResponse)
@@ -22,6 +25,10 @@ def sync_spotify_liked_tracks(
     try:
         return SpotifySyncResponse(**sync_liked_tracks(db, current_user))
     except (KeyError, ValueError, requests.RequestException) as exc:
+        # HTTPException is handled cleanly by FastAPI and normally logs no
+        # traceback at all, so the *cause* of a 502 here was previously
+        # unrecoverable from `docker logs` after the fact.
+        logger.exception("Spotify liked-track sync failed for user %s", current_user.id)
         raise HTTPException(status_code=502, detail="Spotify liked-track sync failed") from exc
 
 
@@ -33,6 +40,7 @@ def backfill_artwork(
     try:
         return SpotifySyncResponse(**backfill_scrobble_artwork(db, current_user))
     except (KeyError, ValueError, requests.RequestException) as exc:
+        logger.exception("Spotify artwork backfill failed for user %s", current_user.id)
         raise HTTPException(status_code=502, detail="Spotify artwork backfill failed") from exc
 
 
