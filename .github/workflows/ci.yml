@@ -5,9 +5,20 @@ on:
     branches: [main]
   pull_request:
 
+# Without this, two pushes to main race each other and whichever
+# publish-images job happens to finish last wins the `latest` tag — which
+# is not necessarily the newer commit. Superseded pull-request runs are
+# cancelled outright (nothing depends on them); main runs queue instead,
+# so an in-flight image publish is never aborted half-way and `latest`
+# still ends up on the newest commit.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   backend-worker:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:16-alpine
@@ -49,6 +60,7 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: frontend
@@ -74,6 +86,7 @@ jobs:
 
   compose:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -120,6 +133,7 @@ jobs:
 
   container-smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -165,6 +179,7 @@ jobs:
 
   production-monitoring-smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -211,21 +226,54 @@ jobs:
           # 8 services carry a healthcheck: db, backend, worker, frontend,
           # prometheus, alertmanager, node-exporter, and watchtower (its
           # image ships its own built-in HEALTHCHECK).
+          healthy=0
           for attempt in {1..30}; do
             healthy="$(docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml ps --format json | grep -c '"Health":"healthy"' || true)"
             if [ "$healthy" -ge 8 ]; then break; fi
             sleep 5
           done
           docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml ps
+          if [ "$healthy" -lt 8 ]; then
+            echo "Only $healthy/8 services became healthy within 150s." >&2
+            exit 1
+          fi
 
       - name: Verify Prometheus and Alertmanager
         run: |
           docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml exec -T prometheus wget --spider --quiet http://localhost:9090/-/ready
           docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml exec -T alertmanager wget --spider --quiet http://localhost:9093/-/ready
-          targets="$(docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml exec -T prometheus wget -qO- http://localhost:9090/api/v1/targets)"
-          printf '%s' "$targets" | grep -q '"job":"backend".*"health":"up"'
-          printf '%s' "$targets" | grep -q '"job":"worker".*"health":"up"'
-          printf '%s' "$targets" | grep -q '"job":"backup".*"health":"up"'
+          # Containers reporting healthy does not mean Prometheus has
+          # completed a scrape cycle yet (scrape_interval is 15s), so poll
+          # for the targets instead of asserting once. Asserting once is
+          # what made this job flaky: a bare `grep -q` that lost the race
+          # failed with nothing but "Process completed with exit code 1".
+          #
+          # Parsed as JSON rather than grepped, too — '"job":"backend".*"health":"up"'
+          # is greedy across the whole single-line response, so it would
+          # happily match a job name from one target and an "up" from a
+          # different one, passing even with that target down.
+          missing="backend worker backup"
+          targets=""
+          for attempt in {1..24}; do
+            targets="$(docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml exec -T prometheus wget -qO- http://localhost:9090/api/v1/targets || true)"
+            if [ -z "$targets" ]; then
+              # jq emits nothing for empty input, which would read back as
+              # "no jobs missing" and pass — treat a failed fetch as all
+              # targets missing instead.
+              missing="backend worker backup"
+            else
+              missing="$(printf '%s' "$targets" | jq -r '["backend","worker","backup"] - [.data.activeTargets[] | select(.health == "up") | .labels.job] | join(" ")' 2>/dev/null || echo "backend worker backup")"
+            fi
+            [ -z "$missing" ] && break
+            sleep 5
+          done
+          if [ -n "$missing" ]; then
+            echo "Prometheus targets never reported up within 120s: $missing" >&2
+            echo "--- /api/v1/targets ---" >&2
+            printf '%s\n' "$targets" >&2
+            exit 1
+          fi
+          echo "Prometheus targets up: backend worker backup"
           docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml exec -T prometheus wget -qO- http://localhost:9090/api/v1/rules | grep -q AudioScrobbler
 
       - name: Dump production monitoring logs on failure
@@ -237,9 +285,15 @@ jobs:
         run: docker compose -f docker-compose.prod.yml -f /tmp/ci-prod-override.yml down -v
 
   publish-images:
-    needs: [backend-worker, frontend, compose, container-smoke]
+    # production-monitoring-smoke included deliberately: it is the only job
+    # that exercises docker-compose.prod.yml as an actual running stack, so
+    # without it a prod-stack regression could still publish :latest — and
+    # with watchtower as the delivery path, publishing :latest *is*
+    # deploying to the NUC.
+    needs: [backend-worker, frontend, compose, container-smoke, production-monitoring-smoke]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
