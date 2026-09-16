@@ -16,8 +16,8 @@ export default function HeaderNav() {
 
   return (
     <header className="topbar">
-      <div>
-        <p className="eyebrow">Audio Scrobbler App</p>
+      <div className="topbar-brand">
+        <img src="/logo.png" alt="Audio Scrobbler App" className="topbar-logo" />
       </div>
       <button
         type="button"
