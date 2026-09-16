@@ -110,6 +110,7 @@ jobs:
           FRONTEND_AUTH_CALLBACK_URL: https://example.com
           CORS_ORIGINS: https://example.com
           VITE_API_BASE_URL: https://example.com/api
+          DOCKER_CONFIG_DIR: /tmp/ci-docker-config
         run: docker compose -f docker-compose.prod.yml config --quiet
 
       - name: Validate monitoring configuration files
@@ -180,29 +181,35 @@ jobs:
   production-monitoring-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Job-level, not step-level: every step in this job shells out to
+    # `docker compose -f docker-compose.prod.yml`, which interpolates all
+    # of these. They used to be set only on the first step, so the later
+    # ones silently ran with everything blank — harmless until
+    # DOCKER_CONFIG_DIR became a required variable, at which point the
+    # wait/verify/teardown steps all failed on interpolation.
+    env:
+      GHCR_OWNER: example
+      IMAGE_TAG: sha-example
+      POSTGRES_DB: scrobbler
+      POSTGRES_USER: scrobbler
+      POSTGRES_PASSWORD: example-password
+      JWT_SECRET: example-jwt-secret
+      REFRESH_TOKEN_KEY: example-refresh-secret
+      WORKER_INGESTION_TOKEN: example-worker-token
+      SPOTIFY_CLIENT_ID: example-client-id
+      SPOTIFY_CLIENT_SECRET: example-client-secret
+      SPOTIFY_REDIRECT_URI: https://example.com/auth/spotify/callback
+      FRONTEND_AUTH_CALLBACK_URL: https://example.com
+      CORS_ORIGINS: https://example.com
+      VITE_API_BASE_URL: https://example.com/api
+      ALERTMANAGER_CRITICAL_WEBHOOK_URL: http://127.0.0.1:65535/disabled
+      ALERTMANAGER_WARNING_WEBHOOK_URL: http://127.0.0.1:65535/disabled
+      DOCKER_CONFIG_DIR: /tmp/ci-docker-config
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
       - name: Start production monitoring stack
-        env:
-          GHCR_OWNER: example
-          IMAGE_TAG: sha-example
-          POSTGRES_DB: scrobbler
-          POSTGRES_USER: scrobbler
-          POSTGRES_PASSWORD: example-password
-          JWT_SECRET: example-jwt-secret
-          REFRESH_TOKEN_KEY: example-refresh-secret
-          WORKER_INGESTION_TOKEN: example-worker-token
-          SPOTIFY_CLIENT_ID: example-client-id
-          SPOTIFY_CLIENT_SECRET: example-client-secret
-          SPOTIFY_REDIRECT_URI: https://example.com/auth/spotify/callback
-          FRONTEND_AUTH_CALLBACK_URL: https://example.com
-          CORS_ORIGINS: https://example.com
-          VITE_API_BASE_URL: https://example.com/api
-          ALERTMANAGER_CRITICAL_WEBHOOK_URL: http://127.0.0.1:65535/disabled
-          ALERTMANAGER_WARNING_WEBHOOK_URL: http://127.0.0.1:65535/disabled
-          DOCKER_CONFIG_DIR: /tmp/ci-docker-config
         run: |
           mkdir -p /tmp/ci-docker-config
           echo '{}' > /tmp/ci-docker-config/config.json
