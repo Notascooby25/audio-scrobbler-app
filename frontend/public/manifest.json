@@ -1,4 +1,5 @@
 {
+  "id": "/?homescreen=audio-scrobbler",
   "name": "Audio Scrobbler App",
   "short_name": "Scrobbler",
   "description": "Track, chart, and share your listening history.",
