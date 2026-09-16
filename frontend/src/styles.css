@@ -66,6 +66,17 @@ p {
   margin-bottom: 3.5rem;
 }
 
+.topbar-brand {
+  display: flex;
+  align-items: center;
+}
+
+.topbar-logo {
+  height: 28px;
+  width: auto;
+  display: block;
+}
+
 .topbar-nav {
   align-items: center;
   display: flex;
