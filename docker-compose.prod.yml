@@ -81,6 +81,14 @@ services:
       backend:
         condition: service_healthy
 
+  # Built from frontend/Dockerfile.prod (a static nginx build, not the
+  # Vite dev server frontend/Dockerfile runs for local dev) — see that
+  # file for why. BACKEND_PROXY_URL and VITE_ALLOWED_HOSTS were dev-server
+  # config and no longer apply; nginx.conf proxies API paths to backend:8000
+  # directly. VITE_API_BASE_URL is intentionally not set here either: it's
+  # a build-time value baked into the static bundle by `vite build`, so a
+  # runtime compose var can't affect it post-build — leaving it unset keeps
+  # the frontend on same-origin relative requests through nginx's proxy.
   frontend:
     image: ghcr.io/${GHCR_OWNER}/audio-scrobbler-app-frontend:${IMAGE_TAG}
     labels:
@@ -88,12 +96,8 @@ services:
       - com.centurylinklabs.watchtower.scope=audio-scrobbler-app
     ports:
       - "5173:5173"
-    environment:
-      BACKEND_PROXY_URL: http://backend:8000
-      VITE_API_BASE_URL: ${VITE_API_BASE_URL}
-      VITE_ALLOWED_HOSTS: ${VITE_ALLOWED_HOSTS:-}
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5173', response => process.exit(response.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:5173/"]
       interval: 10s
       timeout: 5s
       retries: 10

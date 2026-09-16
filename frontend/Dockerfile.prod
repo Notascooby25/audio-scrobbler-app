@@ -1,0 +1,25 @@
+# Production build: static assets served by nginx, replacing the Vite dev
+# server that docker-compose.prod.yml previously ran directly. The dev
+# server has no place serving real traffic — no CSP, verbose error
+# overlays, an HMR websocket, and none of it is meant to be
+# internet-reachable. frontend/Dockerfile (the dev-server image) is
+# unchanged and still what docker-compose.yml and local dev use.
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+FROM nginx:1.27-alpine
+
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 5173
+
+HEALTHCHECK --interval=10s --timeout=5s --retries=10 --start-period=10s \
+    CMD wget --spider --quiet http://localhost:5173/ || exit 1
