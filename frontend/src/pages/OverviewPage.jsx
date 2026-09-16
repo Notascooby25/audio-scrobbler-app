@@ -67,7 +67,7 @@ export default function OverviewPage() {
             <button type="button" onClick={refreshSpotifyLibrary}>Sync Spotify library</button>
             {syncStatus && <p className="panel-meta" role="status">{syncStatus}</p>}
           </div>
-          <DateRangeSelector value={dateRange} onChange={setDateRange} />
+          <DateRangeSelector value={dateRange} onChange={setDateRange} showCompare={false} />
           {charts && (
             <div className="overview-grid">
               <RankedList title="Top artists" entries={charts.artists} />

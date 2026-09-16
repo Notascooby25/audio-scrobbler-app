@@ -24,8 +24,27 @@ export default defineConfig({
       '/auth': { target: backendUrl, changeOrigin: true },
       '/analytics': { target: backendUrl, changeOrigin: true },
       '/stats': { target: backendUrl, changeOrigin: true },
-      '/library': { target: backendUrl, changeOrigin: true },
-      '/reports': { target: backendUrl, changeOrigin: true },
+      // /library and /reports are also SPA page routes (GET /library, GET
+      // /reports) with no bare backend counterpart — only sub-paths like
+      // /library/scrobbles or /reports/summary are real API calls. bypass
+      // hands the bare route back to Vite's own SPA-fallback middleware
+      // instead of proxying it to the backend, where it would 404.
+      '/library': {
+        target: backendUrl,
+        changeOrigin: true,
+        bypass: (req) => {
+          const path = req.url.split('?')[0]
+          if (path === '/library' || path === '/library/') return req.url
+        },
+      },
+      '/reports': {
+        target: backendUrl,
+        changeOrigin: true,
+        bypass: (req) => {
+          const path = req.url.split('?')[0]
+          if (path === '/reports' || path === '/reports/') return req.url
+        },
+      },
       '/spotify': { target: backendUrl, changeOrigin: true },
       '/users': { target: backendUrl, changeOrigin: true },
       '/preferences': { target: backendUrl, changeOrigin: true },

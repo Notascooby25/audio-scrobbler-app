@@ -43,14 +43,21 @@ export default function ReportsPage() {
         <div>
           <p className="section-kicker">Your listening story</p>
           <h2>Patterns worth returning to.</h2>
-          {report && <p>{report.summary.period_scrobbles.toLocaleString()} scrobbles this period, {report.summary.comparison_percent}% versus the previous period.</p>}
+          {report && (
+            <p>
+              {report.summary.period_scrobbles.toLocaleString()} scrobbles this period
+              {dateRange.compare_to_previous && `, ${report.summary.comparison_percent}% versus the previous period`}.
+            </p>
+          )}
         </div>
         <Link to="/library">Browse the source history</Link>
       </div>
       {report && <div className="report-facts">
         <div><strong>{Number(report.summary.listening_minutes || 0).toLocaleString()}</strong><span>Listening minutes</span></div>
         <div><strong>{Number(report.summary.average_per_day || 0)}</strong><span>Average per day</span></div>
-        <div><strong>{Number(report.summary.previous_period_scrobbles || 0).toLocaleString()}</strong><span>Previous period</span></div>
+        {dateRange.compare_to_previous && (
+          <div><strong>{Number(report.summary.previous_period_scrobbles || 0).toLocaleString()}</strong><span>Previous period</span></div>
+        )}
       </div>}
       {report && <div className="report-data-grid">
         <BarTrendChart title="Scrobbles over time" points={report.charts.weekly_scrobbles} />

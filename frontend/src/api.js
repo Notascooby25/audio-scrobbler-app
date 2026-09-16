@@ -347,7 +347,7 @@ export function fetchReportsEntity({ token, entity, dateRange }) {
 }
 
 export function syncLikedTracks({ token }) {
-  return fetchAnalyticsResource('/spotify/sync-liked-tracks', { token })
+  return fetchAnalyticsResource('/spotify/sync-liked-tracks', { token, method: 'POST' })
 }
 
 export function likeSpotifyTrack({ token, trackId }) {
@@ -359,7 +359,7 @@ export function unlikeSpotifyTrack({ token, trackId }) {
 }
 
 export function backfillArtwork({ token }) {
-  return fetchAnalyticsResource('/spotify/backfill-artwork', { token })
+  return fetchAnalyticsResource('/spotify/backfill-artwork', { token, method: 'POST' })
 }
 
 export function fetchLikedTracks({ token, limit, offset, search }) {
