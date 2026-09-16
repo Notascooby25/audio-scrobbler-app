@@ -190,7 +190,12 @@ services:
     image: containrrr/watchtower:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${DOCKER_CONFIG_DIR}/config.json:/config.json:ro
+      # Required rather than defaulted: unset, this resolved to
+      # "/config.json" on the host, silently mounting the wrong thing and
+      # leaving watchtower unauthenticated against GHCR. There is no safe
+      # default to guess here (~ does not expand in compose volume paths),
+      # so fail loudly at `compose config` time instead.
+      - ${DOCKER_CONFIG_DIR:?set DOCKER_CONFIG_DIR to the docker config dir holding your GHCR login, e.g. /home/youruser/.docker}/config.json:/config.json:ro
     environment:
       WATCHTOWER_POLL_INTERVAL: ${WATCHTOWER_POLL_INTERVAL:-300}
       WATCHTOWER_CLEANUP: "true"

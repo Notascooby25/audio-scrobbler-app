@@ -110,6 +110,7 @@ jobs:
           FRONTEND_AUTH_CALLBACK_URL: https://example.com
           CORS_ORIGINS: https://example.com
           VITE_API_BASE_URL: https://example.com/api
+          DOCKER_CONFIG_DIR: /tmp/ci-docker-config
         run: docker compose -f docker-compose.prod.yml config --quiet
 
       - name: Validate monitoring configuration files

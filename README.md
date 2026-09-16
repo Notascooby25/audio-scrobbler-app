@@ -57,16 +57,39 @@ Successful pushes to `main` publish backend, worker, and frontend images to GHCR
 
 ## Production Images
 
-Copy `.env.example` to a deployment-only environment file, replace every placeholder secret, and set `IMAGE_TAG` to an immutable commit-SHA tag. Pull and start the GHCR images with:
+> Operational procedures — restore-from-backup, rollback, backup health, monitoring — live in [docs/RUNBOOK.md](docs/RUNBOOK.md). The PDF runbooks under `docs/` and `guides/` are outdated and superseded by it.
+
+Copy `.env.example` to a deployment-only environment file and replace every placeholder secret. Keep `.env.production` only on the deployment host.
+
+### How code reaches production
+
+Watchtower, running on the deployment host, polls GHCR every `WATCHTOWER_POLL_INTERVAL` seconds and restarts backend/worker/frontend when a new `:latest` image appears. A successful push to `main` publishes those images, so **merging to `main` is what deploys**. No GitHub-initiated deploy step is involved, and none is needed — the host reaches out, which is what makes this work from behind NAT.
+
+This requires `IMAGE_TAG=latest`. Pinning it to an immutable `sha-<short>` tag makes Watchtower a permanent no-op: it only re-resolves the tag a container was originally started with, and a `sha-` tag's digest never moves.
+
+Watchtower needs the host already logged in via `docker login ghcr.io`, with `DOCKER_CONFIG_DIR` pointing at the docker config directory holding those credentials.
+
+### Manual deploy and rollback
+
+To pin a specific build — a deliberate rollback, or rolling forward past a bad `:latest`:
 
 ```bash
+# set IMAGE_TAG=sha-<short> in .env.production first
 docker compose -f docker-compose.prod.yml --env-file .env.production pull
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d
 ```
 
-To roll back, change `IMAGE_TAG` to a previously published SHA and run the same commands. Database migrations run during backend startup; application image rollback does not roll back database migrations.
-The deployment workflow verifies backend, worker, and frontend health and attempts an application-image rollback if startup or readiness fails. It never removes the PostgreSQL volume.
-Before deployment, the workflow creates and restore-verifies a compressed PostgreSQL backup under the host deployment directory. Backups are retained for `BACKUP_RETENTION_DAYS` (14 days by default).
+Note the `sha-` prefix: CI publishes `sha-45c4e2e`, not `45c4e2e`. A bare short SHA fails with `manifest unknown`. Set `IMAGE_TAG` back to `latest` once you're done, or Watchtower stays inert.
+
+Database migrations run during backend startup; rolling an image back does **not** roll back migrations.
+
+The `Deploy production` GitHub Actions workflow is **break-glass only and has never completed a run** — the `production` environment has no secrets set, and GitHub-hosted runners cannot reach a LAN deployment host without an additional Tailscale (or equivalent) step that does not exist here. Treat the commands above as the real procedure.
+
+### Backups
+
+Backups run on the deployment host itself, on a systemd timer, every 6 hours — see `scripts/systemd/` and its `install.sh`. Each run dumps the database, restore-verifies the dump into a scratch database, uploads it offsite via rclone, and pings a heartbeat/dead-man's-switch URL if one is configured.
+
+Local dumps are kept for `BACKUP_RETENTION_DAYS` (3 by default); the offsite copies are pruned separately after `GDRIVE_RETENTION_DAYS` (14 by default).
 
 Manual backup and verification from the production host:
 
@@ -75,15 +98,21 @@ ENV_FILE=.env.production COMPOSE_FILE=docker-compose.prod.yml scripts/backup_dat
 ENV_FILE=.env.production COMPOSE_FILE=docker-compose.prod.yml scripts/verify_database_backup.sh backups/scrobbler-<timestamp>.dump
 ```
 
-Production deployment is manually triggered through the GitHub Actions `Deploy production` workflow. Configure the protected `production` environment with `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_PATH`, `DEPLOY_SSH_KEY`, `GHCR_USERNAME`, and `GHCR_TOKEN`. Keep `.env.production` only on the deployment host.
+Or run the whole cycle exactly as the timer does:
 
-The `Verify production backup` workflow runs daily at `02:17 UTC` and can also be started manually. It creates and restore-verifies a backup on the deployment host without uploading database contents to GitHub.
+```bash
+systemctl --user start audio-scrobbler-backup.service
+```
 
-Production Compose includes an internal Prometheus service scraping backend and worker metrics with 14-day retention by default. It is not published directly to the host; access it through an internal network or an authenticated operator tunnel.
-Prometheus also tracks the last verified database backup through a host-local textfile metric and alerts when verification is stale for more than 48 hours.
-Production Compose includes an internal Alertmanager with severity-based routing. Configure the critical and warning webhook URLs through the deployment environment; the documented defaults intentionally disable delivery.
-CI validates Prometheus and Alertmanager configuration semantics with the pinned monitoring images before changes can merge.
-CI builds local application images to start the production monitoring Compose stack with inert placeholder secrets, verifies Prometheus targets and Alertmanager readiness, and tears the stack down afterward.
+The `Verify production backup` workflow is retained for a future Tailscale-enabled setup, but its schedule is disabled and it has never completed a run, for the same reachability reason as the deploy workflow.
+
+### Monitoring
+
+Production Compose includes an internal Prometheus scraping backend and worker metrics with 14-day retention by default. It is not published to the host; reach it through `docker compose exec` or an authenticated operator tunnel.
+
+Prometheus tracks the last verified backup and the last successful offsite upload through host-local textfile metrics, alerting when either goes stale (12h) or has never been written at all. Alertmanager routes by severity; the defaults in `.env.example` intentionally disable delivery, so set `ALERTMANAGER_CRITICAL_WEBHOOK_URL` to something real or critical alerts go nowhere.
+
+CI validates Prometheus and Alertmanager configuration semantics with the pinned monitoring images, and stands up the full production Compose stack with inert placeholder secrets to verify targets and readiness before any image is published.
 
 ## Listening Ingestion
 
