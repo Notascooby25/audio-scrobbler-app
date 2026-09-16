@@ -29,6 +29,14 @@ spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID", "")
 spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET", "")
 refresh_token_key = os.getenv("REFRESH_TOKEN_KEY", "0123456789abcdef0123456789abcdef")
 spotify_interval_minutes = int(os.getenv("WORKER_SPOTIFY_INTERVAL_MINUTES", "5"))
+# Liked-tracks sync got its own interval rather than sharing the
+# recently-played one above: even with the incremental fetch in
+# spotify_library_service (only pages until it reaches a track it's already
+# synced), the artist-artwork lookup phase still redoes work per newly-liked
+# artist, and a brand-new user's first sync still walks their whole library.
+# Decoupling the two means a heavy first sync or a big liking spree doesn't
+# also slow down how often recently-played scrobbles show up.
+liked_tracks_interval_minutes = int(os.getenv("WORKER_LIKED_TRACKS_INTERVAL_MINUTES", "15"))
 file_import_enabled = os.getenv("WORKER_FILE_IMPORT_ENABLED", "false").lower() == "true"
 file_import_dir = os.getenv("WORKER_IMPORT_DIR", "/data/imports")
 file_import_interval_minutes = int(os.getenv("WORKER_FILE_IMPORT_INTERVAL_MINUTES", "10"))
@@ -37,6 +45,9 @@ last_spotify_sync_at: str | None = None
 last_spotify_sync_users = 0
 last_spotify_sync_failures = 0
 last_spotify_sync_events = 0
+last_liked_tracks_sync_at: str | None = None
+last_liked_tracks_sync_users = 0
+last_liked_tracks_sync_failures = 0
 last_file_import_at: str | None = None
 last_file_import_processed = 0
 last_file_import_failed = 0
@@ -98,22 +109,39 @@ def run_spotify_ingestion() -> None:
                 session.rollback()
                 failures += 1
                 logger.exception("Spotify sync failed for user %s", user.id)
+        last_spotify_sync_at = datetime.now(timezone.utc).isoformat()
+        last_spotify_sync_users = len(users)
+        last_spotify_sync_failures = failures
+        last_spotify_sync_events = events
+    finally:
+        session.close()
+        engine.dispose()
 
-            # Liked/Saved tracks + Spotify-sourced artwork used to only sync
-            # when someone clicked "Sync Spotify library" on Overview. Runs
-            # on the same cycle and cadence as the recently-played sync
-            # above rather than its own schedule, so both use the one
-            # WORKER_SPOTIFY_INTERVAL_MINUTES interval.
+
+def run_liked_tracks_ingestion() -> None:
+    # Liked/Saved tracks + Spotify-sourced artwork used to only sync when
+    # someone clicked "Sync Spotify library" on Overview. Runs on its own
+    # interval (WORKER_LIKED_TRACKS_INTERVAL_MINUTES), decoupled from the
+    # recently-played cycle above — see the interval comment near the top
+    # of this file for why.
+    global last_liked_tracks_sync_at, last_liked_tracks_sync_users, last_liked_tracks_sync_failures
+    if not spotify_enabled or not spotify_client_id or not spotify_client_secret:
+        return
+    engine = create_engine(database_url, pool_pre_ping=True)
+    session = sessionmaker(bind=engine)()
+    try:
+        users = session.query(UserRecord).filter(UserRecord.is_active.is_(True)).all()
+        failures = 0
+        for user in users:
             try:
                 sync_liked_tracks_and_artwork(backend_url, worker_token, user.id)
                 logger.info("Spotify liked-track sync completed for user %s", user.id)
             except Exception:
                 failures += 1
                 logger.exception("Spotify liked-track sync failed for user %s", user.id)
-        last_spotify_sync_at = datetime.now(timezone.utc).isoformat()
-        last_spotify_sync_users = len(users)
-        last_spotify_sync_failures = failures
-        last_spotify_sync_events = events
+        last_liked_tracks_sync_at = datetime.now(timezone.utc).isoformat()
+        last_liked_tracks_sync_users = len(users)
+        last_liked_tracks_sync_failures = failures
     finally:
         session.close()
         engine.dispose()
@@ -144,6 +172,9 @@ def health_check() -> dict[str, str]:
         "last_spotify_sync_users": str(last_spotify_sync_users),
         "last_spotify_sync_failures": str(last_spotify_sync_failures),
         "last_spotify_sync_events": str(last_spotify_sync_events),
+        "last_liked_tracks_sync_at": last_liked_tracks_sync_at or "never",
+        "last_liked_tracks_sync_users": str(last_liked_tracks_sync_users),
+        "last_liked_tracks_sync_failures": str(last_liked_tracks_sync_failures),
         "file_import_enabled": str(file_import_enabled).lower(),
         "last_file_import_at": last_file_import_at or "never",
         "last_file_import_processed": str(last_file_import_processed),
@@ -154,6 +185,7 @@ def health_check() -> dict[str, str]:
 @app.get("/metrics", response_class=PlainTextResponse)
 def metrics() -> str:
     last_sync = 0 if last_spotify_sync_at == "never" or last_spotify_sync_at is None else 1
+    last_liked_sync = 0 if last_liked_tracks_sync_at is None else 1
     return "\n".join([
         "# HELP audio_scrobbler_worker_scheduler_running Scheduler state.",
         "# TYPE audio_scrobbler_worker_scheduler_running gauge",
@@ -170,6 +202,15 @@ def metrics() -> str:
         "# HELP audio_scrobbler_worker_spotify_sync_events Events submitted in the last sync.",
         "# TYPE audio_scrobbler_worker_spotify_sync_events gauge",
         f"audio_scrobbler_worker_spotify_sync_events {last_spotify_sync_events}",
+        "# HELP audio_scrobbler_worker_liked_tracks_sync_success Last liked-tracks sync completed.",
+        "# TYPE audio_scrobbler_worker_liked_tracks_sync_success gauge",
+        f"audio_scrobbler_worker_liked_tracks_sync_success {last_liked_sync}",
+        "# HELP audio_scrobbler_worker_liked_tracks_sync_users Users attempted in the last liked-tracks sync.",
+        "# TYPE audio_scrobbler_worker_liked_tracks_sync_users gauge",
+        f"audio_scrobbler_worker_liked_tracks_sync_users {last_liked_tracks_sync_users}",
+        "# HELP audio_scrobbler_worker_liked_tracks_sync_failures Failures in the last liked-tracks sync.",
+        "# TYPE audio_scrobbler_worker_liked_tracks_sync_failures gauge",
+        f"audio_scrobbler_worker_liked_tracks_sync_failures {last_liked_tracks_sync_failures}",
         "# HELP audio_scrobbler_worker_file_import_processed Files processed in the last file import run.",
         "# TYPE audio_scrobbler_worker_file_import_processed gauge",
         f"audio_scrobbler_worker_file_import_processed {last_file_import_processed}",
@@ -203,6 +244,7 @@ def start_scheduler() -> None:
         scheduler.add_job(run_fixture_ingestion, "interval", minutes=1, id="fixture-ingestion")
     if spotify_enabled:
         scheduler.add_job(run_spotify_ingestion, "interval", minutes=spotify_interval_minutes, id="spotify-ingestion")
+        scheduler.add_job(run_liked_tracks_ingestion, "interval", minutes=liked_tracks_interval_minutes, id="liked-tracks-ingestion")
     if file_import_enabled:
         scheduler.add_job(run_file_import, "interval", minutes=file_import_interval_minutes, id="file-import")
 

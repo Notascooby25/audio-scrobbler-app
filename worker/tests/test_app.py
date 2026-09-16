@@ -75,6 +75,9 @@ def test_health_reports_scheduler_and_fixture_status(monkeypatch):
         "last_spotify_sync_users": "0",
         "last_spotify_sync_failures": "0",
         "last_spotify_sync_events": "0",
+        "last_liked_tracks_sync_at": "never",
+        "last_liked_tracks_sync_users": "0",
+        "last_liked_tracks_sync_failures": "0",
         "file_import_enabled": "false",
         "last_file_import_at": "never",
         "last_file_import_processed": "0",
@@ -92,8 +95,22 @@ def test_metrics_exposes_worker_gauges_without_user_data():
     metrics = app.metrics()
     assert "audio_scrobbler_worker_scheduler_running" in metrics
     assert "audio_scrobbler_worker_spotify_sync_failures" in metrics
+    assert "audio_scrobbler_worker_liked_tracks_sync_failures" in metrics
     assert "audio_scrobbler_worker_file_import_processed" in metrics
     assert "user_id" not in metrics
+
+
+def test_run_liked_tracks_ingestion_is_disabled_by_default(monkeypatch):
+    monkeypatch.setattr(app, "spotify_enabled", False)
+    monkeypatch.setattr(
+        app,
+        "create_engine",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("should not touch the database")),
+    )
+
+    app.run_liked_tracks_ingestion()
+
+    assert app.last_liked_tracks_sync_at is None
 
 
 def test_run_file_import_is_disabled_by_default(monkeypatch):

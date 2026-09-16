@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Any
 
 import requests
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..config import settings
@@ -89,12 +90,28 @@ def _parse_added_at(value: Any) -> datetime:
 def sync_liked_tracks(db: Session, user: User) -> dict[str, int]:
     access_token = _refresh_access_token(db, user)
     headers = {"Authorization": f"Bearer {access_token}"}
+    # /me/tracks returns items newest-added-first (Spotify's documented
+    # order for Saved Tracks). Every liked track we already have is stored
+    # locally with its added_at, so the newest one we've already seen is a
+    # watermark: paginate from the top and stop as soon as an item is
+    # older than it, instead of re-fetching the whole Saved Tracks list on
+    # every call. On a brand-new user (no local rows yet) this is None, so
+    # the first sync naturally still walks the full library once.
+    #
+    # This intentionally never reconciles the other direction — a track
+    # unliked directly in Spotify (not through this app) stays in our
+    # local liked_tracks table, since nothing here ever sees it "missing"
+    # from a page it never fetches. That was already true before this
+    # change too: the old full re-fetch only ever upserted what it saw and
+    # never deleted local rows absent from the response.
+    since = db.query(func.max(LikedTrack.added_at)).filter(LikedTrack.user_id == user.id).scalar()
     offset = 0
     fetched = 0
     inserted = 0
     updated = 0
     artist_ids: dict[str, str] = {}
-    while True:
+    reached_watermark = False
+    while not reached_watermark:
         response = _request(
             "GET",
             SPOTIFY_SAVED_TRACKS_URL,
@@ -108,6 +125,12 @@ def sync_liked_tracks(db: Session, user: User) -> dict[str, int]:
             track = item.get("track") if isinstance(item, dict) else None
             if not isinstance(track, dict) or not isinstance(track.get("id"), str):
                 continue
+            added_at = _parse_added_at(item.get("added_at"))
+            if since is not None and added_at < since:
+                # Everything from here on is even older (descending order),
+                # so nothing later in this page or any later page is new.
+                reached_watermark = True
+                break
             track_id = track["id"]
             artists = track.get("artists")
             artist_name = artists[0].get("name") if isinstance(artists, list) and artists and isinstance(artists[0], dict) else None
@@ -118,7 +141,7 @@ def sync_liked_tracks(db: Session, user: User) -> dict[str, int]:
                 continue
             record = db.query(LikedTrack).filter_by(user_id=user.id, spotify_track_id=track_id).first()
             if record is None:
-                record = LikedTrack(user_id=user.id, spotify_track_id=track_id, added_at=_parse_added_at(item.get("added_at")))
+                record = LikedTrack(user_id=user.id, spotify_track_id=track_id, added_at=added_at)
                 db.add(record)
                 inserted += 1
             else:
@@ -132,10 +155,15 @@ def sync_liked_tracks(db: Session, user: User) -> dict[str, int]:
             record.raw_metadata = item
             record.updated_at = datetime.utcnow()
             fetched += 1
-        if len(items) < 50:
+        if reached_watermark or len(items) < 50:
             break
         offset += 50
 
+    # artist_ids only holds artists touched by tracks processed above, so
+    # this refresh is now scoped to newly-synced tracks rather than
+    # re-fetching and re-applying artwork for every artist in the whole
+    # liked library on every call. Trade-off: an artist's photo changing on
+    # Spotify won't be picked up again for a track that's already synced.
     artist_artwork: dict[str, str] = {}
     ids = list(artist_ids.values())
     for start in range(0, len(ids), 50):
