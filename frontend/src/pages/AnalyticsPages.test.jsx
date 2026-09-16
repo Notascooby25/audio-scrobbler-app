@@ -19,8 +19,6 @@ vi.mock('../api', () => ({
   createBlock: vi.fn(),
   deleteLibraryEntries: vi.fn(),
   deleteLibraryScrobbles: vi.fn(),
-  syncLikedTracks: vi.fn(),
-  backfillArtwork: vi.fn(),
 }))
 
 import {

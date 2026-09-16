@@ -58,6 +58,39 @@ def submit_event_with_retries(backend_url: str, worker_token: str, event: dict[s
     raise requests.HTTPError("Backend ingestion failed after retries")
 
 
+def _call_backend_internal_with_retries(backend_url: str, worker_token: str, path: str, user_id: int) -> dict[str, object]:
+    # sync_liked_tracks/backfill_scrobble_artwork on the backend page through
+    # Spotify themselves and already retry a 429 there; a long-running
+    # request is expected for a real liked-songs library, so this uses a
+    # much longer timeout than the lightweight per-event ingestion call
+    # above.
+    for attempt in range(3):
+        response = requests.post(
+            f"{backend_url}{path}",
+            json={"user_id": user_id},
+            headers={"X-Worker-Token": worker_token},
+            timeout=120,
+        )
+        if response.status_code in (429, 500, 502, 503, 504) and attempt < 2:
+            retry_after = min(float(response.headers.get("Retry-After", "1")), 30) if response.status_code == 429 else 2 ** attempt
+            time.sleep(retry_after)
+            continue
+        response.raise_for_status()
+        return response.json()
+    raise requests.HTTPError(f"Backend request to {path} failed after retries")
+
+
+def sync_liked_tracks_and_artwork(backend_url: str, worker_token: str, user_id: int) -> None:
+    """Runs the same liked-tracks sync and Spotify artwork backfill the
+    Overview page's "Sync Spotify library" button used to trigger manually,
+    now as part of the regular automatic Spotify cycle. sync_liked_tracks
+    re-fetches the user's full Saved Tracks list on every call (it's not
+    incremental), so this also naturally backfills anyone's existing likes
+    the first time it runs for them."""
+    _call_backend_internal_with_retries(backend_url, worker_token, "/spotify/internal/sync-liked-tracks", user_id)
+    _call_backend_internal_with_retries(backend_url, worker_token, "/spotify/internal/backfill-artwork", user_id)
+
+
 def normalize_recent_item(item: dict[str, object], user_id: int) -> dict[str, object] | None:
     track = item.get("track")
     played_at = item.get("played_at")

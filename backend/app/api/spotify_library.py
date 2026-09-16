@@ -8,9 +8,15 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from ..api.deps import get_current_user
+from ..api.ingestion import require_worker_token
 from ..db import get_db
 from ..models import LikedTrack, User
-from ..schemas.spotify_library import LikedTracksResponse, SpotifySyncResponse, TrackLikeResponse
+from ..schemas.spotify_library import (
+    LikedTracksResponse,
+    SpotifySyncResponse,
+    TrackLikeResponse,
+    WorkerLikedTrackSyncRequest,
+)
 from ..services.spotify_library_service import backfill_scrobble_artwork, set_track_liked, sync_liked_tracks
 
 router = APIRouter(prefix="/spotify", tags=["spotify-library"])
@@ -41,6 +47,41 @@ def backfill_artwork(
         return SpotifySyncResponse(**backfill_scrobble_artwork(db, current_user))
     except (KeyError, ValueError, requests.RequestException) as exc:
         logger.exception("Spotify artwork backfill failed for user %s", current_user.id)
+        raise HTTPException(status_code=502, detail="Spotify artwork backfill failed") from exc
+
+
+@router.post("/internal/sync-liked-tracks", response_model=SpotifySyncResponse)
+def sync_spotify_liked_tracks_internal(
+    payload: WorkerLikedTrackSyncRequest,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_worker_token),
+) -> SpotifySyncResponse:
+    """Same as /sync-liked-tracks, worker-token gated so the scheduler can run
+    this automatically alongside the recently-played sync, without a user's
+    session token."""
+    user = db.query(User).filter(User.id == payload.user_id, User.is_active.is_(True)).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="Active user not found")
+    try:
+        return SpotifySyncResponse(**sync_liked_tracks(db, user))
+    except (KeyError, ValueError, requests.RequestException) as exc:
+        logger.exception("Spotify liked-track sync failed for user %s", user.id)
+        raise HTTPException(status_code=502, detail="Spotify liked-track sync failed") from exc
+
+
+@router.post("/internal/backfill-artwork", response_model=SpotifySyncResponse)
+def backfill_artwork_internal(
+    payload: WorkerLikedTrackSyncRequest,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_worker_token),
+) -> SpotifySyncResponse:
+    user = db.query(User).filter(User.id == payload.user_id, User.is_active.is_(True)).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="Active user not found")
+    try:
+        return SpotifySyncResponse(**backfill_scrobble_artwork(db, user))
+    except (KeyError, ValueError, requests.RequestException) as exc:
+        logger.exception("Spotify artwork backfill failed for user %s", user.id)
         raise HTTPException(status_code=502, detail="Spotify artwork backfill failed") from exc
 
 

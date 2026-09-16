@@ -13,7 +13,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from file_import import process_import_directory
-from spotify_ingestion import SpotifyClient, UserRecord, sync_user
+from spotify_ingestion import SpotifyClient, UserRecord, sync_liked_tracks_and_artwork, sync_user
 
 app = FastAPI(title="Audio Scrobbler Worker")
 logger = logging.getLogger("audio-scrobbler-worker")
@@ -98,6 +98,18 @@ def run_spotify_ingestion() -> None:
                 session.rollback()
                 failures += 1
                 logger.exception("Spotify sync failed for user %s", user.id)
+
+            # Liked/Saved tracks + Spotify-sourced artwork used to only sync
+            # when someone clicked "Sync Spotify library" on Overview. Runs
+            # on the same cycle and cadence as the recently-played sync
+            # above rather than its own schedule, so both use the one
+            # WORKER_SPOTIFY_INTERVAL_MINUTES interval.
+            try:
+                sync_liked_tracks_and_artwork(backend_url, worker_token, user.id)
+                logger.info("Spotify liked-track sync completed for user %s", user.id)
+            except Exception:
+                failures += 1
+                logger.exception("Spotify liked-track sync failed for user %s", user.id)
         last_spotify_sync_at = datetime.now(timezone.utc).isoformat()
         last_spotify_sync_users = len(users)
         last_spotify_sync_failures = failures

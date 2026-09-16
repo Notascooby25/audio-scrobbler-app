@@ -4,7 +4,7 @@ import AnalyticsPage from '../components/AnalyticsPage'
 import DateRangeSelector from '../components/DateRangeSelector'
 import RankedList from '../components/RankedList'
 import SummaryStatsBar from '../components/SummaryStatsBar'
-import { backfillArtwork, fetchStatsChart, fetchStatsSummary, syncLikedTracks } from '../api'
+import { fetchStatsChart, fetchStatsSummary } from '../api'
 import { createDefaultDateRange, isValidDateRange } from '../dateRange'
 import { readSession } from '../session'
 
@@ -15,7 +15,6 @@ export default function OverviewPage() {
   const [charts, setCharts] = useState(null)
   const [status, setStatus] = useState(session?.accessToken ? 'loading' : 'idle')
   const [error, setError] = useState('')
-  const [syncStatus, setSyncStatus] = useState('')
 
   useEffect(() => {
     if (!session?.accessToken) return
@@ -42,19 +41,6 @@ export default function OverviewPage() {
     })
   }, [dateRange])
 
-  const refreshSpotifyLibrary = async () => {
-    setSyncStatus('Syncing Spotify library...')
-    try {
-      const [liked, artwork] = await Promise.all([
-        syncLikedTracks({ token: session.accessToken }),
-        backfillArtwork({ token: session.accessToken }),
-      ])
-      setSyncStatus(`${liked.inserted + liked.updated} liked tracks synced; ${artwork.artwork_updated} scrobbles enriched.`)
-    } catch (requestError) {
-      setSyncStatus(requestError.message)
-    }
-  }
-
   return (
     <AnalyticsPage eyebrow="Personal archive" title="Overview">
       {!session?.accessToken && <p className="notice">Connect Spotify from the <Link to="/connect">connection page</Link> to see your listening overview.</p>}
@@ -63,10 +49,6 @@ export default function OverviewPage() {
       {summary && (
         <>
           <SummaryStatsBar stats={summary} />
-          <div className="library-sync">
-            <button type="button" onClick={refreshSpotifyLibrary}>Sync Spotify library</button>
-            {syncStatus && <p className="panel-meta" role="status">{syncStatus}</p>}
-          </div>
           <DateRangeSelector value={dateRange} onChange={setDateRange} showCompare={false} />
           {charts && (
             <div className="overview-grid">

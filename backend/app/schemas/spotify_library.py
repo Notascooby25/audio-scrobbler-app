@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class LikedTrackResponse(BaseModel):
@@ -34,3 +34,7 @@ class SpotifySyncResponse(BaseModel):
     inserted: int
     updated: int
     artwork_updated: int
+
+
+class WorkerLikedTrackSyncRequest(BaseModel):
+    user_id: int = Field(gt=0)

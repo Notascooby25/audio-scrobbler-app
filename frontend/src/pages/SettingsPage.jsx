@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import AnalyticsPage from '../components/AnalyticsPage'
-import { deleteImportedScrobbles, fetchBlocks, fetchUserSettings, removeBlock, updateUserSettings, startArtworkBackfill, fetchImportBatches, advancedDeleteImports } from '../api'
+import { deleteImportedScrobbles, fetchBlocks, fetchUserSettings, removeBlock, updateUserSettings, startArtworkBackfill, fetchImportBatches, advancedDeleteImports, syncLikedTracks } from '../api'
 import { readSession } from '../session'
 import ImportProgressBar from '../components/ImportProgressBar'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
@@ -46,6 +46,8 @@ export default function SettingsPage() {
   const [advancedDeleteError, setAdvancedDeleteError] = useState('')
   const [backfillState, setBackfillState] = useState('idle')
   const [backfillProgress, setBackfillProgress] = useState(null)
+  const [likedSyncState, setLikedSyncState] = useState('idle')
+  const [likedSyncResult, setLikedSyncResult] = useState(null)
   const saveTimer = useRef(null)
 
   useEffect(() => {
@@ -188,6 +190,18 @@ export default function SettingsPage() {
     }
   }
 
+  const triggerLikedTracksSync = async () => {
+    setLikedSyncState('running')
+    setLikedSyncResult(null)
+    try {
+      const result = await syncLikedTracks({ token: session.accessToken })
+      setLikedSyncState('complete')
+      setLikedSyncResult(result)
+    } catch {
+      setLikedSyncState('error')
+    }
+  }
+
   return (
     <AnalyticsPage eyebrow="Personal preferences" title="Settings">
       {!session?.accessToken && <p className="notice">Connect Spotify to manage your personal settings.</p>}
@@ -305,6 +319,23 @@ export default function SettingsPage() {
           id="settings-panel-data"
           aria-labelledby="settings-tab-data"
         >
+          <div style={{ marginBottom: '1rem' }}>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Sync Liked Tracks</h3>
+            <p className="notice" style={{ marginBottom: '1rem' }}>
+              Your Spotify Liked Songs sync automatically in the background. Use this to sync on demand instead of waiting for the next automatic run.
+            </p>
+            {likedSyncState === 'complete' && likedSyncResult && (
+              <p role="status" style={{ color: 'var(--color-primary)', marginBottom: '1rem', fontWeight: 500 }}>
+                Synced! {likedSyncResult.inserted} new, {likedSyncResult.updated} updated.
+              </p>
+            )}
+            {likedSyncState === 'error' && (
+              <p className="notice notice-error" role="alert" style={{ marginBottom: '1rem' }}>Liked tracks sync failed. Try again.</p>
+            )}
+            <button type="button" className="secondary-button" disabled={likedSyncState === 'running'} onClick={triggerLikedTracksSync}>
+              {likedSyncState === 'running' ? 'Syncing...' : 'Sync Liked Tracks'}
+            </button>
+          </div>
           <div style={{ marginBottom: '1rem' }}>
             <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Backfill Missing Artwork</h3>
             <p className="notice" style={{ marginBottom: '1rem' }}>Scan your library for missing artwork and attempt to fill it in from Deezer and iTunes.</p>
