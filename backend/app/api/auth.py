@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 import jwt
 import requests
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -18,6 +20,8 @@ from ..services.spotify_oauth_service import (
     complete_spotify_callback,
     create_oauth_state,
 )
+
+logger = logging.getLogger("audio-scrobbler-api")
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -52,6 +56,17 @@ def spotify_callback(
     except (ValueError, jwt.InvalidTokenError) as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OAuth state") from exc
     except requests.RequestException as exc:
+        # Spotify's error body (invalid_grant, invalid_client, ...) is the only way to tell
+        # a reused/expired code apart from bad credentials, so surface it in the logs.
+        spotify_response = getattr(exc, "response", None)
+        if spotify_response is not None:
+            logger.warning(
+                "Spotify OAuth token exchange failed: HTTP %s %s",
+                spotify_response.status_code,
+                spotify_response.text[:500],
+            )
+        else:
+            logger.warning("Spotify OAuth token exchange failed: %s: %s", type(exc).__name__, exc)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Spotify OAuth request failed") from exc
     response = SpotifyCallbackResponse(access_token=access_token, expires_in=settings.access_token_ttl_seconds, user_id=user_id)
     if settings.frontend_auth_callback_url:
