@@ -14,6 +14,42 @@ SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
 SPOTIFY_RECENT_URL = "https://api.spotify.com/v1/me/player/recently-played"
 Base = declarative_base()
 
+# Spotify's quota is per-app (client_id), not per-user, so this is process-wide
+# state shared by every SpotifyClient instance and every poll cycle.
+_spotify_blocked_until: datetime | None = None
+# Spotify doesn't always send Retry-After on a quota (as opposed to per-second
+# rate-limit) rejection; fall back to a conservative pause rather than retrying
+# again next poll cycle.
+DEFAULT_RATE_LIMIT_BACKOFF_SECONDS = 1800.0
+
+
+class SpotifyRateLimitedError(Exception):
+    """Raised instead of contacting Spotify while the app-wide quota block is active."""
+
+    def __init__(self, blocked_until: datetime):
+        self.blocked_until = blocked_until
+        super().__init__(f"Spotify quota exhausted; paused until {blocked_until.isoformat()}")
+
+
+def spotify_rate_limit_blocked_until() -> datetime | None:
+    """Returns when the current quota block expires, or None if we're clear to call Spotify."""
+    global _spotify_blocked_until
+    if _spotify_blocked_until and datetime.now(timezone.utc) < _spotify_blocked_until:
+        return _spotify_blocked_until
+    _spotify_blocked_until = None
+    return None
+
+
+def _mark_spotify_rate_limited(retry_after_header: str | None) -> datetime:
+    global _spotify_blocked_until
+    try:
+        seconds = float(retry_after_header) if retry_after_header else DEFAULT_RATE_LIMIT_BACKOFF_SECONDS
+    except ValueError:
+        seconds = DEFAULT_RATE_LIMIT_BACKOFF_SECONDS
+    seconds = max(seconds, 60.0)
+    _spotify_blocked_until = datetime.now(timezone.utc) + timedelta(seconds=seconds)
+    return _spotify_blocked_until
+
 
 class UserRecord(Base):
     __tablename__ = "users"
@@ -115,12 +151,17 @@ class SpotifyClient:
 
     @staticmethod
     def _request(method: str, url: str, **kwargs):
+        blocked_until = spotify_rate_limit_blocked_until()
+        if blocked_until:
+            raise SpotifyRateLimitedError(blocked_until)
         for attempt in range(3):
             response = getattr(requests, method)(url, timeout=10, **kwargs)
-            if response.status_code == 429 and attempt < 2:
-                retry_after = min(float(response.headers.get("Retry-After", "1")), 30)
-                time.sleep(retry_after)
-                continue
+            if response.status_code == 429:
+                if attempt < 2:
+                    retry_after = min(float(response.headers.get("Retry-After", "1")), 30)
+                    time.sleep(retry_after)
+                    continue
+                raise SpotifyRateLimitedError(_mark_spotify_rate_limited(response.headers.get("Retry-After")))
             if response.status_code >= 500 and attempt < 2:
                 time.sleep(2 ** attempt)
                 continue

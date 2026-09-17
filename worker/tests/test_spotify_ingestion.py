@@ -1,15 +1,23 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
 from spotify_ingestion import (
     CheckpointRecord,
+    SpotifyClient,
+    SpotifyRateLimitedError,
     UserRecord,
     normalize_recent_item,
+    spotify_rate_limit_blocked_until,
     sync_user,
 )
+
+
+@pytest.fixture(autouse=True)
+def _reset_spotify_rate_limit(monkeypatch):
+    monkeypatch.setattr("spotify_ingestion._spotify_blocked_until", None)
 
 
 ITEM = {
@@ -119,5 +127,41 @@ def test_sync_does_not_commit_when_backend_submission_fails(monkeypatch):
         sync_user(session, user, FakeClient(), "http://backend", "worker-token")
 
     assert session.commits == 0
+
+
+class FakeRateLimitedResponse:
+    status_code = 429
+    headers = {"Retry-After": "90"}
+
+    def raise_for_status(self):
+        raise AssertionError("raise_for_status should not be reached on a 429")
+
+
+def test_request_marks_app_wide_block_after_exhausting_retries(monkeypatch):
+    monkeypatch.setattr("spotify_ingestion.time.sleep", lambda _seconds: None)
+    monkeypatch.setattr("spotify_ingestion.requests.get", lambda *args, **kwargs: FakeRateLimitedResponse())
+    client = SpotifyClient("client-id", "client-secret", "test-key")
+
+    with pytest.raises(SpotifyRateLimitedError):
+        client.recently_played("access-token")
+
+    blocked_until = spotify_rate_limit_blocked_until()
+    assert blocked_until is not None
+    assert blocked_until > datetime.now(timezone.utc)
+
+
+def test_request_skips_the_network_call_while_already_blocked(monkeypatch):
+    monkeypatch.setattr(
+        "spotify_ingestion._spotify_blocked_until", datetime.now(timezone.utc) + timedelta(minutes=10)
+    )
+
+    def _fail_if_called(*args, **kwargs):
+        raise AssertionError("Spotify should not be contacted during an active rate-limit block")
+
+    monkeypatch.setattr("spotify_ingestion.requests.get", _fail_if_called)
+    client = SpotifyClient("client-id", "client-secret", "test-key")
+
+    with pytest.raises(SpotifyRateLimitedError):
+        client.recently_played("access-token")
 
 

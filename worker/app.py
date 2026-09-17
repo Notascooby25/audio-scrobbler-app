@@ -13,7 +13,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from file_import import process_import_directory
-from spotify_ingestion import SpotifyClient, UserRecord, sync_user
+from spotify_ingestion import SpotifyClient, UserRecord, spotify_rate_limit_blocked_until, sync_user
 
 app = FastAPI(title="Audio Scrobbler Worker")
 logger = logging.getLogger("audio-scrobbler-worker")
@@ -82,6 +82,10 @@ def run_spotify_ingestion() -> None:
     global last_spotify_sync_at, last_spotify_sync_users, last_spotify_sync_failures, last_spotify_sync_events
     if not spotify_enabled or not spotify_client_id or not spotify_client_secret:
         return
+    blocked_until = spotify_rate_limit_blocked_until()
+    if blocked_until:
+        logger.warning("Skipping Spotify sync: quota rate-limited until %s", blocked_until.isoformat())
+        return
     engine = create_engine(database_url, pool_pre_ping=True)
     session = sessionmaker(bind=engine)()
     client = SpotifyClient(spotify_client_id, spotify_client_secret, refresh_token_key)
@@ -122,12 +126,14 @@ def run_file_import() -> None:
 
 @app.get("/health")
 def health_check() -> dict[str, str]:
+    blocked_until = spotify_rate_limit_blocked_until()
     return {
         "status": "ok",
         "service": "worker",
         "scheduler_running": str(scheduler.running).lower(),
         "fixture_enabled": str(fixture_enabled).lower(),
         "spotify_enabled": str(spotify_enabled).lower(),
+        "spotify_rate_limited_until": blocked_until.isoformat() if blocked_until else "not_limited",
         "last_spotify_sync_at": last_spotify_sync_at or "never",
         "last_spotify_sync_users": str(last_spotify_sync_users),
         "last_spotify_sync_failures": str(last_spotify_sync_failures),
@@ -142,10 +148,14 @@ def health_check() -> dict[str, str]:
 @app.get("/metrics", response_class=PlainTextResponse)
 def metrics() -> str:
     last_sync = 0 if last_spotify_sync_at == "never" or last_spotify_sync_at is None else 1
+    rate_limited = 1 if spotify_rate_limit_blocked_until() else 0
     return "\n".join([
         "# HELP audio_scrobbler_worker_scheduler_running Scheduler state.",
         "# TYPE audio_scrobbler_worker_scheduler_running gauge",
         f"audio_scrobbler_worker_scheduler_running {int(scheduler.running)}",
+        "# HELP audio_scrobbler_worker_spotify_rate_limited Whether the Spotify quota block is currently active.",
+        "# TYPE audio_scrobbler_worker_spotify_rate_limited gauge",
+        f"audio_scrobbler_worker_spotify_rate_limited {rate_limited}",
         "# HELP audio_scrobbler_worker_spotify_sync_success Last sync completed.",
         "# TYPE audio_scrobbler_worker_spotify_sync_success gauge",
         f"audio_scrobbler_worker_spotify_sync_success {last_sync}",
