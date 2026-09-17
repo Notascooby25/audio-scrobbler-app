@@ -55,10 +55,12 @@ def monthly_summary(
 def recent_scrobbles(
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's recent scrobbles."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ScrobbleListResponse:
-    return get_recent_scrobbles(db, current_user.id, limit, offset)
+    target_user_id = _resolve_viewable_user_id(db, current_user, user_id)
+    return get_recent_scrobbles(db, target_user_id, limit, offset)
 
 
 @router.get("/charts/{user_id}", response_model=LegacyChartResponse)
@@ -75,13 +77,8 @@ def user_charts(
     if range not in CHART_RANGES:
         raise HTTPException(status_code=400, detail=f"Unsupported range: {range!r}")
 
-    target_user = social_service.get_active_user(db, user_id)
-    if target_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    if not social_service.can_view_details(db, current_user.id, user_id):
-        raise HTTPException(status_code=403, detail="Charts are only visible to the owner or their followers")
-
-    return get_user_charts(db, user_id, entity, range, limit)
+    target_user_id = _resolve_viewable_user_id(db, current_user, user_id)
+    return get_user_charts(db, target_user_id, entity, range, limit)
 
 
 @stats_router.get("/summary", response_model=StatsResponse)
@@ -90,6 +87,17 @@ def stats_summary(
     current_user: User = Depends(get_current_user),
 ) -> StatsResponse:
     return get_stats_summary(db, current_user.id)
+
+
+def _resolve_viewable_user_id(db: Session, current_user: User, user_id: int | None) -> int:
+    if user_id is None:
+        return current_user.id
+    target = social_service.get_active_user(db, user_id)
+    if target is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not social_service.can_view_details(db, current_user.id, user_id):
+        raise HTTPException(status_code=403, detail="This data is only visible to the owner or their followers")
+    return user_id
 
 
 def _resolve_optional_range(range_key: str | None, start_date: str | None, end_date: str | None) -> tuple[object | None, object | None]:
@@ -165,6 +173,7 @@ def library_scrobbles(
     filter_name: str | None = Query(default=None),
     filter_secondary: str | None = Query(default=None, description="Artist name for album or track filters."),
     search: str | None = Query(default=None, description="Search query for track, artist, or album name."),
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's library."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> LibraryScrobbleResponse:
@@ -172,11 +181,12 @@ def library_scrobbles(
         raise HTTPException(status_code=400, detail="Unsupported filter entity")
     if (filter_entity is None) != (filter_name is None):
         raise HTTPException(status_code=400, detail="filter_entity and filter_name must be provided together")
+    target_user_id = _resolve_viewable_user_id(db, current_user, user_id)
     period_start, period_end = _resolve_optional_range(range, start_date, end_date)
     kwargs = {"start": period_start, "end": period_end} if period_start is not None else {}
     if filter_entity is None:
-        return get_library_scrobbles(db, current_user.id, limit, offset, search_query=search, **kwargs)
-    return get_library_scrobbles(db, current_user.id, limit, offset, filter_entity=filter_entity, filter_name=filter_name, filter_secondary=filter_secondary, search_query=search, **kwargs)
+        return get_library_scrobbles(db, target_user_id, limit, offset, search_query=search, **kwargs)
+    return get_library_scrobbles(db, target_user_id, limit, offset, filter_entity=filter_entity, filter_name=filter_name, filter_secondary=filter_secondary, search_query=search, **kwargs)
 
 
 @library_router.get("/{entity}", response_model=LibraryResponse | TimelineResponse)
@@ -188,16 +198,18 @@ def library_entities(
     start_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
     end_date: str | None = Query(default=None, description="Required when range=custom (ISO date)."),
     search: str | None = Query(default=None, description="Search query for name."),
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's library."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> LibraryResponse | TimelineResponse:
+    target_user_id = _resolve_viewable_user_id(db, current_user, user_id)
     if entity == "timeline":
-        return get_scrobbles_timeline(db, current_user.id)
+        return get_scrobbles_timeline(db, target_user_id)
     if entity not in CHART_ENTITIES:
         raise HTTPException(status_code=404, detail="Library collection not found")
     period_start, period_end = _resolve_optional_range(range, start_date, end_date)
     kwargs = {"start": period_start, "end": period_end} if period_start is not None else {}
-    return get_library_entities(db, current_user.id, entity, limit, offset, search_query=search, **kwargs)
+    return get_library_entities(db, target_user_id, entity, limit, offset, search_query=search, **kwargs)
 
 
 @reports_router.get("/summary", response_model=ReportSummaryResponse)
@@ -206,13 +218,15 @@ def reports_summary(
     start_date: str | None = Query(default=None, description="Required for range=custom (ISO date)."),
     end_date: str | None = Query(default=None, description="Required for range=custom (ISO date)."),
     compare_to_previous: bool = Query(default=True),
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's reports."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ReportSummaryResponse:
     if range not in DATE_RANGE_PRESETS:
         raise HTTPException(status_code=400, detail=f"Unsupported range: {range!r}")
+    target_user_id = _resolve_viewable_user_id(db, current_user, user_id)
     try:
-        return get_report_summary(db, current_user.id, range, start_date, end_date, compare_to_previous)
+        return get_report_summary(db, target_user_id, range, start_date, end_date, compare_to_previous)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -222,13 +236,15 @@ def reports_charts(
     range: str = Query(default="last.month", description="One of: last.week, last.month, last.year, custom"),
     start_date: str | None = Query(default=None, description="Required for range=custom (ISO date)."),
     end_date: str | None = Query(default=None, description="Required for range=custom (ISO date)."),
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's reports."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ReportChartsResponse:
     if range not in DATE_RANGE_PRESETS:
         raise HTTPException(status_code=400, detail=f"Unsupported range: {range!r}")
+    target_user_id = _resolve_viewable_user_id(db, current_user, user_id)
     try:
-        return get_report_charts(db, current_user.id, range, start_date, end_date)
+        return get_report_charts(db, target_user_id, range, start_date, end_date)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -239,6 +255,7 @@ def reports_entities(
     range: str = Query(default="last.month", description="One of: last.week, last.month, last.year, custom"),
     start_date: str | None = Query(default=None, description="Required for range=custom (ISO date)."),
     end_date: str | None = Query(default=None, description="Required for range=custom (ISO date)."),
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's reports."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ChartResponse:
@@ -246,8 +263,9 @@ def reports_entities(
         raise HTTPException(status_code=404, detail="Report collection not found")
     if range not in DATE_RANGE_PRESETS:
         raise HTTPException(status_code=400, detail=f"Unsupported range: {range!r}")
+    target_user_id = _resolve_viewable_user_id(db, current_user, user_id)
     try:
         period_start, period_end, _previous_start, _previous_end, _granularity = resolve_date_range(range, start_date, end_date)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return get_user_charts(db, current_user.id, entity, "overall", 10, start=period_start, end=period_end)
+    return get_user_charts(db, target_user_id, entity, "overall", 10, start=period_start, end=period_end)

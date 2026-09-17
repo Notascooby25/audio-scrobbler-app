@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 
@@ -12,3 +14,24 @@ class SpotifySyncResponse(BaseModel):
 
 class WorkerBackfillArtworkRequest(BaseModel):
     user_id: int = Field(gt=0)
+
+
+class WorkerLikedTrackItem(BaseModel):
+    spotify_track_id: str
+    track_name: str
+    artist_name: str
+    album_name: str | None = None
+    artwork_url: str | None = None
+    artist_artwork_url: str | None = None
+    added_at: datetime
+    raw_metadata: dict[str, object] | None = None
+
+
+class WorkerLikedTracksSyncRequest(BaseModel):
+    user_id: int = Field(gt=0)
+    tracks: list[WorkerLikedTrackItem]
+
+
+class LikedTracksUpsertResponse(BaseModel):
+    inserted: int
+    updated: int

@@ -4,6 +4,7 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
+from ..models import LikedTrack
 from ..queries.analytics_queries import (
     build_library_count_query,
     build_library_entities_query,
@@ -38,6 +39,23 @@ from ..schemas.analytics import (
     TimelineEntry,
     TimelineResponse,
 )
+
+
+def _liked_track_ids(db: Session, user_id: int, candidate_ids: set[str]) -> set[str]:
+    # Lightweight test doubles for `db` only implement `.execute()`, not the
+    # ORM `.query()` API — skip gracefully rather than erroring on those.
+    if not candidate_ids or not hasattr(db, "query"):
+        return set()
+    return {
+        record.spotify_track_id
+        for record in db.query(LikedTrack)
+        .filter(LikedTrack.user_id == user_id, LikedTrack.spotify_track_id.in_(candidate_ids))
+        .all()
+    }
+
+
+def _candidate_track_ids(rows) -> set[str]:
+    return {track_id for row in rows if (track_id := getattr(row, "spotify_track_id", None))}
 
 
 def get_monthly_summary(
@@ -78,6 +96,7 @@ def get_recent_scrobbles(
 ) -> ScrobbleListResponse:
     statement = build_recent_scrobbles_query(user_id=user_id, limit=limit, offset=offset)
     rows = db.execute(statement).all()
+    liked_ids = _liked_track_ids(db, user_id, _candidate_track_ids(rows))
 
     scrobbles = [
         ScrobbleListEntry(
@@ -88,6 +107,7 @@ def get_recent_scrobbles(
             played_at=row.played_at,
             artwork_url=getattr(row, "artwork_url", None),
             spotify_track_id=getattr(row, "spotify_track_id", None),
+            is_liked=getattr(row, "spotify_track_id", None) in liked_ids,
         )
         for row in rows
     ]
@@ -117,6 +137,7 @@ def get_user_charts(
 ) -> ChartResponse:
     statement = build_top_entities_query(user_id=user_id, entity=entity, range_key=range_key, limit=limit, start=start, end=end)
     rows = db.execute(statement).all()
+    liked_ids = _liked_track_ids(db, user_id, _candidate_track_ids(rows)) if entity == "tracks" else set()
 
     entries = []
     for row in rows:
@@ -125,7 +146,7 @@ def get_user_charts(
             entries.append(ChartEntry(label=row.artist_name, secondary=None, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), sources=row_sources))
         elif entity == "tracks":
             track_id = getattr(row, "spotify_track_id", None)
-            entries.append(ChartEntry(label=row.track_name, secondary=row.artist_name, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), spotify_track_id=track_id, sources=row_sources))
+            entries.append(ChartEntry(label=row.track_name, secondary=row.artist_name, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), spotify_track_id=track_id, sources=row_sources, is_liked=track_id in liked_ids))
         else:
             entries.append(ChartEntry(label=row.album_name, secondary=row.artist_name, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), sources=row_sources))
 
@@ -155,6 +176,7 @@ def get_library_scrobbles(
 ) -> LibraryScrobbleResponse:
     rows = db.execute(build_library_scrobbles_query(user_id, limit, offset, start, end, filter_entity, filter_name, filter_secondary, search_query)).all()
     total_count = db.execute(build_library_count_query(user_id, start, end, filter_entity, filter_name, filter_secondary, search_query)).scalar_one()
+    liked_ids = _liked_track_ids(db, user_id, _candidate_track_ids(rows))
     scrobbles = [
         LibraryScrobbleEntry(
             id=row.id,
@@ -164,6 +186,7 @@ def get_library_scrobbles(
             played_at=row.played_at,
             artwork_url=getattr(row, "artwork_url", None),
             spotify_track_id=getattr(row, "spotify_track_id", None),
+            is_liked=getattr(row, "spotify_track_id", None) in liked_ids,
         )
         for row in rows
     ]

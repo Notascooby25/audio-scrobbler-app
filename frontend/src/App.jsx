@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
+import FollowingPage from './pages/FollowingPage'
 import HomePage from './pages/HomePage'
 import LibraryPage from './pages/LibraryPage'
 import OverviewPage from './pages/OverviewPage'
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/:userId" element={<ProfilePage />} />
+          <Route path="/following" element={<FollowingPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Routes>

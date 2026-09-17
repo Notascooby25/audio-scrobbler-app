@@ -127,6 +127,14 @@ export default function ProfilePage() {
                 <p><strong>{profile.last_scrobble.track_name}</strong> by {profile.last_scrobble.artist_name}</p>
               </div>
             )}
+            {profile.can_view_details && (
+              <nav className="profile-actions" aria-label={`${profile.username}'s listening history`}>
+                <Link to={profile.is_self ? '/library' : `/library?userId=${profile.id}`}>View Library</Link>
+                <Link to={profile.is_self ? '/reports?range=last.week' : `/reports?userId=${profile.id}&range=last.week`}>View Last 7 Days</Link>
+                <Link to={profile.is_self ? '/reports?range=last.month' : `/reports?userId=${profile.id}&range=last.month`}>View Last Month</Link>
+                <Link to={profile.is_self ? '/reports?range=last.year' : `/reports?userId=${profile.id}&range=last.year`}>View Last Year</Link>
+              </nav>
+            )}
           {!profile.can_view_details && <p className="notice">Follow this user to see their last scrobbled track.</p>}
         </div>
       )}

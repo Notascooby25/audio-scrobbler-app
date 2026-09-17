@@ -7,7 +7,9 @@ from sqlalchemy.orm import Session
 
 from ..models import ListeningEvent
 from ..schemas.ingestion import ListeningEventCreate, ListeningEventResponse
+from . import scrobble_settings_service
 from .runtime_metrics import record_ingestion
+from .text_cleaning import clean_title
 
 
 def ingest_listening_event(
@@ -16,10 +18,13 @@ def ingest_listening_event(
     event: ListeningEventCreate,
 ) -> ListeningEventResponse:
     canonical_play_id = event.play_id or event.track_id
+    track_name = event.track_name
+    if scrobble_settings_service.get_strip_remaster_tags(db, user_id):
+        track_name = clean_title(track_name)
     listening_event = ListeningEvent(
         user_id=user_id,
         track_id=event.track_id,
-        track_name=event.track_name,
+        track_name=track_name,
         artist_name=event.artist_name,
         album_name=event.album_name,
         artwork_url=event.artwork_url,

@@ -7,7 +7,8 @@ import requests
 from sqlalchemy.orm import Session
 
 from ..config import settings
-from ..models import ListeningEvent, User
+from ..models import LikedTrack, ListeningEvent, User
+from ..schemas.spotify_library import WorkerLikedTrackItem
 from ..security import decrypt_refresh_token, encrypt_refresh_token
 
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
@@ -91,3 +92,52 @@ def backfill_scrobble_artwork(db: Session, user: User) -> dict[str, int]:
                 updated += 1
     db.commit()
     return {"fetched": len(missing), "inserted": 0, "updated": 0, "artwork_updated": updated}
+
+
+def upsert_liked_tracks(db: Session, user_id: int, tracks: list[WorkerLikedTrackItem]) -> dict[str, int]:
+    """Persists a batch of liked tracks the worker already fetched from Spotify.
+
+    Pure persistence only — this never calls Spotify itself. All outbound
+    Spotify calls for liked-songs sync live in the worker's rate-limit-aware
+    SpotifyClient (see worker/spotify_ingestion.py).
+    """
+    if not tracks:
+        return {"inserted": 0, "updated": 0}
+
+    inserted = 0
+    updated = 0
+    existing_by_track_id = {
+        record.spotify_track_id: record
+        for record in db.query(LikedTrack).filter(
+            LikedTrack.user_id == user_id,
+            LikedTrack.spotify_track_id.in_([track.spotify_track_id for track in tracks]),
+        ).all()
+    }
+    for track in tracks:
+        existing = existing_by_track_id.get(track.spotify_track_id)
+        if existing is None:
+            db.add(
+                LikedTrack(
+                    user_id=user_id,
+                    spotify_track_id=track.spotify_track_id,
+                    track_name=track.track_name,
+                    artist_name=track.artist_name,
+                    album_name=track.album_name,
+                    artwork_url=track.artwork_url,
+                    artist_artwork_url=track.artist_artwork_url,
+                    added_at=track.added_at,
+                    raw_metadata=track.raw_metadata,
+                )
+            )
+            inserted += 1
+        else:
+            existing.track_name = track.track_name
+            existing.artist_name = track.artist_name
+            existing.album_name = track.album_name
+            existing.artwork_url = track.artwork_url
+            existing.artist_artwork_url = track.artist_artwork_url
+            existing.added_at = track.added_at
+            existing.raw_metadata = track.raw_metadata
+            updated += 1
+    db.commit()
+    return {"inserted": inserted, "updated": updated}

@@ -21,4 +21,19 @@ describe('LibraryScrobbleList', () => {
     expect(screen.getByText('spotify')).toBeInTheDocument()
     expect(screen.getByText('youtube')).toBeInTheDocument()
   })
+
+  it('shows a heart badge only on liked tracks', () => {
+    render(
+      <LibraryScrobbleList
+        token="token"
+        view="list"
+        scrobbles={[
+          { id: 1, track_name: 'Video Games', artist_name: 'Lana Del Rey', source: 'spotify', played_at: new Date().toISOString(), spotify_track_id: 'track-1', is_liked: true },
+          { id: 2, track_name: 'Daylight', artist_name: 'Matt Berninger', source: 'youtube', played_at: new Date().toISOString(), spotify_track_id: null, is_liked: false },
+        ]}
+      />,
+    )
+
+    expect(screen.getAllByTitle('Liked on Spotify')).toHaveLength(1)
+  })
 })

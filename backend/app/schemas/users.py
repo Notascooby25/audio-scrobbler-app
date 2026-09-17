@@ -24,6 +24,10 @@ class UserSearchResponse(BaseModel):
     results: list[UserSearchResult]
 
 
+class FollowingListResponse(BaseModel):
+    results: list[UserSearchResult]
+
+
 class LastScrobble(BaseModel):
     track_name: str
     artist_name: str

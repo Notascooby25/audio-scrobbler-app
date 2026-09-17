@@ -74,6 +74,7 @@ describe('ProfilePage', () => {
     await waitFor(() => expect(screen.getByText('@music-fan')).toBeInTheDocument())
     expect(screen.getByText('Follow this user to see their last scrobbled track.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Follow' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'View Library' })).not.toBeInTheDocument()
   })
 
   it('reveals the last scrobble to followers', async () => {
@@ -94,6 +95,11 @@ describe('ProfilePage', () => {
 
     await waitFor(() => expect(screen.getByText('Slow Show', { exact: false })).toBeInTheDocument())
     expect(screen.getByRole('button', { name: 'Unfollow' })).toBeInTheDocument()
+
+    expect(screen.getByRole('link', { name: 'View Library' })).toHaveAttribute('href', '/library?userId=2')
+    expect(screen.getByRole('link', { name: 'View Last 7 Days' })).toHaveAttribute('href', '/reports?userId=2&range=last.week')
+    expect(screen.getByRole('link', { name: 'View Last Month' })).toHaveAttribute('href', '/reports?userId=2&range=last.month')
+    expect(screen.getByRole('link', { name: 'View Last Year' })).toHaveAttribute('href', '/reports?userId=2&range=last.year')
   })
 
   it('toggles follow state when the follow button is clicked', async () => {

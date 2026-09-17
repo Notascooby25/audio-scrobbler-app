@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from ..api.deps import get_current_user
 from ..db import get_db
 from ..models import User
-from ..schemas.users import FollowActionResponse, UserProfileResponse, UserSearchResponse
+from ..schemas.users import FollowActionResponse, FollowingListResponse, UserProfileResponse, UserSearchResponse
 from ..services import social_service
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -42,6 +42,16 @@ def unfollow(
     _get_active_user_or_404(db, user_id)
     social_service.unfollow_user(db, current_user.id, user_id)
     return FollowActionResponse(following=False, follower_count=social_service.follower_count(db, user_id))
+
+
+@router.get("/me/following", response_model=FollowingListResponse, status_code=status.HTTP_200_OK)
+def following(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> FollowingListResponse:
+    return FollowingListResponse(results=social_service.get_following(db, current_user.id, limit, offset))
 
 
 @router.get("/search", response_model=UserSearchResponse, status_code=status.HTTP_200_OK)

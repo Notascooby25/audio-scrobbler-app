@@ -6,6 +6,7 @@ const NAV_LINKS = [
   { to: '/library', label: 'Library' },
   { to: '/reports', label: 'Reports' },
   { to: '/profile', label: 'Profile' },
+  { to: '/following', label: 'Following' },
   { to: '/connect', label: 'Connect' },
 ]
 

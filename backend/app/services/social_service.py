@@ -53,6 +53,18 @@ def following_count(db: Session, user_id: int) -> int:
     return db.query(Follow).filter(Follow.follower_id == user_id).count()
 
 
+def get_following(db: Session, user_id: int, limit: int = 50, offset: int = 0) -> list[User]:
+    return (
+        db.query(User)
+        .join(Follow, Follow.followee_id == User.id)
+        .filter(Follow.follower_id == user_id, User.is_active.is_(True))
+        .order_by(User.username)
+        .limit(limit)
+        .offset(offset)
+        .all()
+    )
+
+
 def search_users(db: Session, query: str, limit: int = 20) -> list[User]:
     like_pattern = f"%{query.strip()}%"
     if not query.strip():

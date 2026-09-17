@@ -5,16 +5,22 @@ import SettingsPage from './SettingsPage'
 import {
   advancedDeleteImports,
   deleteImportedScrobbles,
+  enableLikedTracksSync,
   fetchBlocks,
   fetchImportBatches,
+  fetchScrobbleSettings,
   fetchUserSettings,
   removeBlock,
+  updateScrobbleSettings,
   updateUserSettings,
 } from '../api'
 
 vi.mock('../api', () => ({
   fetchUserSettings: vi.fn(),
   updateUserSettings: vi.fn(),
+  fetchScrobbleSettings: vi.fn(),
+  updateScrobbleSettings: vi.fn(),
+  enableLikedTracksSync: vi.fn(),
   fetchBlocks: vi.fn(),
   removeBlock: vi.fn(),
   deleteImportedScrobbles: vi.fn(),
@@ -37,6 +43,15 @@ const settings = {
   timestamp_mode: 'relative',
 }
 
+const scrobbleSettings = {
+  user_id: 1,
+  strip_remaster_tags: true,
+  poll_interval_minutes: 5,
+  liked_tracks_sync_enabled: false,
+  liked_tracks_backfill_in_progress: false,
+  liked_tracks_last_synced_at: null,
+}
+
 describe('SettingsPage', () => {
   beforeEach(() => {
     localStorage.setItem('audio-scrobbler-session', JSON.stringify({ accessToken: 'token', userId: 1 }))
@@ -44,6 +59,9 @@ describe('SettingsPage', () => {
     fetchBlocks.mockResolvedValue({ blocks: [] })
     fetchImportBatches.mockResolvedValue({ batches: [] })
     updateUserSettings.mockImplementation(({ changes }) => Promise.resolve({ ...settings, ...changes }))
+    fetchScrobbleSettings.mockResolvedValue(scrobbleSettings)
+    updateScrobbleSettings.mockImplementation(({ changes }) => Promise.resolve({ ...scrobbleSettings, ...changes }))
+    enableLikedTracksSync.mockResolvedValue({ ...scrobbleSettings, liked_tracks_sync_enabled: true, liked_tracks_backfill_in_progress: true })
   })
 
   afterEach(() => {
@@ -74,17 +92,19 @@ describe('SettingsPage', () => {
     expect(removeBlock).toHaveBeenCalledWith({ token: 'token', blockId: 7 })
   })
 
-  it('renders all 4 tabs with Danger Zone visually distinct and switches between them', async () => {
+  it('renders all 5 tabs with Danger Zone visually distinct and switches between them', async () => {
     render(<MemoryRouter><SettingsPage /></MemoryRouter>)
 
-    // All 4 tabs present
+    // All 5 tabs present
     const generalTab = await screen.findByRole('tab', { name: 'General' })
     const viewsTab = screen.getByRole('tab', { name: 'Views' })
+    const scrobbleTab = screen.getByRole('tab', { name: 'Scrobble' })
     const dataTab = screen.getByRole('tab', { name: 'Data' })
     const dangerTab = screen.getByRole('tab', { name: 'Danger Zone' })
 
     expect(generalTab).toBeInTheDocument()
     expect(viewsTab).toBeInTheDocument()
+    expect(scrobbleTab).toBeInTheDocument()
     expect(dataTab).toBeInTheDocument()
     expect(dangerTab).toBeInTheDocument()
 
@@ -183,5 +203,42 @@ describe('SettingsPage', () => {
     await waitFor(() =>
       expect(screen.getByText('Deleted 32 scrobbles successfully.')).toBeInTheDocument()
     )
+  })
+
+  it('saves the strip remaster tags toggle and poll interval from the Scrobble tab', async () => {
+    render(<MemoryRouter><SettingsPage /></MemoryRouter>)
+
+    const scrobbleTab = await screen.findByRole('tab', { name: 'Scrobble' })
+    fireEvent.click(scrobbleTab)
+
+    const stripToggle = await screen.findByLabelText(/Strip remaster tags/)
+    expect(stripToggle).toBeChecked()
+    fireEvent.click(stripToggle)
+
+    await waitFor(() =>
+      expect(updateScrobbleSettings).toHaveBeenCalledWith({ token: 'token', changes: { strip_remaster_tags: false } }),
+      { timeout: 1000 },
+    )
+
+    fireEvent.change(screen.getByLabelText('Poll frequency'), { target: { value: '30' } })
+
+    await waitFor(() =>
+      expect(updateScrobbleSettings).toHaveBeenCalledWith({ token: 'token', changes: { poll_interval_minutes: 30 } }),
+      { timeout: 1000 },
+    )
+  })
+
+  it('triggers liked-songs sync once and then shows it as active', async () => {
+    render(<MemoryRouter><SettingsPage /></MemoryRouter>)
+
+    const dataTab = await screen.findByRole('tab', { name: 'Data' })
+    fireEvent.click(dataTab)
+
+    const syncButton = await screen.findByRole('button', { name: 'Sync Liked Songs' })
+    fireEvent.click(syncButton)
+
+    await waitFor(() => expect(enableLikedTracksSync).toHaveBeenCalledWith({ token: 'token' }))
+    await waitFor(() => expect(screen.getByText(/Liked songs sync is active/)).toBeInTheDocument())
+    expect(screen.queryByRole('button', { name: 'Sync Liked Songs' })).not.toBeInTheDocument()
   })
 })

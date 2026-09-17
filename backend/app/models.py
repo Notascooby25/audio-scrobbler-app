@@ -109,7 +109,46 @@ class IngestionCheckpoint(Base):
 
     user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     last_played_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_polled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class UserScrobbleSettings(Base):
+    __tablename__ = "user_scrobble_settings"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_user_scrobble_settings_user_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    strip_remaster_tags: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    poll_interval_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=5)
+    liked_tracks_sync_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    liked_tracks_backfill_offset: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    liked_tracks_watermark: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    liked_tracks_catch_up_floor: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    liked_tracks_last_synced_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class LikedTrack(Base):
+    __tablename__ = "liked_tracks"
+    __table_args__ = (
+        UniqueConstraint("user_id", "spotify_track_id", name="uq_liked_track_user_spotify_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    spotify_track_id: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
+    track_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    artist_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    album_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    artwork_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    artist_artwork_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    added_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    raw_metadata: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
 
 class ArtworkCache(Base):

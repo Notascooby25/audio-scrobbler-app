@@ -30,6 +30,7 @@ class ScrobbleListEntry(BaseModel):
     played_at: datetime
     artwork_url: str | None = None
     spotify_track_id: str | None = None
+    is_liked: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -50,6 +51,7 @@ class ChartEntry(BaseModel):
     artwork_url: str | None = None
     spotify_track_id: str | None = None
     sources: list[str] = []
+    is_liked: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 

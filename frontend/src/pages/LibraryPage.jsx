@@ -8,7 +8,7 @@ import LibraryViewToggle from '../components/LibraryViewToggle'
 import PageSizeSelect from '../components/PageSizeSelect'
 import Pagination from '../components/Pagination'
 import TimelineChart from '../components/TimelineChart'
-import { createBlock, deleteLibraryEntries, deleteLibraryScrobbles, fetchLibraryCollection, fetchLibraryScrobbles, fetchLibraryTimeline, fetchUserSettings } from '../api'
+import { createBlock, deleteLibraryEntries, deleteLibraryScrobbles, fetchLibraryCollection, fetchLibraryScrobbles, fetchLibraryTimeline, fetchUserProfile, fetchUserSettings } from '../api'
 import { createDefaultDateRange, isValidDateRange } from '../dateRange'
 import { readSession } from '../session'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
@@ -23,6 +23,10 @@ const TABS = [
 export default function LibraryPage() {
   const session = readSession()
   const [searchParams, setSearchParams] = useSearchParams()
+  const routeUserId = searchParams.get('userId')
+  const targetUserId = routeUserId ? Number(routeUserId) : undefined
+  const isOwnLibrary = !routeUserId || Number(routeUserId) === session?.userId
+  const [targetProfile, setTargetProfile] = useState(null)
   const [tab, setTab] = useState(() => searchParams.get('filter_name') ? 'scrobbles' : 'scrobbles')
   const [dateRange, setDateRange] = useState(createDefaultDateRange())
   const [page, setPage] = useState(1)
@@ -64,6 +68,17 @@ export default function LibraryPage() {
   }, [searchParams])
 
   useEffect(() => {
+    if (!session?.accessToken || isOwnLibrary) {
+      setTargetProfile(null)
+      return
+    }
+    fetchUserProfile({ token: session.accessToken, userId: targetUserId })
+      .then(setTargetProfile)
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeUserId])
+
+  useEffect(() => {
     if (!session?.accessToken) return
     fetchUserSettings({ token: session.accessToken })
       .then((userSettings) => {
@@ -94,9 +109,9 @@ export default function LibraryPage() {
     const offset = (page - 1) * pageSize
     const rangeArg = dateRange
     const request = tab === 'scrobbles'
-      ? fetchLibraryScrobbles({ token: session.accessToken, limit: pageSize, offset, dateRange: rangeArg, filterEntity: scrobbleFilter.entity, filterName: scrobbleFilter.name, filterSecondary: scrobbleFilter.secondary, search: activeSearchQuery || undefined })
-      : fetchLibraryCollection({ token: session.accessToken, entity: tab, limit: pageSize, offset, dateRange: rangeArg, search: activeSearchQuery || undefined })
-    Promise.all([request, fetchLibraryTimeline({ token: session.accessToken })])
+      ? fetchLibraryScrobbles({ token: session.accessToken, limit: pageSize, offset, dateRange: rangeArg, filterEntity: scrobbleFilter.entity, filterName: scrobbleFilter.name, filterSecondary: scrobbleFilter.secondary, search: activeSearchQuery || undefined, userId: targetUserId })
+      : fetchLibraryCollection({ token: session.accessToken, entity: tab, limit: pageSize, offset, dateRange: rangeArg, search: activeSearchQuery || undefined, userId: targetUserId })
+    Promise.all([request, fetchLibraryTimeline({ token: session.accessToken, userId: targetUserId })])
       .then(([result, chart]) => {
         setData(result)
         setLoadedTab(tab)
@@ -105,10 +120,10 @@ export default function LibraryPage() {
         setStatus('ready')
       })
       .catch((requestError) => {
-        setError(requestError.message)
+        setError(requestError.status === 403 ? "Follow this user to see their library." : requestError.message)
         setStatus('error')
       })
-  }, [tab, dateRange, pageSize, page, preferencesReady, refreshKey, scrobbleFilter, activeSearchQuery])
+  }, [tab, dateRange, pageSize, page, preferencesReady, refreshKey, scrobbleFilter, activeSearchQuery, routeUserId])
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
   const rankedEntries = data && loadedTab === tab && tab !== 'scrobbles' ? data.entries : []
@@ -215,7 +230,7 @@ export default function LibraryPage() {
   }
 
   return (
-    <AnalyticsPage eyebrow="Personal archive" title="Library">
+    <AnalyticsPage eyebrow="Personal archive" title={isOwnLibrary ? 'Library' : `@${targetProfile?.username || '...'}'s Library`}>
       {!session?.accessToken && <p className="notice">Connect Spotify from the <a href="/connect">connection page</a> to browse your library.</p>}
       {status === 'loading' && <p className="notice">Loading your library...</p>}
       {status === 'error' && <p className="notice notice-error" role="alert">{error}</p>}
@@ -224,7 +239,7 @@ export default function LibraryPage() {
         <>
           <div className="library-tabs" role="tablist" aria-label="Library sections">
             {TABS.map(([value, label]) => (
-              <button key={value} type="button" role="tab" aria-selected={tab === value} className={tab === value ? 'active' : ''} onClick={() => { setTab(value); setSearchParams({}) }}>{label}</button>
+              <button key={value} type="button" role="tab" aria-selected={tab === value} className={tab === value ? 'active' : ''} onClick={() => { setTab(value); setSearchParams(routeUserId ? { userId: routeUserId } : {}) }}>{label}</button>
             ))}
           </div>
           <div className="library-controls-bar">
@@ -244,12 +259,12 @@ export default function LibraryPage() {
                 view={activeView}
                 onChange={changeView}
                 selectMode={selectMode}
-                onToggleSelectMode={() => setSelectMode((prev) => !prev)}
+                onToggleSelectMode={isOwnLibrary ? () => setSelectMode((prev) => !prev) : undefined}
                 allowGrid={tab !== 'scrobbles'}
               />
             </div>
           </div>
-          {selectedCount > 0 && (
+          {isOwnLibrary && selectedCount > 0 && (
             <div className="bulk-action-bar" role="status">
               <strong>{selectedCount.toLocaleString()} selected</strong>
               <button type="button" disabled={bulkBusy} onClick={toggleVisibleSelection}>Select visible</button>
@@ -261,8 +276,8 @@ export default function LibraryPage() {
           )}
           <div className="library-layout">
             {tab === 'scrobbles'
-              ? <LibraryScrobbleList scrobbles={visibleScrobbles} token={session.accessToken} view={activeView} showArtwork={settings?.show_artwork !== false} showSourceBadges={settings?.show_source_badges !== false} timestampMode={settings?.timestamp_mode || 'relative'} filterLabel={scrobbleFilter.name} selectedIds={selectedScrobbleIds} onToggleSelection={toggleScrobbleSelection} selectMode={selectMode} />
-              : <LibraryRankList entries={rankedEntries} kind={tab} token={session.accessToken} page={page} pageSize={pageSize} totalCount={totalCount} view={activeView} showArtwork={settings?.show_artwork !== false} showSourceBadges={settings?.show_source_badges !== false} selectedKeys={selectedEntries} onToggleSelection={toggleEntrySelection} onEntryChanged={handleEntryChanged} selectMode={selectMode} />}
+              ? <LibraryScrobbleList scrobbles={visibleScrobbles} token={session.accessToken} view={activeView} showArtwork={settings?.show_artwork !== false} showSourceBadges={settings?.show_source_badges !== false} timestampMode={settings?.timestamp_mode || 'relative'} filterLabel={scrobbleFilter.name} selectedIds={selectedScrobbleIds} onToggleSelection={isOwnLibrary ? toggleScrobbleSelection : undefined} selectMode={isOwnLibrary && selectMode} />
+              : <LibraryRankList entries={rankedEntries} kind={tab} token={session.accessToken} page={page} pageSize={pageSize} totalCount={totalCount} view={activeView} showArtwork={settings?.show_artwork !== false} showSourceBadges={settings?.show_source_badges !== false} selectedKeys={selectedEntries} onToggleSelection={isOwnLibrary ? toggleEntrySelection : undefined} onEntryChanged={isOwnLibrary ? handleEntryChanged : undefined} selectMode={isOwnLibrary && selectMode} userId={targetUserId} />}
             <TimelineChart entries={timeline} />
           </div>
           <div className="library-pagination-bar">

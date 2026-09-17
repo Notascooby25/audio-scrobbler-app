@@ -23,6 +23,7 @@ export default function LibraryRankList({
   onToggleSelection,
   onEntryChanged,
   selectMode = false,
+  userId,
 }) {
   const maximum = Math.max(...entries.map((entry) => entry.play_count), 1)
   const heading = kind === 'artists' ? 'Artists scrobbled' : kind === 'albums' ? 'Albums scrobbled' : 'Tracks scrobbled'
@@ -42,7 +43,7 @@ export default function LibraryRankList({
           {entries.map((entry, index) => {
             const rankNumber = (page - 1) * pageSize + index + 1
             const selectionKey = `${entityType}:${entry.label}:${entry.secondary || ''}`
-            const entityUrl = `/library?filter_entity=${entityType}&filter_name=${encodeURIComponent(entry.label)}${entry.secondary ? `&filter_secondary=${encodeURIComponent(entry.secondary)}` : ''}`
+            const entityUrl = `/library?filter_entity=${entityType}&filter_name=${encodeURIComponent(entry.label)}${entry.secondary ? `&filter_secondary=${encodeURIComponent(entry.secondary)}` : ''}${userId ? `&userId=${userId}` : ''}`
 
             if (view === 'grid') {
               const relativePercent = maximum > 0 ? (entry.play_count / maximum) * 100 : 0
@@ -65,6 +66,11 @@ export default function LibraryRankList({
                       </Link>
                       {showSourceBadges && entry.sources && entry.sources.length > 0 && (
                         <SourceBadge sources={entry.sources} size="grid" />
+                      )}
+                      {kind === 'tracks' && entry.is_liked && (
+                        <div className="grid-card-like">
+                          <span className="liked-badge" aria-hidden="true" title="Liked on Spotify">♥</span>
+                        </div>
                       )}
                     </div>
                   )}
@@ -133,6 +139,9 @@ export default function LibraryRankList({
                   </span>
                 </span>
                 <div className="library-rank-actions">
+                  {kind === 'tracks' && entry.is_liked && (
+                    <span className="liked-badge" aria-hidden="true" title="Liked on Spotify">♥</span>
+                  )}
                   <Link
                     className="library-count-bar"
                     style={countWidth(entry.play_count, maximum)}

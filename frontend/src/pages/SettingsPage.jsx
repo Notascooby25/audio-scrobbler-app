@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import AnalyticsPage from '../components/AnalyticsPage'
-import { deleteImportedScrobbles, fetchBlocks, fetchUserSettings, removeBlock, updateUserSettings, startArtworkBackfill, fetchImportBatches, advancedDeleteImports } from '../api'
+import { deleteImportedScrobbles, enableLikedTracksSync, fetchBlocks, fetchScrobbleSettings, fetchUserSettings, removeBlock, updateScrobbleSettings, updateUserSettings, startArtworkBackfill, fetchImportBatches, advancedDeleteImports } from '../api'
 import { readSession } from '../session'
 import ImportProgressBar from '../components/ImportProgressBar'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
@@ -9,9 +9,12 @@ import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
 const SETTINGS_TABS = [
   ['general', 'General'],
   ['views', 'Views'],
+  ['scrobble', 'Scrobble'],
   ['data', 'Data'],
   ['danger', 'Danger Zone'],
 ]
+
+const POLL_INTERVAL_OPTIONS = [5, 10, 15, 30, 60]
 
 const VIEW_OPTIONS = [
   ['default_library_view', 'Default library view'],
@@ -26,13 +29,16 @@ export default function SettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const tabParam = searchParams.get('tab')
   const [activeTab, setActiveTab] = useState(() => {
-    if (['general', 'views', 'data', 'danger'].includes(tabParam)) {
+    if (['general', 'views', 'scrobble', 'data', 'danger'].includes(tabParam)) {
       return tabParam
     }
     return 'general'
   })
   const [settings, setSettings] = useState(null)
   const [status, setStatus] = useState('idle')
+  const [scrobbleSettings, setScrobbleSettings] = useState(null)
+  const [scrobbleStatus, setScrobbleStatus] = useState('idle')
+  const [likedSyncStatus, setLikedSyncStatus] = useState('idle')
   const [blocks, setBlocks] = useState([])
   const [blocksError, setBlocksError] = useState('')
   const [deleteMode, setDeleteMode] = useState('source')
@@ -59,6 +65,9 @@ export default function SettingsPage() {
     fetchBlocks({ token: session.accessToken })
       .then((data) => setBlocks(data.blocks))
       .catch(() => setBlocksError('Blocked items could not be loaded.'))
+    fetchScrobbleSettings({ token: session.accessToken })
+      .then(setScrobbleSettings)
+      .catch(() => {})
   }, [])
 
   useEffect(() => () => clearTimeout(saveTimer.current), [])
@@ -76,6 +85,39 @@ export default function SettingsPage() {
         })
         .catch(() => setStatus('error'))
     }, 350)
+  }
+
+  const scrobbleSaveTimer = useRef(null)
+  const pendingScrobbleChanges = useRef({})
+  useEffect(() => () => clearTimeout(scrobbleSaveTimer.current), [])
+
+  const changeScrobbleSetting = (key, value) => {
+    const next = { ...scrobbleSettings, [key]: value }
+    setScrobbleSettings(next)
+    setScrobbleStatus('saving')
+    pendingScrobbleChanges.current = { ...pendingScrobbleChanges.current, [key]: value }
+    clearTimeout(scrobbleSaveTimer.current)
+    scrobbleSaveTimer.current = setTimeout(() => {
+      const changes = pendingScrobbleChanges.current
+      pendingScrobbleChanges.current = {}
+      updateScrobbleSettings({ token: session.accessToken, changes })
+        .then((saved) => {
+          setScrobbleSettings(saved)
+          setScrobbleStatus('saved')
+        })
+        .catch(() => setScrobbleStatus('error'))
+    }, 350)
+  }
+
+  const triggerLikedTracksSync = async () => {
+    setLikedSyncStatus('saving')
+    try {
+      const saved = await enableLikedTracksSync({ token: session.accessToken })
+      setScrobbleSettings(saved)
+      setLikedSyncStatus('saved')
+    } catch {
+      setLikedSyncStatus('error')
+    }
   }
 
   const unblock = async (blockId) => {
@@ -297,6 +339,36 @@ export default function SettingsPage() {
           {status === 'saved' && <p role="status">Saved</p>}
         </div>
       )}
+      {activeTab === 'scrobble' && scrobbleSettings && (
+        <div
+          className="settings-form"
+          role="tabpanel"
+          id="settings-panel-scrobble"
+          aria-labelledby="settings-tab-scrobble"
+        >
+          <label className="settings-checkbox">
+            <input
+              type="checkbox"
+              checked={scrobbleSettings.strip_remaster_tags}
+              onChange={(event) => changeScrobbleSetting('strip_remaster_tags', event.target.checked)}
+            />
+            Strip remaster tags (e.g. "(Remastered)", "[Live]") from track titles
+          </label>
+          <label>
+            Poll frequency
+            <select
+              value={scrobbleSettings.poll_interval_minutes}
+              onChange={(event) => changeScrobbleSetting('poll_interval_minutes', Number(event.target.value))}
+            >
+              {POLL_INTERVAL_OPTIONS.map((minutes) => (
+                <option key={minutes} value={minutes}>Every {minutes} minutes</option>
+              ))}
+            </select>
+          </label>
+          {scrobbleStatus === 'saving' && <p role="status">Saving...</p>}
+          {scrobbleStatus === 'saved' && <p role="status">Saved</p>}
+        </div>
+      )}
       {activeTab === 'data' && session?.accessToken && (
         <section
           className="settings-form"
@@ -304,6 +376,25 @@ export default function SettingsPage() {
           id="settings-panel-data"
           aria-labelledby="settings-tab-data"
         >
+          <div style={{ marginBottom: '1rem' }}>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Liked Songs</h3>
+            {scrobbleSettings?.liked_tracks_sync_enabled ? (
+              <p className="notice">
+                Liked songs sync is active
+                {scrobbleSettings.liked_tracks_backfill_in_progress ? ' (catching up on your existing library)' : ''}.
+              </p>
+            ) : (
+              <>
+                <p className="notice" style={{ marginBottom: '0.5rem' }}>
+                  This only needs to be pressed once — your liked songs will keep syncing automatically after that, roughly daily.
+                </p>
+                <button type="button" className="secondary-button" disabled={likedSyncStatus === 'saving'} onClick={triggerLikedTracksSync}>
+                  {likedSyncStatus === 'saving' ? 'Starting...' : 'Sync Liked Songs'}
+                </button>
+                {likedSyncStatus === 'error' && <p className="notice notice-error" role="alert">Could not start liked-songs sync.</p>}
+              </>
+            )}
+          </div>
           <div style={{ marginBottom: '1rem' }}>
             <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Backfill Missing Artwork</h3>
             <p className="notice" style={{ marginBottom: '1rem' }}>Scan your library for missing artwork and attempt to fill it in from Deezer and iTunes.</p>

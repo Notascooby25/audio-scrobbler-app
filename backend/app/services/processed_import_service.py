@@ -17,30 +17,12 @@ from sqlalchemy.orm import Session
 from ..config import settings
 from ..models import ArtworkCache, ListeningEvent
 from ..schemas.imports import ImportScrobbleSummary, UnifiedImportProgressEvent
+from .text_cleaning import clean_title
 
 logger = logging.getLogger("audio-scrobbler-import")
 
 
 # ─── Metadata Cleaning & Matching Helpers (from process_exports.py) ───────────
-
-def clean_title(title: str) -> str:
-    """Strips extra metadata like (Remastered) or [Live] for better API matching."""
-    if not isinstance(title, str) or not title.strip():
-        return ""
-    cleaned = re.sub(
-        r"[\(\[\{].*?(remaster|live|version|edit|deluxe|feat|ft\.).*?[\)\]\}]",
-        "",
-        title,
-        flags=re.IGNORECASE,
-    )
-    cleaned = re.sub(
-        r"-\s*(remastered|live|radio edit|single version).*$",
-        "",
-        cleaned,
-        flags=re.IGNORECASE,
-    )
-    res = cleaned.strip()
-    return res if res else title.strip()
 
 
 def is_artist_match(target_artist: str, returned_artist: str) -> bool:

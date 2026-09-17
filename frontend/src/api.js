@@ -312,12 +312,12 @@ export function fetchStatsChart({ token, entity, limit, dateRange }) {
   return fetchAnalyticsResource(`/stats/top-${entity}`, { token, params })
 }
 
-export function fetchLibraryCollection({ token, entity, limit, offset, dateRange, search }) {
-  const params = { limit, offset, search, ...(dateRange ? toQueryParams(dateRange) : {}) }
+export function fetchLibraryCollection({ token, entity, limit, offset, dateRange, search, userId }) {
+  const params = { limit, offset, search, user_id: userId, ...(dateRange ? toQueryParams(dateRange) : {}) }
   return fetchAnalyticsResource(`/library/${entity}`, { token, params })
 }
 
-export function fetchLibraryScrobbles({ token, limit, offset, dateRange, filterEntity, filterName, filterSecondary, search }) {
+export function fetchLibraryScrobbles({ token, limit, offset, dateRange, filterEntity, filterName, filterSecondary, search, userId }) {
   return fetchAnalyticsResource('/library/scrobbles', {
     token,
     params: {
@@ -327,27 +327,28 @@ export function fetchLibraryScrobbles({ token, limit, offset, dateRange, filterE
       filter_name: filterName,
       filter_secondary: filterSecondary,
       search,
+      user_id: userId,
       ...(dateRange ? toQueryParams(dateRange) : {}),
     },
   })
 }
 
-export function fetchLibraryTimeline({ token }) {
-  return fetchAnalyticsResource('/library/timeline', { token })
+export function fetchLibraryTimeline({ token, userId }) {
+  return fetchAnalyticsResource('/library/timeline', { token, params: { user_id: userId } })
 }
 
-export function fetchReportsSummary({ token, dateRange }) {
-  const params = dateRange ? toQueryParams(dateRange) : {}
+export function fetchReportsSummary({ token, dateRange, userId }) {
+  const params = { user_id: userId, ...(dateRange ? toQueryParams(dateRange) : {}) }
   return fetchAnalyticsResource('/reports/summary', { token, params })
 }
 
-export function fetchReportsCharts({ token, dateRange }) {
-  const params = dateRange ? toQueryParams(dateRange) : {}
+export function fetchReportsCharts({ token, dateRange, userId }) {
+  const params = { user_id: userId, ...(dateRange ? toQueryParams(dateRange) : {}) }
   return fetchAnalyticsResource('/reports/charts', { token, params })
 }
 
-export function fetchReportsEntity({ token, entity, dateRange }) {
-  const params = dateRange ? toQueryParams(dateRange) : {}
+export function fetchReportsEntity({ token, entity, dateRange, userId }) {
+  const params = { user_id: userId, ...(dateRange ? toQueryParams(dateRange) : {}) }
   return fetchAnalyticsResource(`/reports/${entity}`, { token, params })
 }
 
@@ -357,6 +358,22 @@ export function fetchUserSettings({ token }) {
 
 export function updateUserSettings({ token, changes }) {
   return fetchAnalyticsResource('/users/me/settings', { token, method: 'PATCH', body: changes })
+}
+
+export function fetchScrobbleSettings({ token }) {
+  return fetchAnalyticsResource('/users/me/settings/scrobble', { token })
+}
+
+export function updateScrobbleSettings({ token, changes }) {
+  return fetchAnalyticsResource('/users/me/settings/scrobble', { token, method: 'PATCH', body: changes })
+}
+
+export function enableLikedTracksSync({ token }) {
+  return fetchAnalyticsResource('/spotify/sync-liked', { token, method: 'POST' })
+}
+
+export function fetchFollowing({ token }) {
+  return fetchAnalyticsResource('/users/me/following', { token })
 }
 
 export function fetchBlocks({ token }) {

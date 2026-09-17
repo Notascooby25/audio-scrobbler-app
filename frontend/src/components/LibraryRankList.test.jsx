@@ -193,5 +193,58 @@ describe('LibraryRankList', () => {
 
     expect(screen.queryByRole('img', { name: 'Scrobbled via YouTube Music' })).not.toBeInTheDocument()
   })
+
+  it('shows a heart badge only for liked tracks, in both list and grid view', () => {
+    const { rerender } = render(
+      <MemoryRouter><LibraryRankList
+        entries={[
+          { label: 'Slow Show', secondary: 'The National', play_count: 12, spotify_track_id: 'track-1', is_liked: true },
+          { label: 'Fake Empire', secondary: 'The National', play_count: 8, spotify_track_id: 'track-2', is_liked: false },
+        ]}
+        kind="tracks"
+        token="token"
+        page={1}
+        pageSize={50}
+        totalCount={2}
+        view="list"
+      /></MemoryRouter>,
+    )
+    expect(screen.getAllByTitle('Liked on Spotify')).toHaveLength(1)
+
+    rerender(
+      <MemoryRouter><LibraryRankList
+        entries={[
+          { label: 'Slow Show', secondary: 'The National', play_count: 12, artwork_url: '/cover.jpg', spotify_track_id: 'track-1', is_liked: true },
+        ]}
+        kind="tracks"
+        token="token"
+        page={1}
+        pageSize={50}
+        totalCount={1}
+        view="grid"
+      /></MemoryRouter>,
+    )
+    expect(screen.getAllByTitle('Liked on Spotify')).toHaveLength(1)
+  })
+
+  it('carries the viewed userId through into entity links', () => {
+    render(
+      <MemoryRouter><LibraryRankList
+        entries={[{ label: 'Slow Show', secondary: 'The National', play_count: 12, spotify_track_id: 'track-1' }]}
+        kind="tracks"
+        token="token"
+        page={1}
+        pageSize={50}
+        totalCount={1}
+        view="list"
+        userId={7}
+      /></MemoryRouter>,
+    )
+
+    expect(screen.getByRole('link', { name: 'Show 12 scrobbles for Slow Show' })).toHaveAttribute(
+      'href',
+      '/library?filter_entity=track&filter_name=Slow%20Show&filter_secondary=The%20National&userId=7',
+    )
+  })
 })
 

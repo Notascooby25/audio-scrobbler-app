@@ -11,7 +11,7 @@ describe('HeaderNav', () => {
   it('renders links to all primary sections', () => {
     render(<MemoryRouter><HeaderNav /></MemoryRouter>)
 
-    ;['Overview', 'Library', 'Reports', 'Profile', 'Connect'].forEach((label) => {
+    ;['Overview', 'Library', 'Reports', 'Profile', 'Following', 'Connect'].forEach((label) => {
       expect(screen.getByRole('link', { name: label })).toBeInTheDocument()
     })
   })
