@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { fetchMonthlySummary, fetchRecentScrobbles, redirectToAuthorization, requestDevelopmentToken, requestSpotifyAuthorization, submitImportScrobbles, submitUnifiedImport } from '../api'
+import { fetchMonthlySummary, fetchRecentScrobbles, fetchSpotifyStatus, redirectToAuthorization, requestDevelopmentToken, requestSpotifyAuthorization, submitImportScrobbles, submitUnifiedImport } from '../api'
 import ChartsPanel from '../components/ChartsPanel'
 import CustomDateField from '../components/CustomDateField'
 import ImportProgressBar from '../components/ImportProgressBar'
@@ -50,7 +50,9 @@ export default function HomePage() {
   const callbackErrorMessage =
     callbackError === 'account_not_allowed'
       ? 'This Spotify account is not authorized to use this app.'
-      : 'Spotify authorization was cancelled.'
+      : callbackError === 'spotify_rate_limited'
+        ? 'Spotify is temporarily rate-limiting this app. Try connecting again later.'
+        : 'Spotify authorization was cancelled.'
   if (callbackError) localStorage.removeItem('audio-scrobbler-session')
   if (callbackSession) localStorage.setItem('audio-scrobbler-session', JSON.stringify(callbackSession))
   const savedSession = callbackSession?.accessToken ? callbackSession : readSavedSession()
@@ -66,7 +68,14 @@ export default function HomePage() {
   const [importError, setImportError] = useState('')
   const [importProgress, setImportProgress] = useState('')
   const [liveProgress, setLiveProgress] = useState(null)
+  const [spotifyRetryAfter, setSpotifyRetryAfter] = useState(null)
   const importInputRef = useRef(null)
+
+  useEffect(() => {
+    fetchSpotifyStatus()
+      .then((result) => setSpotifyRetryAfter(result.rate_limited ? result.retry_after : null))
+      .catch(() => {})
+  }, [])
 
   const connectSpotify = async () => {
     setStatus('loading')
@@ -245,7 +254,14 @@ export default function HomePage() {
           </button>
           {token && <button type="button" onClick={clearSession}>Sign out</button>}
         </form>
-        {!token && <button type="button" onClick={connectSpotify}>Connect Spotify</button>}
+        {!token && (
+          <>
+            <button type="button" onClick={connectSpotify} disabled={Boolean(spotifyRetryAfter)}>Connect Spotify</button>
+            {spotifyRetryAfter && (
+              <p className="notice">Spotify is rate-limiting this app. Try again after {new Date(spotifyRetryAfter).toLocaleTimeString()}.</p>
+            )}
+          </>
+        )}
         {token && (
           <div className="import-panel">
             <label className="import-picker">

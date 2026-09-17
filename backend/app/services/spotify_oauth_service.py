@@ -17,9 +17,46 @@ SPOTIFY_AUTHORIZE_URL = "https://accounts.spotify.com/authorize"
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
 SPOTIFY_PROFILE_URL = "https://api.spotify.com/v1/me"
 
+# Spotify's quota is per-app (client_id), not per-user, so this is process-wide
+# state shared by every request the backend makes, independent of the worker's
+# own copy of this same tracking for its background polling.
+_spotify_blocked_until: datetime | None = None
+# Spotify doesn't always send Retry-After on a quota (as opposed to per-second
+# rate-limit) rejection; fall back to a conservative pause rather than letting
+# every subsequent Connect attempt hit Spotify again immediately.
+DEFAULT_RATE_LIMIT_BACKOFF_SECONDS = 1800.0
+
 
 class SpotifyAccessDeniedError(Exception):
     """Raised when a Spotify account is not on the allowlist, if one is configured."""
+
+
+class SpotifyRateLimitedError(Exception):
+    """Raised instead of contacting Spotify while the app-wide quota block is active."""
+
+    def __init__(self, blocked_until: datetime):
+        self.blocked_until = blocked_until
+        super().__init__(f"Spotify quota exhausted; paused until {blocked_until.isoformat()}")
+
+
+def spotify_rate_limit_blocked_until() -> datetime | None:
+    """Returns when the current quota block expires, or None if we're clear to call Spotify."""
+    global _spotify_blocked_until
+    if _spotify_blocked_until and datetime.now(timezone.utc) < _spotify_blocked_until:
+        return _spotify_blocked_until
+    _spotify_blocked_until = None
+    return None
+
+
+def _mark_spotify_rate_limited(retry_after_header: str | None) -> datetime:
+    global _spotify_blocked_until
+    try:
+        seconds = float(retry_after_header) if retry_after_header else DEFAULT_RATE_LIMIT_BACKOFF_SECONDS
+    except ValueError:
+        seconds = DEFAULT_RATE_LIMIT_BACKOFF_SECONDS
+    seconds = max(seconds, 60.0)
+    _spotify_blocked_until = datetime.now(timezone.utc) + timedelta(seconds=seconds)
+    return _spotify_blocked_until
 
 
 def create_oauth_state() -> str:
@@ -46,6 +83,9 @@ def build_authorization_url(state: str) -> str:
 
 def complete_spotify_callback(db: Session, code: str, state: str) -> tuple[str, int]:
     validate_oauth_state(state)
+    blocked_until = spotify_rate_limit_blocked_until()
+    if blocked_until:
+        raise SpotifyRateLimitedError(blocked_until)
     token_response = requests.post(
         SPOTIFY_TOKEN_URL,
         data={
@@ -56,6 +96,8 @@ def complete_spotify_callback(db: Session, code: str, state: str) -> tuple[str, 
         auth=(settings.spotify_client_id, settings.spotify_client_secret),
         timeout=10,
     )
+    if token_response.status_code == 429:
+        raise SpotifyRateLimitedError(_mark_spotify_rate_limited(token_response.headers.get("Retry-After")))
     token_response.raise_for_status()
     token_data = token_response.json()
     profile_response = requests.get(
@@ -63,6 +105,8 @@ def complete_spotify_callback(db: Session, code: str, state: str) -> tuple[str, 
         headers={"Authorization": f"Bearer {token_data['access_token']}"},
         timeout=10,
     )
+    if profile_response.status_code == 429:
+        raise SpotifyRateLimitedError(_mark_spotify_rate_limited(profile_response.headers.get("Retry-After")))
     profile_response.raise_for_status()
     profile = profile_response.json()
     spotify_user_id = profile["id"]

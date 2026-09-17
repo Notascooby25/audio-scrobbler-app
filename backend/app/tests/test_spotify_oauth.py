@@ -1,13 +1,20 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs, urlparse
 
 import jwt
+import pytest
 
 from backend.app.config import settings
 from backend.app.models import User
 from backend.app.security import decrypt_refresh_token
 from backend.app.services import spotify_oauth_service
+
+
+@pytest.fixture(autouse=True)
+def _reset_spotify_rate_limit(monkeypatch):
+    monkeypatch.setattr(spotify_oauth_service, "_spotify_blocked_until", None)
 
 
 class Query:
@@ -40,8 +47,10 @@ class FakeDB:
 
 
 class FakeResponse:
-    def __init__(self, payload):
+    def __init__(self, payload, status_code=200, headers=None):
         self.payload = payload
+        self.status_code = status_code
+        self.headers = headers or {}
 
     def raise_for_status(self):
         return None
@@ -136,3 +145,35 @@ def test_callback_allows_spotify_id_on_allowlist(monkeypatch):
 
     assert user_id == 17
     assert isinstance(db.user, User)
+
+
+def test_callback_marks_rate_limited_on_429_token_exchange(monkeypatch):
+    monkeypatch.setattr(
+        spotify_oauth_service.requests,
+        "post",
+        lambda *args, **kwargs: FakeResponse({}, status_code=429, headers={"Retry-After": "120"}),
+    )
+    db = FakeDB()
+
+    with pytest.raises(spotify_oauth_service.SpotifyRateLimitedError):
+        spotify_oauth_service.complete_spotify_callback(db, "authorization-code", spotify_oauth_service.create_oauth_state())
+
+    blocked_until = spotify_oauth_service.spotify_rate_limit_blocked_until()
+    assert blocked_until is not None
+    assert blocked_until > datetime.now(timezone.utc)
+    assert db.commits == 0
+
+
+def test_callback_skips_request_when_already_blocked(monkeypatch):
+    monkeypatch.setattr(
+        spotify_oauth_service, "_spotify_blocked_until", datetime.now(timezone.utc) + timedelta(minutes=10)
+    )
+
+    def _fail_if_called(*args, **kwargs):
+        raise AssertionError("Spotify should not be contacted during an active rate-limit block")
+
+    monkeypatch.setattr(spotify_oauth_service.requests, "post", _fail_if_called)
+    db = FakeDB()
+
+    with pytest.raises(spotify_oauth_service.SpotifyRateLimitedError):
+        spotify_oauth_service.complete_spotify_callback(db, "authorization-code", spotify_oauth_service.create_oauth_state())

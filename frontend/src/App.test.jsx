@@ -10,9 +10,10 @@ vi.mock('./api', () => ({
   requestDevelopmentToken: vi.fn().mockResolvedValue({ access_token: 'demo-token', expires_in: 3600 }),
   requestSpotifyAuthorization: vi.fn().mockResolvedValue({ authorization_url: 'https://accounts.spotify.com/authorize' }),
   redirectToAuthorization: vi.fn(),
+  fetchSpotifyStatus: vi.fn().mockResolvedValue({ rate_limited: false, retry_after: null }),
 }))
 
-import { fetchMonthlySummary, fetchRecentScrobbles, requestDevelopmentToken, requestSpotifyAuthorization, submitImportScrobbles } from './api'
+import { fetchMonthlySummary, fetchRecentScrobbles, fetchSpotifyStatus, requestDevelopmentToken, requestSpotifyAuthorization, submitImportScrobbles } from './api'
 
 describe('App', () => {
   afterEach(() => {
@@ -44,6 +45,15 @@ describe('App', () => {
     renderConnectPage()
     fireEvent.click(screen.getByRole('button', { name: 'Connect Spotify' }))
     await waitFor(() => expect(requestSpotifyAuthorization).toHaveBeenCalled())
+  })
+
+  it('disables the Connect button while Spotify is rate-limited', async () => {
+    fetchSpotifyStatus.mockResolvedValueOnce({ rate_limited: true, retry_after: '2026-09-17T20:00:00Z' })
+    renderConnectPage()
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Connect Spotify' })).toBeDisabled())
+    expect(screen.getByText(/Spotify is rate-limiting this app/)).toBeInTheDocument()
+    expect(requestSpotifyAuthorization).not.toHaveBeenCalled()
   })
 
   it('renders an empty result after loading a filtered summary', async () => {

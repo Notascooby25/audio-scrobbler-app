@@ -40,6 +40,11 @@ export async function requestSpotifyAuthorization() {
   return parseResponse(response)
 }
 
+export async function fetchSpotifyStatus() {
+  const response = await fetch(`${API_BASE_URL}/auth/spotify/status`)
+  return parseResponse(response)
+}
+
 export function redirectToAuthorization(url) {
   window.location.assign(url)
 }

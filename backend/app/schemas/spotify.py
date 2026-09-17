@@ -8,6 +8,11 @@ class SpotifyAuthorizeResponse(BaseModel):
     state: str
 
 
+class SpotifyStatusResponse(BaseModel):
+    rate_limited: bool
+    retry_after: str | None = None
+
+
 class SpotifyCallbackResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"

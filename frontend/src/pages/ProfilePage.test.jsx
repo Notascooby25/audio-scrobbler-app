@@ -9,9 +9,10 @@ vi.mock('../api', () => ({
   unfollowUser: vi.fn(),
   requestSpotifyAuthorization: vi.fn().mockResolvedValue({ authorization_url: 'https://accounts.spotify.com/authorize' }),
   redirectToAuthorization: vi.fn(),
+  fetchSpotifyStatus: vi.fn().mockResolvedValue({ rate_limited: false, retry_after: null }),
 }))
 
-import { fetchUserProfile, followUser, redirectToAuthorization } from '../api'
+import { fetchSpotifyStatus, fetchUserProfile, followUser, redirectToAuthorization } from '../api'
 
 function renderProfile(routeUserId) {
   const path = routeUserId ? `/profile/${routeUserId}` : '/profile'
@@ -44,6 +45,14 @@ describe('ProfilePage', () => {
     renderProfile()
     fireEvent.click(screen.getByRole('button', { name: 'Connect Spotify' }))
     await waitFor(() => expect(redirectToAuthorization).toHaveBeenCalledWith('https://accounts.spotify.com/authorize'))
+  })
+
+  it('disables the Connect button while Spotify is rate-limited', async () => {
+    fetchSpotifyStatus.mockResolvedValueOnce({ rate_limited: true, retry_after: '2026-09-17T20:00:00Z' })
+    renderProfile()
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Connect Spotify' })).toBeDisabled())
+    expect(screen.getByText(/Spotify is rate-limiting this app/)).toBeInTheDocument()
   })
 
   it('hides the last scrobble from non-followers', async () => {

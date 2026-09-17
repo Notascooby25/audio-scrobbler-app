@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Link } from 'react-router-dom'
-import { fetchUserProfile, followUser, redirectToAuthorization, requestSpotifyAuthorization, unfollowUser } from '../api'
+import { fetchSpotifyStatus, fetchUserProfile, followUser, redirectToAuthorization, requestSpotifyAuthorization, unfollowUser } from '../api'
 import FollowButton from '../components/FollowButton'
 
 function readSavedSession() {
@@ -22,6 +22,13 @@ export default function ProfilePage() {
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
   const [connectError, setConnectError] = useState('')
+  const [spotifyRetryAfter, setSpotifyRetryAfter] = useState(null)
+
+  useEffect(() => {
+    fetchSpotifyStatus()
+      .then((result) => setSpotifyRetryAfter(result.rate_limited ? result.retry_after : null))
+      .catch(() => {})
+  }, [])
 
   const loadProfile = async () => {
     if (!token || !targetUserId) {
@@ -81,7 +88,10 @@ export default function ProfilePage() {
         {!token && (
           <div className="profile-connect">
             <p className="notice">Sign in from the dashboard, or connect Spotify to create your profile.</p>
-            <button type="button" onClick={connectSpotify}>Connect Spotify</button>
+            <button type="button" onClick={connectSpotify} disabled={Boolean(spotifyRetryAfter)}>Connect Spotify</button>
+            {spotifyRetryAfter && (
+              <p className="notice">Spotify is rate-limiting this app. Try again after {new Date(spotifyRetryAfter).toLocaleTimeString()}.</p>
+            )}
             {connectError && <p className="notice notice-error" role="alert">{connectError}</p>}
           </div>
         )}
@@ -104,7 +114,10 @@ export default function ProfilePage() {
             )}
             {profile.is_self && (
               <>
-                <button type="button" onClick={connectSpotify}>Connect Spotify</button>
+                <button type="button" onClick={connectSpotify} disabled={Boolean(spotifyRetryAfter)}>Connect Spotify</button>
+                {spotifyRetryAfter && (
+                  <p className="notice">Spotify is rate-limiting this app. Try again after {new Date(spotifyRetryAfter).toLocaleTimeString()}.</p>
+                )}
                 <Link className="settings-link" to="/settings">Settings</Link>
               </>
             )}

@@ -134,3 +134,52 @@ def test_spotify_callback_denies_non_allowlisted_account():
         app.dependency_overrides.clear()
 
     assert response.status_code == 403
+
+
+def test_spotify_status_reports_not_rate_limited_by_default(monkeypatch):
+    monkeypatch.setattr(auth_module, "spotify_rate_limit_blocked_until", lambda: None)
+
+    response = client.get("/auth/spotify/status")
+
+    assert response.status_code == 200
+    assert response.json() == {"rate_limited": False, "retry_after": None}
+
+
+def test_spotify_status_reports_rate_limited_until(monkeypatch):
+    blocked_until = datetime.now(timezone.utc) + timedelta(minutes=15)
+    monkeypatch.setattr(auth_module, "spotify_rate_limit_blocked_until", lambda: blocked_until)
+
+    response = client.get("/auth/spotify/status")
+
+    assert response.status_code == 200
+    assert response.json() == {"rate_limited": True, "retry_after": blocked_until.isoformat()}
+
+
+def test_spotify_authorize_returns_429_while_rate_limited(monkeypatch):
+    blocked_until = datetime.now(timezone.utc) + timedelta(minutes=5)
+    monkeypatch.setattr(auth_module, "spotify_rate_limit_blocked_until", lambda: blocked_until)
+    monkeypatch.setattr(auth_module, "settings", type(settings)(spotify_client_id="client-id"))
+
+    response = client.get("/auth/spotify/authorize")
+
+    assert response.status_code == 429
+    assert "Retry-After" in response.headers
+
+
+def test_spotify_callback_returns_429_when_rate_limited(monkeypatch):
+    # Force the raise-HTTPException branch regardless of any locally configured
+    # FRONTEND_AUTH_CALLBACK_URL, which would otherwise redirect instead.
+    monkeypatch.setattr(auth_module, "settings", type(settings)(frontend_auth_callback_url=""))
+
+    def blocked(*args, **kwargs):
+        raise spotify_oauth_service_module.SpotifyRateLimitedError(datetime.now(timezone.utc) + timedelta(minutes=5))
+
+    monkeypatch_target = auth_module.complete_spotify_callback
+    auth_module.complete_spotify_callback = blocked
+    try:
+        response = client.get("/auth/spotify/callback?state=valid-state&code=some-code")
+    finally:
+        auth_module.complete_spotify_callback = monkeypatch_target
+
+    assert response.status_code == 429
+    assert "Retry-After" in response.headers
