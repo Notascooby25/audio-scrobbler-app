@@ -53,8 +53,34 @@ def following_count(db: Session, user_id: int) -> int:
     return db.query(Follow).filter(Follow.follower_id == user_id).count()
 
 
-def get_following(db: Session, user_id: int, limit: int = 50, offset: int = 0) -> list[User]:
-    return (
+def _attach_last_scrobbles(db: Session, users: list[User]) -> list[dict]:
+    results = []
+    for user in users:
+        event = (
+            db.query(ListeningEvent)
+            .filter(ListeningEvent.user_id == user.id)
+            .order_by(ListeningEvent.played_at.desc())
+            .first()
+        )
+        last_scrobble = None
+        if event is not None:
+            last_scrobble = LastScrobble(
+                track_name=event.track_name,
+                artist_name=event.artist_name,
+                album_name=event.album_name,
+                source=event.source,
+                played_at=event.played_at,
+            )
+        results.append({
+            "id": user.id,
+            "username": user.username,
+            "display_name": user.display_name,
+            "last_scrobble": last_scrobble
+        })
+    return results
+
+def get_following(db: Session, user_id: int, limit: int = 50, offset: int = 0) -> list[dict]:
+    users = (
         db.query(User)
         .join(Follow, Follow.followee_id == User.id)
         .filter(Follow.follower_id == user_id, User.is_active.is_(True))
@@ -63,13 +89,16 @@ def get_following(db: Session, user_id: int, limit: int = 50, offset: int = 0) -
         .offset(offset)
         .all()
     )
+    return _attach_last_scrobbles(db, users)
 
 
-def search_users(db: Session, query: str, limit: int = 20) -> list[User]:
-    like_pattern = f"%{query.strip()}%"
+def search_users(db: Session, query: str, limit: int = 20) -> list[dict]:
     if not query.strip():
-        return []
-    return (
+        users = db.query(User).filter(User.is_active.is_(True)).order_by(User.username).limit(limit).all()
+        return _attach_last_scrobbles(db, users)
+        
+    like_pattern = f"%{query.strip()}%"
+    users = (
         db.query(User)
         .filter(
             User.is_active.is_(True),
@@ -79,6 +108,7 @@ def search_users(db: Session, query: str, limit: int = 20) -> list[User]:
         .limit(limit)
         .all()
     )
+    return _attach_last_scrobbles(db, users)
 
 
 def get_user_profile(db: Session, viewer_id: int, target_user: User) -> UserProfileResponse:

@@ -5,9 +5,10 @@ import FollowingPage from './FollowingPage'
 
 vi.mock('../api', () => ({
   fetchFollowing: vi.fn(),
+  searchUsers: vi.fn(),
 }))
 
-import { fetchFollowing } from '../api'
+import { fetchFollowing, searchUsers } from '../api'
 
 describe('FollowingPage', () => {
   afterEach(() => {
@@ -32,6 +33,7 @@ describe('FollowingPage', () => {
         { id: 3, username: 'other-fan', display_name: 'Other Fan' },
       ],
     })
+    searchUsers.mockResolvedValue({ results: [] })
 
     render(<MemoryRouter><FollowingPage /></MemoryRouter>)
 
@@ -45,6 +47,7 @@ describe('FollowingPage', () => {
   it('shows an empty-state message when following no one', async () => {
     localStorage.setItem('audio-scrobbler-session', JSON.stringify({ userId: 1, accessToken: 'demo-token' }))
     fetchFollowing.mockResolvedValue({ results: [] })
+    searchUsers.mockResolvedValue({ results: [] })
 
     render(<MemoryRouter><FollowingPage /></MemoryRouter>)
 

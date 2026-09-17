@@ -12,10 +12,21 @@ class FollowActionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class LastScrobble(BaseModel):
+    track_name: str
+    artist_name: str
+    album_name: str | None
+    source: str
+    played_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class UserSearchResult(BaseModel):
     id: int
     username: str
     display_name: str
+    last_scrobble: LastScrobble | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -26,16 +37,6 @@ class UserSearchResponse(BaseModel):
 
 class FollowingListResponse(BaseModel):
     results: list[UserSearchResult]
-
-
-class LastScrobble(BaseModel):
-    track_name: str
-    artist_name: str
-    album_name: str | None
-    source: str
-    played_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class UserProfileResponse(BaseModel):
