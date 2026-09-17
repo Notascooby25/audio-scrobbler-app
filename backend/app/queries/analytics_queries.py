@@ -328,12 +328,16 @@ def build_library_entities_query(
     else:
         raise ValueError(f"Unsupported library entity: {entity!r}")
 
-    statement = select(
+    selected_columns = [
         *group_columns,
         func.max(ListeningEvent.artwork_url).label("artwork_url"),
         func.count(ListeningEvent.id).label("play_count"),
         group_concat_distinct(ListeningEvent.source).label("sources"),
-    ).where(
+    ]
+    if entity == "tracks":
+        selected_columns.append(func.max(ListeningEvent.track_id).label("spotify_track_id"))
+
+    statement = select(*selected_columns).where(
         ListeningEvent.user_id == user_id
     ).where(not_blocked_clause(user_id))
     if entity == "albums":

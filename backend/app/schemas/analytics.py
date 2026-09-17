@@ -92,6 +92,8 @@ class LibraryEntry(BaseModel):
     play_count: int
     artwork_url: str | None = None
     sources: list[str] = []
+    spotify_track_id: str | None = None
+    is_liked: bool = False
 
 
 class LibraryResponse(BaseModel):

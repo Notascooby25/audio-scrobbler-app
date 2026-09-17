@@ -211,6 +211,7 @@ def get_library_entities(
 ) -> LibraryResponse:
     rows = db.execute(build_library_entities_query(user_id, entity, limit, offset, start, end, search_query)).all()
     total_count = db.execute(build_library_entity_count_query(user_id, entity, start, end, search_query)).scalar_one()
+    liked_ids = _liked_track_ids(db, user_id, _candidate_track_ids(rows)) if entity == "tracks" else set()
     entries = []
     for row in rows:
         row_sources = _parse_sources(getattr(row, "sources", None))
@@ -219,7 +220,8 @@ def get_library_entities(
         elif entity == "albums":
             entries.append(LibraryEntry(label=row.album_name, secondary=row.artist_name, play_count=int(row.play_count), artwork_url=getattr(row, "artwork_url", None), sources=row_sources))
         else:
-            entries.append(LibraryEntry(label=row.track_name, secondary=row.artist_name, play_count=int(row.play_count), artwork_url=getattr(row, "artwork_url", None), sources=row_sources))
+            track_id = getattr(row, "spotify_track_id", None)
+            entries.append(LibraryEntry(label=row.track_name, secondary=row.artist_name, play_count=int(row.play_count), artwork_url=getattr(row, "artwork_url", None), sources=row_sources, spotify_track_id=track_id, is_liked=track_id in liked_ids))
     return LibraryResponse(user_id=user_id, entries=entries, limit=limit, offset=offset, total_count=int(total_count))
 
 
