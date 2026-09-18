@@ -113,6 +113,19 @@ class IngestionCheckpoint(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
+class RealtimePlaybackState(Base):
+    __tablename__ = "realtime_playback_state"
+
+    user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    track_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    duration_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    max_progress_ms: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+    scrobbled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    raw_metadata: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    is_playing: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
 class UserScrobbleSettings(Base):
     __tablename__ = "user_scrobble_settings"
     __table_args__ = (
@@ -128,6 +141,8 @@ class UserScrobbleSettings(Base):
     liked_tracks_watermark: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     liked_tracks_catch_up_floor: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     liked_tracks_last_synced_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    realtime_sync_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    scrobble_threshold_percent: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

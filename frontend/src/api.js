@@ -273,6 +273,13 @@ export async function fetchUserProfile({ token, userId }) {
   return parseResponse(response)
 }
 
+export async function fetchNowPlaying({ token, userId }) {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/now-playing`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return parseResponse(response)
+}
+
 export async function fetchUserCharts({ token, userId, entity, range, limit }) {
   const params = new URLSearchParams()
   if (entity) params.set('entity', entity)

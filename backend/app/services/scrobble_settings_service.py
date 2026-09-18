@@ -9,6 +9,8 @@ from ..schemas.scrobble_settings import POLL_INTERVAL_OPTIONS
 DEFAULTS = {
     "strip_remaster_tags": True,
     "poll_interval_minutes": 5,
+    "realtime_sync_enabled": False,
+    "scrobble_threshold_percent": 50,
 }
 
 
@@ -32,6 +34,8 @@ def update(db: Session, user_id: int, changes: dict[str, object]) -> UserScrobbl
     for key, value in changes.items():
         if key == "poll_interval_minutes" and value not in POLL_INTERVAL_OPTIONS:
             raise ValueError("Unsupported poll interval")
+        if key == "scrobble_threshold_percent" and not (1 <= value <= 100):
+            raise ValueError("Threshold must be between 1 and 100")
         setattr(settings, key, value)
     db.commit()
     db.refresh(settings)

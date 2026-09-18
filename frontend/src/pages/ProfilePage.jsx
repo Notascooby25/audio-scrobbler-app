@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Link } from 'react-router-dom'
-import { fetchSpotifyStatus, fetchUserProfile, followUser, redirectToAuthorization, requestSpotifyAuthorization, unfollowUser } from '../api'
+import { fetchSpotifyStatus, fetchUserProfile, fetchNowPlaying, followUser, redirectToAuthorization, requestSpotifyAuthorization, unfollowUser } from '../api'
 import FollowButton from '../components/FollowButton'
 
 function readSavedSession() {
@@ -19,6 +19,7 @@ export default function ProfilePage() {
   const targetUserId = routeUserId ? Number(routeUserId) : savedSession?.userId
 
   const [profile, setProfile] = useState(null)
+  const [nowPlaying, setNowPlaying] = useState(null)
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
   const [connectError, setConnectError] = useState('')
@@ -40,12 +41,33 @@ export default function ProfilePage() {
     try {
       const data = await fetchUserProfile({ token, userId: targetUserId })
       setProfile(data)
+      try {
+        const npData = await fetchNowPlaying({ token, userId: targetUserId })
+        setNowPlaying(npData)
+      } catch (npError) {
+        // Ignore now playing errors silently
+        console.error("Failed to load now playing", npError)
+      }
       setStatus('ready')
     } catch (requestError) {
       setError(requestError.message)
       setStatus('error')
     }
   }
+
+  // Poll now playing every 10 seconds
+  useEffect(() => {
+    if (!token || !targetUserId || status !== 'ready') return
+    const interval = setInterval(async () => {
+      try {
+        const npData = await fetchNowPlaying({ token, userId: targetUserId })
+        setNowPlaying(npData)
+      } catch (npError) {
+        // ignore
+      }
+    }, 10000)
+    return () => clearInterval(interval)
+  }, [token, targetUserId, status])
 
   useEffect(() => {
     loadProfile()
@@ -105,6 +127,16 @@ export default function ProfilePage() {
           <div className="profile-card">
             <h3 className="profile-username">@{profile.username}</h3>
             <p className="profile-display-name">{profile.display_name}</p>
+            
+            {nowPlaying && nowPlaying.is_playing && (
+              <div className="now-playing-banner" style={{ background: 'var(--green-900)', color: '#fff', padding: '1rem', borderRadius: '8px', margin: '1rem 0' }}>
+                <p style={{ margin: 0, fontWeight: 'bold', fontSize: '0.9rem', textTransform: 'uppercase', color: 'var(--green-300)' }}>Now Playing</p>
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '1.1rem' }}>
+                  <strong>{nowPlaying.track_name}</strong> by {nowPlaying.artist_name}
+                </p>
+              </div>
+            )}
+            
             <dl className="profile-stats">
               <div><dt>Followers</dt><dd>{profile.follower_count}</dd></div>
               <div><dt>Following</dt><dd>{profile.following_count}</dd></div>

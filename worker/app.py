@@ -137,6 +137,36 @@ def run_spotify_ingestion() -> None:
         engine.dispose()
 
 
+def run_currently_playing_sync() -> None:
+    if not spotify_enabled or not spotify_client_id or not spotify_client_secret:
+        return
+    blocked_until = spotify_rate_limit_blocked_until()
+    if blocked_until:
+        return
+    engine = create_engine(database_url, pool_pre_ping=True)
+    session = sessionmaker(bind=engine)()
+    client = SpotifyClient(spotify_client_id, spotify_client_secret, refresh_token_key)
+    try:
+        from spotify_ingestion import sync_currently_playing
+        enabled_settings = session.query(ScrobbleSettingsRecord).filter(ScrobbleSettingsRecord.realtime_sync_enabled.is_(True)).all()
+        user_ids = [record.user_id for record in enabled_settings]
+        users_by_id = {
+            user.id: user
+            for user in session.query(UserRecord).filter(UserRecord.id.in_(user_ids), UserRecord.is_active.is_(True)).all()
+        } if user_ids else {}
+        for settings in enabled_settings:
+            user = users_by_id.get(settings.user_id)
+            if user:
+                try:
+                    sync_currently_playing(session, user, settings, client, backend_url, worker_token)
+                except Exception:
+                    session.rollback()
+                    logger.exception("Realtime sync failed for user %s", user.id)
+    finally:
+        session.close()
+        engine.dispose()
+
+
 def run_liked_tracks_ingestion() -> None:
     global last_liked_tracks_sync_at, last_liked_tracks_sync_users, last_liked_tracks_sync_failures, last_liked_tracks_sync_events
     if not spotify_enabled or not spotify_client_id or not spotify_client_secret:
@@ -288,6 +318,7 @@ def start_scheduler() -> None:
         scheduler.add_job(run_fixture_ingestion, "interval", minutes=1, id="fixture-ingestion")
     if spotify_enabled:
         scheduler.add_job(run_spotify_ingestion, "interval", minutes=spotify_interval_minutes, id="spotify-ingestion")
+        scheduler.add_job(run_currently_playing_sync, "interval", seconds=10, id="currently-playing-sync")
         scheduler.add_job(run_liked_tracks_ingestion, "interval", minutes=liked_tracks_interval_minutes, id="liked-tracks-ingestion")
     if file_import_enabled:
         scheduler.add_job(run_file_import, "interval", minutes=file_import_interval_minutes, id="file-import")

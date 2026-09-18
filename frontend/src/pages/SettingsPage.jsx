@@ -365,6 +365,30 @@ export default function SettingsPage() {
               ))}
             </select>
           </label>
+          <label className="settings-checkbox">
+            <input
+              type="checkbox"
+              checked={scrobbleSettings.realtime_sync_enabled}
+              onChange={(event) => changeScrobbleSetting('realtime_sync_enabled', event.target.checked)}
+            />
+            Enable Real-time Scrobbling (requires Spotify Premium, polls every 10s)
+          </label>
+          {scrobbleSettings.realtime_sync_enabled && (
+            <label style={{ marginLeft: '1.5rem' }}>
+              Scrobble completion threshold
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <input
+                  type="range"
+                  min="1"
+                  max="100"
+                  value={scrobbleSettings.scrobble_threshold_percent}
+                  onChange={(event) => changeScrobbleSetting('scrobble_threshold_percent', Number(event.target.value))}
+                />
+                <span>{scrobbleSettings.scrobble_threshold_percent}%</span>
+              </div>
+              <small className="panel-meta">Track will scrobble immediately when this percentage of its duration is played.</small>
+            </label>
+          )}
           {scrobbleStatus === 'saving' && <p role="status">Saving...</p>}
           {scrobbleStatus === 'saved' && <p role="status">Saved</p>}
         </div>

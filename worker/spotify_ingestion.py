@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 
 import requests
 from cryptography.fernet import Fernet, InvalidToken
-from sqlalchemy import Boolean, DateTime, Integer, String, Text, create_engine
+from sqlalchemy import Boolean, DateTime, Integer, String, Text, JSON, BigInteger, create_engine
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column, sessionmaker
 
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
@@ -70,6 +70,18 @@ class CheckpointRecord(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 
 
+class RealtimePlaybackStateRecord(Base):
+    __tablename__ = "realtime_playback_state"
+    user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    track_id: Mapped[str] = mapped_column(String(255))
+    duration_ms: Mapped[int] = mapped_column(BigInteger)
+    max_progress_ms: Mapped[int] = mapped_column(BigInteger)
+    scrobbled: Mapped[bool] = mapped_column(Boolean)
+    raw_metadata: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    is_playing: Mapped[bool] = mapped_column(Boolean)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
 class ScrobbleSettingsRecord(Base):
     __tablename__ = "user_scrobble_settings"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -80,6 +92,8 @@ class ScrobbleSettingsRecord(Base):
     liked_tracks_watermark: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     liked_tracks_catch_up_floor: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     liked_tracks_last_synced_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    realtime_sync_enabled: Mapped[bool] = mapped_column(Boolean)
+    scrobble_threshold_percent: Mapped[int] = mapped_column(Integer)
 
 
 def decrypt_refresh_token(ciphertext: str, refresh_token_key: str) -> str:
@@ -230,6 +244,13 @@ class SpotifyClient:
         items = response.json().get("items", [])
         return [item for item in items if isinstance(item, dict)]
 
+    def currently_playing(self, access_token: str) -> dict[str, object] | None:
+        response = self._request("get", "https://api.spotify.com/v1/me/player/currently-playing", headers={"Authorization": f"Bearer {access_token}"})
+        if response.status_code == 204:
+            return None
+        response.raise_for_status()
+        return response.json()
+
     @staticmethod
     def _request(method: str, url: str, **kwargs):
         blocked_until = spotify_rate_limit_blocked_until()
@@ -249,6 +270,94 @@ class SpotifyClient:
             response.raise_for_status()
             return response
         raise requests.HTTPError(f"Spotify request failed after retries: {url}")
+
+
+def sync_currently_playing(
+    session,
+    user: UserRecord,
+    settings: ScrobbleSettingsRecord,
+    client: SpotifyClient,
+    backend_url: str,
+    worker_token: str,
+) -> bool:
+    try:
+        refresh_token = decrypt_refresh_token(user.refresh_token_cipher, client.refresh_token_key)
+    except InvalidToken:
+        return False
+        
+    access_token, rotated_refresh_token = client.refresh_access_token(refresh_token)
+    
+    current = client.currently_playing(access_token)
+    now = datetime.utcnow()
+    
+    state = session.query(RealtimePlaybackStateRecord).filter(RealtimePlaybackStateRecord.user_id == user.id).first()
+    if not state:
+        state = RealtimePlaybackStateRecord(user_id=user.id, max_progress_ms=0, scrobbled=False)
+        session.add(state)
+        
+    if not current or not current.get("is_playing") or not current.get("item"):
+        state.is_playing = False
+        state.updated_at = now
+    else:
+        item = current["item"]
+        track_id = item.get("id") or item.get("uri")
+        progress_ms = current.get("progress_ms", 0)
+        duration_ms = item.get("duration_ms", 0)
+        
+        if track_id != state.track_id:
+            state.track_id = track_id
+            state.duration_ms = duration_ms
+            state.max_progress_ms = progress_ms
+            state.scrobbled = False
+            state.raw_metadata = current
+        else:
+            if progress_ms > state.max_progress_ms:
+                state.max_progress_ms = progress_ms
+            state.raw_metadata = current
+            
+        state.is_playing = True
+        state.updated_at = now
+        
+        # Check if we should scrobble
+        threshold = settings.scrobble_threshold_percent
+        if not state.scrobbled and duration_ms > 0 and (state.max_progress_ms / duration_ms) >= (threshold / 100.0):
+            # scrobble it
+            played_at = (now - timedelta(milliseconds=state.max_progress_ms)).replace(microsecond=0)
+            
+            # extract artists/name
+            track_name = item.get("name")
+            artists = item.get("artists", [])
+            artist_name = artists[0].get("name") if artists else "Unknown Artist"
+            album_name = item.get("album", {}).get("name") if item.get("album") else None
+            
+            images = item.get("album", {}).get("images") if item.get("album") else None
+            artwork_url = images[0].get("url") if isinstance(images, list) and images and isinstance(images[0], dict) else None
+
+            event = {
+                "user_id": user.id,
+                "track_id": track_id,
+                "track_name": track_name,
+                "artist_name": artist_name,
+                "album_name": album_name,
+                "artwork_url": artwork_url,
+                "played_at": played_at.isoformat() + "Z",
+                "duration_ms": duration_ms,
+                "source": "spotify_realtime",
+                "play_id": f"{track_id}:{played_at.isoformat()}",
+                "payload": current,
+                "raw_metadata": current,
+            }
+            try:
+                submit_event_with_retries(backend_url, worker_token, event)
+                state.scrobbled = True
+            except Exception:
+                pass # will retry next tick if not skipped
+                
+    if rotated_refresh_token:
+        user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)
+        
+    session.commit()
+    return True
 
 
 def sync_user(session, user: UserRecord, client: SpotifyClient, backend_url: str, worker_token: str) -> int:

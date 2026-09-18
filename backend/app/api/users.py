@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from ..api.deps import get_current_user
 from ..db import get_db
 from ..models import User
-from ..schemas.users import FollowActionResponse, FollowingListResponse, UserProfileResponse, UserSearchResponse
+from ..schemas.users import FollowActionResponse, FollowingListResponse, UserProfileResponse, UserSearchResponse, NowPlayingResponse
 from ..services import social_service
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -71,3 +71,43 @@ def profile(
 ) -> UserProfileResponse:
     target_user = _get_active_user_or_404(db, user_id)
     return social_service.get_user_profile(db, current_user.id, target_user)
+
+
+@router.get("/{user_id}/now-playing", response_model=NowPlayingResponse, status_code=status.HTTP_200_OK)
+def now_playing(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> NowPlayingResponse:
+    _get_active_user_or_404(db, user_id)
+    # Check if they allow viewing details (if private profile, etc, handled by social_service later if needed)
+    # For now, just return the state
+    from ..models import RealtimePlaybackState
+    
+    state = db.query(RealtimePlaybackState).filter(RealtimePlaybackState.user_id == user_id).first()
+    if not state or not state.is_playing:
+        return NowPlayingResponse(is_playing=False)
+        
+    # parse raw_metadata for track info
+    track_name = None
+    artist_name = None
+    album_name = None
+    if state.raw_metadata and isinstance(state.raw_metadata, dict):
+        item = state.raw_metadata.get("item", {})
+        if item:
+            track_name = item.get("name")
+            artists = item.get("artists", [])
+            if artists:
+                artist_name = artists[0].get("name")
+            album = item.get("album", {})
+            album_name = album.get("name")
+            
+    return NowPlayingResponse(
+        is_playing=True,
+        track_name=track_name,
+        artist_name=artist_name,
+        album_name=album_name,
+        progress_ms=state.max_progress_ms,
+        duration_ms=state.duration_ms,
+        raw_metadata=state.raw_metadata
+    )

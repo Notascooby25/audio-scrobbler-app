@@ -51,3 +51,15 @@ class UserProfileResponse(BaseModel):
     last_scrobble: LastScrobble | None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class NowPlayingResponse(BaseModel):
+    is_playing: bool
+    track_name: str | None = None
+    artist_name: str | None = None
+    album_name: str | None = None
+    progress_ms: int | None = None
+    duration_ms: int | None = None
+    raw_metadata: dict | None = None
+
+    model_config = ConfigDict(from_attributes=True)
