@@ -292,7 +292,7 @@ def sync_currently_playing(
     
     state = session.query(RealtimePlaybackStateRecord).filter(RealtimePlaybackStateRecord.user_id == user.id).first()
     if not state:
-        state = RealtimePlaybackStateRecord(user_id=user.id, max_progress_ms=0, scrobbled=False)
+        state = RealtimePlaybackStateRecord(user_id=user.id, track_id="", duration_ms=0, max_progress_ms=0, scrobbled=False)
         session.add(state)
         
     if not current or not current.get("is_playing") or not current.get("item"):

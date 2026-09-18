@@ -159,6 +159,7 @@ def run_currently_playing_sync() -> None:
             if user:
                 try:
                     sync_currently_playing(session, user, settings, client, backend_url, worker_token)
+                    session.commit()
                 except Exception:
                     session.rollback()
                     logger.exception("Realtime sync failed for user %s", user.id)
