@@ -23,22 +23,22 @@ def ingest_listening_event(
         track_name = clean_title(track_name)
         
     from datetime import timedelta
-    if event.source == "spotify":
-        # Deduplicate historical scrobbles if a real-time scrobble already caught it
-        realtime_dup = (
+    if event.source.startswith("spotify"):
+        # Deduplicate historical or real-time Spotify scrobbles if the same track was already recorded within 15 minutes
+        dup = (
             db.query(ListeningEvent)
             .filter(
                 ListeningEvent.user_id == user_id,
                 ListeningEvent.track_id == event.track_id,
-                ListeningEvent.source == "spotify_realtime",
+                ListeningEvent.source.in_(["spotify", "spotify_realtime"]),
                 ListeningEvent.played_at >= event.played_at - timedelta(minutes=15),
                 ListeningEvent.played_at <= event.played_at + timedelta(minutes=15),
             )
             .first()
         )
-        if realtime_dup:
+        if dup:
             record_ingestion(True)
-            return ListeningEventResponse(event_id=realtime_dup.id, duplicate=True)
+            return ListeningEventResponse(event_id=dup.id, duplicate=True)
 
     listening_event = ListeningEvent(
         user_id=user_id,

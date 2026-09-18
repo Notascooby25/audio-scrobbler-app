@@ -237,10 +237,22 @@ export default function LibraryPage() {
       {actionNotice && <p className="notice" role="status">{actionNotice}</p>}
       {session?.accessToken && (
         <>
-          <div className="library-tabs" role="tablist" aria-label="Library sections">
-            {TABS.map(([value, label]) => (
-              <button key={value} type="button" role="tab" aria-selected={tab === value} className={tab === value ? 'active' : ''} onClick={() => { setTab(value); setSearchParams(routeUserId ? { userId: routeUserId } : {}) }}>{label}</button>
-            ))}
+          <div className="library-segmented-group">
+            <span className="library-segmented-label">View</span>
+            <div className="segmented-tabs library-tabs" role="tablist" aria-label="Library sections">
+              {TABS.map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === value}
+                  className={`segmented-tab ${tab === value ? 'active' : ''}`}
+                  onClick={() => { setTab(value); setSearchParams(routeUserId ? { userId: routeUserId } : {}) }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="library-controls-bar">
             <DateRangeSelector value={dateRange} onChange={setDateRange} showCompare={false} />

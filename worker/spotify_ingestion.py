@@ -342,7 +342,7 @@ def sync_currently_playing(
                 "artwork_url": artwork_url,
                 "played_at": played_at.isoformat() + "Z",
                 "duration_ms": duration_ms,
-                "source": "spotify_realtime",
+                "source": "spotify",
                 "play_id": f"{track_id}:{played_at.isoformat()}",
                 "payload": current,
                 "raw_metadata": current,

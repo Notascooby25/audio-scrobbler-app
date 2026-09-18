@@ -7,6 +7,7 @@ describe('SourceBadge', () => {
     expect(resolveSourceType(null)).toBeNull()
     expect(resolveSourceType([])).toBeNull()
     expect(resolveSourceType('spotify')).toBe('spotify')
+    expect(resolveSourceType('spotify_realtime')).toBe('spotify')
     expect(resolveSourceType(['spotify'])).toBe('spotify')
     expect(resolveSourceType('youtube')).toBe('youtube')
     expect(resolveSourceType(['youtube'])).toBe('youtube')

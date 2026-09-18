@@ -6,7 +6,7 @@ export function resolveSourceType(sourceOrSources) {
     ? sourceOrSources.map((s) => String(s).toLowerCase().trim())
     : [String(sourceOrSources).toLowerCase().trim()]
 
-  const hasSpotify = list.some((s) => s === 'spotify')
+  const hasSpotify = list.some((s) => s === 'spotify' || s === 'spotify_realtime' || s.startsWith('spotify'))
   const hasYoutube = list.some((s) => s === 'youtube' || s === 'youtube_music' || s === 'youtubemusic')
 
   if (hasSpotify && hasYoutube) return 'split'
