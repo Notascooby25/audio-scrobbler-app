@@ -26,7 +26,7 @@ class Settings:
     spotify_client_id: str = os.getenv("SPOTIFY_CLIENT_ID", "")
     spotify_client_secret: str = os.getenv("SPOTIFY_CLIENT_SECRET", "")
     spotify_redirect_uri: str = os.getenv("SPOTIFY_REDIRECT_URI", "http://127.0.0.1:8000/auth/spotify/callback")
-    spotify_scopes: str = os.getenv("SPOTIFY_SCOPES", "user-read-recently-played user-library-read")
+    spotify_scopes: str = os.getenv("SPOTIFY_SCOPES", "user-read-recently-played user-library-read user-read-currently-playing")
     frontend_auth_callback_url: str = os.getenv("FRONTEND_AUTH_CALLBACK_URL", "")
     # Comma-separated Spotify user IDs allowed to sign up or log in.
     # Empty (the default) means unrestricted — matches pre-existing

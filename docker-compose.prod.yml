@@ -36,7 +36,7 @@ services:
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID}
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET}
       SPOTIFY_REDIRECT_URI: ${SPOTIFY_REDIRECT_URI}
-      SPOTIFY_SCOPES: ${SPOTIFY_SCOPES:-user-read-recently-played user-library-read}
+      SPOTIFY_SCOPES: ${SPOTIFY_SCOPES:-user-read-recently-played user-library-read user-read-currently-playing}
       FRONTEND_AUTH_CALLBACK_URL: ${FRONTEND_AUTH_CALLBACK_URL}
       ALLOWED_SPOTIFY_USER_IDS: ${ALLOWED_SPOTIFY_USER_IDS:-}
       CORS_ORIGINS: ${CORS_ORIGINS}

@@ -29,7 +29,7 @@ services:
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
       SPOTIFY_REDIRECT_URI: ${SPOTIFY_REDIRECT_URI:-http://127.0.0.1:8000/auth/spotify/callback}
-      SPOTIFY_SCOPES: user-read-recently-played user-library-read
+      SPOTIFY_SCOPES: ${SPOTIFY_SCOPES:-user-read-recently-played user-library-read user-read-currently-playing}
       FRONTEND_AUTH_CALLBACK_URL: ${FRONTEND_AUTH_CALLBACK_URL:-http://localhost:5173/connect}
       ALLOWED_SPOTIFY_USER_IDS: ${ALLOWED_SPOTIFY_USER_IDS:-}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
