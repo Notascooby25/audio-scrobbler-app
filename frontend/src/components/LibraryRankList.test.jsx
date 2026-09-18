@@ -194,7 +194,7 @@ describe('LibraryRankList', () => {
     expect(screen.queryByRole('img', { name: 'Scrobbled via YouTube Music' })).not.toBeInTheDocument()
   })
 
-  it('shows a heart badge only for liked tracks, in both list and grid view', () => {
+  it('shows a heart on every track, filled red only when liked, in both list and grid view', () => {
     const { rerender } = render(
       <MemoryRouter><LibraryRankList
         entries={[
@@ -210,21 +210,40 @@ describe('LibraryRankList', () => {
       /></MemoryRouter>,
     )
     expect(screen.getAllByTitle('Liked on Spotify')).toHaveLength(1)
+    expect(screen.getAllByTitle('Not liked on Spotify')).toHaveLength(1)
 
     rerender(
       <MemoryRouter><LibraryRankList
         entries={[
           { label: 'Slow Show', secondary: 'The National', play_count: 12, artwork_url: '/cover.jpg', spotify_track_id: 'track-1', is_liked: true },
+          { label: 'Fake Empire', secondary: 'The National', play_count: 8, artwork_url: '/cover2.jpg', spotify_track_id: 'track-2', is_liked: false },
         ]}
         kind="tracks"
         token="token"
         page={1}
         pageSize={50}
-        totalCount={1}
+        totalCount={2}
         view="grid"
       /></MemoryRouter>,
     )
     expect(screen.getAllByTitle('Liked on Spotify')).toHaveLength(1)
+    expect(screen.getAllByTitle('Not liked on Spotify')).toHaveLength(1)
+  })
+
+  it('does not show a heart for artists or albums', () => {
+    render(
+      <MemoryRouter><LibraryRankList
+        entries={[{ label: 'The National', play_count: 12 }]}
+        kind="artists"
+        token="token"
+        page={1}
+        pageSize={50}
+        totalCount={1}
+        view="list"
+      /></MemoryRouter>,
+    )
+    expect(screen.queryByTitle('Not liked on Spotify')).not.toBeInTheDocument()
+    expect(screen.queryByTitle('Liked on Spotify')).not.toBeInTheDocument()
   })
 
   it('carries the viewed userId through into entity links', () => {

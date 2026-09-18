@@ -1,5 +1,6 @@
 import Artwork from './Artwork'
 import EntryMenu from './EntryMenu'
+import LikedHeart from './LikedHeart'
 import SourceBadge from './SourceBadge'
 import { Link } from 'react-router-dom'
 
@@ -67,9 +68,9 @@ export default function LibraryRankList({
                       {showSourceBadges && entry.sources && entry.sources.length > 0 && (
                         <SourceBadge sources={entry.sources} size="grid" />
                       )}
-                      {kind === 'tracks' && entry.is_liked && (
+                      {kind === 'tracks' && (
                         <div className="grid-card-like">
-                          <span className="liked-badge" aria-hidden="true" title="Liked on Spotify">♥</span>
+                          <LikedHeart liked={entry.is_liked} />
                         </div>
                       )}
                     </div>
@@ -139,9 +140,7 @@ export default function LibraryRankList({
                   </span>
                 </span>
                 <div className="library-rank-actions">
-                  {kind === 'tracks' && entry.is_liked && (
-                    <span className="liked-badge" aria-hidden="true" title="Liked on Spotify">♥</span>
-                  )}
+                  {kind === 'tracks' && <LikedHeart liked={entry.is_liked} />}
                   <Link
                     className="library-count-bar"
                     style={countWidth(entry.play_count, maximum)}

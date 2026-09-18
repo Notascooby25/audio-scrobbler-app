@@ -22,7 +22,7 @@ describe('LibraryScrobbleList', () => {
     expect(screen.getByText('youtube')).toBeInTheDocument()
   })
 
-  it('shows a heart badge only on liked tracks', () => {
+  it('shows a heart on every track, filled red only when liked', () => {
     render(
       <LibraryScrobbleList
         token="token"
@@ -35,5 +35,6 @@ describe('LibraryScrobbleList', () => {
     )
 
     expect(screen.getAllByTitle('Liked on Spotify')).toHaveLength(1)
+    expect(screen.getAllByTitle('Not liked on Spotify')).toHaveLength(1)
   })
 })

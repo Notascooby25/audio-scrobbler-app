@@ -1,4 +1,5 @@
 import Artwork from './Artwork'
+import LikedHeart from './LikedHeart'
 import SourceBadge from './SourceBadge'
 import { formatScrobbleTime } from '../timeFormatting'
 
@@ -47,7 +48,7 @@ export default function LibraryScrobbleList({
                   </label>
                 )}
                 {showArtwork && <Artwork className="library-row-artwork scrobble-grid-artwork" src={scrobble.artwork_url} label={scrobble.track_name} />}
-                {scrobble.is_liked && <span className="liked-badge scrobble-grid-heart" aria-hidden="true" title="Liked on Spotify">♥</span>}
+                <LikedHeart liked={scrobble.is_liked} className="scrobble-grid-heart" />
                 <span className="library-row-copy">
                   <strong>{scrobble.track_name}</strong>
                   <small>{scrobble.artist_name}</small>

@@ -1775,7 +1775,7 @@ button:disabled {
   order: 1;
 }
 
-.library-scrobble-row .like-button {
+.library-scrobble-row .scrobble-grid-heart {
   order: 2;
   margin-left: auto;
 }
@@ -1811,37 +1811,6 @@ button:disabled {
   margin: 1.25rem 0 0.3rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-}
-
-.like-button {
-  background: transparent;
-  border: 0;
-  color: var(--color-muted);
-  font-size: 1.35rem;
-  min-height: 44px;
-  min-width: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.25rem;
-  cursor: pointer;
-  text-transform: none;
-  border-radius: var(--radius-sm);
-  transition: color 140ms ease;
-  box-shadow: none;
-}
-
-.like-button:hover {
-  color: var(--color-accent);
-}
-
-.like-button-active {
-  color: var(--color-accent);
-}
-
-.like-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
 }
 
 .library-scrobble-row .source-badge {
@@ -1982,7 +1951,25 @@ button:disabled {
   justify-content: center;
   width: 28px;
   height: 28px;
+}
+
+.liked-heart {
+  color: var(--color-muted);
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.liked-heart-active {
+  color: #d73232;
+}
+
+.grid-card-like .liked-heart {
   color: #ffffff;
+}
+
+.grid-card-like .liked-heart-active {
+  color: #d73232;
 }
 
 .grid-card-body {
