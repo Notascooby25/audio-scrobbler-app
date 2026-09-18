@@ -92,21 +92,30 @@ def now_playing(
     track_name = None
     artist_name = None
     album_name = None
+    artwork_url = None
+    track_id = state.track_id
     if state.raw_metadata and isinstance(state.raw_metadata, dict):
         item = state.raw_metadata.get("item", {})
         if item:
             track_name = item.get("name")
+            track_id = item.get("id") or track_id
             artists = item.get("artists", [])
             if artists:
                 artist_name = artists[0].get("name")
             album = item.get("album", {})
-            album_name = album.get("name")
+            if album:
+                album_name = album.get("name")
+                images = album.get("images", [])
+                if images and isinstance(images, list) and isinstance(images[0], dict):
+                    artwork_url = images[0].get("url")
             
     return NowPlayingResponse(
         is_playing=True,
+        track_id=track_id,
         track_name=track_name,
         artist_name=artist_name,
         album_name=album_name,
+        artwork_url=artwork_url,
         progress_ms=state.max_progress_ms,
         duration_ms=state.duration_ms,
         raw_metadata=state.raw_metadata

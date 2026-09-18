@@ -1221,9 +1221,213 @@ button:disabled {
   justify-self: start;
 }
 
-.last-scrobble {
+.profile-button-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.profile-connect-button {
+  background: var(--color-accent);
+  color: #ffffff;
+  border: 0.5px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+
+.profile-connect-button:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+.profile-settings-button {
+  background: transparent;
+  color: var(--color-ink);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  min-height: 2.25rem;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.profile-settings-button:hover {
+  background: var(--color-canvas);
+  border-color: var(--color-ink);
+  color: var(--color-ink);
+}
+
+.profile-track-card {
+  background: var(--color-surface);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: none;
+}
+
+.profile-track-card.now-playing {
+  border-color: rgba(29, 185, 84, 0.4);
+  background: var(--color-spotify-bg);
+}
+
+.profile-track-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.profile-live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-spotify);
+}
+
+.profile-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-spotify);
+  animation: live-pulse-animation 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes live-pulse-animation {
+  0% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.profile-card-kicker {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+}
+
+.profile-card-time {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.profile-track-card-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile-track-artwork-wrap {
+  width: 72px;
+  height: 72px;
+  min-width: 72px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-canvas);
+  border: 0.5px solid var(--color-border);
+}
+
+.profile-track-artwork {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.profile-track-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.profile-track-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-track-artist {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-track-album {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-muted);
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   border-top: 0.5px solid var(--color-border);
   padding-top: 1rem;
+  margin-top: 0.5rem;
+}
+
+.profile-actions a {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 0.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 120ms ease;
+}
+
+.profile-actions a:hover {
+  background: var(--color-canvas);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 /* ─── Charts Panel ──────────────────────────────────────────────────────────── */

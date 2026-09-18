@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom'
 import { Link } from 'react-router-dom'
 import { fetchSpotifyStatus, fetchUserProfile, fetchNowPlaying, followUser, redirectToAuthorization, requestSpotifyAuthorization, unfollowUser } from '../api'
 import FollowButton from '../components/FollowButton'
+import Artwork from '../components/Artwork'
+import { formatScrobbleTime } from '../timeFormatting'
 
 function readSavedSession() {
   try {
@@ -125,40 +127,95 @@ export default function ProfilePage() {
 
         {token && targetUserId && profile && (
           <div className="profile-card">
-            <h3 className="profile-username">@{profile.username}</h3>
-            <p className="profile-display-name">{profile.display_name}</p>
-            
-            {nowPlaying && nowPlaying.is_playing && (
-              <div className="now-playing-banner" style={{ background: 'var(--green-900)', color: '#fff', padding: '1rem', borderRadius: '8px', margin: '1rem 0' }}>
-                <p style={{ margin: 0, fontWeight: 'bold', fontSize: '0.9rem', textTransform: 'uppercase', color: 'var(--green-300)' }}>Now Playing</p>
-                <p style={{ margin: '0.25rem 0 0 0', fontSize: '1.1rem' }}>
-                  <strong>{nowPlaying.track_name}</strong> by {nowPlaying.artist_name}
-                </p>
-              </div>
-            )}
-            
+            <div className="profile-header">
+              <h3 className="profile-username">@{profile.username}</h3>
+              <p className="profile-display-name">{profile.display_name}</p>
+            </div>
+
             <dl className="profile-stats">
               <div><dt>Followers</dt><dd>{profile.follower_count}</dd></div>
               <div><dt>Following</dt><dd>{profile.following_count}</dd></div>
             </dl>
+
             {!profile.is_self && (
               <FollowButton isFollowing={profile.is_following} onToggle={toggleFollow} disabled={status === 'loading'} />
             )}
+
             {profile.is_self && (
-              <>
-                <button type="button" onClick={() => connectSpotify(true)} disabled={Boolean(spotifyRetryAfter)}>Connect Spotify</button>
+              <div className="profile-button-row">
+                <button
+                  type="button"
+                  className="profile-connect-button"
+                  onClick={() => connectSpotify(true)}
+                  disabled={Boolean(spotifyRetryAfter)}
+                >
+                  Connect Spotify
+                </button>
+                <Link className="profile-settings-button" to="/settings">
+                  Settings
+                </Link>
                 {spotifyRetryAfter && (
-                  <p className="notice">Spotify is rate-limiting this app. Try again after {new Date(spotifyRetryAfter).toLocaleTimeString()}.</p>
+                  <p className="notice" style={{ width: '100%', margin: '0.5rem 0 0' }}>
+                    Spotify is rate-limiting this app. Try again after {new Date(spotifyRetryAfter).toLocaleTimeString()}.
+                  </p>
                 )}
-                <Link className="settings-link" to="/settings">Settings</Link>
-              </>
-            )}
-            {profile.can_view_details && profile.last_scrobble && (
-              <div className="last-scrobble">
-                <p className="section-kicker">Last scrobbled</p>
-                <p><strong>{profile.last_scrobble.track_name}</strong> by {profile.last_scrobble.artist_name}</p>
               </div>
             )}
+
+            {nowPlaying && nowPlaying.is_playing && (
+              <div className="profile-track-card now-playing">
+                <div className="profile-track-card-header">
+                  <span className="profile-live-indicator">
+                    <span className="profile-live-dot" aria-hidden="true" />
+                    Now Playing
+                  </span>
+                </div>
+                <div className="profile-track-card-content">
+                  <div className="profile-track-artwork-wrap">
+                    <Artwork
+                      className="profile-track-artwork"
+                      src={nowPlaying.artwork_url}
+                      label={nowPlaying.track_name}
+                    />
+                  </div>
+                  <div className="profile-track-details">
+                    <h4 className="profile-track-title">{nowPlaying.track_name}</h4>
+                    <p className="profile-track-artist">{nowPlaying.artist_name}</p>
+                    {nowPlaying.album_name && (
+                      <p className="profile-track-album">{nowPlaying.album_name}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {profile.can_view_details && profile.last_scrobble && (
+              <div className="profile-track-card last-scrobbled">
+                <div className="profile-track-card-header">
+                  <span className="profile-card-kicker">Last Scrobbled</span>
+                  <time className="profile-card-time" dateTime={profile.last_scrobble.played_at}>
+                    {formatScrobbleTime(profile.last_scrobble.played_at)}
+                  </time>
+                </div>
+                <div className="profile-track-card-content">
+                  <div className="profile-track-artwork-wrap">
+                    <Artwork
+                      className="profile-track-artwork"
+                      src={profile.last_scrobble.artwork_url}
+                      label={profile.last_scrobble.track_name}
+                    />
+                  </div>
+                  <div className="profile-track-details">
+                    <h4 className="profile-track-title">{profile.last_scrobble.track_name}</h4>
+                    <p className="profile-track-artist">{profile.last_scrobble.artist_name}</p>
+                    {profile.last_scrobble.album_name && (
+                      <p className="profile-track-album">{profile.last_scrobble.album_name}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {profile.can_view_details && (
               <nav className="profile-actions" aria-label={`${profile.username}'s listening history`}>
                 <Link to={profile.is_self ? '/library' : `/library?userId=${profile.id}`}>View Library</Link>
@@ -167,9 +224,10 @@ export default function ProfilePage() {
                 <Link to={profile.is_self ? '/reports?range=last.year' : `/reports?userId=${profile.id}&range=last.year`}>View Last Year</Link>
               </nav>
             )}
-          {!profile.can_view_details && <p className="notice">Follow this user to see their last scrobbled track.</p>}
-        </div>
-      )}
+
+            {!profile.can_view_details && <p className="notice">Follow this user to see their last scrobbled track.</p>}
+          </div>
+        )}
     </section>
   )
 }

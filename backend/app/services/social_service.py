@@ -70,6 +70,8 @@ def _attach_last_scrobbles(db: Session, users: list[User]) -> list[dict]:
                 album_name=event.album_name,
                 source=event.source,
                 played_at=event.played_at,
+                track_id=event.track_id,
+                artwork_url=event.artwork_url,
             )
         results.append({
             "id": user.id,
@@ -131,6 +133,8 @@ def get_user_profile(db: Session, viewer_id: int, target_user: User) -> UserProf
                 album_name=event.album_name,
                 source=event.source,
                 played_at=event.played_at,
+                track_id=event.track_id,
+                artwork_url=event.artwork_url,
             )
 
     return UserProfileResponse(

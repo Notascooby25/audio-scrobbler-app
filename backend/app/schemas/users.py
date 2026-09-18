@@ -18,6 +18,8 @@ class LastScrobble(BaseModel):
     album_name: str | None
     source: str
     played_at: datetime
+    track_id: str | None = None
+    artwork_url: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -55,9 +57,11 @@ class UserProfileResponse(BaseModel):
 
 class NowPlayingResponse(BaseModel):
     is_playing: bool
+    track_id: str | None = None
     track_name: str | None = None
     artist_name: str | None = None
     album_name: str | None = None
+    artwork_url: str | None = None
     progress_ms: int | None = None
     duration_ms: int | None = None
     raw_metadata: dict | None = None
