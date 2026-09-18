@@ -101,7 +101,7 @@ def _resolve_viewable_user_id(db: Session, current_user: User, user_id: int | No
 
 
 def _resolve_optional_range(range_key: str | None, start_date: str | None, end_date: str | None) -> tuple[object | None, object | None]:
-    if range_key is None:
+    if range_key is None or range_key == "all.time":
         return None, None
     if range_key not in DATE_RANGE_PRESETS:
         raise HTTPException(status_code=400, detail=f"Unsupported range: {range_key!r}")

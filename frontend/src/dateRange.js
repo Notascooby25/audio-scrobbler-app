@@ -1,9 +1,10 @@
-export const DATE_RANGE_PRESETS = ['last.week', 'last.month', 'last.year', 'custom']
+export const DATE_RANGE_PRESETS = ['last.week', 'last.month', 'last.year', 'all.time', 'custom']
 
 export const DATE_RANGE_LABELS = {
   'last.week': 'Last week',
   'last.month': 'Last month',
   'last.year': 'Last year',
+  'all.time': 'All time',
   custom: 'Custom range',
 }
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 
-DATE_RANGES = {"last.week", "last.month", "last.year", "custom"}
+DATE_RANGES = {"last.week", "last.month", "last.year", "all.time", "custom"}
 VIEWS = {"list", "grid"}
 PAGE_SIZES = {10, 25, 50, 100}
 

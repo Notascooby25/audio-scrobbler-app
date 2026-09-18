@@ -246,14 +246,19 @@ def get_report_summary(
     current = db.execute(build_report_period_count_query(user_id, period_start, period_end)).one()
     current_count = int(current.scrobble_count)
 
-    previous_count = 0
-    comparison = 0.0
-    if compare_to_previous:
-        previous = db.execute(build_report_period_count_query(user_id, previous_start, previous_end)).one()
-        previous_count = int(previous.scrobble_count)
-        comparison = ((current_count - previous_count) / previous_count * 100) if previous_count else 0.0
-
-    days = max((period_end - period_start).days, 1)
+    if range_key == "all.time":
+        previous_count = 0
+        comparison = 0.0
+        earliest = db.query(func.min(ListeningEvent.played_at)).filter(ListeningEvent.user_id == user_id).scalar()
+        days = max((period_end - earliest).days, 1) if earliest else 1
+    else:
+        previous_count = 0
+        comparison = 0.0
+        if compare_to_previous:
+            previous = db.execute(build_report_period_count_query(user_id, previous_start, previous_end)).one()
+            previous_count = int(previous.scrobble_count)
+            comparison = ((current_count - previous_count) / previous_count * 100) if previous_count else 0.0
+        days = max((period_end - period_start).days, 1)
     return ReportSummaryResponse(
         user_id=user_id,
         range=range_key,

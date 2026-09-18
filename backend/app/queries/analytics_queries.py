@@ -150,7 +150,7 @@ CHART_RANGE_TO_DAYS = {"7day": 7, "1month": 30, "12month": 365}
 CHART_ENTITIES = ("artists", "tracks", "albums")
 CHART_RANGES = (*CHART_RANGE_TO_DAYS.keys(), "overall")
 
-DATE_RANGE_PRESETS = ("last.week", "last.month", "last.year", "custom")
+DATE_RANGE_PRESETS = ("last.week", "last.month", "last.year", "all.time", "custom")
 
 
 def build_top_entities_query(
@@ -223,6 +223,8 @@ def resolve_date_range(
         period_start, period_end, granularity = now - timedelta(days=30), now, "day"
     elif range_key == "last.year":
         period_start, period_end, granularity = now - timedelta(days=365), now, "month"
+    elif range_key == "all.time":
+        period_start, period_end, granularity = datetime(1970, 1, 1), now, "month"
     elif range_key == "custom":
         if not start_date or not end_date:
             raise ValueError("start_date and end_date are required for a custom range")

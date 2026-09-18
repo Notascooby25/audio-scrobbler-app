@@ -54,6 +54,7 @@ describe('dateRange utilities', () => {
 
   it('validates date ranges, rejecting invalid or 1912 dates', () => {
     expect(isValidDateRange({ range: 'last.week' })).toBe(true)
+    expect(isValidDateRange({ range: 'all.time' })).toBe(true)
     expect(isValidDateRange({ range: 'custom', start_date: '2025-01-01', end_date: '2025-06-01' })).toBe(true)
     expect(isValidDateRange({ range: 'custom', start_date: '2025-06-01', end_date: '2025-01-01' })).toBe(false)
     expect(isValidDateRange({ range: 'custom', start_date: '1912-01-01', end_date: '2025-01-01' })).toBe(false)

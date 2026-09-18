@@ -194,7 +194,7 @@ export default function ProfilePage() {
                 <div className="profile-track-card-header">
                   <span className="profile-card-kicker">Last Scrobbled</span>
                   <time className="profile-card-time" dateTime={profile.last_scrobble.played_at}>
-                    {formatScrobbleTime(profile.last_scrobble.played_at)}
+                    {formatScrobbleTime(profile.last_scrobble.played_at, Date.now(), 'absolute')}
                   </time>
                 </div>
                 <div className="profile-track-card-content">
@@ -222,6 +222,7 @@ export default function ProfilePage() {
                 <Link to={profile.is_self ? '/reports?range=last.week' : `/reports?userId=${profile.id}&range=last.week`}>View Last 7 Days</Link>
                 <Link to={profile.is_self ? '/reports?range=last.month' : `/reports?userId=${profile.id}&range=last.month`}>View Last Month</Link>
                 <Link to={profile.is_self ? '/reports?range=last.year' : `/reports?userId=${profile.id}&range=last.year`}>View Last Year</Link>
+                <Link to={profile.is_self ? '/reports?range=all.time' : `/reports?userId=${profile.id}&range=all.time`}>View All Time</Link>
               </nav>
             )}
 

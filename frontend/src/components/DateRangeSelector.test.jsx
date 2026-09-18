@@ -81,7 +81,7 @@ describe('DateRangeSelector', () => {
     render(<DateRangeSelector value={value} onChange={onChange} />)
 
     const tabs = screen.getAllByRole('tab')
-    expect(tabs.length).toBe(4)
+    expect(tabs.length).toBe(5)
 
     const activeTabs = tabs.filter((tab) => tab.classList.contains('active'))
     expect(activeTabs).toHaveLength(1)
@@ -89,7 +89,7 @@ describe('DateRangeSelector', () => {
     expect(activeTabs[0]).toHaveAttribute('aria-selected', 'true')
 
     const inactiveTabs = tabs.filter((tab) => !tab.classList.contains('active'))
-    expect(inactiveTabs).toHaveLength(3)
+    expect(inactiveTabs).toHaveLength(4)
     inactiveTabs.forEach((tab) => {
       expect(tab).toHaveAttribute('aria-selected', 'false')
     })

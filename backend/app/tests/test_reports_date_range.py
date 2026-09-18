@@ -77,6 +77,14 @@ def test_resolve_date_range_last_year_uses_month_granularity():
     assert granularity == "month"
 
 
+def test_resolve_date_range_all_time():
+    now = datetime(2026, 6, 15)
+    start, end, _previous_start, _previous_end, granularity = resolve_date_range("all.time", now=now)
+    assert start == datetime(1970, 1, 1)
+    assert end == now
+    assert granularity == "month"
+
+
 def test_resolve_date_range_custom_short_span_uses_day_granularity():
     start, end, previous_start, previous_end, granularity = resolve_date_range("custom", "2026-01-01", "2026-01-10")
     assert start == datetime(2026, 1, 1)
