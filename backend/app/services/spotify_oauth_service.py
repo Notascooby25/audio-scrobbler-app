@@ -70,7 +70,7 @@ def validate_oauth_state(state: str) -> None:
         raise ValueError("Invalid OAuth state")
 
 
-def build_authorization_url(state: str) -> str:
+def build_authorization_url(state: str, force_dialog: bool = False) -> str:
     params = {
         "client_id": settings.spotify_client_id,
         "response_type": "code",
@@ -78,6 +78,8 @@ def build_authorization_url(state: str) -> str:
         "scope": settings.spotify_scopes,
         "state": state,
     }
+    if force_dialog:
+        params["show_dialog"] = "true"
     return f"{SPOTIFY_AUTHORIZE_URL}?{urlencode(params)}"
 
 

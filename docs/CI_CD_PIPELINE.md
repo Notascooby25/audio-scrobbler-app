@@ -1,0 +1,192 @@
+# CI/CD Pipeline — How a Merge Becomes a Deploy
+
+What actually happens between "merge to `main`" and "the NUC is running the
+new code," and the specific failure mode that silently broke this for the
+real-time scrobbling change on 2026-09-18 — so it doesn't happen again.
+
+> Day-to-day CI behavior is also summarized in [README.md](../README.md#ci)
+> and [README.md](../README.md#production-images). Operational commands
+> (rollback, restore, monitoring) live in [RUNBOOK.md](RUNBOOK.md). This
+> document is the failure-mode reference: what breaks the pipeline silently,
+> and how to check it actually ran instead of assuming it did.
+
+---
+
+## The full path, step by step
+
+```
+git push origin main
+        │
+        ▼
+GitHub Actions workflow "CI" (.github/workflows/ci.yml) triggers
+        │
+        ├── backend-worker   (pytest, incl. a real `alembic upgrade head`)
+        ├── frontend         (npm test, npm run build)
+        ├── compose          (validates docker-compose.yml / .prod.yml / monitoring configs)
+        ├── container-smoke            (builds full dev stack, hits health endpoints)
+        └── production-monitoring-smoke (builds prod images, runs docker-compose.prod.yml
+                                          for real, checks Prometheus/Alertmanager targets)
+        │
+        │   publish-images job needs ALL FIVE of the above to succeed
+        ▼
+publish-images (only runs on push to main, all 5 deps green)
+        │  builds backend/worker/frontend images, pushes to GHCR:
+        │    ghcr.io/<repo>-backend:latest / :sha-<short>
+        │    ghcr.io/<repo>-worker:latest  / :sha-<short>
+        │    ghcr.io/<repo>-frontend:latest / :sha-<short>
+        ▼
+Watchtower on the NUC polls GHCR every WATCHTOWER_POLL_INTERVAL (300s)
+        │  sees a new digest behind the `:latest` tag it's tracking
+        ▼
+Watchtower pulls the new images and recreates backend/worker/frontend containers
+        │
+        ▼
+backend container's entrypoint runs `alembic upgrade head` before starting Uvicorn
+        │  this is the ONLY place migrations run in production —
+        │  there is no separate "run migrations" deploy step
+        ▼
+New code, new schema, live.
+```
+
+**The load-bearing fact:** `publish-images` has
+`needs: [backend-worker, frontend, compose, container-smoke, production-monitoring-smoke]`
+([ci.yml](../.github/workflows/ci.yml#L294-L300)). If *any* of those five jobs
+fails, no image is built and nothing is pushed to GHCR. Watchtower then has
+nothing new to find — it keeps running the old images, forever, with no error
+and no alert. A red CI run and a silent no-op deploy look identical from the
+NUC's side.
+
+There is no separate GitHub-initiated deploy step. `.github/workflows/deploy.yml`
+exists but is break-glass only and has never completed a run (no secrets are
+configured for the `production` environment, and GitHub-hosted runners can't
+reach the NUC's LAN address). **Merging to `main` and having CI go green is
+the entire deploy mechanism.**
+
+---
+
+## What actually went wrong on 2026-09-18
+
+The real-time scrobbling commit (`f230067`) added a new Alembic migration,
+`backend/migrations/versions/0014_add_realtime_scrobbling.py`, with:
+
+```python
+revision = '0014'
+down_revision = '0013'
+```
+
+But no migration in this repo has a revision id of literally `"0013"`. Every
+file in `backend/migrations/versions/` uses its full filename stem as the
+revision id — migration `0013` is actually:
+
+```python
+# 0013_add_checkpoint_last_polled_at.py
+revision = "0013_add_checkpoint_last_polled_at"
+down_revision = "0012_add_user_scrobble_settings"
+```
+
+So `down_revision = '0013'` in the new file pointed at a revision that
+doesn't exist. Alembic can't build the chain and fails with:
+
+```
+KeyError: '0013'
+```
+
+This broke `alembic upgrade head` everywhere it runs, which turned out to be
+three separate places in CI:
+
+1. **`backend-worker`** — `backend/app/tests/test_migrations.py` has a test,
+   `test_alembic_upgrade_head_creates_canonical_import_schema`, that runs a
+   real `alembic upgrade head` against a throwaway SQLite database. It caught
+   this immediately, in about 5 seconds, before any container was even built.
+2. **`container-smoke`** — the dev stack's backend container failed its
+   startup migration and exited, so the "wait for health" step timed out.
+3. **`production-monitoring-smoke`** — same failure against the production
+   Compose stack.
+
+Because all three (plus, transitively, `publish-images`'s dependency on them)
+are required, **no image was ever published to GHCR**. Watchtower had nothing
+new to pull. The NUC kept running the pre-`f230067` images indefinitely — no
+restart, no error, no alert — while the commit sat merged on `main` looking
+complete.
+
+The fix is a one-line correction:
+
+```python
+down_revision = "0013_add_checkpoint_last_polled_at"
+```
+
+---
+
+## Rule: how to add a new Alembic migration in this repo
+
+This repo does **not** use Alembic's default autogenerated hash ids
+(`5f9e2b1b3a3c`-style — one older migration, `add_page_sizes.py`, does, and
+is the one exception). Every other migration's `revision` is its filename
+stem, written by hand. That convention only works if `down_revision` is
+copied byte-for-byte from the current head's `revision` line — never
+guessed, abbreviated, or inferred from the filename number.
+
+Before writing a new migration:
+
+```bash
+cd backend
+alembic heads
+```
+
+This prints the actual current head revision id. Use that exact string as
+the new migration's `down_revision`. Do not shorten `"0013_add_checkpoint_last_polled_at"`
+to `"0013"` — Alembic does not resolve numeric prefixes, and nothing else
+uses them as ids.
+
+After writing it, before pushing:
+
+```bash
+cd backend
+alembic upgrade head    # against a real or throwaway Postgres/SQLite DB
+```
+
+or just run the existing test, which does this for you against SQLite:
+
+```bash
+python -m pytest backend/app/tests/test_migrations.py -q
+```
+
+A broken chain fails in under a second. There is no reason this should ever
+reach `git push`.
+
+---
+
+## How to check a deploy actually happened
+
+Don't infer success from "the push went through" or from an assistant's
+summary of what it did — check the pipeline itself:
+
+```bash
+# 1. Did CI pass for the commit you expect?
+gh run list --limit 5
+gh run view <run-id>              # per-job breakdown if it failed
+
+# 2. Did publish-images actually run and push?
+gh run view <run-id> --job <publish-images-job-id> --log | grep -i "digest\|pushed"
+```
+
+Then, on the NUC:
+
+```bash
+cd /srv/audio-scrobbler-app
+
+# What image digest is actually running?
+docker ps --format '{{.Names}}\t{{.Image}}'
+docker inspect --format '{{.Image}}' audio-scrobbler-app-backend-1
+
+# Is Watchtower seeing anything new?
+docker logs --tail 20 audio-scrobbler-app-watchtower-1
+
+# Did migrations actually apply?
+docker compose -f docker-compose.prod.yml --env-file .env.production exec -T backend \
+  alembic current
+```
+
+If `gh run list` shows red for the commit you care about, stop — nothing
+downstream of that (Watchtower, migrations, the feature itself) happened,
+regardless of what any earlier step reported.

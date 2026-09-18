@@ -36,7 +36,7 @@ def spotify_status() -> SpotifyStatusResponse:
 
 
 @router.get("/spotify/authorize", response_model=SpotifyAuthorizeResponse)
-def spotify_authorize() -> SpotifyAuthorizeResponse:
+def spotify_authorize(force_dialog: bool = Query(default=False)) -> SpotifyAuthorizeResponse:
     if not settings.spotify_client_id:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Spotify OAuth is not configured")
     blocked_until = spotify_rate_limit_blocked_until()
@@ -47,7 +47,7 @@ def spotify_authorize() -> SpotifyAuthorizeResponse:
             headers={"Retry-After": str(int((blocked_until - datetime.now(timezone.utc)).total_seconds()))},
         )
     state = create_oauth_state()
-    return SpotifyAuthorizeResponse(authorization_url=build_authorization_url(state), state=state)
+    return SpotifyAuthorizeResponse(authorization_url=build_authorization_url(state, force_dialog=force_dialog), state=state)
 
 
 @router.get("/spotify/callback", response_model=None)

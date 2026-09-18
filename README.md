@@ -55,6 +55,8 @@ Backend and worker `/metrics` endpoints expose bounded Prometheus-compatible ope
 GitHub Actions runs backend and worker tests, clean PostgreSQL migrations, frontend tests and builds, Docker Compose validation, and a full container smoke test on pushes to `main` and pull requests.
 Successful pushes to `main` publish backend, worker, and frontend images to GHCR with commit-SHA tags and a `latest` tag.
 
+> For the full merge-to-deploy pipeline, the exact job dependency graph, and a real incident where a broken Alembic migration chain silently blocked publishing with no error visible outside CI, see [docs/CI_CD_PIPELINE.md](docs/CI_CD_PIPELINE.md).
+
 ## Production Images
 
 > Operational procedures — restore-from-backup, rollback, backup health, monitoring — live in [docs/RUNBOOK.md](docs/RUNBOOK.md). The PDF runbooks under `docs/` and `guides/` are outdated and superseded by it.

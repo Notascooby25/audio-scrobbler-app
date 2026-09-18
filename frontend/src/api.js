@@ -35,8 +35,9 @@ export async function requestDevelopmentToken(userId) {
   return parseResponse(response)
 }
 
-export async function requestSpotifyAuthorization() {
-  const response = await fetch(`${API_BASE_URL}/auth/spotify/authorize`)
+export async function requestSpotifyAuthorization(forceDialog = false) {
+  const params = forceDialog ? '?force_dialog=true' : ''
+  const response = await fetch(`${API_BASE_URL}/auth/spotify/authorize${params}`)
   return parseResponse(response)
 }
 

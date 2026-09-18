@@ -74,10 +74,10 @@ export default function ProfilePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, targetUserId])
 
-  const connectSpotify = async () => {
+  const connectSpotify = async (forceDialog = false) => {
     setConnectError('')
     try {
-      const { authorization_url: authorizationUrl } = await requestSpotifyAuthorization()
+      const { authorization_url: authorizationUrl } = await requestSpotifyAuthorization(forceDialog)
       redirectToAuthorization(authorizationUrl)
     } catch (requestError) {
       setConnectError(requestError.message)
@@ -146,7 +146,7 @@ export default function ProfilePage() {
             )}
             {profile.is_self && (
               <>
-                <button type="button" onClick={connectSpotify} disabled={Boolean(spotifyRetryAfter)}>Connect Spotify</button>
+                <button type="button" onClick={() => connectSpotify(true)} disabled={Boolean(spotifyRetryAfter)}>Connect Spotify</button>
                 {spotifyRetryAfter && (
                   <p className="notice">Spotify is rate-limiting this app. Try again after {new Date(spotifyRetryAfter).toLocaleTimeString()}.</p>
                 )}
