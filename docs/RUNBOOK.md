@@ -54,6 +54,13 @@ rclone copy gdrive-crypt:AudioScrobblerBackups/scrobbler-<timestamp>.dump /srv/a
 
 (Substitute whatever `GDRIVE_REMOTE_NAME` is set to in `.env.production`.)
 
+> **Dumps from before 2026-09-20 are on the plaintext `gdrive` remote, not
+> `gdrive-crypt`.** `backup_database.sh` read its settings before sourcing the
+> env file, so `GDRIVE_REMOTE_NAME=gdrive-crypt` was ignored and every upload
+> went to the script's built-in default. If `gdrive-crypt:AudioScrobblerBackups/`
+> is empty or missing, that is why — look in `gdrive:AudioScrobblerBackups/`
+> instead. Those older dumps are unencrypted at rest in Google Drive.
+
 ### 2. Verify it before you rely on it
 
 This restores into a throwaway database and checks row counts against live —
@@ -112,17 +119,51 @@ curl -s http://localhost:8010/readyz
 
 ---
 
-## Dormant data
+## Liked tracks — live, not dormant
 
-The "Liked Tracks" feature (sync, heart buttons, Liked Tracks library tab, Loved tracks stat) was removed from the application on 2026-09-16, but the underlying database table and columns were deliberately left in place (no migration was run to drop them) so the data isn't lost if the feature is revived later.
+> This section previously said liked-tracks was removed on 2026-09-16 and that
+> its table and columns were unused and safe to drop. **That is no longer
+> true.** The feature was revived alongside real-time scrobbling (commit
+> `3cbfc0a`, "add scrobble settings, revive liked-songs sync"). Do not drop
+> any of it.
 
-The following remain unused in the database:
+The chain, end to end:
 
-- `liked_tracks` table (created by migration `0007_add_artwork_and_liked_tracks.py`)
-- `user_preferences.liked_tracks_view` column (created by migration `0009_add_user_preferences.py`)
-- `liked_tracks.artist_artwork_url` column (created by migration `0008_add_artist_artwork.py`)
+| Step | Where |
+|---|---|
+| "Sync Liked Songs" button — pressed once per user | `frontend/src/pages/SettingsPage.jsx` |
+| `POST /spotify/sync-liked` | `backend/app/api/spotify_library.py` |
+| Sets `liked_tracks_sync_enabled`, `liked_tracks_backfill_offset = 0` | `backend/app/services/scrobble_settings_service.py` |
+| Worker job, every `WORKER_LIKED_TRACKS_INTERVAL_MINUTES` (30) | `worker/app.py` |
+| Walks the library one 40-track page per tick, then daily | `worker/spotify_ingestion.py` |
+| Hearts rendered from `is_liked` | `frontend/src/components/LikedHeart.jsx` |
 
-If you need to clean these up in the future, these migrations added them and can serve as a reference for the drop operations.
+Actively written and read: the `liked_tracks` table, and the
+`liked_tracks_*` columns on `user_scrobble_settings`.
+
+Genuinely unused: `user_preferences.liked_tracks_view` (migration
+`0009_add_user_preferences.py`) — a view-mode preference for the removed
+Liked Tracks library tab, which was not revived.
+
+### Reading sync state
+
+```bash
+docker exec audio-scrobbler-app-db-1 psql -U scrobbler -d scrobbler -P pager=off \
+  -c 'select user_id, liked_tracks_sync_enabled, liked_tracks_backfill_offset,
+             liked_tracks_watermark, liked_tracks_last_synced_at
+      from user_scrobble_settings order by user_id;'
+```
+
+- `backfill_offset` non-null → the initial walk is still running; it should advance by 40 each tick.
+- `backfill_offset` NULL + a recent `last_synced_at` → healthy steady state.
+
+**Do not read health from the worker metrics alone.** In steady state
+`sync_liked_tracks_for_user` returns early if `last_synced_at` is under 24h
+old, so `audio_scrobbler_worker_liked_tracks_sync_events` is 0 on nearly every
+tick. `users: 1, events: 0, failures: 0` is what *success* looks like here,
+not a stall. The worker also never calls `logging.basicConfig()`, so its
+`logger.info` lines never reach the logs — absence of liked-tracks log lines
+means nothing either way.
 
 ---
 
