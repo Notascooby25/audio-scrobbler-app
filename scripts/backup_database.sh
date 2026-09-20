@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-backup_dir=${BACKUP_DIR:-backups}
-metrics_dir=${BACKUP_METRICS_DIR:-monitoring}
-retention_days=${BACKUP_RETENTION_DAYS:-3}
-gdrive_retention_days=${GDRIVE_RETENTION_DAYS:-14}
-gdrive_remote=${GDRIVE_REMOTE_NAME:-gdrive}
+# Values the caller supplied in the environment (systemd EnvironmentFile, or
+# an inline VAR=... prefix), captured before the env file is sourced. The
+# `set -a; . "$env_file"` below overwrites exported variables outright, so a
+# host-specific override would otherwise silently lose to the shared env file
+# — see BACKUP_DIR in scripts/systemd/audio-scrobbler-backup.env.example,
+# which is documented as exactly that kind of per-host override.
+env_backup_dir=${BACKUP_DIR:-}
+env_metrics_dir=${BACKUP_METRICS_DIR:-}
+env_retention_days=${BACKUP_RETENTION_DAYS:-}
+env_gdrive_retention_days=${GDRIVE_RETENTION_DAYS:-}
+env_gdrive_remote=${GDRIVE_REMOTE_NAME:-}
 
 if [[ -n "${ENV_FILE:-}" ]]; then
   env_file="$ENV_FILE"
@@ -36,6 +42,17 @@ fi
 
 POSTGRES_USER=${POSTGRES_USER:-scrobbler}
 POSTGRES_DB=${POSTGRES_DB:-scrobbler}
+
+# Resolved only now, after the env file has been sourced. Reading these before
+# that point made every backup setting in .env.production a no-op: dumps went
+# to the plaintext `gdrive` remote while GDRIVE_REMOTE_NAME=gdrive-crypt sat
+# there being ignored, and offsite pruning used 14 days rather than the
+# configured 30. Precedence is caller environment > env file > default.
+backup_dir=${env_backup_dir:-${BACKUP_DIR:-backups}}
+metrics_dir=${env_metrics_dir:-${BACKUP_METRICS_DIR:-monitoring}}
+retention_days=${env_retention_days:-${BACKUP_RETENTION_DAYS:-3}}
+gdrive_retention_days=${env_gdrive_retention_days:-${GDRIVE_RETENTION_DAYS:-14}}
+gdrive_remote=${env_gdrive_remote:-${GDRIVE_REMOTE_NAME:-gdrive}}
 
 mkdir -p "$backup_dir"
 timestamp=$(date -u +%Y%m%dT%H%M%SZ)
