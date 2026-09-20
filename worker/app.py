@@ -24,6 +24,17 @@ from spotify_ingestion import (
 )
 
 app = FastAPI(title="Audio Scrobbler Worker")
+
+# Without this, nothing configures the root logger: uvicorn sets up its own
+# "uvicorn.*" loggers and leaves the root at WARNING, so every logger.info()
+# below was silently dropped. The access log kept appearing, which made the
+# worker look far more talkative than it was — sync progress, per-user
+# results and rate-limit skips all went nowhere, leaving the metrics endpoint
+# as the only signal and a stalled sync indistinguishable from an idle one.
+logging.basicConfig(
+    level=os.getenv("WORKER_LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
 logger = logging.getLogger("audio-scrobbler-worker")
 
 scheduler = BackgroundScheduler()
