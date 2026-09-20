@@ -59,7 +59,7 @@ Successful pushes to `main` publish backend, worker, and frontend images to GHCR
 
 ## Production Images
 
-> Operational procedures — restore-from-backup, rollback, backup health, monitoring — live in [docs/RUNBOOK.md](docs/RUNBOOK.md). The PDF runbooks under `docs/` and `guides/` are outdated and superseded by it.
+> Operational procedures — restore-from-backup, rollback, backup health, monitoring — live in [docs/RUNBOOK.md](docs/RUNBOOK.md). Rebuilding after total host loss, plus secret rotation, Spotify quota blocks, disk exhaustion and migration failures, are in [docs/DISASTER_RECOVERY.md](docs/DISASTER_RECOVERY.md). The PDF runbooks under `docs/` and `guides/` are outdated and superseded by both.
 
 Copy `.env.example` to a deployment-only environment file and replace every placeholder secret. Keep `.env.production` only on the deployment host.
 

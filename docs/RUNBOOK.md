@@ -2,6 +2,11 @@
 
 The authoritative operational reference for this app.
 
+This file covers a system that is running but misbehaving. If the host itself
+is gone, or you are rebuilding from nothing, start at
+[DISASTER_RECOVERY.md](DISASTER_RECOVERY.md) instead — it also covers secret
+rotation, Spotify quota blocks, disk exhaustion and migration failures.
+
 > **Supersedes the PDFs.** `docs/Deployment_Runbook_—_Family_Music_Scrobbler_PWA.pdf`
 > and `guides/Operations_&_Monitoring_Guide_—_Family_Music_Scrobbler_PWA.pdf`
 > describe a system that does not exist: a `scripts/verify_backup.sh` that was
