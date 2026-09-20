@@ -6,8 +6,10 @@ if [[ $# -ne 1 ]]; then
   exit 2
 fi
 
-backup_dir=${BACKUP_DIR:-backups}
-metrics_dir=${BACKUP_METRICS_DIR:-monitoring}
+# Captured before the env file is sourced, for the same reason as in
+# backup_database.sh: `set -a; . "$env_file"` overwrites exported variables,
+# so a caller-supplied override must be read first to win. Resolved below.
+env_metrics_dir=${BACKUP_METRICS_DIR:-}
 
 if [[ -n "${ENV_FILE:-}" ]]; then
   env_file="$ENV_FILE"
@@ -41,6 +43,7 @@ verify_db="scrobbler_restore_verify_$(date -u +%Y%m%d%H%M%S)"
 POSTGRES_USER=${POSTGRES_USER:-scrobbler}
 POSTGRES_DB=${POSTGRES_DB:-scrobbler}
 min_restored_fraction=${BACKUP_MIN_RESTORED_FRACTION:-0.5}
+metrics_dir=${env_metrics_dir:-${BACKUP_METRICS_DIR:-monitoring}}
 
 cleanup() {
   docker compose "${compose_args[@]}" exec -T db \
