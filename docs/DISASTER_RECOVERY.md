@@ -25,23 +25,35 @@ needs `password`, `password2`, `remote`, `filename_encryption` and
 password.
 
 **Verify the offsite copy is actually recoverable** (do this quarterly, and
-after any rclone change):
+after any rclone change). This tests the *stored* copy of your config — the one
+in your password manager — not the live one on the NUC, which is the whole
+point: put the saved `[gdrive]` and `[gdrive-crypt]` blocks into a temporary
+file and use only that:
 
 ```bash
-rclone config create crypt-test crypt \
-  remote=gdrive:encrypted-nuc-backups \
-  password='<from password manager>' \
-  password2='<from password manager>' \
-  --obscure
+install -m 600 /dev/null /tmp/rclone-test.conf
+cat > /tmp/rclone-test.conf          # paste the saved blocks, then press Ctrl-D
 
-rclone lsl crypt-test:AudioScrobblerBackups/ | tail -3
-rclone cat --count 5 crypt-test:AudioScrobblerBackups/<newest>.dump   # expect: PGDMP
-rclone config delete crypt-test
+rclone lsf --config /tmp/rclone-test.conf gdrive-crypt:AudioScrobblerBackups/ | sort | tail -3
+newest=$(rclone lsf --config /tmp/rclone-test.conf gdrive-crypt:AudioScrobblerBackups/ | sort | tail -n 1)
+rclone cat --config /tmp/rclone-test.conf --count 5 "gdrive-crypt:AudioScrobblerBackups/$newest"; echo   # expect: PGDMP
+
+shred -u /tmp/rclone-test.conf
 ```
 
 `PGDMP` means the dump decrypted and is a valid PostgreSQL custom-format
-archive. Anything else means your stored credentials are wrong — fix that
-while the NUC is still alive.
+archive. Readable file names in the listing but no `PGDMP` (or garbled names)
+means your stored credentials are wrong — fix that while the NUC is still alive.
+
+`rclone.conf` stores the crypt passwords already **obscured**, so blocks copied
+from it work as they are. Do **not** feed them to
+`rclone config create … --obscure`, which would obscure them a second time and
+fail even though the saved copy is fine. (The `[gdrive]` block also carries a
+Google login token; rclone may refresh it inside the temp file, which is
+harmless.) If what you hold instead is the *plaintext* password and salt,
+recreate the remote with
+`rclone config create crypt-test crypt remote=gdrive:encrypted-nuc-backups password=… password2=… --obscure`
+and use `crypt-test:` in place of `gdrive-crypt:` above.
 
 ### Prove every copy actually restores
 
