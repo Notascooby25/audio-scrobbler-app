@@ -80,11 +80,16 @@ Run `rclone config` again and create a second remote:
 4. Filename encryption: **`standard`**. Directory name encryption: **`true`**.
 5. Password and salt password: let rclone **generate** both (choose `g`) and keep them.
 
-> **Store the whole config block in your password manager — not just the
+> **Store the whole config in your password manager — not just the
 > passphrase.** Recreating a crypt remote needs `password`, `password2`, `remote`,
 > `filename_encryption` and `directory_name_encryption` to all match. Without them
 > every uploaded dump is unreadable noise. `rclone.conf` lives in
-> `~/.config/rclone/`, outside anything the NAS mirror copies. See
+> `~/.config/rclone/`, outside anything the NAS mirror copies.
+>
+> **Save it as one base64 line, not as plain text:**
+> `base64 -w0 ~/.config/rclone/rclone.conf`. A multi-line note is often flattened
+> by password managers, and the long Google token can be damaged — a copy saved
+> that way could not be restored. Then prove the saved copy works with the drill in
 > [docs/DISASTER_RECOVERY.md](../docs/DISASTER_RECOVERY.md#before-you-need-any-of-this).
 
 Then tell the script to use it, in `.env.production`:
