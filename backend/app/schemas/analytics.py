@@ -135,6 +135,7 @@ class ReportSummaryResponse(BaseModel):
     comparison_percent: float
     listening_minutes: int
     average_per_day: float
+    following_average_scrobbles: float | None = None
 
 
 class ReportPoint(BaseModel):
