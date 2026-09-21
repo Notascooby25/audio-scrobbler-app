@@ -2,6 +2,11 @@
 
 This guide explains how to set up `rclone` to authenticate with Google Drive so that your database backups are automatically uploaded by the `backup_database.sh` script.
 
+> **Encrypt the uploads.** Steps 1–3 create a plain `gdrive` remote. Do that first,
+> then wrap it in an encrypted (crypt) remote in step 4 and point the script at
+> *that*. The script's built-in fallback is the plain remote, so skipping step 4 —
+> or forgetting `GDRIVE_REMOTE_NAME` — silently uploads your dumps unencrypted.
+
 > **Note for Existing Setups:** If you already have `rclone` installed and configured on your server (e.g., your NUC), you can skip to **Step 3**.
 
 ## 1. Install rclone (If not already installed)
@@ -65,19 +70,50 @@ rclone ls gdrive:
 
 If it lists files from your Google Drive without errors, the setup is complete!
 
-## 4. How the Backup Script Uses It
+## 4. Wrap it in an encrypted (crypt) remote
+
+Run `rclone config` again and create a second remote:
+
+1. **`n`** for a new remote, name it **`gdrive-crypt`**.
+2. Storage: **`crypt`**.
+3. `remote>`: a folder inside the plain remote, e.g. `gdrive:encrypted-nuc-backups`.
+4. Filename encryption: **`standard`**. Directory name encryption: **`true`**.
+5. Password and salt password: let rclone **generate** both (choose `g`) and keep them.
+
+> **Store the whole config block in your password manager — not just the
+> passphrase.** Recreating a crypt remote needs `password`, `password2`, `remote`,
+> `filename_encryption` and `directory_name_encryption` to all match. Without them
+> every uploaded dump is unreadable noise. `rclone.conf` lives in
+> `~/.config/rclone/`, outside anything the NAS mirror copies. See
+> [docs/DISASTER_RECOVERY.md](../docs/DISASTER_RECOVERY.md#before-you-need-any-of-this).
+
+Then tell the script to use it, in `.env.production`:
+
+```env
+GDRIVE_REMOTE_NAME=gdrive-crypt
+```
+
+## 5. How the Backup Script Uses It
 
 The `scripts/backup_database.sh` script automatically checks if `rclone` is installed. If it is, it will execute:
 
 ```bash
-rclone copy "$backup_file" "gdrive:AudioScrobblerBackups/"
+rclone copy "$backup_file" "${GDRIVE_REMOTE_NAME}:AudioScrobblerBackups/"
 ```
 
-This creates a folder named `AudioScrobblerBackups` in the root of your Google Drive and places the backups inside. The script also automatically prunes files in this folder that are older than 14 days (this can be configured via the `GDRIVE_RETENTION_DAYS` environment variable).
+This creates a folder named `AudioScrobblerBackups` on that remote (encrypted, when it is a crypt remote) and places the backups inside. The script also prunes files in this folder that are older than `GDRIVE_RETENTION_DAYS`.
+
+Confirm it works end to end — this restores the newest uploaded dump into a throwaway database:
+
+```bash
+scripts/restore_drill.sh gdrive
+```
+
+The drill refuses to run against a non-crypt remote, so it also catches the "forgot `GDRIVE_REMOTE_NAME`" mistake.
 
 ## Changing Retention
 
-By default, the script retains backups on Google Drive for 14 days. To change this, set the environment variable in your `.env` or `.env.production` file:
+The script's built-in default is 14 days, and `.env.example` sets 30 (what the NUC uses). To change it, set the environment variable in your `.env` or `.env.production` file:
 
 ```env
 GDRIVE_RETENTION_DAYS=30

@@ -89,9 +89,25 @@ The `Deploy production` GitHub Actions workflow is **break-glass only and has ne
 
 ### Backups
 
-Backups run on the deployment host itself, on a systemd timer, every 6 hours — see `scripts/systemd/` and its `install.sh`. Each run dumps the database, restore-verifies the dump into a scratch database, uploads it offsite via rclone, and pings a heartbeat/dead-man's-switch URL if one is configured.
+Backups run on the deployment host itself, on a systemd timer, every 6 hours — see `scripts/systemd/` and its `install.sh`. Each run dumps the database, restore-verifies the dump into a scratch database, uploads it to Google Drive through an rclone **crypt** (encrypted) remote, and pings a heartbeat/dead-man's-switch URL if one is configured.
 
-Local dumps are kept for `BACKUP_RETENTION_DAYS` (3 by default); the offsite copies are pruned separately after `GDRIVE_RETENTION_DAYS` (14 by default).
+There are three copies:
+
+| Copy | Where | Kept |
+|---|---|---|
+| NUC local | `backups/` under the deploy directory | `BACKUP_RETENTION_DAYS` (3 by default) |
+| Google Drive (encrypted) | `AudioScrobblerBackups/` on the `GDRIVE_REMOTE_NAME` remote | `GDRIVE_RETENTION_DAYS` (script default 14; the NUC sets 30) |
+| Synology NAS | the whole app folder, mirrored every 6h | last few days, plus 30 days of rotated-out dumps in `_versions/` |
+
+The NAS mirror is **not part of this repo**: it is `scripts/push_srv_to_synology.sh` in the sleepwell repo, which mirrors all of `/srv` for every app on the NUC. See [docs/DISASTER_RECOVERY.md](docs/DISASTER_RECOVERY.md) for how the copies fit together and how to restore from each.
+
+Check that the *other* copies genuinely restore (not just that a backup ran):
+
+```bash
+scripts/restore_drill.sh local    # or: nas, gdrive
+```
+
+The drill script has hermetic tests (stubbed `rclone`/`ssh`/`rsync`; nothing real is touched): `scripts/tests/test_restore_drill.sh`.
 
 Manual backup and verification from the production host:
 

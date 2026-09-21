@@ -10,9 +10,10 @@ rotation, Spotify quota blocks, disk exhaustion and migration failures.
 > **Supersedes the PDFs.** `docs/Deployment_Runbook_—_Family_Music_Scrobbler_PWA.pdf`
 > and `guides/Operations_&_Monitoring_Guide_—_Family_Music_Scrobbler_PWA.pdf`
 > describe a system that does not exist: a `scripts/verify_backup.sh` that was
-> never written, rsync-to-Synology as the offsite path (it is rclone to Google
-> Drive), and a restore using `psql`, which **cannot read the dumps this app
-> actually produces**. Follow this file instead.
+> never written, rsync-to-Synology as *the* offsite path (this app's own upload is
+> rclone to encrypted Google Drive; its NAS copy comes from the sleepwell repo's
+> whole-`/srv` mirror), and a restore using `psql`, which **cannot read the dumps
+> this app actually produces**. Follow this file instead.
 
 ---
 
@@ -24,8 +25,10 @@ rotation, Spotify quota blocks, disk exhaustion and migration failures.
 | Compose file | `docker-compose.prod.yml` |
 | Secrets | `.env.production`, host-only, never in git |
 | Local dumps | `backups/scrobbler-<UTC timestamp>.dump` under the deploy directory |
-| Offsite dumps | `rclone` remote from `GDRIVE_REMOTE_NAME`, under `AudioScrobblerBackups/` |
+| Offsite dumps | `rclone` remote from `GDRIVE_REMOTE_NAME`, under `AudioScrobblerBackups/` (encrypted, 30 days) |
+| NAS copy | Whole app folder mirrored to `<NAS_TARGET>/audio-scrobbler-app/` every 6h by the **sleepwell repo's** `push_srv_to_synology.sh` (config `~/.config/nas-sync.env`); rotated-out dumps kept 30 days in `<NAS_TARGET>/_versions/` |
 | Backup schedule | systemd **user** timer, every 6h — `systemctl --user list-timers` |
+| Copy drills | `scripts/restore_drill.sh {local\|nas\|gdrive}` |
 
 All `docker compose` commands below assume:
 
@@ -58,6 +61,10 @@ rclone copy gdrive-crypt:AudioScrobblerBackups/scrobbler-<timestamp>.dump /srv/a
 ```
 
 (Substitute whatever `GDRIVE_REMOTE_NAME` is set to in `.env.production`.)
+
+Or from the NAS, which needs no rclone credentials (see
+[DISASTER_RECOVERY.md](DISASTER_RECOVERY.md#4-restore-rclone-and-pull-a-dump) for
+the commands and for older dumps under `_versions/`).
 
 > **Dumps from before 2026-09-20 are on the plaintext `gdrive` remote, not
 > `gdrive-crypt`.** `backup_database.sh` read its settings before sourcing the
@@ -186,6 +193,41 @@ systemctl --user status audio-scrobbler-backup.service
 # Run one now
 systemctl --user start audio-scrobbler-backup.service
 ```
+
+### NAS copy
+
+The NAS mirror is a sleepwell-repo job covering every app, so check it there:
+
+```bash
+# Look for "Completed" and no FAILED/ERROR in the latest run
+tail -n 30 /srv/shared/backups/synology_backup_cron.log
+
+# The 30 */6 line must point at push_srv_to_synology.sh
+crontab -l | grep push_srv_to_synology
+
+# Prove the NAS dump is current AND restorable (fails if older than 8h)
+cd /srv/audio-scrobbler-app && scripts/restore_drill.sh nas
+```
+
+The job pings a healthchecks.io check on success and `/fail` on error when
+`NAS_HEALTHCHECK_URL` is set in `~/.config/nas-sync.env`. If it is not set,
+**nothing alerts when the NAS copy stops** — set it.
+
+### Prove the other copies restore
+
+`.prom` freshness only proves a backup *ran*. Drill the copies themselves (quarterly,
+and after any rclone, NAS or credential change):
+
+```bash
+cd /srv/audio-scrobbler-app
+scripts/restore_drill.sh local
+scripts/restore_drill.sh nas
+scripts/restore_drill.sh gdrive
+```
+
+Each restores the newest dump from that copy into a throwaway database and prints
+`DRILL PASSED`. Drills never touch `monitoring/backup.prom`, so they cannot mask a
+broken timer. Details in [DISASTER_RECOVERY.md](DISASTER_RECOVERY.md#prove-every-copy-actually-restores).
 
 Those `.prom` files are read by node-exporter's textfile collector and drive
 the `AudioScrobblerBackupStale` / `AudioScrobblerBackupNeverRan` alerts. They
