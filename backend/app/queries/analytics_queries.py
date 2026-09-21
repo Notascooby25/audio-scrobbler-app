@@ -147,11 +147,25 @@ def build_recent_scrobbles_query(
 
 
 CHART_RANGE_TO_DAYS = {"7day": 7, "1month": 30, "12month": 365}
-CHART_ENTITIES = ("artists", "tracks", "albums")
+CHART_ENTITIES = ("artists", "tracks", "albums", "playlists")
 CHART_RANGES = (*CHART_RANGE_TO_DAYS.keys(), "overall")
 
 DATE_RANGE_PRESETS = ("last.week", "last.month", "last.year", "all.time", "custom")
 
+
+class extract_playlist_uri(FunctionElement):
+    name = "extract_playlist_uri"
+    inherit_cache = True
+
+@compiles(extract_playlist_uri, "sqlite")
+def sqlite_extract_playlist_uri(element, compiler, **kw):
+    arg = compiler.process(element.clauses.clauses[0], **kw)
+    return f"case when json_extract({arg}, '$.context.type') = 'playlist' then json_extract({arg}, '$.context.uri') else null end"
+
+@compiles(extract_playlist_uri, "postgresql")
+def pg_extract_playlist_uri(element, compiler, **kw):
+    arg = compiler.process(element.clauses.clauses[0], **kw)
+    return f"case when {arg}->'context'->>'type' = 'playlist' then {arg}->'context'->>'uri' else null end"
 
 def build_top_entities_query(
     user_id: int,
@@ -167,6 +181,9 @@ def build_top_entities_query(
         group_columns = [ListeningEvent.track_name, ListeningEvent.artist_name]
     elif entity == "albums":
         group_columns = [ListeningEvent.album_name, ListeningEvent.artist_name]
+    elif entity == "playlists":
+        playlist_uri_expr = extract_playlist_uri(ListeningEvent.raw_metadata)
+        group_columns = [playlist_uri_expr.label("playlist_uri")]
     else:
         raise ValueError(f"Unsupported chart entity: {entity!r}")
 
@@ -188,6 +205,8 @@ def build_top_entities_query(
     ).where(not_blocked_clause(user_id))
     if entity == "albums":
         statement = statement.where(ListeningEvent.album_name.isnot(None))
+    elif entity == "playlists":
+        statement = statement.where(playlist_uri_expr.isnot(None))
 
     if start is not None:
         statement = statement.where(ListeningEvent.played_at >= start)
@@ -466,4 +485,41 @@ def build_report_clock_query(user_id: int, start: datetime, end: datetime):
         .where(ListeningEvent.user_id == user_id, not_blocked_clause(user_id), ListeningEvent.played_at >= start, ListeningEvent.played_at < end)
         .group_by(hour_expr)
         .order_by(hour_expr)
+    )
+
+
+class extract_release_decade(FunctionElement):
+    name = "extract_release_decade"
+    inherit_cache = True
+
+
+@compiles(extract_release_decade, "sqlite")
+def sqlite_extract_decade(element, compiler, **kw):
+    arg = compiler.process(element.clauses.clauses[0], **kw)
+    return f"(cast(substr(json_extract({arg}, '$.track.album.release_date'), 1, 4) as integer) / 10) * 10"
+
+
+@compiles(extract_release_decade, "postgresql")
+def pg_extract_decade(element, compiler, **kw):
+    arg = compiler.process(element.clauses.clauses[0], **kw)
+    return f"(cast(substring({arg}->'track'->'album'->>'release_date' from 1 for 4) as integer) / 10) * 10"
+
+
+def build_report_decade_query(user_id: int, start: datetime, end: datetime):
+    decade_expr = extract_release_decade(ListeningEvent.raw_metadata)
+    return (
+        select(
+            decade_expr.label("label"),
+            func.count(ListeningEvent.id).label("count")
+        )
+        .where(
+            ListeningEvent.user_id == user_id,
+            not_blocked_clause(user_id),
+            ListeningEvent.played_at >= start,
+            ListeningEvent.played_at < end,
+            decade_expr.isnot(None),
+            decade_expr > 0  # Ignore invalid parsed years
+        )
+        .group_by(decade_expr)
+        .order_by(decade_expr)
     )

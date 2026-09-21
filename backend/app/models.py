@@ -173,3 +173,11 @@ class ArtworkCache(Base):
     artwork_url: Mapped[str] = mapped_column(Text, nullable=False)
     cached_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
+
+class PlaylistCache(Base):
+    __tablename__ = "playlist_cache"
+
+    playlist_uri: Mapped[str] = mapped_column(String(255), primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    cached_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
