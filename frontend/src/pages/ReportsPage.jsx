@@ -11,8 +11,6 @@ import { readSession } from '../session'
 
 const REPORTS = [
   ['Music ratio', 'Compare artists, albums, and tracks in your history.'],
-  ['Listening fingerprint', 'A richer listening profile will be calculated from your history.'],
-  ['Music by decade', 'Release-year metadata will unlock this view.'],
 ]
 
 function dateRangeFromParams(searchParams) {
