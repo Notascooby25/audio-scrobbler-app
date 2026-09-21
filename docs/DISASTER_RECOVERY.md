@@ -9,13 +9,14 @@ Written to be followed under stress, on a machine that may not be the NUC.
 
 ## Before you need any of this
 
-Three things must exist **off the NUC**, or the procedures below cannot be
+Four things must exist **off the NUC**, or the procedures below cannot be
 completed. Check them now, not during an incident.
 
 | Thing | Where it should live | Why |
 |---|---|---|
-| `rclone.conf` (the `[gdrive-crypt]` block) | Password manager | Offsite dumps are encrypted. Without the crypt `password` **and** `password2`, they are noise. |
-| `.env.production` | Password manager | Holds `REFRESH_TOKEN_KEY`, without which every stored Spotify token is undecryptable (see [Scenario 7](#scenario-7-secret-rotation)). |
+| `rclone.conf` (both the `[gdrive]` **and** `[gdrive-crypt]` blocks), saved as **one base64 line** (see below) | Password manager | Offsite dumps are encrypted. Without the crypt `password` **and** `password2`, they are noise. It lives in `~/.config/rclone/`, outside `/srv`, so the NAS mirror does **not** carry it. |
+| `.env.production` | Password manager | Holds `REFRESH_TOKEN_KEY`, without which every stored Spotify token is undecryptable (see [Scenario 7](#scenario-7-secret-rotation)). The NAS mirror holds a convenience copy; do not rely on it. |
+| NAS login details (host, user, SSH port, share path) | Password manager | The NAS holds the only *unencrypted* off-host copy, and the fastest restore. They are in `~/.config/nas-sync.env` on the NUC (also in the daily host-config snapshot), but the SSH key that reaches the NAS dies with the NUC — a rebuilt host needs a new key authorised in DSM by an admin. |
 | Spotify app credentials | developer.spotify.com | `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` and the registered redirect URI. |
 
 A passphrase alone is **not** enough for rclone — recreating a crypt remote
@@ -23,24 +24,90 @@ needs `password`, `password2`, `remote`, `filename_encryption` and
 `directory_name_encryption` to all match. Store the config block, not the
 password.
 
-**Verify the offsite copy is actually recoverable** (do this quarterly, and
-after any rclone change):
+**Save the config in a form that cannot be mangled.** `rclone.conf` is
+multi-line and contains a long one-line Google token. Password managers routinely
+flatten line breaks or damage long values — this really happened here: a note
+pasted as plain text lost its newlines *and* its token, and could not be used.
+Save it as a **single base64 line**, which survives any kind of field:
 
 ```bash
-rclone config create crypt-test crypt \
-  remote=gdrive:encrypted-nuc-backups \
-  password='<from password manager>' \
-  password2='<from password manager>' \
-  --obscure
+base64 -w0 ~/.config/rclone/rclone.conf; echo     # copy that one line into the password manager
+```
 
-rclone lsl crypt-test:AudioScrobblerBackups/ | tail -3
-rclone cat --count 5 crypt-test:AudioScrobblerBackups/<newest>.dump   # expect: PGDMP
-rclone config delete crypt-test
+**Verify the offsite copy is actually recoverable** (do this quarterly, and
+after any rclone change). This tests the *stored* copy — the one in your password
+manager — not the live one on the NUC, which is the whole point. Copy the value
+**from the password manager, not from the terminal**:
+
+```bash
+install -m 600 /dev/null /tmp/rclone-test.conf && base64 -d > /tmp/rclone-test.conf
+```
+
+Paste the saved line, press Enter, then Ctrl-D. **Paste the block above on its
+own** — `base64 -d` reads whatever follows it as its input. Then:
+
+```bash
+newest=$(rclone lsf --config /tmp/rclone-test.conf gdrive-crypt:AudioScrobblerBackups/ | sort | tail -n 1); echo "$newest"
+rclone cat --config /tmp/rclone-test.conf --count 5 "gdrive-crypt:AudioScrobblerBackups/$newest"; echo   # expect: PGDMP
+shred -u /tmp/rclone-test.conf
 ```
 
 `PGDMP` means the dump decrypted and is a valid PostgreSQL custom-format
 archive. Anything else means your stored credentials are wrong — fix that
-while the NUC is still alive.
+while the NUC is still alive. The two failures seen in practice:
+
+| rclone says | Meaning |
+|---|---|
+| `didn't find section in config file ("gdrive-crypt")` | The saved copy lost its line breaks (saved as plain text). Re-save as base64. |
+| `failed to create oauth client: invalid character … after top-level value` | The saved copy's Google `token` was damaged. Re-save as base64. |
+
+`rclone.conf` stores the crypt passwords already **obscured**, so the saved config
+works as it is. Do **not** feed those values to
+`rclone config create … --obscure`, which would obscure them a second time and
+fail even though the saved copy is fine. (The `[gdrive]` block also carries a
+Google login token; rclone may refresh it inside the temp file, which is
+harmless.) If what you hold instead is the *plaintext* password and salt,
+recreate the remote with
+`rclone config create crypt-test crypt remote=gdrive:encrypted-nuc-backups password=… password2=… --obscure`
+and use `crypt-test:` in place of `gdrive-crypt:` above.
+
+### Prove every copy actually restores
+
+The 6-hourly timer restore-verifies the dump it has just made. That says nothing
+about the *other* copies, so drill each one (quarterly, and after any rclone,
+NAS or credential change):
+
+```bash
+cd /srv/audio-scrobbler-app
+scripts/restore_drill.sh local      # newest dump in backups/
+scripts/restore_drill.sh nas        # newest dump the NAS mirror holds
+scripts/restore_drill.sh gdrive     # newest dump in the encrypted Drive folder
+```
+
+Each pulls the newest dump into a temp directory, restores it into a throwaway
+database (never the live one) and prints `DRILL PASSED`. It fails if the copy is
+older than 8 hours — a restorable but stale copy means that copy is not being kept
+up to date — and the `gdrive` drill refuses to run against a non-crypt remote. A
+drill never updates `monitoring/backup.prom`, so it cannot mask a broken timer.
+
+---
+
+## Where the copies are
+
+| Copy | Location | Holds | Encrypted |
+|---|---|---|---|
+| NUC local | `/srv/audio-scrobbler-app/backups/` | Last 3 days of dumps (6-hourly) | No |
+| Synology NAS | `<NAS_TARGET>/audio-scrobbler-app/` — the **whole app folder** (dumps, `docker-compose.prod.yml`, `.env.production`, `scripts/`, `monitoring/`) | Mirror every 6h. Dumps deleted from the NUC are kept for 30 days under `<NAS_TARGET>/_versions/<UTC time>/audio-scrobbler-app/backups/` | No (owner-only folder) |
+| Google Drive | `gdrive-crypt:AudioScrobblerBackups/` | Last 30 days of dumps | Yes |
+
+The NAS mirror is **not owned by this repo.** It is `scripts/push_srv_to_synology.sh`
+in the *sleepwell* repo (cron `30 */6 * * *`, config in `~/.config/nas-sync.env`),
+and it mirrors all of `/srv` for every app. Two consequences:
+
+- Do not edit that job from here; change it in the sleepwell repo.
+- A broken or wiped `/srv/sleepwell` checkout silently stops this app's NAS copy
+  too. The NAS job has its own dead-man's-switch ping (`NAS_HEALTHCHECK_URL`) for
+  exactly that reason — see [RUNBOOK.md](RUNBOOK.md#check-backup-health).
 
 ---
 
@@ -91,6 +158,19 @@ cp -r /tmp/asa/docker-compose.prod.yml /tmp/asa/monitoring /tmp/asa/scripts .
 
 Only those three are needed on the host — images come from GHCR.
 
+**Fastest route if the NAS is reachable:** the NAS holds this whole folder, so
+one command brings back the compose file, `scripts/`, `monitoring/`,
+`.env.production` *and* recent dumps (it needs an SSH key authorised on the NAS —
+see [Before you need any of this](#before-you-need-any-of-this)):
+
+```bash
+rsync -a -e "ssh -i ~/.ssh/<nas-key> -p <nas-port>" \
+  <nas-user>@<nas-host>:<NAS_TARGET>/audio-scrobbler-app/ /srv/audio-scrobbler-app/
+```
+
+Then skip to [step 5](#5-start-the-database-only) — but still confirm
+`.env.production` is right, and still do [step 8](#8-reinstall-the-backup-timer).
+
 ### 3. Restore `.env.production`
 
 From your password manager. If it is lost, rebuild it — these are **required**
@@ -135,8 +215,8 @@ python3 -c "import secrets; print('JWT_SECRET=' + secrets.token_hex(32)); print(
 
 ```bash
 mkdir -p ~/.config/rclone
-# paste the saved [gdrive] and [gdrive-crypt] blocks into:
-nano ~/.config/rclone/rclone.conf
+install -m 600 /dev/null ~/.config/rclone/rclone.conf
+base64 -d > ~/.config/rclone/rclone.conf     # paste the saved base64 line, Enter, then Ctrl-D
 
 rclone lsl gdrive-crypt:AudioScrobblerBackups/ | tail -5
 mkdir -p backups
@@ -144,10 +224,26 @@ rclone copy gdrive-crypt:AudioScrobblerBackups/scrobbler-<newest>.dump backups/
 ```
 
 If `gdrive-crypt:AudioScrobblerBackups/` is empty, the dump may predate the
-2026-09-20 encryption fix — look in `gdrive:AudioScrobblerBackups/` instead.
+2026-09-20 encryption fix — look in `gdrive:AudioScrobblerBackups/` instead
+(as of 2026-09-21 no plaintext `AudioScrobblerBackups` folder remains on Drive,
+so offsite history effectively starts 2026-09-20).
 
 If `gdrive:` needs re-authorising, `rclone config reconnect gdrive:` opens a
 browser flow. The crypt remote wraps it, so `gdrive:` must work first.
+
+**Or pull a dump from the NAS** (no rclone credentials needed, only the NAS
+key). The newest few days are in `audio-scrobbler-app/backups/`; older dumps
+that were removed from the NUC are under `_versions/`:
+
+```bash
+mkdir -p backups
+rsync -t -e "ssh -i ~/.ssh/<nas-key> -p <nas-port>" \
+  <nas-user>@<nas-host>:<NAS_TARGET>/audio-scrobbler-app/backups/scrobbler-<newest>.dump backups/
+
+# an older dump that has since rotated off the NUC:
+ssh -i ~/.ssh/<nas-key> -p <nas-port> <nas-user>@<nas-host> \
+  "find <NAS_TARGET>/_versions -path '*audio-scrobbler-app/backups*' -name 'scrobbler-*.dump'"
+```
 
 ### 5. Start the database only
 
@@ -209,6 +305,11 @@ systemctl --user start audio-scrobbler-backup.service
 rclone lsl gdrive-crypt:AudioScrobblerBackups/ | tail -2
 ```
 
+The **NAS mirror** is not part of this repo and does not come back on its own.
+Until it is reinstalled from the sleepwell repo (`scripts/setup_offsite_backup_cron.sh`,
+plus a recreated `~/.config/nas-sync.env` and a new SSH key authorised on the NAS)
+this app has no NAS copy. Then run `scripts/restore_drill.sh nas` to prove it.
+
 ### 9. Restore external access
 
 - **Spotify redirect URI** — `SPOTIFY_REDIRECT_URI` must match a URI registered
@@ -244,7 +345,9 @@ docker compose -f docker-compose.prod.yml --env-file .env.production stop backen
 ```
 
 Then follow [Scenario 1 steps 5–7](#5-start-the-database-only), using a local
-dump from `backups/` if one survives — no need to pull from offsite.
+dump from `backups/` if one survives — no need to pull from offsite. If none does,
+take the newest from the NAS or Google Drive as in
+[Scenario 1 step 4](#4-restore-rclone-and-pull-a-dump).
 
 Verify the dump *before* relying on it:
 
@@ -356,13 +459,17 @@ doing exactly what it was asked to.
 
 What you still have:
 - Local dumps in `/srv/audio-scrobbler-app/backups/` (3 days), if the host lives
+- **The NAS copies — these are not encrypted, so losing the crypt credentials does
+  not touch them:** the last ~3 days in `audio-scrobbler-app/backups/` plus 30
+  days of rotated-out dumps under `_versions/`. This is the real safety net here.
 - The live database, if it is intact
 
 Act immediately:
 
 1. Copy the current `rclone.conf` somewhere safe **now**, if the NUC is alive.
-2. If it is not, treat the offsite copies as lost, recover from local dumps, and
-   set up a new crypt remote with credentials stored off-host from the start.
+2. If it is not, treat the Google copies as lost, recover from the NAS or local
+   dumps, and set up a new crypt remote with credentials stored off-host from the
+   start.
 
 Prevention is the whole story here — see
 [Before you need any of this](#before-you-need-any-of-this).
@@ -399,22 +506,28 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d backe
 
 ## Scenario 8: App unreachable from outside
 
-The app is reached from outside the LAN via **Tailscale Funnel**. That setup is
-referenced in [RUNBOOK.md](RUNBOOK.md) and [README.md](../README.md) but the
-configuration itself **is not recorded anywhere in this repository** — not the
-Funnel config, the hostname, nor which port it fronts.
+The app is reached from outside the LAN via **Tailscale Funnel**. The NUC serves
+two apps through it, on different ports — this app must not disturb the other:
 
-> **Known gap.** Someone rebuilding from this document cannot restore external
-> access from the repo alone. Capture the working `tailscale funnel status`
-> output and the serve config, then replace this section.
+| Public URL | Proxies to | App |
+|---|---|---|
+| `https://nuc-server.<tailnet>.ts.net` (port 443) | `http://127.0.0.1:8510` | sleepwell — **leave alone** |
+| `https://nuc-server.<tailnet>.ts.net:8443` | `http://127.0.0.1:5173` | this app (the frontend nginx, which proxies `/auth`, `/api` to the backend) |
 
-What is known:
-- The frontend nginx container listens on **5173** and proxies API paths to
-  `backend:8000` ([frontend/nginx.conf](../frontend/nginx.conf)).
-- The backend is published on the host at `BACKEND_HOST_PORT` (8010 here).
-- `FRONTEND_AUTH_CALLBACK_URL`, `CORS_ORIGINS` and `SPOTIFY_REDIRECT_URI` all
-  encode the public hostname — all three need updating if it changes, and
-  `SPOTIFY_REDIRECT_URI` must also be re-registered with Spotify.
+Re-create this app's mapping (port 443 is already taken by sleepwell, hence 8443):
+
+```bash
+sudo tailscale funnel --bg --https=8443 5173
+tailscale funnel status          # confirm BOTH mappings are present
+```
+
+The live config is also captured daily by `scripts/backup_host_config.sh` in the
+sleepwell repo (`tailscale/funnel-status.txt` inside the newest
+`host_config_*.tar.gz`, in `/srv/shared/backups/host-config/` and on the NAS).
+
+`FRONTEND_AUTH_CALLBACK_URL`, `CORS_ORIGINS` and `SPOTIFY_REDIRECT_URI` all encode
+the public hostname — all three need updating if it changes, and
+`SPOTIFY_REDIRECT_URI` must also be re-registered with Spotify.
 
 To confirm the app is healthy while access is broken, test from the host:
 
@@ -429,13 +542,11 @@ Both healthy means the problem is the tunnel, not the app.
 
 ## What this document does not yet cover
 
-- **NAS backups.** A third backup destination is planned but not built. When it
-  exists, this file needs a restore-from-NAS path in
-  [Scenario 1 step 4](#4-restore-rclone-and-pull-a-dump) and
-  [Scenario 2](#scenario-2-postgres-volume-lost-host-fine), and the
-  "Before you need any of this" table needs whatever credentials it requires.
-- **Tailscale Funnel** — see [Scenario 8](#scenario-8-app-unreachable-from-outside).
-- **A rehearsed full restore.** The database restore in Scenario 2 is exercised
-  every 6 hours by `verify_database_backup.sh`. The *full host rebuild* in
-  Scenario 1 has never been performed end to end. Until it has, treat its step
-  ordering as reasoned rather than proven.
+- **A rehearsed full host rebuild.** The database restore is exercised every 6
+  hours by `verify_database_backup.sh`, and each copy can be drilled with
+  `scripts/restore_drill.sh`. The *full host rebuild* in Scenario 1 has never been
+  performed end to end — it needs a spare machine (on the dev machine it risks the
+  dev `postgres_data` volume). Until it has, treat its step ordering as reasoned
+  rather than proven.
+- **Restoring the other apps.** This file covers Audio Scrobbler only. Sleepwell
+  and the expense tracker are in the sleepwell repo's `docs/nuc-backup-overview.md`.
