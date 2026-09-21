@@ -14,7 +14,7 @@ completed. Check them now, not during an incident.
 
 | Thing | Where it should live | Why |
 |---|---|---|
-| `rclone.conf` (the `[gdrive]` **and** `[gdrive-crypt]` blocks) | Password manager | Offsite dumps are encrypted. Without the crypt `password` **and** `password2`, they are noise. It lives in `~/.config/rclone/`, outside `/srv`, so the NAS mirror does **not** carry it. |
+| `rclone.conf` (both the `[gdrive]` **and** `[gdrive-crypt]` blocks), saved as **one base64 line** (see below) | Password manager | Offsite dumps are encrypted. Without the crypt `password` **and** `password2`, they are noise. It lives in `~/.config/rclone/`, outside `/srv`, so the NAS mirror does **not** carry it. |
 | `.env.production` | Password manager | Holds `REFRESH_TOKEN_KEY`, without which every stored Spotify token is undecryptable (see [Scenario 7](#scenario-7-secret-rotation)). The NAS mirror holds a convenience copy; do not rely on it. |
 | NAS login details (host, user, SSH port, share path) | Password manager | The NAS holds the only *unencrypted* off-host copy, and the fastest restore. They are in `~/.config/nas-sync.env` on the NUC (also in the daily host-config snapshot), but the SSH key that reaches the NAS dies with the NUC — a rebuilt host needs a new key authorised in DSM by an admin. |
 | Spotify app credentials | developer.spotify.com | `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` and the registered redirect URI. |
@@ -24,29 +24,45 @@ needs `password`, `password2`, `remote`, `filename_encryption` and
 `directory_name_encryption` to all match. Store the config block, not the
 password.
 
-**Verify the offsite copy is actually recoverable** (do this quarterly, and
-after any rclone change). This tests the *stored* copy of your config — the one
-in your password manager — not the live one on the NUC, which is the whole
-point: put the saved `[gdrive]` and `[gdrive-crypt]` blocks into a temporary
-file and use only that:
+**Save the config in a form that cannot be mangled.** `rclone.conf` is
+multi-line and contains a long one-line Google token. Password managers routinely
+flatten line breaks or damage long values — this really happened here: a note
+pasted as plain text lost its newlines *and* its token, and could not be used.
+Save it as a **single base64 line**, which survives any kind of field:
 
 ```bash
-install -m 600 /dev/null /tmp/rclone-test.conf
-cat > /tmp/rclone-test.conf          # paste the saved blocks, then press Ctrl-D
+base64 -w0 ~/.config/rclone/rclone.conf; echo     # copy that one line into the password manager
+```
 
-rclone lsf --config /tmp/rclone-test.conf gdrive-crypt:AudioScrobblerBackups/ | sort | tail -3
-newest=$(rclone lsf --config /tmp/rclone-test.conf gdrive-crypt:AudioScrobblerBackups/ | sort | tail -n 1)
+**Verify the offsite copy is actually recoverable** (do this quarterly, and
+after any rclone change). This tests the *stored* copy — the one in your password
+manager — not the live one on the NUC, which is the whole point. Copy the value
+**from the password manager, not from the terminal**:
+
+```bash
+install -m 600 /dev/null /tmp/rclone-test.conf && base64 -d > /tmp/rclone-test.conf
+```
+
+Paste the saved line, press Enter, then Ctrl-D. **Paste the block above on its
+own** — `base64 -d` reads whatever follows it as its input. Then:
+
+```bash
+newest=$(rclone lsf --config /tmp/rclone-test.conf gdrive-crypt:AudioScrobblerBackups/ | sort | tail -n 1); echo "$newest"
 rclone cat --config /tmp/rclone-test.conf --count 5 "gdrive-crypt:AudioScrobblerBackups/$newest"; echo   # expect: PGDMP
-
 shred -u /tmp/rclone-test.conf
 ```
 
 `PGDMP` means the dump decrypted and is a valid PostgreSQL custom-format
-archive. Readable file names in the listing but no `PGDMP` (or garbled names)
-means your stored credentials are wrong — fix that while the NUC is still alive.
+archive. Anything else means your stored credentials are wrong — fix that
+while the NUC is still alive. The two failures seen in practice:
 
-`rclone.conf` stores the crypt passwords already **obscured**, so blocks copied
-from it work as they are. Do **not** feed them to
+| rclone says | Meaning |
+|---|---|
+| `didn't find section in config file ("gdrive-crypt")` | The saved copy lost its line breaks (saved as plain text). Re-save as base64. |
+| `failed to create oauth client: invalid character … after top-level value` | The saved copy's Google `token` was damaged. Re-save as base64. |
+
+`rclone.conf` stores the crypt passwords already **obscured**, so the saved config
+works as it is. Do **not** feed those values to
 `rclone config create … --obscure`, which would obscure them a second time and
 fail even though the saved copy is fine. (The `[gdrive]` block also carries a
 Google login token; rclone may refresh it inside the temp file, which is
@@ -199,8 +215,8 @@ python3 -c "import secrets; print('JWT_SECRET=' + secrets.token_hex(32)); print(
 
 ```bash
 mkdir -p ~/.config/rclone
-# paste the saved [gdrive] and [gdrive-crypt] blocks into:
-nano ~/.config/rclone/rclone.conf
+install -m 600 /dev/null ~/.config/rclone/rclone.conf
+base64 -d > ~/.config/rclone/rclone.conf     # paste the saved base64 line, Enter, then Ctrl-D
 
 rclone lsl gdrive-crypt:AudioScrobblerBackups/ | tail -5
 mkdir -p backups
