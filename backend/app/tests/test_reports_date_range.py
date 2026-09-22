@@ -172,7 +172,7 @@ def test_reports_entity_rejects_unsupported_range():
 
 
 def test_reports_entity_rejects_unknown_entity():
-    response = client.get("/reports/playlists")
+    response = client.get("/reports/bogus")
     assert response.status_code == 404
 
 
