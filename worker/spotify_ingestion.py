@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import logging
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -9,6 +10,11 @@ import requests
 from cryptography.fernet import Fernet, InvalidToken
 from sqlalchemy import Boolean, DateTime, Integer, String, Text, JSON, BigInteger, create_engine
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column, sessionmaker
+
+# app.py's logging.basicConfig() runs at process start (before the scheduler ever
+# calls into this module), so this propagates to the root logger it configures —
+# see e3767c2 "configure logging so sync progress actually reaches the logs".
+logger = logging.getLogger(__name__)
 
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
 SPOTIFY_RECENT_URL = "https://api.spotify.com/v1/me/player/recently-played"
@@ -141,6 +147,38 @@ def submit_liked_tracks_with_retries(backend_url: str, worker_token: str, user_i
     raise requests.HTTPError("Backend liked-tracks sync failed after retries")
 
 
+def fetch_pending_playlist_uris(backend_url: str, worker_token: str, limit: int) -> list[dict[str, object]]:
+    response = requests.get(
+        f"{backend_url}/spotify/internal/playlist-cache/pending",
+        headers={"X-Worker-Token": worker_token},
+        params={"limit": limit},
+        timeout=10,
+    )
+    response.raise_for_status()
+    items = response.json().get("items", [])
+    return [item for item in items if isinstance(item, dict)]
+
+
+def submit_playlist_cache_with_retries(backend_url: str, worker_token: str, items: list[dict[str, str]]):
+    if not items:
+        return None
+    payload = {"items": items}
+    for attempt in range(3):
+        response = requests.post(
+            f"{backend_url}/spotify/internal/playlist-cache",
+            json=payload,
+            headers={"X-Worker-Token": worker_token},
+            timeout=10,
+        )
+        if response.status_code in (429, 500, 502, 503, 504) and attempt < 2:
+            retry_after = min(float(response.headers.get("Retry-After", "1")), 30) if response.status_code == 429 else 2 ** attempt
+            time.sleep(retry_after)
+            continue
+        response.raise_for_status()
+        return response
+    raise requests.HTTPError("Backend playlist-cache upsert failed after retries")
+
+
 def _parse_added_at(value: object) -> datetime | None:
     if not isinstance(value, str):
         return None
@@ -248,6 +286,16 @@ class SpotifyClient:
         response = self._request("get", "https://api.spotify.com/v1/me/player/currently-playing", headers={"Authorization": f"Bearer {access_token}"})
         if response.status_code == 204:
             return None
+        response.raise_for_status()
+        return response.json()
+
+    def playlist(self, access_token: str, playlist_id: str) -> dict[str, object]:
+        response = self._request(
+            "get",
+            f"https://api.spotify.com/v1/playlists/{playlist_id}",
+            headers={"Authorization": f"Bearer {access_token}"},
+            params={"fields": "name"},
+        )
         response.raise_for_status()
         return response.json()
 
@@ -474,3 +522,92 @@ def sync_liked_tracks_for_user(
         user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)
     session.commit()
     return len(normalized)
+
+def backfill_playlist_names(
+    session,
+    client: SpotifyClient,
+    backend_url: str,
+    worker_token: str,
+    max_items: int = 10,
+) -> dict[str, int]:
+    """Resolves display names for playlists that show up in someone's listening
+    history but have no cached name yet.
+
+    Spotify's playback context only gives a playlist ID, not a name, so the
+    Reports "Playlists" view needs a lookup somewhere. That lookup used to
+    happen inline in the backend's own request handler — one Spotify call per
+    uncached playlist, synchronously, while the page loaded, through a second
+    Spotify-calling path that didn't share this module's rate-limit state.
+    That is the same "many sequential calls with no gap" pattern behind the
+    2026-09-17 incident. It now happens here instead: through the same
+    rate-limit-aware SpotifyClient as everything else the worker does, a
+    handful of playlists per scheduler tick rather than however many a single
+    page view happens to need.
+
+    The backend owns finding what is still uncached (GET .../pending) and
+    owns writing playlist_cache (POST ...) — this only ever talks to Spotify
+    and reports results back, the same shape as liked-tracks results.
+    """
+    try:
+        pending = fetch_pending_playlist_uris(backend_url, worker_token, max_items)
+    except requests.RequestException:
+        logger.exception("Could not fetch pending playlist URIs from the backend")
+        return {"processed": 0, "resolved": 0, "failures": 1}
+
+    resolved_items: list[dict[str, str]] = []
+    users_by_id: dict[int, UserRecord | None] = {}
+    processed = 0
+    failures = 0
+
+    for item in pending:
+        uri = item.get("playlist_uri")
+        user_id = item.get("user_id")
+        if not isinstance(uri, str) or not uri or not isinstance(user_id, int):
+            continue
+        processed += 1
+        playlist_id = uri.split(":")[-1] if ":" in uri else uri
+
+        if user_id in users_by_id:
+            user = users_by_id[user_id]
+        else:
+            user = session.get(UserRecord, user_id)
+            users_by_id[user_id] = user
+        if user is None or not user.is_active:
+            failures += 1
+            continue
+
+        try:
+            refresh_token = decrypt_refresh_token(user.refresh_token_cipher, client.refresh_token_key)
+            access_token, rotated_refresh_token = client.refresh_access_token(refresh_token)
+            if rotated_refresh_token:
+                user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)
+                session.commit()
+            data = client.playlist(access_token, playlist_id)
+            resolved_items.append({"playlist_uri": uri, "name": data.get("name") or "Unknown Playlist"})
+        except SpotifyRateLimitedError:
+            logger.warning("Stopping playlist-name backfill: Spotify quota rate-limited")
+            break
+        except InvalidToken:
+            failures += 1
+        except requests.HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else None
+            if status in (403, 404):
+                # Deleted, or not visible to this user's token — cache a placeholder
+                # so this URI is not offered again on the next tick.
+                resolved_items.append({"playlist_uri": uri, "name": "Unknown Playlist"})
+            else:
+                failures += 1
+                logger.exception("Playlist lookup failed for %s", uri)
+        except Exception:
+            failures += 1
+            logger.exception("Playlist lookup failed for %s", uri)
+
+    if resolved_items:
+        try:
+            submit_playlist_cache_with_retries(backend_url, worker_token, resolved_items)
+        except requests.RequestException:
+            logger.exception("Could not submit resolved playlist names to the backend")
+            failures += len(resolved_items)
+            return {"processed": processed, "resolved": 0, "failures": failures}
+
+    return {"processed": processed, "resolved": len(resolved_items), "failures": failures}

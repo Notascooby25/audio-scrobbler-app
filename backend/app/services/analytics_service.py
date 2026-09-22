@@ -4,7 +4,7 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from ..models import LikedTrack, Follow
+from ..models import LikedTrack, Follow, PlaylistCache
 from ..queries.analytics_queries import (
     build_library_count_query,
     build_library_entities_query,
@@ -155,42 +155,26 @@ def get_user_charts(
             entries.append(ChartEntry(label=row.album_name, secondary=row.artist_name, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), sources=row_sources))
 
     if entity == "playlists" and entries:
-        from ..models import PlaylistCache, User
-        from ..services.spotify_library_service import _refresh_access_token, _request
-        
-        # Collect missing URIs
-        uris_to_fetch = []
-        cached_names = {}
-        for entry in entries:
-            if entry.spotify_track_id:
-                cache_row = db.query(PlaylistCache).filter(PlaylistCache.playlist_uri == entry.spotify_track_id).first()
-                if cache_row:
-                    cached_names[entry.spotify_track_id] = cache_row.name
-                else:
-                    uris_to_fetch.append(entry.spotify_track_id)
-        
-        # Fetch missing
-        if uris_to_fetch:
-            user = db.query(User).filter(User.id == user_id).first()
-            if user:
-                try:
-                    access_token = _refresh_access_token(db, user)
-                    headers = {"Authorization": f"Bearer {access_token}"}
-                    for uri in uris_to_fetch:
-                        playlist_id = uri.split(":")[-1] if ":" in uri else uri
-                        response = _request("GET", f"https://api.spotify.com/v1/playlists/{playlist_id}", headers=headers)
-                        name = response.json().get("name", "Unknown Playlist")
-                        cached_names[uri] = name
-                        db.add(PlaylistCache(playlist_uri=uri, name=name))
-                    db.commit()
-                except Exception:
-                    # Ignore fetching errors (e.g. rate limit, auth)
-                    pass
-        
-        # Update labels
-        for entry in entries:
-            if entry.spotify_track_id and entry.spotify_track_id in cached_names:
-                entry.label = cached_names[entry.spotify_track_id]
+        # Read-only: no Spotify call happens here. This used to fetch missing
+        # names inline, one Spotify request per uncached playlist while the
+        # request blocked on the response — an un-throttled Spotify-calling
+        # path unrelated to the shared rate-limit state everything else
+        # respects, and the same "many sequential calls with no gap" pattern
+        # behind the 2026-09-17 incident. Names are now resolved in the
+        # background by the worker's rate-limit-aware SpotifyClient
+        # (worker/spotify_ingestion.py: backfill_playlist_names) a handful at
+        # a time, and just read from playlist_cache here. A playlist that
+        # hasn't been resolved yet keeps showing its raw URI as the label
+        # until the worker catches up.
+        uris = {entry.spotify_track_id for entry in entries if entry.spotify_track_id}
+        if uris:
+            cached_names = {
+                row.playlist_uri: row.name
+                for row in db.query(PlaylistCache).filter(PlaylistCache.playlist_uri.in_(uris)).all()
+            }
+            for entry in entries:
+                if entry.spotify_track_id and entry.spotify_track_id in cached_names:
+                    entry.label = cached_names[entry.spotify_track_id]
 
     return ChartResponse(user_id=user_id, entity=entity, range=range_key, entries=entries)
 
