@@ -18,7 +18,6 @@ from spotify_ingestion import (
     ScrobbleSettingsRecord,
     SpotifyClient,
     UserRecord,
-    backfill_playlist_names,
     spotify_rate_limit_blocked_until,
     sync_liked_tracks_for_user,
     sync_user,
@@ -56,8 +55,6 @@ liked_tracks_interval_minutes = int(os.getenv("WORKER_LIKED_TRACKS_INTERVAL_MINU
 # Playlist names are low-priority enrichment, not ingestion, so this defaults to a
 # slow cadence and a small per-tick batch — a large backlog is spread across many
 # ticks rather than bursting Spotify, the same reasoning as the liked-tracks walk.
-playlist_cache_interval_minutes = int(os.getenv("WORKER_PLAYLIST_CACHE_INTERVAL_MINUTES", "15"))
-playlist_cache_batch_size = int(os.getenv("WORKER_PLAYLIST_CACHE_BATCH_SIZE", "10"))
 file_import_enabled = os.getenv("WORKER_FILE_IMPORT_ENABLED", "false").lower() == "true"
 file_import_dir = os.getenv("WORKER_IMPORT_DIR", "/data/imports")
 file_import_interval_minutes = int(os.getenv("WORKER_FILE_IMPORT_INTERVAL_MINUTES", "10"))
@@ -70,10 +67,6 @@ last_liked_tracks_sync_at: str | None = None
 last_liked_tracks_sync_users = 0
 last_liked_tracks_sync_failures = 0
 last_liked_tracks_sync_events = 0
-last_playlist_cache_sync_at: str | None = None
-last_playlist_cache_sync_processed = 0
-last_playlist_cache_sync_resolved = 0
-last_playlist_cache_sync_failures = 0
 last_file_import_at: str | None = None
 last_file_import_processed = 0
 last_file_import_failed = 0
@@ -234,34 +227,6 @@ def run_liked_tracks_ingestion() -> None:
         engine.dispose()
 
 
-def run_playlist_cache_backfill() -> None:
-    global last_playlist_cache_sync_at, last_playlist_cache_sync_processed
-    global last_playlist_cache_sync_resolved, last_playlist_cache_sync_failures
-    if not spotify_enabled or not spotify_client_id or not spotify_client_secret:
-        return
-    blocked_until = spotify_rate_limit_blocked_until()
-    if blocked_until:
-        logger.warning("Skipping playlist-name backfill: quota rate-limited until %s", blocked_until.isoformat())
-        return
-    engine = create_engine(database_url, pool_pre_ping=True)
-    session = sessionmaker(bind=engine)()
-    client = SpotifyClient(spotify_client_id, spotify_client_secret, refresh_token_key)
-    try:
-        result = backfill_playlist_names(session, client, backend_url, worker_token, max_items=playlist_cache_batch_size)
-        last_playlist_cache_sync_at = datetime.now(timezone.utc).isoformat()
-        last_playlist_cache_sync_processed = result["processed"]
-        last_playlist_cache_sync_resolved = result["resolved"]
-        last_playlist_cache_sync_failures = result["failures"]
-        if result["processed"]:
-            logger.info(
-                "Playlist-name backfill completed: %s processed, %s resolved, %s failures",
-                result["processed"], result["resolved"], result["failures"],
-            )
-    except Exception:
-        logger.exception("Playlist-name backfill failed")
-    finally:
-        session.close()
-        engine.dispose()
 
 
 def run_file_import() -> None:
@@ -295,10 +260,6 @@ def health_check() -> dict[str, str]:
         "last_liked_tracks_sync_users": str(last_liked_tracks_sync_users),
         "last_liked_tracks_sync_failures": str(last_liked_tracks_sync_failures),
         "last_liked_tracks_sync_events": str(last_liked_tracks_sync_events),
-        "last_playlist_cache_sync_at": last_playlist_cache_sync_at or "never",
-        "last_playlist_cache_sync_processed": str(last_playlist_cache_sync_processed),
-        "last_playlist_cache_sync_resolved": str(last_playlist_cache_sync_resolved),
-        "last_playlist_cache_sync_failures": str(last_playlist_cache_sync_failures),
         "file_import_enabled": str(file_import_enabled).lower(),
         "last_file_import_at": last_file_import_at or "never",
         "last_file_import_processed": str(last_file_import_processed),
@@ -341,15 +302,6 @@ def metrics() -> str:
         "# HELP audio_scrobbler_worker_liked_tracks_sync_events Tracks submitted in the last liked-tracks sync.",
         "# TYPE audio_scrobbler_worker_liked_tracks_sync_events gauge",
         f"audio_scrobbler_worker_liked_tracks_sync_events {last_liked_tracks_sync_events}",
-        "# HELP audio_scrobbler_worker_playlist_cache_processed Playlist URIs attempted in the last backfill tick.",
-        "# TYPE audio_scrobbler_worker_playlist_cache_processed gauge",
-        f"audio_scrobbler_worker_playlist_cache_processed {last_playlist_cache_sync_processed}",
-        "# HELP audio_scrobbler_worker_playlist_cache_resolved Playlist names resolved in the last backfill tick.",
-        "# TYPE audio_scrobbler_worker_playlist_cache_resolved gauge",
-        f"audio_scrobbler_worker_playlist_cache_resolved {last_playlist_cache_sync_resolved}",
-        "# HELP audio_scrobbler_worker_playlist_cache_failures Failures in the last playlist-name backfill tick.",
-        "# TYPE audio_scrobbler_worker_playlist_cache_failures gauge",
-        f"audio_scrobbler_worker_playlist_cache_failures {last_playlist_cache_sync_failures}",
         "# HELP audio_scrobbler_worker_file_import_processed Files processed in the last file import run.",
         "# TYPE audio_scrobbler_worker_file_import_processed gauge",
         f"audio_scrobbler_worker_file_import_processed {last_file_import_processed}",
@@ -385,7 +337,6 @@ def start_scheduler() -> None:
         scheduler.add_job(run_spotify_ingestion, "interval", minutes=spotify_interval_minutes, id="spotify-ingestion")
         scheduler.add_job(run_currently_playing_sync, "interval", seconds=10, id="currently-playing-sync")
         scheduler.add_job(run_liked_tracks_ingestion, "interval", minutes=liked_tracks_interval_minutes, id="liked-tracks-ingestion")
-        scheduler.add_job(run_playlist_cache_backfill, "interval", minutes=playlist_cache_interval_minutes, id="playlist-cache-backfill")
     if file_import_enabled:
         scheduler.add_job(run_file_import, "interval", minutes=file_import_interval_minutes, id="file-import")
 

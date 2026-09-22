@@ -37,23 +37,3 @@ class LikedTracksUpsertResponse(BaseModel):
     updated: int
 
 
-class PlaylistCachePendingItem(BaseModel):
-    playlist_uri: str
-    user_id: int
-
-
-class PlaylistCachePendingResponse(BaseModel):
-    items: list[PlaylistCachePendingItem]
-
-
-class WorkerPlaylistCacheItem(BaseModel):
-    playlist_uri: str
-    name: str
-
-
-class WorkerPlaylistCacheUpsertRequest(BaseModel):
-    items: list[WorkerPlaylistCacheItem]
-
-
-class PlaylistCacheUpsertResponse(BaseModel):
-    upserted: int

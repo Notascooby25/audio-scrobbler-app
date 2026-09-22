@@ -80,7 +80,7 @@ describe('date filtering', () => {
     expect(fetchReportsSummary).toHaveBeenLastCalledWith({ token: 'demo-token', dateRange: expect.objectContaining({ range: 'last.month' }) })
   })
 
-  it('loads live artist, album, track, and playlist categories for Reports', async () => {
+  it('loads live artist, album, and track categories for Reports', async () => {
     fetchReportsSummary.mockResolvedValue({ period_scrobbles: 8, comparison_percent: 2, listening_minutes: 40, average_per_day: 1, previous_period_scrobbles: 7 })
     fetchReportsCharts.mockResolvedValue({ weekly_scrobbles: [], listening_clock: [] })
     fetchReportsEntity.mockImplementation(({ entity }) => Promise.resolve({ entries: [{ label: entity, play_count: 1 }] }))
@@ -90,8 +90,7 @@ describe('date filtering', () => {
     await waitFor(() => expect(screen.getByText('artists')).toBeInTheDocument())
     expect(screen.getByText('albums')).toBeInTheDocument()
     expect(screen.getByText('tracks')).toBeInTheDocument()
-    expect(screen.getByText('playlists')).toBeInTheDocument()
-    expect(fetchReportsEntity).toHaveBeenCalledTimes(4)
+    expect(fetchReportsEntity).toHaveBeenCalledTimes(3)
   })
 
   it('does not refetch Reports data while a custom range is missing dates', async () => {

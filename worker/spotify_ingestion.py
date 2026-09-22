@@ -147,36 +147,10 @@ def submit_liked_tracks_with_retries(backend_url: str, worker_token: str, user_i
     raise requests.HTTPError("Backend liked-tracks sync failed after retries")
 
 
-def fetch_pending_playlist_uris(backend_url: str, worker_token: str, limit: int) -> list[dict[str, object]]:
-    response = requests.get(
-        f"{backend_url}/spotify/internal/playlist-cache/pending",
-        headers={"X-Worker-Token": worker_token},
-        params={"limit": limit},
-        timeout=10,
-    )
-    response.raise_for_status()
-    items = response.json().get("items", [])
-    return [item for item in items if isinstance(item, dict)]
 
 
-def submit_playlist_cache_with_retries(backend_url: str, worker_token: str, items: list[dict[str, str]]):
-    if not items:
-        return None
-    payload = {"items": items}
-    for attempt in range(3):
-        response = requests.post(
-            f"{backend_url}/spotify/internal/playlist-cache",
-            json=payload,
-            headers={"X-Worker-Token": worker_token},
-            timeout=10,
-        )
-        if response.status_code in (429, 500, 502, 503, 504) and attempt < 2:
-            retry_after = min(float(response.headers.get("Retry-After", "1")), 30) if response.status_code == 429 else 2 ** attempt
-            time.sleep(retry_after)
-            continue
-        response.raise_for_status()
-        return response
-    raise requests.HTTPError("Backend playlist-cache upsert failed after retries")
+
+
 
 
 def _parse_added_at(value: object) -> datetime | None:

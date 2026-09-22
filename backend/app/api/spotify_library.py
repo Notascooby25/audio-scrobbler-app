@@ -13,20 +13,14 @@ from ..models import User
 from ..schemas.scrobble_settings import UserScrobbleSettingsResponse
 from ..schemas.spotify_library import (
     LikedTracksUpsertResponse,
-    PlaylistCachePendingItem,
-    PlaylistCachePendingResponse,
-    PlaylistCacheUpsertResponse,
     SpotifySyncResponse,
     WorkerBackfillArtworkRequest,
     WorkerLikedTracksSyncRequest,
-    WorkerPlaylistCacheUpsertRequest,
 )
 from ..services import scrobble_settings_service
 from ..services.spotify_library_service import (
     backfill_scrobble_artwork,
-    find_pending_playlist_uris,
     upsert_liked_tracks,
-    upsert_playlist_cache,
 )
 
 router = APIRouter(prefix="/spotify", tags=["spotify-library"])
@@ -82,21 +76,4 @@ def backfill_artwork_internal(
         raise HTTPException(status_code=502, detail="Spotify artwork backfill failed") from exc
 
 
-@router.get("/internal/playlist-cache/pending", response_model=PlaylistCachePendingResponse)
-def playlist_cache_pending(
-    limit: int = Query(default=10, ge=1, le=50),
-    db: Session = Depends(get_db),
-    _: None = Depends(require_worker_token),
-) -> PlaylistCachePendingResponse:
-    items = find_pending_playlist_uris(db, limit=limit)
-    return PlaylistCachePendingResponse(items=[PlaylistCachePendingItem(**item) for item in items])
 
-
-@router.post("/internal/playlist-cache", response_model=PlaylistCacheUpsertResponse)
-def playlist_cache_upsert(
-    payload: WorkerPlaylistCacheUpsertRequest,
-    db: Session = Depends(get_db),
-    _: None = Depends(require_worker_token),
-) -> PlaylistCacheUpsertResponse:
-    upserted = upsert_playlist_cache(db, payload.items)
-    return PlaylistCacheUpsertResponse(upserted=upserted)

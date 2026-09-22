@@ -174,6 +174,7 @@ class ArtworkCache(Base):
     cached_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
+# Kept intentionally, unreferenced, for reversibility
 class PlaylistCache(Base):
     __tablename__ = "playlist_cache"
 

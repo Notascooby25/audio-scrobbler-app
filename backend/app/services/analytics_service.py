@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from ..models import Follow, LikedTrack, ListeningEvent, PlaylistCache
+from ..models import Follow, LikedTrack, ListeningEvent
 from ..queries.analytics_queries import (
     build_library_count_query,
     build_library_entities_query,
@@ -149,33 +149,8 @@ def get_user_charts(
         elif entity == "tracks":
             track_id = getattr(row, "spotify_track_id", None)
             entries.append(ChartEntry(label=row.track_name, secondary=row.artist_name, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), spotify_track_id=track_id, sources=row_sources, is_liked=track_id in liked_ids))
-        elif entity == "playlists":
-            playlist_uri = getattr(row, "playlist_uri", None)
-            entries.append(ChartEntry(label=playlist_uri or "Unknown Playlist", secondary=None, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), sources=row_sources, spotify_track_id=playlist_uri))
         else:
             entries.append(ChartEntry(label=row.album_name, secondary=row.artist_name, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), sources=row_sources))
-
-    if entity == "playlists" and entries:
-        # Read-only: no Spotify call happens here. This used to fetch missing
-        # names inline, one Spotify request per uncached playlist while the
-        # request blocked on the response — an un-throttled Spotify-calling
-        # path unrelated to the shared rate-limit state everything else
-        # respects, and the same "many sequential calls with no gap" pattern
-        # behind the 2026-09-17 incident. Names are now resolved in the
-        # background by the worker's rate-limit-aware SpotifyClient
-        # (worker/spotify_ingestion.py: backfill_playlist_names) a handful at
-        # a time, and just read from playlist_cache here. A playlist that
-        # hasn't been resolved yet keeps showing its raw URI as the label
-        # until the worker catches up.
-        uris = {entry.spotify_track_id for entry in entries if entry.spotify_track_id}
-        if uris:
-            cached_names = {
-                row.playlist_uri: row.name
-                for row in db.query(PlaylistCache).filter(PlaylistCache.playlist_uri.in_(uris)).all()
-            }
-            for entry in entries:
-                if entry.spotify_track_id and entry.spotify_track_id in cached_names:
-                    entry.label = cached_names[entry.spotify_track_id]
 
     return ChartResponse(user_id=user_id, entity=entity, range=range_key, entries=entries)
 

@@ -53,8 +53,7 @@ export default function ReportsPage() {
       fetchReportsEntity({ token: session.accessToken, entity: 'artists', dateRange, userId: targetUserId }),
       fetchReportsEntity({ token: session.accessToken, entity: 'albums', dateRange, userId: targetUserId }),
       fetchReportsEntity({ token: session.accessToken, entity: 'tracks', dateRange, userId: targetUserId }),
-      fetchReportsEntity({ token: session.accessToken, entity: 'playlists', dateRange, userId: targetUserId }),
-    ]).then(([summary, charts, artists, albums, tracks, playlists]) => setReport({ summary, charts, artists, albums, tracks, playlists }))
+    ]).then(([summary, charts, artists, albums, tracks]) => setReport({ summary, charts, artists, albums, tracks }))
       .catch((requestError) => setError(requestError.status === 403 ? "Follow this user to see their reports." : requestError.message))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange, routeUserId])
@@ -95,7 +94,7 @@ export default function ReportsPage() {
         <LibraryRankList entries={report.artists.entries} kind="artists" token={session.accessToken} page={1} pageSize={10} totalCount={report.artists.entries.length} view="list" userId={targetUserId} />
         <LibraryRankList entries={report.albums.entries} kind="albums" token={session.accessToken} page={1} pageSize={10} totalCount={report.albums.entries.length} view="list" userId={targetUserId} />
         <LibraryRankList entries={report.tracks.entries} kind="tracks" token={session.accessToken} page={1} pageSize={10} totalCount={report.tracks.entries.length} view="list" userId={targetUserId} />
-        <LibraryRankList entries={report.playlists.entries} kind="playlists" token={session.accessToken} page={1} pageSize={10} totalCount={report.playlists.entries.length} view="list" userId={targetUserId} />
+
       </div>}
       <div className="report-grid">
         {REPORTS.map(([title, description]) => (

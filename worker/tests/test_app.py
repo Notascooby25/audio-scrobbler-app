@@ -80,10 +80,6 @@ def test_health_reports_scheduler_and_fixture_status(monkeypatch):
         "last_liked_tracks_sync_users": "0",
         "last_liked_tracks_sync_failures": "0",
         "last_liked_tracks_sync_events": "0",
-        "last_playlist_cache_sync_at": "never",
-        "last_playlist_cache_sync_processed": "0",
-        "last_playlist_cache_sync_resolved": "0",
-        "last_playlist_cache_sync_failures": "0",
         "file_import_enabled": "false",
         "last_file_import_at": "never",
         "last_file_import_processed": "0",
@@ -101,7 +97,6 @@ def test_metrics_exposes_worker_gauges_without_user_data():
     metrics = app.metrics()
     assert "audio_scrobbler_worker_scheduler_running" in metrics
     assert "audio_scrobbler_worker_spotify_sync_failures" in metrics
-    assert "audio_scrobbler_worker_playlist_cache_resolved" in metrics
     assert "audio_scrobbler_worker_file_import_processed" in metrics
     assert "user_id" not in metrics
 
