@@ -3,8 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy.orm import Session
+from sqlalchemy import select, func
 
-from ..models import LikedTrack, Follow
+from ..models import LikedTrack, Follow, ListeningEvent
 from ..queries.analytics_queries import (
     build_library_count_query,
     build_library_entities_query,
@@ -302,22 +303,19 @@ def get_report_summary(
             comparison = ((current_count - previous_count) / previous_count * 100) if previous_count else 0.0
         days = max((period_end - period_start).days, 1)
     following_avg = None
-    if range_key != "all.time":
-        # Get list of followed user IDs
-        followed_ids = [f.followee_id for f in db.query(Follow).filter(Follow.follower_id == user_id).all()]
-        if followed_ids:
-            # Sum of scrobbles for all followed users in this period
-            from ..models import ListeningEvent
-            from sqlalchemy import select, func
-            from ..queries.analytics_queries import not_blocked_clause
-            
-            # Since not_blocked_clause takes user_id, we just get raw scrobbles for simplicity,
-            # or we can iterate. Since it's a small group typically, iteration is safer for block rules:
-            total_follow_scrobbles = 0
-            for f_id in followed_ids:
-                f_count_row = db.execute(build_report_period_count_query(f_id, period_start, period_end)).one()
-                total_follow_scrobbles += int(f_count_row.scrobble_count)
-            following_avg = total_follow_scrobbles / len(followed_ids)
+    # Get list of followed user IDs
+    followed_ids = [f.followee_id for f in db.query(Follow).filter(Follow.follower_id == user_id).all()]
+    if followed_ids:
+        # Sum of scrobbles for all followed users in this period
+        from ..queries.analytics_queries import not_blocked_clause
+        
+        # Since not_blocked_clause takes user_id, we just get raw scrobbles for simplicity,
+        # or we can iterate. Since it's a small group typically, iteration is safer for block rules:
+        total_follow_scrobbles = 0
+        for f_id in followed_ids:
+            f_count_row = db.execute(build_report_period_count_query(f_id, period_start, period_end)).one()
+            total_follow_scrobbles += int(f_count_row.scrobble_count)
+        following_avg = total_follow_scrobbles / len(followed_ids)
 
     return ReportSummaryResponse(
         user_id=user_id,

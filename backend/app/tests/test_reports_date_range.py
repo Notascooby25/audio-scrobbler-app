@@ -158,6 +158,43 @@ def test_reports_summary_custom_requires_start_and_end():
     assert response.status_code == 400
 
 
+def test_reports_summary_all_time_following_avg_with_friend():
+    db = TestingSession()
+    from backend.app.models import Follow
+    db.add(User(id=2, spotify_user_id="friend", username="friend", display_name="Friend", refresh_token_cipher="c", is_active=True))
+    db.add(Follow(follower_id=1, followee_id=2))
+    db.add(
+        ListeningEvent(
+            user_id=2,
+            track_id="track-f",
+            track_name="Friend Track",
+            artist_name="Friend Artist",
+            album_name="Friend Album",
+            played_at=datetime.utcnow() - timedelta(days=2),
+            source="spotify",
+            play_id="track-f",
+        )
+    )
+    db.commit()
+    
+    response = client.get("/reports/summary?range=all.time")
+    
+    db.query(ListeningEvent).filter_by(user_id=2).delete()
+    db.query(Follow).delete()
+    db.query(User).filter_by(id=2).delete()
+    db.commit()
+    db.close()
+
+    assert response.status_code == 200
+    assert response.json()["following_average_scrobbles"] == 1.0
+
+
+def test_reports_summary_all_time_following_avg_no_friends():
+    response = client.get("/reports/summary?range=all.time")
+    assert response.status_code == 200
+    assert response.json()["following_average_scrobbles"] is None
+
+
 # --- /reports/{entity} ---
 
 def test_reports_entity_filters_by_range():
@@ -172,7 +209,7 @@ def test_reports_entity_rejects_unsupported_range():
 
 
 def test_reports_entity_rejects_unknown_entity():
-    response = client.get("/reports/playlists")
+    response = client.get("/reports/unknown_entity")
     assert response.status_code == 404
 
 
