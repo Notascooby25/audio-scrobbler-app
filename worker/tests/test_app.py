@@ -84,6 +84,10 @@ def test_health_reports_scheduler_and_fixture_status(monkeypatch):
         "last_file_import_at": "never",
         "last_file_import_processed": "0",
         "last_file_import_failed": "0",
+        "last_genre_cache_sync_at": "never",
+        "last_genre_cache_sync_processed": "0",
+        "last_genre_cache_sync_resolved": "0",
+        "last_genre_cache_sync_failures": "0",
     }
 
 

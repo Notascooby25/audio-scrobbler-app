@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import os
+genre_cache_interval_minutes = int(os.environ.get("WORKER_GENRE_CACHE_INTERVAL_MINUTES", "5"))
+genre_cache_batch_size = int(os.environ.get("WORKER_GENRE_CACHE_BATCH_SIZE", "50"))
+
 import logging
 from datetime import datetime, timedelta, timezone
 
@@ -70,6 +73,12 @@ last_liked_tracks_sync_events = 0
 last_file_import_at: str | None = None
 last_file_import_processed = 0
 last_file_import_failed = 0
+
+last_genre_cache_sync_at = "never"
+last_genre_cache_sync_processed = 0
+last_genre_cache_sync_resolved = 0
+last_genre_cache_sync_failures = 0
+
 
 
 def build_fixture_event() -> dict[str, object]:
@@ -229,6 +238,27 @@ def run_liked_tracks_ingestion() -> None:
 
 
 
+
+def run_genre_cache_backfill() -> None:
+    global last_genre_cache_sync_at, last_genre_cache_sync_processed, last_genre_cache_sync_resolved, last_genre_cache_sync_failures
+    if not spotify_enabled or not spotify_client_id or not spotify_client_secret:
+        return
+    blocked_until = spotify_rate_limit_blocked_until()
+    if blocked_until:
+        return
+    client = SpotifyClient(spotify_client_id, spotify_client_secret, refresh_token_key)
+    try:
+        from spotify_ingestion import backfill_artist_genres
+        result = backfill_artist_genres(client, backend_url, worker_token, max_items=genre_cache_batch_size)
+        last_genre_cache_sync_processed = result["processed"]
+        last_genre_cache_sync_resolved = result["resolved"]
+        last_genre_cache_sync_failures = result["failures"]
+        last_genre_cache_sync_at = datetime.now(timezone.utc).isoformat()
+        if result["processed"] > 0:
+            logger.info("Genre cache backfill: %s processed, %s resolved, %s failures", result["processed"], result["resolved"], result["failures"])
+    except Exception:
+        logger.exception("Genre cache backfill failed")
+
 def run_file_import() -> None:
     global last_file_import_at, last_file_import_processed, last_file_import_failed
     if not file_import_enabled:
@@ -264,6 +294,12 @@ def health_check() -> dict[str, str]:
         "last_file_import_at": last_file_import_at or "never",
         "last_file_import_processed": str(last_file_import_processed),
         "last_file_import_failed": str(last_file_import_failed),
+
+        "last_genre_cache_sync_at": last_genre_cache_sync_at,
+        "last_genre_cache_sync_processed": str(last_genre_cache_sync_processed),
+        "last_genre_cache_sync_resolved": str(last_genre_cache_sync_resolved),
+        "last_genre_cache_sync_failures": str(last_genre_cache_sync_failures),
+
     }
 
 
@@ -305,6 +341,12 @@ def metrics() -> str:
         "# HELP audio_scrobbler_worker_file_import_processed Files processed in the last file import run.",
         "# TYPE audio_scrobbler_worker_file_import_processed gauge",
         f"audio_scrobbler_worker_file_import_processed {last_file_import_processed}",
+        "# HELP audio_scrobbler_worker_genre_cache_processed Total genre cache items processed.",
+        "# TYPE audio_scrobbler_worker_genre_cache_processed gauge",
+        f"audio_scrobbler_worker_genre_cache_processed {last_genre_cache_sync_processed}",
+        "# HELP audio_scrobbler_worker_genre_cache_resolved Total genre cache items resolved.",
+        "# TYPE audio_scrobbler_worker_genre_cache_resolved gauge",
+        f"audio_scrobbler_worker_genre_cache_resolved {last_genre_cache_sync_resolved}",
         "# HELP audio_scrobbler_worker_file_import_failed Files failed in the last file import run.",
         "# TYPE audio_scrobbler_worker_file_import_failed gauge",
         f"audio_scrobbler_worker_file_import_failed {last_file_import_failed}",
@@ -330,6 +372,17 @@ def readiness_check() -> dict[str, str] | JSONResponse:
 
 @app.on_event("startup")
 def start_scheduler() -> None:
+    
+    if spotify_enabled:
+        scheduler.add_job(
+            run_genre_cache_backfill,
+            "interval",
+            minutes=genre_cache_interval_minutes,
+            id="genre_cache_backfill",
+            replace_existing=True,
+            next_run_time=datetime.now(timezone.utc),
+        )
+
     scheduler.start()
     if fixture_enabled:
         scheduler.add_job(run_fixture_ingestion, "interval", minutes=1, id="fixture-ingestion")
