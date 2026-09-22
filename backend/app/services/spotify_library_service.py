@@ -150,3 +150,27 @@ def upsert_liked_tracks(db: Session, user_id: int, tracks: list[WorkerLikedTrack
             updated += 1
     db.commit()
     return {"inserted": inserted, "updated": updated}
+def find_pending_genre_artist_ids(db: Session, limit: int = 10) -> list[str]:
+    from ..queries.analytics_queries import build_pending_genre_artist_ids_query
+    rows = db.execute(build_pending_genre_artist_ids_query(limit)).all()
+    return [row.artist_id for row in rows if row.artist_id]
+
+def upsert_genre_cache(db: Session, items: list[dict[str, object]]) -> int:
+    from ..models import GenreCache
+    from datetime import datetime
+    if not items:
+        return 0
+    artist_ids = {item["artist_spotify_id"] for item in items}
+    existing_rows = db.query(GenreCache).filter(GenreCache.artist_spotify_id.in_(artist_ids)).all()
+    existing_by_id = {row.artist_spotify_id: row for row in existing_rows}
+    for item in items:
+        artist_id = item["artist_spotify_id"]
+        genres = item.get("genres", [])
+        row = existing_by_id.get(artist_id)
+        if row:
+            row.genres = genres
+            row.cached_at = datetime.utcnow()
+        else:
+            db.add(GenreCache(artist_spotify_id=artist_id, genres=genres, cached_at=datetime.utcnow()))
+    db.commit()
+    return len(items)

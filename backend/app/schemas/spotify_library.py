@@ -37,3 +37,19 @@ class LikedTracksUpsertResponse(BaseModel):
     updated: int
 
 
+
+class GenreCachePendingItem(BaseModel):
+    artist_spotify_id: str
+
+class GenreCachePendingResponse(BaseModel):
+    items: list[GenreCachePendingItem]
+
+class WorkerGenreCacheItem(BaseModel):
+    artist_spotify_id: str
+    genres: list[str]
+
+class WorkerGenreCacheUpsertRequest(BaseModel):
+    items: list[WorkerGenreCacheItem]
+
+class GenreCacheUpsertResponse(BaseModel):
+    upserted: int

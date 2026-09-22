@@ -77,3 +77,31 @@ def backfill_artwork_internal(
 
 
 
+
+from ..schemas.spotify_library import (
+    GenreCachePendingResponse,
+    GenreCachePendingItem,
+    WorkerGenreCacheUpsertRequest,
+    GenreCacheUpsertResponse
+)
+
+@router.get("/internal/genre-cache/pending", response_model=GenreCachePendingResponse)
+def genre_cache_pending(
+    limit: int = Query(default=10, ge=1, le=50),
+    db: Session = Depends(get_db),
+    _: None = Depends(require_worker_token),
+) -> GenreCachePendingResponse:
+    from ..services.spotify_library_service import find_pending_genre_artist_ids
+    artist_ids = find_pending_genre_artist_ids(db, limit=limit)
+    return GenreCachePendingResponse(items=[GenreCachePendingItem(artist_spotify_id=aid) for aid in artist_ids])
+
+
+@router.post("/internal/genre-cache", response_model=GenreCacheUpsertResponse)
+def genre_cache_upsert(
+    payload: WorkerGenreCacheUpsertRequest,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_worker_token),
+) -> GenreCacheUpsertResponse:
+    from ..services.spotify_library_service import upsert_genre_cache
+    upserted = upsert_genre_cache(db, [item.model_dump() for item in payload.items])
+    return GenreCacheUpsertResponse(upserted=upserted)

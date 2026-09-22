@@ -211,3 +211,4 @@ def test_charts_aggregates_sources():
     entries = response.json()["entries"]
     nat = next(e for e in entries if e["label"] == "The National")
     assert set(nat["sources"]) == {"spotify", "youtube"}
+

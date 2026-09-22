@@ -182,3 +182,10 @@ class PlaylistCache(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     cached_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
+
+
+class GenreCache(Base):
+    __tablename__ = "genre_cache"
+    artist_spotify_id: Mapped[str] = mapped_column(String(255), primary_key=True, index=True)
+    genres: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    cached_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
