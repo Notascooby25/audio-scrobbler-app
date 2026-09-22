@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import time
+from datetime import datetime
 from typing import Any
 
 import requests
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..config import settings
-from ..models import LikedTrack, ListeningEvent, User
-from ..schemas.spotify_library import WorkerLikedTrackItem
+from ..models import LikedTrack, ListeningEvent, PlaylistCache, User
+from ..queries.analytics_queries import extract_playlist_uri
+from ..schemas.spotify_library import WorkerLikedTrackItem, WorkerPlaylistCacheItem
 from ..security import decrypt_refresh_token, encrypt_refresh_token
 
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
@@ -92,6 +95,57 @@ def backfill_scrobble_artwork(db: Session, user: User) -> dict[str, int]:
                 updated += 1
     db.commit()
     return {"fetched": len(missing), "inserted": 0, "updated": 0, "artwork_updated": updated}
+
+
+def find_pending_playlist_uris(db: Session, limit: int = 10) -> list[dict[str, Any]]:
+    """Returns up to `limit` playlist URIs seen in someone's listening history that
+    have no PlaylistCache row yet, each paired with an active user who played it (so
+    the worker has whose token to look the name up with).
+
+    Read-only, and makes no Spotify call itself — see backfill_playlist_names in
+    worker/spotify_ingestion.py, which is the only thing that actually calls Spotify
+    for this. Reuses extract_playlist_uri (queries/analytics_queries.py) rather than
+    re-deriving the dialect-specific JSON extraction here.
+    """
+    playlist_uri_expr = extract_playlist_uri(ListeningEvent.raw_metadata)
+    already_cached = select(PlaylistCache.playlist_uri).where(PlaylistCache.playlist_uri == playlist_uri_expr)
+    statement = (
+        select(playlist_uri_expr.label("playlist_uri"), func.max(ListeningEvent.user_id).label("user_id"))
+        .join(User, User.id == ListeningEvent.user_id)
+        .where(playlist_uri_expr.isnot(None))
+        .where(User.is_active.is_(True))
+        .where(~already_cached.exists())
+        .group_by(playlist_uri_expr)
+        .limit(limit)
+    )
+    rows = db.execute(statement).all()
+    return [{"playlist_uri": row.playlist_uri, "user_id": row.user_id} for row in rows]
+
+
+def upsert_playlist_cache(db: Session, items: list[WorkerPlaylistCacheItem]) -> int:
+    """Persists playlist names the worker already resolved via Spotify.
+
+    Pure persistence only — like upsert_liked_tracks, this never calls Spotify
+    itself; the lookup happens in the worker's rate-limit-aware SpotifyClient
+    (worker/spotify_ingestion.py).
+    """
+    if not items:
+        return 0
+    existing = {
+        row.playlist_uri: row
+        for row in db.query(PlaylistCache).filter(
+            PlaylistCache.playlist_uri.in_([item.playlist_uri for item in items])
+        ).all()
+    }
+    for item in items:
+        row = existing.get(item.playlist_uri)
+        if row is None:
+            db.add(PlaylistCache(playlist_uri=item.playlist_uri, name=item.name, cached_at=datetime.utcnow()))
+        else:
+            row.name = item.name
+            row.cached_at = datetime.utcnow()
+    db.commit()
+    return len(items)
 
 
 def upsert_liked_tracks(db: Session, user_id: int, tracks: list[WorkerLikedTrackItem]) -> dict[str, int]:
