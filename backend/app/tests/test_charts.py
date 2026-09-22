@@ -98,7 +98,7 @@ def test_charts_rejects_unsupported_entity_and_range():
     app.dependency_overrides[analytics_module.get_db] = lambda: db
     app.dependency_overrides[analytics_module.get_current_user] = lambda: ViewerUser()
     try:
-        bad_entity = client.get("/analytics/charts/2?entity=playlists", headers={"Authorization": "Bearer test"})
+        bad_entity = client.get("/analytics/charts/2?entity=bogus", headers={"Authorization": "Bearer test"})
         bad_range = client.get("/analytics/charts/2?range=5year", headers={"Authorization": "Bearer test"})
     finally:
         app.dependency_overrides.clear()

@@ -11,8 +11,6 @@ import { readSession } from '../session'
 
 const REPORTS = [
   ['Music ratio', 'Compare artists, albums, and tracks in your history.'],
-  ['Listening fingerprint', 'A richer listening profile will be calculated from your history.'],
-  ['Music by decade', 'Release-year metadata will unlock this view.'],
 ]
 
 function dateRangeFromParams(searchParams) {
@@ -55,7 +53,8 @@ export default function ReportsPage() {
       fetchReportsEntity({ token: session.accessToken, entity: 'artists', dateRange, userId: targetUserId }),
       fetchReportsEntity({ token: session.accessToken, entity: 'albums', dateRange, userId: targetUserId }),
       fetchReportsEntity({ token: session.accessToken, entity: 'tracks', dateRange, userId: targetUserId }),
-    ]).then(([summary, charts, artists, albums, tracks]) => setReport({ summary, charts, artists, albums, tracks }))
+      fetchReportsEntity({ token: session.accessToken, entity: 'playlists', dateRange, userId: targetUserId }),
+    ]).then(([summary, charts, artists, albums, tracks, playlists]) => setReport({ summary, charts, artists, albums, tracks, playlists }))
       .catch((requestError) => setError(requestError.status === 403 ? "Follow this user to see their reports." : requestError.message))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange, routeUserId])
@@ -84,6 +83,9 @@ export default function ReportsPage() {
         {dateRange.compare_to_previous && (
           <div><strong>{Number(report.summary.previous_period_scrobbles || 0).toLocaleString()}</strong><span>Previous period</span></div>
         )}
+        {report.summary.following_average_scrobbles !== null && report.summary.following_average_scrobbles !== undefined && (
+          <div><strong>{Number(report.summary.following_average_scrobbles).toLocaleString()}</strong><span>Friends' average</span></div>
+        )}
       </div>}
       {report && <div className="report-data-grid">
         <BarTrendChart title="Scrobbles over time" points={report.charts.weekly_scrobbles} />
@@ -93,6 +95,7 @@ export default function ReportsPage() {
         <LibraryRankList entries={report.artists.entries} kind="artists" token={session.accessToken} page={1} pageSize={10} totalCount={report.artists.entries.length} view="list" userId={targetUserId} />
         <LibraryRankList entries={report.albums.entries} kind="albums" token={session.accessToken} page={1} pageSize={10} totalCount={report.albums.entries.length} view="list" userId={targetUserId} />
         <LibraryRankList entries={report.tracks.entries} kind="tracks" token={session.accessToken} page={1} pageSize={10} totalCount={report.tracks.entries.length} view="list" userId={targetUserId} />
+        <LibraryRankList entries={report.playlists.entries} kind="playlists" token={session.accessToken} page={1} pageSize={10} totalCount={report.playlists.entries.length} view="list" userId={targetUserId} />
       </div>}
       <div className="report-grid">
         {REPORTS.map(([title, description]) => (
@@ -103,6 +106,12 @@ export default function ReportsPage() {
           </article>
         ))}
       </div>
+      {report && report.charts.music_by_decade && report.charts.music_by_decade.length > 0 && (
+        <div className="report-decade-chart">
+          <h2>Music by decade</h2>
+          <BarTrendChart title="Releases by decade" points={report.charts.music_by_decade} />
+        </div>
+      )}
     </AnalyticsPage>
   )
 }

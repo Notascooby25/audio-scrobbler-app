@@ -4,7 +4,7 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from ..models import LikedTrack
+from ..models import LikedTrack, Follow
 from ..queries.analytics_queries import (
     build_library_count_query,
     build_library_entities_query,
@@ -17,6 +17,7 @@ from ..queries.analytics_queries import (
     build_report_monthly_query,
     build_report_period_count_query,
     build_report_weekly_query,
+    build_report_decade_query,
     build_stats_summary_query,
     build_top_entities_query,
     resolve_date_range,
@@ -147,8 +148,49 @@ def get_user_charts(
         elif entity == "tracks":
             track_id = getattr(row, "spotify_track_id", None)
             entries.append(ChartEntry(label=row.track_name, secondary=row.artist_name, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), spotify_track_id=track_id, sources=row_sources, is_liked=track_id in liked_ids))
+        elif entity == "playlists":
+            playlist_uri = getattr(row, "playlist_uri", None)
+            entries.append(ChartEntry(label=playlist_uri or "Unknown Playlist", secondary=None, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), sources=row_sources, spotify_track_id=playlist_uri))
         else:
             entries.append(ChartEntry(label=row.album_name, secondary=row.artist_name, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), sources=row_sources))
+
+    if entity == "playlists" and entries:
+        from ..models import PlaylistCache, User
+        from ..services.spotify_library_service import _refresh_access_token, _request
+        
+        # Collect missing URIs
+        uris_to_fetch = []
+        cached_names = {}
+        for entry in entries:
+            if entry.spotify_track_id:
+                cache_row = db.query(PlaylistCache).filter(PlaylistCache.playlist_uri == entry.spotify_track_id).first()
+                if cache_row:
+                    cached_names[entry.spotify_track_id] = cache_row.name
+                else:
+                    uris_to_fetch.append(entry.spotify_track_id)
+        
+        # Fetch missing
+        if uris_to_fetch:
+            user = db.query(User).filter(User.id == user_id).first()
+            if user:
+                try:
+                    access_token = _refresh_access_token(db, user)
+                    headers = {"Authorization": f"Bearer {access_token}"}
+                    for uri in uris_to_fetch:
+                        playlist_id = uri.split(":")[-1] if ":" in uri else uri
+                        response = _request("GET", f"https://api.spotify.com/v1/playlists/{playlist_id}", headers=headers)
+                        name = response.json().get("name", "Unknown Playlist")
+                        cached_names[uri] = name
+                        db.add(PlaylistCache(playlist_uri=uri, name=name))
+                    db.commit()
+                except Exception:
+                    # Ignore fetching errors (e.g. rate limit, auth)
+                    pass
+        
+        # Update labels
+        for entry in entries:
+            if entry.spotify_track_id and entry.spotify_track_id in cached_names:
+                entry.label = cached_names[entry.spotify_track_id]
 
     return ChartResponse(user_id=user_id, entity=entity, range=range_key, entries=entries)
 
@@ -259,6 +301,24 @@ def get_report_summary(
             previous_count = int(previous.scrobble_count)
             comparison = ((current_count - previous_count) / previous_count * 100) if previous_count else 0.0
         days = max((period_end - period_start).days, 1)
+    following_avg = None
+    if range_key != "all.time":
+        # Get list of followed user IDs
+        followed_ids = [f.followee_id for f in db.query(Follow).filter(Follow.follower_id == user_id).all()]
+        if followed_ids:
+            # Sum of scrobbles for all followed users in this period
+            from ..models import ListeningEvent
+            from sqlalchemy import select, func
+            from ..queries.analytics_queries import not_blocked_clause
+            
+            # Since not_blocked_clause takes user_id, we just get raw scrobbles for simplicity,
+            # or we can iterate. Since it's a small group typically, iteration is safer for block rules:
+            total_follow_scrobbles = 0
+            for f_id in followed_ids:
+                f_count_row = db.execute(build_report_period_count_query(f_id, period_start, period_end)).one()
+                total_follow_scrobbles += int(f_count_row.scrobble_count)
+            following_avg = total_follow_scrobbles / len(followed_ids)
+
     return ReportSummaryResponse(
         user_id=user_id,
         range=range_key,
@@ -268,6 +328,7 @@ def get_report_summary(
         comparison_percent=round(comparison, 1),
         listening_minutes=int(current.duration_ms // 60000),
         average_per_day=round(current_count / days, 1),
+        following_average_scrobbles=round(following_avg, 1) if following_avg is not None else None,
     )
 
 
@@ -285,10 +346,13 @@ def get_report_charts(
         scrobble_rows = db.execute(build_report_weekly_query(user_id, period_start, period_end)).all()
     clock_rows = db.execute(build_report_clock_query(user_id, period_start, period_end)).all()
     clock_counts = {int(row.label): int(row.count) for row in clock_rows}
+    
+    decade_rows = db.execute(build_report_decade_query(user_id, period_start, period_end)).all()
+    
     return ReportChartsResponse(
         user_id=user_id,
         range=range_key,
         weekly_scrobbles=[ReportPoint(label=row.label, count=int(row.count)) for row in scrobble_rows],
         listening_clock=[ReportPoint(label=str(hour), count=clock_counts.get(hour, 0)) for hour in range(24)],
-        music_by_decade=[],
+        music_by_decade=[ReportPoint(label=f"{int(row.label)}s", count=int(row.count)) for row in decade_rows if row.label],
     )
