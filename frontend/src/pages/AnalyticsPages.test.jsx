@@ -90,7 +90,7 @@ describe('date filtering', () => {
     await waitFor(() => expect(screen.getByText('artists')).toBeInTheDocument())
     expect(screen.getByText('albums')).toBeInTheDocument()
     expect(screen.getByText('tracks')).toBeInTheDocument()
-    expect(fetchReportsEntity).toHaveBeenCalledTimes(3)
+    expect(fetchReportsEntity).toHaveBeenCalledTimes(4)
   })
 
   it('does not refetch Reports data while a custom range is missing dates', async () => {

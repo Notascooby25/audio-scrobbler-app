@@ -4,7 +4,8 @@ import AnalyticsPage from '../components/AnalyticsPage'
 import DateRangeSelector from '../components/DateRangeSelector'
 import LibraryRankList from '../components/LibraryRankList'
 import BarTrendChart from '../components/charts/BarTrendChart'
-import ListeningClockChart from '../components/charts/ListeningClockChart'
+import ListeningHeatmap from '../components/charts/ListeningHeatmap'
+import GenreBarList from '../components/charts/GenreBarList'
 import { fetchReportsCharts, fetchReportsEntity, fetchReportsSummary, fetchUserProfile } from '../api'
 import { createDefaultDateRange, DATE_RANGE_PRESETS, isValidDateRange } from '../dateRange'
 import { readSession } from '../session'
@@ -53,7 +54,8 @@ export default function ReportsPage() {
       fetchReportsEntity({ token: session.accessToken, entity: 'artists', dateRange, userId: targetUserId }),
       fetchReportsEntity({ token: session.accessToken, entity: 'albums', dateRange, userId: targetUserId }),
       fetchReportsEntity({ token: session.accessToken, entity: 'tracks', dateRange, userId: targetUserId }),
-    ]).then(([summary, charts, artists, albums, tracks]) => setReport({ summary, charts, artists, albums, tracks }))
+      fetchReportsEntity({ token: session.accessToken, entity: 'genres', dateRange, userId: targetUserId }),
+    ]).then(([summary, charts, artists, albums, tracks, genres]) => setReport({ summary, charts, artists, albums, tracks, genres }))
       .catch((requestError) => setError(requestError.status === 403 ? "Follow this user to see their reports." : requestError.message))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange, routeUserId])
@@ -86,9 +88,23 @@ export default function ReportsPage() {
           <div><strong>{Number(report.summary.following_average_scrobbles).toLocaleString()}</strong><span>Friends' average</span></div>
         )}
       </div>}
-      {report && <div className="report-data-grid">
+            {report && <div className="report-data-grid">
         <BarTrendChart title="Scrobbles over time" points={report.charts.weekly_scrobbles} />
-        <ListeningClockChart points={report.charts.listening_clock} />
+        <div className="chart-panel">
+          <h2>Listening routines</h2>
+          <ListeningHeatmap points={report.charts.listening_heatmap} />
+          <div className="chart-caption">Your listening activity mapped by hour and day of the week.</div>
+        </div>
+      </div>}
+      {report && <div className="report-character-grid">
+        <div className="chart-panel">
+          <h2>Music by decade</h2>
+          <BarTrendChart title="Releases by decade" points={report.charts.music_by_decade} />
+        </div>
+        <div className="chart-panel">
+          <h2>Top genres</h2>
+          <GenreBarList genres={report.genres?.entries?.map(e => ({ label: e.label, count: e.play_count })) || []} />
+        </div>
       </div>}
       {report && <div className="report-category-grid">
         <LibraryRankList entries={report.artists.entries} kind="artists" token={session.accessToken} page={1} pageSize={10} totalCount={report.artists.entries.length} view="list" userId={targetUserId} />
@@ -105,12 +121,7 @@ export default function ReportsPage() {
           </article>
         ))}
       </div>
-      {report && report.charts.music_by_decade && report.charts.music_by_decade.length > 0 && (
-        <div className="report-decade-chart">
-          <h2>Music by decade</h2>
-          <BarTrendChart title="Releases by decade" points={report.charts.music_by_decade} />
-        </div>
-      )}
+      
     </AnalyticsPage>
   )
 }
