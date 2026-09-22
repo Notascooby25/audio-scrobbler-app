@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from ..models import Follow, LikedTrack, ListeningEvent
 from ..queries.analytics_queries import (
+    build_report_heatmap_query,
     build_library_count_query,
     build_library_entities_query,
     build_library_entity_count_query,
@@ -32,6 +33,7 @@ from ..schemas.analytics import (
     LibraryResponse,
     LibraryScrobbleEntry,
     LibraryScrobbleResponse,
+    HeatmapPoint,
     ReportChartsResponse,
     ReportPoint,
     ReportSummaryResponse,
@@ -334,10 +336,21 @@ def get_report_charts(
     
     decade_rows = db.execute(build_report_decade_query(user_id, period_start, period_end)).all()
     
+
+    heatmap_rows = db.execute(build_report_heatmap_query(user_id, period_start, period_end)).all()
+    heatmap_data = {(int(row.day), int(row.hour)): int(row.count) for row in heatmap_rows if row.day is not None and row.hour is not None}
+    
+    listening_heatmap = []
+    for day in range(7):
+        for hour in range(24):
+            listening_heatmap.append(HeatmapPoint(day=day, hour=hour, count=heatmap_data.get((day, hour), 0)))
+            
     return ReportChartsResponse(
+
         user_id=user_id,
         range=range_key,
         weekly_scrobbles=[ReportPoint(label=row.label, count=int(row.count)) for row in scrobble_rows],
         listening_clock=[ReportPoint(label=str(hour), count=clock_counts.get(hour, 0)) for hour in range(24)],
         music_by_decade=[ReportPoint(label=f"{int(row.label)}s", count=int(row.count)) for row in decade_rows if row.label],
+        listening_heatmap=listening_heatmap,
     )

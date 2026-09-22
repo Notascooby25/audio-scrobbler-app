@@ -143,9 +143,16 @@ class ReportPoint(BaseModel):
     count: int
 
 
+
+class HeatmapPoint(BaseModel):
+    day: int
+    hour: int
+    count: int
+
 class ReportChartsResponse(BaseModel):
     user_id: int
     range: str
     weekly_scrobbles: list[ReportPoint]
     listening_clock: list[ReportPoint]
     music_by_decade: list[ReportPoint]
+    listening_heatmap: list[HeatmapPoint]
