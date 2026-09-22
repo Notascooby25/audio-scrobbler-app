@@ -94,35 +94,52 @@ def test_music_by_decade_is_empty_not_broken_when_nothing_has_a_release_date(ove
 # cast('' as integer) raises "invalid input syntax for type integer", taking the whole
 # query down. This only runs against a real Postgres (CI provisions one on
 # localhost:5432 for this job; skipped elsewhere it isn't available).
+#
+# Runs against its own throwaway, uniquely-named database on that server -- NOT the
+# "scrobbler" database -- and drops it again afterwards. The CI job's later "Apply
+# clean database migrations" step runs `alembic upgrade head` against "scrobbler"
+# from what it assumes is a truly empty database (against the *same*, job-scoped
+# Postgres service this test also uses); a first version of this test called
+# Base.metadata.create_all() directly against "scrobbler" and left listening_events
+# already fully formed, so that later step's own migration 0002 failed with
+# "column duration_ms already exists" -- a real self-inflicted CI failure, not a
+# flaky one. An isolated database, dropped in the fixture's teardown, can't do that
+# no matter what a test creates inside it.
 
-PG_URL = os.environ.get("REPORTS_TEST_PG_URL", "postgresql+psycopg://scrobbler:scrobbler@localhost:5432/scrobbler")
-
-
-def _pg_engine():
-    eng = create_engine(PG_URL)
-    with eng.connect() as conn:
-        conn.execute(text("SELECT 1"))
-    return eng
+ADMIN_PG_URL = os.environ.get("REPORTS_TEST_ADMIN_PG_URL", "postgresql+psycopg://scrobbler:scrobbler@localhost:5432/scrobbler")
+TEST_DB_NAME = "reports_decade_crash_test"
 
 
 @pytest.fixture
 def pg_session():
     try:
-        eng = _pg_engine()
+        admin_engine = create_engine(ADMIN_PG_URL, isolation_level="AUTOCOMMIT")
+        with admin_engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
     except Exception:
-        pytest.skip(f"no reachable Postgres at {PG_URL} (set REPORTS_TEST_PG_URL to override)")
+        pytest.skip(f"no reachable Postgres at {ADMIN_PG_URL} (set REPORTS_TEST_ADMIN_PG_URL to override)")
+
+    with admin_engine.connect() as conn:
+        # DROP first: a previous run that crashed before teardown could have left this
+        # behind, and CREATE DATABASE errors if it already exists.
+        conn.execute(text(f'DROP DATABASE IF EXISTS "{TEST_DB_NAME}" WITH (FORCE)'))
+        conn.execute(text(f'CREATE DATABASE "{TEST_DB_NAME}"'))
+
+    test_url = ADMIN_PG_URL.rsplit("/", 1)[0] + f"/{TEST_DB_NAME}"
+    eng = create_engine(test_url)
     Base.metadata.create_all(eng)
     Session = sessionmaker(bind=eng)
     db = Session()
-    db.execute(text("TRUNCATE listening_events, users RESTART IDENTITY CASCADE"))
     db.add(User(id=1, spotify_user_id="demo", username="demo", display_name="Demo", refresh_token_cipher="c", is_active=True))
     db.commit()
+
     yield db
-    db.rollback()
-    db.execute(text("TRUNCATE listening_events, users RESTART IDENTITY CASCADE"))
-    db.commit()
+
     db.close()
     eng.dispose()
+    with admin_engine.connect() as conn:
+        conn.execute(text(f'DROP DATABASE IF EXISTS "{TEST_DB_NAME}" WITH (FORCE)'))
+    admin_engine.dispose()
 
 
 def test_decade_query_survives_an_empty_release_date_on_real_postgres(pg_session):
