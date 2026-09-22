@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from ..models import LikedTrack, Follow, PlaylistCache
+from ..models import Follow, LikedTrack, ListeningEvent, PlaylistCache
 from ..queries.analytics_queries import (
     build_library_count_query,
     build_library_entities_query,
@@ -290,13 +291,10 @@ def get_report_summary(
         # Get list of followed user IDs
         followed_ids = [f.followee_id for f in db.query(Follow).filter(Follow.follower_id == user_id).all()]
         if followed_ids:
-            # Sum of scrobbles for all followed users in this period
-            from ..models import ListeningEvent
-            from sqlalchemy import select, func
-            from ..queries.analytics_queries import not_blocked_clause
-            
-            # Since not_blocked_clause takes user_id, we just get raw scrobbles for simplicity,
-            # or we can iterate. Since it's a small group typically, iteration is safer for block rules:
+            # build_report_period_count_query already applies each user's own
+            # not_blocked_clause internally, so calling it once per followed user
+            # (rather than one combined query across all of them) means every
+            # person's block rules are respected individually.
             total_follow_scrobbles = 0
             for f_id in followed_ids:
                 f_count_row = db.execute(build_report_period_count_query(f_id, period_start, period_end)).one()
