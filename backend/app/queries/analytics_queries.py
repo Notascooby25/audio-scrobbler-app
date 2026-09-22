@@ -502,7 +502,16 @@ def sqlite_extract_decade(element, compiler, **kw):
 @compiles(extract_release_decade, "postgresql")
 def pg_extract_decade(element, compiler, **kw):
     arg = compiler.process(element.clauses.clauses[0], **kw)
-    return f"(cast(substring({arg}->'track'->'album'->>'release_date' from 1 for 4) as integer) / 10) * 10"
+    # `substring(x from pattern)` (POSIX form) returns NULL when the pattern doesn't
+    # match, instead of the plain `substring(x from 1 for 4)` slice this replaced,
+    # which handed a non-numeric slice straight to cast(... as integer) — that throws
+    # a hard "invalid input syntax for type integer" and takes down the whole query
+    # for anything with a malformed or empty release_date (an empty string in
+    # particular: substr('', 1, 4) is '', not NULL, so the old isnot(None) guard
+    # never caught it). SQLite's substr()+cast() already coerces a bad string to the
+    # excluded value 0 rather than erroring, which is why this only ever showed up
+    # against real Postgres, never in the (SQLite-only) test suite.
+    return f"(cast(substring({arg}->'track'->'album'->>'release_date' from '^[0-9]{{4}}') as integer) / 10) * 10"
 
 
 def build_report_decade_query(user_id: int, start: datetime, end: datetime):

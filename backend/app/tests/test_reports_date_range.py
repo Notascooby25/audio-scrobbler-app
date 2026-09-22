@@ -11,8 +11,9 @@ from sqlalchemy.pool import StaticPool
 from backend.app.api import analytics as analytics_module
 from backend.app.db import Base
 from backend.app.main import app
-from backend.app.models import ListeningEvent, User
+from backend.app.models import Follow, ListeningEvent, User
 from backend.app.queries.analytics_queries import resolve_date_range
+from backend.app.services.analytics_service import get_report_summary
 
 engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
 TestingSession = sessionmaker(bind=engine)
@@ -146,6 +147,72 @@ def test_reports_summary_compare_to_previous_false_skips_comparison():
     payload = response.json()
     assert payload["previous_period_scrobbles"] == 0
     assert payload["comparison_percent"] == 0.0
+
+
+def test_reports_summary_all_time_does_not_crash_and_covers_full_history():
+    # Regression: get_report_summary(range_key="all.time") used ListeningEvent and
+    # func without a module-level import for either. A later local `from sqlalchemy
+    # import select, func` added elsewhere in the same function (for the friends
+    # comparison below) made this an UnboundLocalError rather than a plain NameError
+    # -- same crash either way, confirmed happening for real in production. Reachable
+    # from a real link ("View All Time" on every profile page), not just this route.
+    response = client.get("/reports/summary?range=all.time")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["period_scrobbles"] == payload["total_scrobbles"] == 7
+    assert payload["previous_period_scrobbles"] == 0
+    assert payload["following_average_scrobbles"] is None
+
+
+def test_reports_summary_all_time_with_no_listening_history_does_not_crash():
+    # A brand new user: `earliest` comes back None, so days must not divide by zero
+    # or otherwise blow up. Calls the service directly since the router's demo user
+    # is fixed to id=1 (which the autouse fixture always seeds with history).
+    db = TestingSession()
+    db.add(User(id=99, spotify_user_id="new", username="newuser", display_name="New", refresh_token_cipher="c", is_active=True))
+    db.commit()
+
+    result = get_report_summary(db, user_id=99, range_key="all.time")
+
+    assert result.total_scrobbles == 0
+    assert result.period_scrobbles == 0
+    assert result.average_per_day == 0.0
+    db.close()
+
+
+def test_reports_summary_following_average_reflects_a_followed_users_scrobbles():
+    db = TestingSession()
+    # _seed()'s autouse fixture only clears ListeningEvent/User, not Follow, so a
+    # follow row from a previous test would otherwise leak into this one.
+    db.query(Follow).delete()
+    db.add(User(id=2, spotify_user_id="friend", username="frienduser", display_name="Friend", refresh_token_cipher="c", is_active=True))
+    db.add(Follow(follower_id=1, followee_id=2))
+    db.commit()
+    now = datetime.utcnow()
+    # 3 plays inside the last.month window (matches the demo user's own window),
+    # 1 well outside it, so the average must reflect 3, not 4.
+    for i, days_ago in enumerate([1, 5, 10, 200]):
+        db.add(ListeningEvent(user_id=2, track_id=f"friend-{i}", track_name="T", artist_name="A",
+                               played_at=now - timedelta(days=days_ago), source="spotify", play_id=f"friend-play-{i}"))
+    db.commit()
+    db.close()
+
+    response = client.get("/reports/summary?range=last.month")
+
+    assert response.status_code == 200
+    assert response.json()["following_average_scrobbles"] == 3.0
+
+
+def test_reports_summary_following_average_is_none_with_no_follows():
+    db = TestingSession()
+    db.query(Follow).delete()
+    db.commit()
+    db.close()
+
+    response = client.get("/reports/summary?range=last.month")
+
+    assert response.json()["following_average_scrobbles"] is None
 
 
 def test_reports_summary_rejects_unsupported_range():
