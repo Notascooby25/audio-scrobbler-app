@@ -460,6 +460,9 @@ def build_report_period_count_query(user_id: int, start: datetime, end: datetime
     return select(
         func.count(ListeningEvent.id).label("scrobble_count"),
         func.coalesce(func.sum(ListeningEvent.duration_ms), 0).label("duration_ms"),
+        func.count(func.distinct(ListeningEvent.artist_name)).label("unique_artists"),
+        func.count(func.distinct(ListeningEvent.album_name)).label("unique_albums"),
+        func.count(func.distinct(ListeningEvent.track_name)).label("unique_tracks"),
     ).where(
         ListeningEvent.user_id == user_id,
         not_blocked_clause(user_id),
@@ -556,7 +559,7 @@ def build_pending_genre_artist_ids_query(limit: int) -> Select:
         select(artist_id_expr.label("artist_id"))
         .select_from(ListeningEvent)
         .where(
-            ListeningEvent.source == "spotify",
+            ListeningEvent.source.in_(["spotify", "spotify_realtime"]),
             artist_id_expr.isnot(None),
             ~exists().where(GenreCache.artist_spotify_id == artist_id_expr)
         )
@@ -575,7 +578,7 @@ def build_report_genre_artist_counts_query(user_id: int, start: datetime | None,
         .select_from(ListeningEvent)
         .where(
             ListeningEvent.user_id == user_id,
-            ListeningEvent.source == "spotify",
+            ListeningEvent.source.in_(["spotify", "spotify_realtime"]),
             artist_id_expr.isnot(None)
         )
     )

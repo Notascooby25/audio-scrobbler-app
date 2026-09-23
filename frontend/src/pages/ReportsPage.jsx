@@ -11,9 +11,6 @@ import { fetchReportsCharts, fetchReportsEntity, fetchReportsSummary, fetchUserP
 import { createDefaultDateRange, DATE_RANGE_PRESETS, isValidDateRange } from '../dateRange'
 import { readSession } from '../session'
 
-const REPORTS = [
-  ['Music ratio', 'Compare artists, albums, and tracks in your history.'],
-]
 
 function dateRangeFromParams(searchParams) {
   const range = searchParams.get('range')
@@ -113,15 +110,38 @@ export default function ReportsPage() {
         <LibraryRankList entries={report.tracks.entries} kind="tracks" token={session.accessToken} page={1} pageSize={10} totalCount={report.tracks.entries.length} view="list" userId={targetUserId} />
 
       </div>}
-      <div className="report-grid">
-        {REPORTS.map(([title, description]) => (
-          <article className="report-card" key={title}>
-            <p className="section-kicker">Coming soon</p>
-            <h2>{title}</h2>
-            <p>{description}</p>
-          </article>
-        ))}
-      </div>
+      {report && <div className="report-character-grid" style={{ marginBottom: '16px' }}>
+        <div className="chart-panel">
+          <p className="section-kicker">Music ratio</p>
+          <h2>Explorer vs. Repeater</h2>
+          <div style={{ padding: '24px 0', textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem', fontWeight: '800', letterSpacing: '-0.02em', color: 'var(--text)' }}>
+              {(report.summary.period_scrobbles / Math.max(1, report.summary.unique_artists)).toFixed(1)}
+            </div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '8px' }}>
+              Scrobbles per artist
+            </div>
+          </div>
+          <div className="chart-caption" style={{ textAlign: 'center' }}>
+            A lower number means you constantly discover new artists. A higher number means you loop your favorites.
+          </div>
+        </div>
+        <div className="chart-panel">
+          <p className="section-kicker">Music ratio</p>
+          <h2>Singles vs. Albums</h2>
+          <div style={{ padding: '24px 0', textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem', fontWeight: '800', letterSpacing: '-0.02em', color: 'var(--text)' }}>
+              {(report.summary.unique_tracks / Math.max(1, report.summary.unique_albums)).toFixed(1)}
+            </div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '8px' }}>
+              Tracks per album
+            </div>
+          </div>
+          <div className="chart-caption" style={{ textAlign: 'center' }}>
+            A lower number means you pick and choose singles. A higher number means you listen to full albums.
+          </div>
+        </div>
+      </div>}
       
     </AnalyticsPage>
   )
