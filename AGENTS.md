@@ -15,4 +15,4 @@
 - Spotify scrobbling: Verified working end-to-end on the NUC (including phone login via Tailscale Funnel) as of 2026-09-15.
 - Spotify rate-limit audit (2026-09-17): Root cause was the (now-removed) liked-tracks sync. `is_active` is never revoked in code.
 - Backup architecture: NUC backs up to Google Drive (crypt) + Synology NAS for all 3 apps. Plaintext Drive copies deleted. `rclone.conf` saved as base64.
-- Open tasks as of 2026-09-22: `expense secrets.toml` off-host backup, dated cleanups (~Oct 2026).
+- Open tasks as of 2026-09-23: dated cleanups (~Oct 2026).
