@@ -99,18 +99,19 @@ def deezer_artwork(track: dict[str, Any]) -> str:
 def itunes_artwork(artist: str, title: str, timeout: float = 3.0) -> str | None:
     """Fallback search using the iTunes API for missing artwork."""
     query = urllib.parse.quote(f"{artist} {clean_title(title)}")
-    url = f"https://itunes.apple.com/search?term={query}&entity=song&limit=1"
+    url = f"https://itunes.apple.com/search?term={query}&entity=song&limit=3"
     
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "music-parser-app/1.0"})
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-            results = data.get("results", [])
-            if results:
-                art = results[0].get("artworkUrl100")
-                if art:
-                    # Upgrade 100x100 resolution to 600x600
-                    return art.replace("100x100bb", "600x600bb")
+            for result in data.get("results", []):
+                ret_artist = result.get("artistName", "")
+                if is_artist_match(artist, ret_artist):
+                    art = result.get("artworkUrl100")
+                    if art:
+                        # Upgrade 100x100 resolution to 600x600
+                        return art.replace("100x100bb", "600x600bb")
     except Exception as exc:
         logger.debug("iTunes lookup exception for %s - %s: %s", artist, title, exc)
     return None
