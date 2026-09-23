@@ -291,10 +291,25 @@ class FakeReportRow:
         self.count = count
 
 
+class FakeHeatmapRow:
+    def __init__(self, day, hour, count):
+        self.day = day
+        self.hour = hour
+        self.count = count
+
+
 class FakeChartsDB:
     def execute(self, statement):
+        # get_report_charts now also runs the heatmap query (labels: day,
+        # hour, count) alongside the label/count queries (weekly, monthly,
+        # clock, decade) — dispatch on the selected columns so each shape
+        # gets rows with the attributes it actually reads.
+        is_heatmap_query = "day" in statement.selected_columns.keys()
+
         class Result:
             def all(self):
+                if is_heatmap_query:
+                    return [FakeHeatmapRow(5, 12, 3)]
                 return [FakeReportRow("5", 3)]
 
         return Result()
