@@ -157,7 +157,7 @@ def get_user_charts(
         counter = Counter()
         for row in rows:
             if not row.artist_id: continue
-            genres = genres_by_artist.get(row.artist_id, [])
+            genres = genres_by_artist.get(row.artist_id) or []
             for g in genres:
                 counter[g] += row.play_count
                 

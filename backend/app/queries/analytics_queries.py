@@ -584,7 +584,7 @@ def build_report_genre_artist_counts_query(user_id: int, start: datetime | None,
     if end is not None:
         statement = statement.where(ListeningEvent.played_at < end)
     
-    statement = statement.group_by(artist_id_expr).order_by(desc("play_count"))
+    statement = statement.group_by(artist_id_expr).order_by(func.count(ListeningEvent.id).desc())
     return statement
 
 def build_report_heatmap_query(user_id: int, start: datetime | None, end: datetime | None) -> Select:
