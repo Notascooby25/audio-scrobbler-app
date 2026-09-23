@@ -9,7 +9,7 @@ function initials(label = '') {
     .join('') || '?'
 }
 
-export default function Artwork({ src, label, className = '', sizes }) {
+export default function Artwork({ src, label, className = '', sizes, crossOrigin }) {
   const [failed, setFailed] = useState(false)
   const showImage = src && !failed
 
@@ -21,6 +21,7 @@ export default function Artwork({ src, label, className = '', sizes }) {
       sizes={sizes}
       loading="lazy"
       decoding="async"
+      crossOrigin={crossOrigin}
       onError={() => setFailed(true)}
     />
   ) : (

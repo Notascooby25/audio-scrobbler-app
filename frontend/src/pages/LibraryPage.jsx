@@ -7,6 +7,7 @@ import LibraryScrobbleList from '../components/LibraryScrobbleList'
 import LibraryViewToggle from '../components/LibraryViewToggle'
 import PageSizeSelect from '../components/PageSizeSelect'
 import Pagination from '../components/Pagination'
+import ShareDialog from '../components/ShareDialog'
 import TimelineChart from '../components/TimelineChart'
 import { createBlock, deleteLibraryEntries, deleteLibraryScrobbles, fetchLibraryCollection, fetchLibraryScrobbles, fetchLibraryTimeline, fetchUserProfile, fetchUserSettings } from '../api'
 import { createDefaultDateRange, isValidDateRange } from '../dateRange'
@@ -55,6 +56,7 @@ export default function LibraryPage() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [selectMode, setSelectMode] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
   const filterKeyRef = useRef(null)
 
   useEffect(() => {
@@ -274,6 +276,11 @@ export default function LibraryPage() {
                 onToggleSelectMode={isOwnLibrary ? () => setSelectMode((prev) => !prev) : undefined}
                 allowGrid={tab !== 'scrobbles'}
               />
+              {tab !== 'scrobbles' && (
+                <button type="button" className="share-trigger-button" onClick={() => setShareOpen(true)}>
+                  Share
+                </button>
+              )}
             </div>
           </div>
           {isOwnLibrary && selectedCount > 0 && (
@@ -312,6 +319,19 @@ export default function LibraryPage() {
             onConfirm={executeBulkDelete}
             onCancel={() => setConfirmDeleteOpen(false)}
           />
+
+          {tab !== 'scrobbles' && (
+            <ShareDialog
+              open={shareOpen}
+              onClose={() => setShareOpen(false)}
+              kind={tab}
+              entries={rankedEntries}
+              dateRange={dateRange}
+              token={session.accessToken}
+              userId={targetUserId}
+              totalCount={totalCount}
+            />
+          )}
         </>
       )}
     </AnalyticsPage>
