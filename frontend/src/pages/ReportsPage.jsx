@@ -89,7 +89,7 @@ export default function ReportsPage() {
       {report && <div className="report-time-grid">
         <div className="chart-panel">
           <h2>Listening routines</h2>
-          <ListeningHeatmap points={report.charts.listening_heatmap} />
+          <div style={{ overflowX: "auto", paddingBottom: "8px" }}><ListeningHeatmap points={report.charts.listening_heatmap} /></div>
           <div className="chart-caption">Your listening activity mapped by hour and day of the week.</div>
         </div>
         <ListeningClockChart points={report.charts.listening_clock} />
@@ -116,7 +116,7 @@ export default function ReportsPage() {
           <h2>Explorer vs. Repeater</h2>
           <div style={{ padding: '24px 0', textAlign: 'center' }}>
             <div style={{ fontSize: '3rem', fontWeight: '800', letterSpacing: '-0.02em', color: 'var(--text)' }}>
-              {(report.summary.period_scrobbles / Math.max(1, report.summary.unique_artists)).toFixed(1)}
+              {(report.summary.period_scrobbles / Math.max(1, (report.summary.unique_artists || 0))).toFixed(1)}
             </div>
             <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '8px' }}>
               Scrobbles per artist
@@ -131,7 +131,7 @@ export default function ReportsPage() {
           <h2>Singles vs. Albums</h2>
           <div style={{ padding: '24px 0', textAlign: 'center' }}>
             <div style={{ fontSize: '3rem', fontWeight: '800', letterSpacing: '-0.02em', color: 'var(--text)' }}>
-              {(report.summary.unique_tracks / Math.max(1, report.summary.unique_albums)).toFixed(1)}
+              {((report.summary.unique_tracks || 0) / Math.max(1, (report.summary.unique_albums || 0))).toFixed(1)}
             </div>
             <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '8px' }}>
               Tracks per album

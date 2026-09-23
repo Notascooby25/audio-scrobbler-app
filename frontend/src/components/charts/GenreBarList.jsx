@@ -1,7 +1,7 @@
 import React from 'react'
 
 export default function GenreBarList({ genres }) {
-  if (!genres || genres.length === 0) return null
+  if (!genres || genres.length === 0) return <p className="notice">No genre data available for this period. Background syncing may still be processing your recent listening.</p>
   const maxCount = Math.max(...genres.map(g => g.count))
   return (
     <ul className="genre-list">

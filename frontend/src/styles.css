@@ -3029,6 +3029,12 @@ dd {
   text-align: right;
 }
 
+.report-character-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
 /* ─── Responsive Media Queries ─────────────────────────────────────────────── */
 @media (max-width: 760px) {
   .app-shell {
@@ -3313,12 +3319,6 @@ dd {
   margin-top: 16px;
   font-size: 13px;
   color: var(--color-muted);
-}
-
-.report-character-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
 }
 
 .genre-list {
