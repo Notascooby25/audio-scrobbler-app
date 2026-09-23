@@ -404,6 +404,10 @@ export function deleteLibraryEntries({ token, entityType, name, secondary }) {
   return fetchAnalyticsResource('/library/delete-entries', { token, method: 'POST', body: { entity_type: entityType, name, secondary } })
 }
 
+export function clearLibraryArtwork({ token, entityType, name, secondary }) {
+  return fetchAnalyticsResource('/library/clear-artwork', { token, method: 'POST', body: { entity_type: entityType, name, secondary } })
+}
+
 export function deleteLibraryScrobbles({ token, ids }) {
   return fetchAnalyticsResource('/library/delete-scrobbles', { token, method: 'POST', body: { ids } })
 }

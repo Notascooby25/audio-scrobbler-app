@@ -96,3 +96,31 @@ def delete_scrobbles(db: Session, user_id: int, ids: list[int]) -> int:
     ).delete(synchronize_session=False)
     db.commit()
     return int(deleted)
+
+def clear_artwork(
+    db: Session,
+    user_id: int,
+    entity_type: str,
+    name: str,
+    secondary: str | None = None,
+) -> int:
+    if entity_type not in ENTITY_TYPES:
+        raise ValueError("Unsupported entity type")
+    cleaned = name.strip()
+    if not cleaned:
+        raise ValueError("Name cannot be empty")
+
+    column = _ENTITY_COLUMNS[entity_type]
+    query = db.query(ListeningEvent).filter(
+        ListeningEvent.user_id == user_id,
+        func.lower(column) == cleaned.lower(),
+    )
+    if entity_type == "track" and secondary:
+        query = query.filter(func.lower(ListeningEvent.artist_name) == secondary.strip().lower())
+    
+    updated = query.update(
+        {ListeningEvent.artwork_url: None, ListeningEvent.artist_artwork_url: None},
+        synchronize_session=False
+    )
+    db.commit()
+    return int(updated)

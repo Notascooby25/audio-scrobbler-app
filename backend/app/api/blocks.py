@@ -73,3 +73,16 @@ def delete_scrobbles(
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return DeleteEntriesResponse(deleted=deleted)
+
+@router.post("/library/clear-artwork", response_model=DeleteEntriesResponse)
+def clear_artwork(
+    payload: DeleteEntriesRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> DeleteEntriesResponse:
+    try:
+        updated = blocks_service.clear_artwork(db, current_user.id, payload.entity_type, payload.name, payload.secondary)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return DeleteEntriesResponse(deleted=updated)
+

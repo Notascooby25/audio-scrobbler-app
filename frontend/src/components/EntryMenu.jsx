@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { createBlock, deleteLibraryEntries } from '../api'
+import { createBlock, deleteLibraryEntries, clearLibraryArtwork } from '../api'
 
 export default function EntryMenu({ token, entityType, name, secondary, playCount, onChanged }) {
   const [open, setOpen] = useState(false)
@@ -64,6 +64,25 @@ export default function EntryMenu({ token, entityType, name, secondary, playCoun
     }
   }
 
+  const clearArtwork = async () => {
+    setBusy(true)
+    setNotice('')
+    try {
+      const result = await clearLibraryArtwork({
+        token,
+        entityType,
+        name,
+        secondary: entityType === 'track' ? secondary : undefined,
+      })
+      setOpen(false)
+      onChanged?.(`Cleared artwork for ${result.deleted} tracks of "${name}". Run backfill to update.`)
+    } catch {
+      setNotice('Clear artwork failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="entry-menu" ref={containerRef}>
       <button
@@ -99,6 +118,7 @@ export default function EntryMenu({ token, entityType, name, secondary, playCoun
             <>
               <button type="button" role="menuitem" disabled={busy} onClick={() => setConfirmingDelete(true)}>Delete…</button>
               <button type="button" role="menuitem" disabled={busy} onClick={blockEntry}>Block</button>
+              <button type="button" role="menuitem" disabled={busy} onClick={clearArtwork}>Clear Artwork</button>
             </>
           ) : (
             <div className="entry-menu-confirm">
