@@ -143,41 +143,43 @@ export default function ShareDialog({ open, onClose, kind, entries = [], dateRan
       }}
     >
       <div className="modal-dialog share-dialog" role="dialog" aria-modal="true" aria-labelledby="share-dialog-title">
-        <h3 id="share-dialog-title" className="modal-title">Share {kind}</h3>
+        <div className="share-dialog-scroll">
+          <h3 id="share-dialog-title" className="modal-title">Share {kind}</h3>
 
-        <div className="share-dialog-controls">
-          <div className="share-dialog-layout-toggle" role="group" aria-label="Layout">
-            <button type="button" className={layout === 'list' ? 'active' : ''} aria-pressed={layout === 'list'} onClick={() => setLayout('list')}>List</button>
-            <button type="button" className={layout === 'grid' ? 'active' : ''} aria-pressed={layout === 'grid'} onClick={() => setLayout('grid')}>Grid</button>
+          <div className="share-dialog-controls">
+            <div className="share-dialog-layout-toggle" role="group" aria-label="Layout">
+              <button type="button" className={layout === 'list' ? 'active' : ''} aria-pressed={layout === 'list'} onClick={() => setLayout('list')}>List</button>
+              <button type="button" className={layout === 'grid' ? 'active' : ''} aria-pressed={layout === 'grid'} onClick={() => setLayout('grid')}>Grid</button>
+            </div>
+
+            <label className="share-dialog-size-control" htmlFor="share-size-slider">
+              <span>Size: {effectiveSize}</span>
+              <input
+                id="share-size-slider"
+                type="range"
+                min={MIN_SIZE}
+                max={MAX_SIZE}
+                value={size}
+                onChange={(e) => setSize(Number(e.target.value))}
+              />
+            </label>
           </div>
 
-          <label className="share-dialog-size-control" htmlFor="share-size-slider">
-            <span>Size: {effectiveSize}</span>
-            <input
-              id="share-size-slider"
-              type="range"
-              min={MIN_SIZE}
-              max={MAX_SIZE}
-              value={size}
-              onChange={(e) => setSize(Number(e.target.value))}
-            />
-          </label>
-        </div>
+          {totalCount > 0 && totalCount < size && (
+            <p className="notice">Only {totalCount} {kind} available — showing {totalCount}.</p>
+          )}
 
-        {totalCount > 0 && totalCount < size && (
-          <p className="notice">Only {totalCount} {kind} available — showing {totalCount}.</p>
-        )}
+          {error && <p className="notice notice-error" role="alert">{error}</p>}
 
-        {error && <p className="notice notice-error" role="alert">{error}</p>}
+          <div className="share-dialog-preview">
+            {(fetching || rendering) && !imageUrl && <p className="notice">Generating preview...</p>}
+            {imageUrl && <img className="share-dialog-preview-image" src={imageUrl} alt={`Top ${kind} share preview`} />}
+          </div>
 
-        <div className="share-dialog-preview">
-          {(fetching || rendering) && !imageUrl && <p className="notice">Generating preview...</p>}
-          {imageUrl && <img className="share-dialog-preview-image" src={imageUrl} alt={`Top ${kind} share preview`} />}
-        </div>
-
-        <div className="share-card-offscreen" aria-hidden="true">
-          <div ref={cardRef}>
-            <ShareCard entries={resolvedEntries} kind={kind} layout={layout} dateRangeLabel={dateRangeLabel(dateRange)} />
+          <div className="share-card-offscreen" aria-hidden="true">
+            <div ref={cardRef}>
+              <ShareCard entries={resolvedEntries} kind={kind} layout={layout} dateRangeLabel={dateRangeLabel(dateRange)} />
+            </div>
           </div>
         </div>
 

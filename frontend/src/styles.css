@@ -2910,6 +2910,27 @@ dd {
 
 .share-dialog {
   max-width: 560px;
+  max-height: calc(100vh - 2rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.share-dialog-scroll {
+  overflow-y: auto;
+  padding: 1.75rem;
+  min-height: 0;
+}
+
+.share-dialog .modal-actions {
+  position: sticky;
+  bottom: 0;
+  flex: 0 0 auto;
+  background: var(--color-surface);
+  padding: 1rem 1.75rem;
+  margin: 0;
+  border-top: 0.5px solid var(--color-border);
 }
 
 .share-dialog-controls {
