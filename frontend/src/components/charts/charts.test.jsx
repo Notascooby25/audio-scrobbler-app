@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import BarTrendChart from './BarTrendChart'
 import GenreBarList from './GenreBarList'
 import ListeningHeatmap from './ListeningHeatmap'
+import ListeningClockChart from './ListeningClockChart'
 
 describe('BarTrendChart', () => {
   afterEach(() => cleanup())
@@ -61,5 +62,25 @@ describe('ListeningHeatmap', () => {
   it('returns nothing when empty', () => {
     const { container } = render(<ListeningHeatmap points={[]} />)
     expect(container.querySelector('.heatmap-container')).not.toBeInTheDocument()
+  })
+})
+
+
+describe('ListeningClockChart', () => {
+  afterEach(() => cleanup())
+
+  it('renders 24 hour bars and highlights the busiest hour', () => {
+    const points = Array.from({ length: 24 }, (_, hour) => ({ label: String(hour), count: hour === 21 ? 12 : 1 }))
+    const { container } = render(<ListeningClockChart points={points} />)
+
+    expect(container.querySelectorAll('line.clock-bar')).toHaveLength(24)
+    expect(container.querySelectorAll('.clock-bar-peak')).toHaveLength(1)
+    expect(screen.getByText('21:00')).toBeInTheDocument()
+  })
+
+  it('shows an empty state when every hour is zero', () => {
+    const points = Array.from({ length: 24 }, (_, hour) => ({ label: String(hour), count: 0 }))
+    render(<ListeningClockChart points={points} />)
+    expect(screen.getByText('No data available for this period.')).toBeInTheDocument()
   })
 })

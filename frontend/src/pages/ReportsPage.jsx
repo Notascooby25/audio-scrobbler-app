@@ -5,6 +5,7 @@ import DateRangeSelector from '../components/DateRangeSelector'
 import LibraryRankList from '../components/LibraryRankList'
 import BarTrendChart from '../components/charts/BarTrendChart'
 import ListeningHeatmap from '../components/charts/ListeningHeatmap'
+import ListeningClockChart from '../components/charts/ListeningClockChart'
 import GenreBarList from '../components/charts/GenreBarList'
 import { fetchReportsCharts, fetchReportsEntity, fetchReportsSummary, fetchUserProfile } from '../api'
 import { createDefaultDateRange, DATE_RANGE_PRESETS, isValidDateRange } from '../dateRange'
@@ -84,17 +85,17 @@ export default function ReportsPage() {
         {dateRange.compare_to_previous && (
           <div><strong>{Number(report.summary.previous_period_scrobbles || 0).toLocaleString()}</strong><span>Previous period</span></div>
         )}
-        {report.summary.following_average_scrobbles !== null && report.summary.following_average_scrobbles !== undefined && (
-          <div><strong>{Number(report.summary.following_average_scrobbles).toLocaleString()}</strong><span>Friends' average</span></div>
-        )}
       </div>}
             {report && <div className="report-data-grid">
         <BarTrendChart title="Scrobbles over time" points={report.charts.weekly_scrobbles} />
+      </div>}
+      {report && <div className="report-time-grid">
         <div className="chart-panel">
           <h2>Listening routines</h2>
           <ListeningHeatmap points={report.charts.listening_heatmap} />
           <div className="chart-caption">Your listening activity mapped by hour and day of the week.</div>
         </div>
+        <ListeningClockChart points={report.charts.listening_clock} />
       </div>}
       {report && <div className="report-character-grid">
         <div className="chart-panel">
