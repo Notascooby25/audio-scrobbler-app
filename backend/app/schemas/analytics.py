@@ -136,6 +136,9 @@ class ReportSummaryResponse(BaseModel):
     listening_minutes: int
     average_per_day: float
     following_average_scrobbles: float | None = None
+    unique_artists: int = 0
+    unique_albums: int = 0
+    unique_tracks: int = 0
 
 
 class ReportPoint(BaseModel):

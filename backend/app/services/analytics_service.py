@@ -316,6 +316,9 @@ def get_report_summary(
         listening_minutes=int(current.duration_ms // 60000),
         average_per_day=round(current_count / days, 1),
         following_average_scrobbles=round(following_avg, 1) if following_avg is not None else None,
+        unique_artists=int(current.unique_artists),
+        unique_albums=int(current.unique_albums),
+        unique_tracks=int(current.unique_tracks),
     )
 
 
