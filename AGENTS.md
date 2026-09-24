@@ -1,6 +1,6 @@
 # How to Work on This Repo
-- Before any code change, read `HANDOVER.md` (and `HANDOVER.private.md` if it exists; it is gitignored, so never commit or quote it) and follow `agents/planner_agent.md`: produce a plan and wait for the user's approval before changing code.
-- Implement approved plans by following `agents/implementation_agent.md`.
+- Every time you have an issue, bug, or update to make: Follow `agents/planner_agent.md` to plan it and wait for the user's approval, then follow `agents/implementation_agent.md` to implement it.
+- Before any code change, read `HANDOVER.md` (and `HANDOVER.private.md` if it exists; it is gitignored, so never commit or quote it).
 - For page work, check `agents/page_specs.md`. See `agents/agents.md` for the overall workflow.
 - If the user explicitly says to skip planning for a small fix, skip the plan, but still follow the testing, commit and safety rules in those files.
 
