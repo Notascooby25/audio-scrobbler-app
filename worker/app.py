@@ -247,9 +247,39 @@ def run_genre_cache_backfill() -> None:
     if blocked_until:
         return
     client = SpotifyClient(spotify_client_id, spotify_client_secret, refresh_token_key)
+    engine = create_engine(database_url, pool_pre_ping=True)
+    session = sessionmaker(bind=engine)()
     try:
-        from spotify_ingestion import backfill_artist_genres
-        result = backfill_artist_genres(client, backend_url, worker_token, max_items=genre_cache_batch_size)
+        from spotify_ingestion import backfill_artist_genres, UserRecord, decrypt_refresh_token, encrypt_refresh_token, InvalidToken
+        import requests
+        
+        users = session.query(UserRecord).filter(UserRecord.is_active.is_(True)).all()
+        access_token = None
+        for user in users:
+            try:
+                refresh_token = decrypt_refresh_token(user.refresh_token_cipher, client.refresh_token_key)
+                token, rotated = client.refresh_access_token(refresh_token)
+                if rotated:
+                    user.refresh_token_cipher = encrypt_refresh_token(rotated, client.refresh_token_key)
+                    session.commit()
+                access_token = token
+                break
+            except InvalidToken:
+                continue
+            except requests.HTTPError as e:
+                if e.response is not None and e.response.status_code in (400, 401, 403):
+                    logger.warning("Disabling user %s due to permanent auth error", user.id)
+                    user.is_active = False
+                    session.commit()
+                continue
+            except Exception:
+                continue
+                
+        if not access_token:
+            logger.warning("Genre cache backfill aborted: no active user token available")
+            return
+            
+        result = backfill_artist_genres(client, backend_url, worker_token, access_token, max_items=genre_cache_batch_size)
         last_genre_cache_sync_processed = result["processed"]
         last_genre_cache_sync_resolved = result["resolved"]
         last_genre_cache_sync_failures = result["failures"]
@@ -258,6 +288,8 @@ def run_genre_cache_backfill() -> None:
             logger.info("Genre cache backfill: %s processed, %s resolved, %s failures", result["processed"], result["resolved"], result["failures"])
     except Exception:
         logger.exception("Genre cache backfill failed")
+    finally:
+        session.close()
 
 def run_file_import() -> None:
     global last_file_import_at, last_file_import_processed, last_file_import_failed

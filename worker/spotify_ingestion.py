@@ -637,6 +637,7 @@ def backfill_artist_genres(
     client: SpotifyClient,
     backend_url: str,
     worker_token: str,
+    access_token: str,
     max_items: int = 50,
 ) -> dict[str, int]:
     stats = {"processed": 0, "resolved": 0, "failures": 0}
@@ -647,9 +648,6 @@ def backfill_artist_genres(
         
         artist_ids = [p["artist_spotify_id"] for p in pending]
         stats["processed"] = len(artist_ids)
-        
-        # Spotify allows up to 50 artists per request
-        access_token = client.get_client_credentials_token()
         
         # Fetch genres
         resolved_items = []
