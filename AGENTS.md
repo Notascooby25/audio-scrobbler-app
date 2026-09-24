@@ -1,3 +1,9 @@
+# How to Work on This Repo
+- Before any code change, read `HANDOVER.md` (and `HANDOVER.private.md` if it exists; it is gitignored, so never commit or quote it) and follow `agents/planner_agent.md`: produce a plan and wait for the user's approval before changing code.
+- Implement approved plans by following `agents/implementation_agent.md`.
+- For page work, check `agents/page_specs.md`. See `agents/agents.md` for the overall workflow.
+- If the user explicitly says to skip planning for a small fix, skip the plan, but still follow the testing, commit and safety rules in those files.
+
 # Version Control Rules
 - At the end of every task or major step that involves modifying files, you MUST use the `run_command` tool to stage all changes, commit them with a descriptive commit message explaining the reason for the changes, and push them to the current branch on GitHub.
 - Example command: `git add -A && git commit -m "feat: <description of changes>" && git push` (If the branch has no upstream, use `--set-upstream origin <branch-name>`).
