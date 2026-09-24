@@ -662,20 +662,22 @@ def backfill_artist_genres(
                         "genres": artist.get("genres", [])
                     })
             except Exception:
+                logger.exception(
+                    "Spotify artist genre fetch failed for chunk of %d artists", len(chunk)
+                )
                 stats["failures"] += len(chunk)
-                
-        # For any artist ID we couldn't resolve, fallback to empty genres array
-        resolved_ids = {item["artist_spotify_id"] for item in resolved_items}
-        for aid in artist_ids:
-            if aid not in resolved_ids:
-                resolved_items.append({
-                    "artist_spotify_id": aid,
-                    "genres": []
-                })
-                
-        submit_genre_cache_with_retries(backend_url, worker_token, resolved_items)
-        stats["resolved"] = len(resolved_ids)
-    except Exception as e:
+
+        # Only write artists we successfully resolved — do NOT write a fallback
+        # genres=[] for artists where the API call failed. Writing empty genres
+        # on failure permanently poisons the cache because the pending query
+        # skips artists that already have an entry (even an empty one), so
+        # they would never be retried. Failed artists are simply left out of
+        # this submission so they remain pending and will be retried next cycle.
+        if resolved_items:
+            submit_genre_cache_with_retries(backend_url, worker_token, resolved_items)
+        stats["resolved"] = len(resolved_items)
+    except Exception:
+        logger.exception("Genre cache backfill failed unexpectedly")
         stats["failures"] += 1
     return stats
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
-from sqlalchemy import exists, func, select, or_
+from sqlalchemy import cast, exists, func, select, or_, Text
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import FunctionElement
 
@@ -552,16 +552,26 @@ def pg_extract_primary_artist_id(element, compiler, **kw):
     return (f"coalesce({arg}->'track'->'artists'->0->>'id', "
             f"{arg}->'item'->'artists'->0->>'id')")
 
-def build_pending_genre_artist_ids_query(limit: int) -> Select:
+def build_pending_genre_artist_ids_query(limit: int) -> "Select":
     from ..models import GenreCache
     artist_id_expr = extract_primary_artist_id(ListeningEvent.raw_metadata)
+    # Exclude only artists that have a non-empty genre list cached.
+    # Artists stored with genres=[] (e.g. due to a previous API failure or
+    # genuine Spotify "no genres" response) are included so they are retried
+    # each cycle.  A cached artist that truly has no genres on Spotify will
+    # keep returning [] from the API, so it will never consume a write; the
+    # minor extra Spotify call is the acceptable trade-off for correctness.
+    has_real_genres = exists().where(
+        GenreCache.artist_spotify_id == artist_id_expr,
+        cast(GenreCache.genres, Text) != "[]",
+    )
     statement = (
         select(artist_id_expr.label("artist_id"))
         .select_from(ListeningEvent)
         .where(
             ListeningEvent.source.in_(["spotify", "spotify_realtime"]),
             artist_id_expr.isnot(None),
-            ~exists().where(GenreCache.artist_spotify_id == artist_id_expr)
+            ~has_real_genres,
         )
         .group_by(artist_id_expr)
         .limit(limit)
