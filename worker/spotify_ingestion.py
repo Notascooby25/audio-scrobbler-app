@@ -603,7 +603,7 @@ def backfill_playlist_names(
 def fetch_pending_genre_artist_ids(backend_url: str, worker_token: str, limit: int) -> list[dict[str, object]]:
     response = requests.get(
         f"{backend_url.rstrip('/')}/spotify/internal/genre-cache/pending",
-        headers={"Authorization": f"Bearer {worker_token}"},
+        headers={"X-Worker-Token": worker_token},
         params={"limit": limit},
         timeout=10,
     )
@@ -615,7 +615,7 @@ def submit_genre_cache_with_retries(backend_url: str, worker_token: str, items: 
     if not items:
         return
     url = f"{backend_url.rstrip('/')}/spotify/internal/genre-cache"
-    headers = {"Authorization": f"Bearer {worker_token}"}
+    headers = {"X-Worker-Token": worker_token}
     for attempt in range(3):
         response = requests.post(
             url,
