@@ -124,25 +124,25 @@ section 1.
 - **Keep this file and `HANDOVER.private.md` in step.** When you update one,
   update the other, keeping the redactions here.
 
-### 1f. The repo's own agent workflow docs
+### 1f. Agent prompts (`agents/`) and global Claude agents
 
-`agents/` contains `planner_agent.md`, `implementation_agent.md`,
-`Planner Agent Master Document.md`, `agents.md` and `planner_agent_prompt.md`.
-They describe a two-agent process:
+Rewritten on 2026-09-24 to match the real code. See `agents/agents.md`.
 
-- **Planner:** does impact analysis and a regression check (API, ingestion
-  scheduling, PWA offline behaviour, DB constraints, deployment), then writes
-  numbered steps. Each step lists files, risks, regression notes and an
-  imperative commit message such as "Add … (Planner Step N)". It ends with
-  "Confirm to proceed" and waits for approval before implementation.
-- **Implementation agent:** implements only approved steps, in order, and blocks
-  if a plan violates the architecture.
-- **Required architecture:** FastAPI, React PWA, PostgreSQL with monthly
-  partitioning, APScheduler worker, AES-encrypted refresh tokens, IndexedDB
-  offline sync, Background Sync API, push notifications, Docker Compose.
+- `agents/planner_agent.md` **plans**: the protocol, general rules, the real
+  architecture, a regression checklist, test commands, deploy steps.
+- `agents/implementation_agent.md` **carries out** an approved plan: it edits,
+  tests, then commits and pushes each step per `AGENTS.md`.
+- `agents/page_specs.md` describes each page's sections, endpoints and
+  components, and lists known issues.
+- `~/.claude/agents/planner.md` and `implementer.md` are Claude Code agents that
+  carry the same general rules across all three projects.
+- **When a rule changes, update both sets. When a page changes, update
+  `page_specs.md`.**
+- Planned-but-never-built items (monthly partitioning, IndexedDB offline sync,
+  Background Sync, push notifications) are listed as ideas and are **not**
+  enforced.
 
-Recent sessions did not use this Planner/Implementation split, so ask Andy
-whether he wants it. Also see `DESIGN.md`, `PRODUCT.md`, `OVERVIEW.md` and
+Also see `DESIGN.md`, `PRODUCT.md`, `OVERVIEW.md` and
 `.github/agents/impeccable-*.agent.md` (UI design agents).
 
 ---
@@ -180,9 +180,10 @@ whether he wants it. Also see `DESIGN.md`, `PRODUCT.md`, `OVERVIEW.md` and
   - **Never call Spotify inline in a request path.** Use the worker-enrichment
     pattern instead: a worker job, a cache table and internal endpoints. Top
     Genres follows this pattern.
-  - **Bulk or paginated Spotify calls caused a rate-limit block** (2026-09-17, a
-    since-removed liked-tracks sync). Throttle anything bulk, and suspect this
-    first if rate-limiting returns.
+  - **Bulk or paginated Spotify calls caused a rate-limit block** (2026-09-16/17,
+    the original un-throttled liked-tracks sync). Its replacement (`3cbfc0a`) is
+    opt-in per user and skips while rate-limited. Throttle anything bulk, and
+    suspect this first if rate-limiting returns.
   - **Python scoping trap:** a local `from sqlalchemy import func` anywhere in a
     function makes `func` local to the whole function, turning a `NameError`
     into an `UnboundLocalError`. Use module-level imports.
@@ -350,3 +351,5 @@ the NAS listing.** The live setup has drifted from the repos before.
 - **A full host-rebuild rehearsal** needs a spare machine; doing it on the dev
   box risks the dev `postgres_data` volume.
 - **Spotify hygiene items:** see `HANDOVER.private.md` section 6.
+- **Reports ratio panels bug** (Explorer vs. Repeater, Singles vs. Albums): see
+  `agents/page_specs.md` section 4.
