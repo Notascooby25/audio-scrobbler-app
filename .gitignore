@@ -33,3 +33,6 @@ monitoring/backup_offsite.prom
 
 # Host-specific systemd env file (may carry a private heartbeat URL).
 scripts/systemd/audio-scrobbler-backup.env
+# Full agent handover: names, account IDs, hostnames, LAN details and known
+# weaknesses. Local only; the redacted, committable version is HANDOVER.md.
+HANDOVER.private.md
