@@ -135,13 +135,7 @@ Sections in page order:
 - **Removed:** the Playlists tab (`2acb98b`). `playlist_cache` and its migration
   remain.
 
-**Known issue (found 2026-09-24):** both ratio panels read
-`summary.unique_artists`, `unique_albums` and `unique_tracks`, but
-`ReportSummaryResponse` has no such fields and `get_report_summary` doesn't set
-them. As a result, Explorer vs. Repeater shows period scrobbles ÷ 1, and
-Singles vs. Albums always shows 0.0.
-- **Fix:** add the three counts to the schema and the service for the selected
-  period, respecting blocked items. Test on Postgres.
+
 
 ## 5. Profile: `/profile` and `/profile/:userId`
 

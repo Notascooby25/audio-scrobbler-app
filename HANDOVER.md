@@ -351,5 +351,4 @@ the NAS listing.** The live setup has drifted from the repos before.
 - **A full host-rebuild rehearsal** needs a spare machine; doing it on the dev
   box risks the dev `postgres_data` volume.
 - **Spotify hygiene items:** see `HANDOVER.private.md` section 6.
-- **Reports ratio panels bug** (Explorer vs. Repeater, Singles vs. Albums): see
-  `agents/page_specs.md` section 4.
+
