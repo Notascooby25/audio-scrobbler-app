@@ -150,10 +150,10 @@ def upsert_liked_tracks(db: Session, user_id: int, tracks: list[WorkerLikedTrack
             updated += 1
     db.commit()
     return {"inserted": inserted, "updated": updated}
-def find_pending_genre_artist_ids(db: Session, limit: int = 10) -> list[str]:
+def find_pending_genre_artist_ids(db: Session, limit: int = 10) -> list[dict[str, str]]:
     from ..queries.analytics_queries import build_pending_genre_artist_ids_query
     rows = db.execute(build_pending_genre_artist_ids_query(limit)).all()
-    return [row.artist_id for row in rows if row.artist_id]
+    return [{"artist_id": row.artist_id, "artist_name": row.artist_name} for row in rows if row.artist_id and row.artist_name]
 
 def upsert_genre_cache(db: Session, items: list[dict[str, object]]) -> int:
     from ..models import GenreCache

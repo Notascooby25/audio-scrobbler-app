@@ -70,6 +70,7 @@ services:
       WORKER_FILE_IMPORT_INTERVAL_MINUTES: "10"
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-scrobbler}:${POSTGRES_PASSWORD:-scrobbler}@db:5432/${POSTGRES_DB:-scrobbler}
       REFRESH_TOKEN_KEY: ${REFRESH_TOKEN_KEY:-0123456789abcdef0123456789abcdef}
+      LASTFM_API_KEY: ${LASTFM_API_KEY:-}
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
     # To enable worker file-based import, mount a host directory at /data/imports and set WORKER_FILE_IMPORT_ENABLED=true:

@@ -566,7 +566,10 @@ def build_pending_genre_artist_ids_query(limit: int) -> "Select":
         cast(GenreCache.genres, Text) != "[]",
     )
     statement = (
-        select(artist_id_expr.label("artist_id"))
+        select(
+            artist_id_expr.label("artist_id"),
+            func.max(ListeningEvent.artist_name).label("artist_name")
+        )
         .select_from(ListeningEvent)
         .where(
             ListeningEvent.source.in_(["spotify", "spotify_realtime"]),

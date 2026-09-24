@@ -92,8 +92,10 @@ def genre_cache_pending(
     _: None = Depends(require_worker_token),
 ) -> GenreCachePendingResponse:
     from ..services.spotify_library_service import find_pending_genre_artist_ids
-    artist_ids = find_pending_genre_artist_ids(db, limit=limit)
-    return GenreCachePendingResponse(items=[GenreCachePendingItem(artist_spotify_id=aid) for aid in artist_ids])
+    artists = find_pending_genre_artist_ids(db, limit=limit)
+    return GenreCachePendingResponse(
+        items=[GenreCachePendingItem(artist_spotify_id=a["artist_id"], artist_name=a["artist_name"]) for a in artists]
+    )
 
 
 @router.post("/internal/genre-cache", response_model=GenreCacheUpsertResponse)

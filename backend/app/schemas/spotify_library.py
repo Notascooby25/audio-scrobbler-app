@@ -40,6 +40,7 @@ class LikedTracksUpsertResponse(BaseModel):
 
 class GenreCachePendingItem(BaseModel):
     artist_spotify_id: str
+    artist_name: str
 
 class GenreCachePendingResponse(BaseModel):
     items: list[GenreCachePendingItem]

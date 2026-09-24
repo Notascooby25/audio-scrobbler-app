@@ -638,6 +638,7 @@ def backfill_artist_genres(
     backend_url: str,
     worker_token: str,
     access_token: str,
+    lastfm_api_key: str = "",
     max_items: int = 50,
 ) -> dict[str, int]:
     stats = {"processed": 0, "resolved": 0, "failures": 0}
@@ -646,33 +647,50 @@ def backfill_artist_genres(
         if not pending:
             return stats
         
-        artist_ids = [p["artist_spotify_id"] for p in pending]
-        stats["processed"] = len(artist_ids)
-        
-        # Fetch genres
+        stats["processed"] = len(pending)
         resolved_items = []
-        # Chunking into 50s just in case max_items > 50
-        for i in range(0, len(artist_ids), 50):
-            chunk = artist_ids[i:i + 50]
-            try:
-                artists_data = client.artists(access_token, chunk)
-                for artist in artists_data:
-                    resolved_items.append({
-                        "artist_spotify_id": artist["id"],
-                        "genres": artist.get("genres", [])
-                    })
-            except Exception:
-                logger.exception(
-                    "Spotify artist genre fetch failed for chunk of %d artists", len(chunk)
-                )
-                stats["failures"] += len(chunk)
+        
+        for item in pending:
+            artist_id = item["artist_spotify_id"]
+            artist_name = item.get("artist_name")
+            genres = []
+            
+            if lastfm_api_key and artist_name:
+                try:
+                    response = requests.get(
+                        "http://ws.audioscrobbler.com/2.0/",
+                        params={
+                            "method": "artist.getinfo",
+                            "artist": artist_name,
+                            "api_key": lastfm_api_key,
+                            "format": "json"
+                        },
+                        timeout=5
+                    )
+                    if response.status_code == 200:
+                        data = response.json()
+                        tags = data.get("artist", {}).get("tags", {}).get("tag", [])
+                        if isinstance(tags, list):
+                            genres = [t.get("name") for t in tags if isinstance(t, dict) and t.get("name")]
+                    else:
+                        response.raise_for_status()
+                except Exception:
+                    logger.exception(f"Last.fm genre fetch failed for artist {artist_name}")
+                    stats["failures"] += 1
+                    continue
+            else:
+                # If we don't have a Last.fm key, or no artist name, we cannot get genres from Last.fm.
+                # Just fail so it can be retried later when key is added.
+                stats["failures"] += 1
+                continue
+            
+            resolved_items.append({
+                "artist_spotify_id": artist_id,
+                "genres": genres
+            })
 
         # Only write artists we successfully resolved — do NOT write a fallback
-        # genres=[] for artists where the API call failed. Writing empty genres
-        # on failure permanently poisons the cache because the pending query
-        # skips artists that already have an entry (even an empty one), so
-        # they would never be retried. Failed artists are simply left out of
-        # this submission so they remain pending and will be retried next cycle.
+        # genres=[] for artists where the API call failed.
         if resolved_items:
             submit_genre_cache_with_retries(backend_url, worker_token, resolved_items)
         stats["resolved"] = len(resolved_items)

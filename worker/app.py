@@ -50,6 +50,7 @@ database_url = os.getenv("DATABASE_URL", "postgresql+psycopg://scrobbler:scrobbl
 spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID", "")
 spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET", "")
 refresh_token_key = os.getenv("REFRESH_TOKEN_KEY", "0123456789abcdef0123456789abcdef")
+lastfm_api_key = os.getenv("LASTFM_API_KEY", "")
 # This now means "how often we check who's due," not "the sync cadence" itself —
 # each user's actual cadence is their own `poll_interval_minutes` setting, checked
 # against ingestion_checkpoints.last_polled_at on every tick.
@@ -279,7 +280,7 @@ def run_genre_cache_backfill() -> None:
             logger.warning("Genre cache backfill aborted: no active user token available")
             return
             
-        result = backfill_artist_genres(client, backend_url, worker_token, access_token, max_items=genre_cache_batch_size)
+        result = backfill_artist_genres(client, backend_url, worker_token, access_token, lastfm_api_key, max_items=genre_cache_batch_size)
         last_genre_cache_sync_processed = result["processed"]
         last_genre_cache_sync_resolved = result["resolved"]
         last_genre_cache_sync_failures = result["failures"]
