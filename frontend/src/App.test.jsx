@@ -11,6 +11,7 @@ vi.mock('./api', () => ({
   requestSpotifyAuthorization: vi.fn().mockResolvedValue({ authorization_url: 'https://accounts.spotify.com/authorize' }),
   redirectToAuthorization: vi.fn(),
   fetchSpotifyStatus: vi.fn().mockResolvedValue({ rate_limited: false, retry_after: null }),
+  fetchUserSettings: vi.fn().mockResolvedValue({ theme: 'system' }),
 }))
 
 import { fetchMonthlySummary, fetchRecentScrobbles, fetchSpotifyStatus, requestDevelopmentToken, requestSpotifyAuthorization, submitImportScrobbles } from './api'

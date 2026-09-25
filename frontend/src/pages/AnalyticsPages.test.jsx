@@ -14,7 +14,7 @@ vi.mock('../api', () => ({
   fetchReportsSummary: vi.fn(),
   fetchReportsCharts: vi.fn(),
   fetchReportsEntity: vi.fn().mockResolvedValue({ entries: [] }),
-  fetchUserSettings: vi.fn().mockResolvedValue({ default_date_range: 'last.week', default_page_size: 50, default_library_view: 'list', scrobbles_view: null, artists_view: null, albums_view: null, tracks_view: null, show_artwork: true, show_source_badges: true, timestamp_mode: 'relative' }),
+  fetchUserSettings: vi.fn().mockResolvedValue({ default_date_range: 'last.week', theme: 'system', default_page_size: 50, default_library_view: 'list', scrobbles_view: null, artists_view: null, albums_view: null, tracks_view: null, show_artwork: true, show_source_badges: true, timestamp_mode: 'relative' }),
   createBlock: vi.fn(),
   deleteLibraryEntries: vi.fn(),
   deleteLibraryScrobbles: vi.fn(),
