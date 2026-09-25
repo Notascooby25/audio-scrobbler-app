@@ -33,7 +33,7 @@ describe('Library List Row Density per DESIGN.md', () => {
     )
   })
 
-  it('styles title as 15px bold (#111111, 600) and subtitle as 12px label (#888888)', () => {
+  it('styles title as 15px bold (var\(--color-ink\), 600) and subtitle as 12px label (var\(--color-muted\))', () => {
     expect(stylesContent).toMatch(
       /\.library-row-copy strong\s*\{[^}]*font-size:\s*15px/
     )
@@ -41,17 +41,17 @@ describe('Library List Row Density per DESIGN.md', () => {
       /\.library-row-copy strong\s*\{[^}]*font-weight:\s*600/
     )
     expect(stylesContent).toMatch(
-      /\.library-row-copy strong\s*\{[^}]*color:\s*#111111/
+      /\.library-row-copy strong\s*\{[^}]*color:\s*var\(--color-ink\)/
     )
     expect(stylesContent).toMatch(
       /\.library-row-copy small\s*\{[^}]*font-size:\s*12px/
     )
     expect(stylesContent).toMatch(
-      /\.library-row-copy small\s*\{[^}]*color:\s*#888888/
+      /\.library-row-copy small\s*\{[^}]*color:\s*var\(--color-muted\)/
     )
   })
 
-  it('styles count and time right-aligned with 12px, 500, #888888', () => {
+  it('styles count and time right-aligned with 12px, 500, var\(--color-muted\)', () => {
     expect(stylesContent).toMatch(
       /\.library-count-bar\s*\{[^}]*font-size:\s*12px/
     )
@@ -59,7 +59,7 @@ describe('Library List Row Density per DESIGN.md', () => {
       /\.library-count-bar\s*\{[^}]*font-weight:\s*500/
     )
     expect(stylesContent).toMatch(
-      /\.library-count-bar\s*\{[^}]*color:\s*#888888/
+      /\.library-count-bar\s*\{[^}]*color:\s*var\(--color-muted\)/
     )
     expect(stylesContent).toMatch(
       /\.library-count-bar\s*\{[^}]*text-align:\s*right/
@@ -71,7 +71,7 @@ describe('Library List Row Density per DESIGN.md', () => {
       /\.library-scrobble-row time\s*\{[^}]*font-weight:\s*500/
     )
     expect(stylesContent).toMatch(
-      /\.library-scrobble-row time\s*\{[^}]*color:\s*#888888/
+      /\.library-scrobble-row time\s*\{[^}]*color:\s*var\(--color-muted\)/
     )
     expect(stylesContent).toMatch(
       /\.library-scrobble-row time\s*\{[^}]*text-align:\s*right/

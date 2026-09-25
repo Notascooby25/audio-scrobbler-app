@@ -61,30 +61,30 @@ describe('Primary Text Color & WCAG AA Contrast Verification', () => {
     })
   })
 
-  describe('CSS Audit for Explicit #111111 and #FFFFFF Declarations', () => {
+  describe('CSS Audit for Design Tokens Declarations', () => {
     it('sets --color-ink to #111111 in :root', () => {
       expect(stylesContent).toMatch(/--color-ink:\s*#111111;/)
     })
 
-    it('explicitly sets body text to color #111111 and font-size 14px', () => {
-      expect(stylesContent).toMatch(/body\s*\{[^}]*color:\s*#111111/i)
+    it('explicitly sets body text to color var(--color-ink) and font-size 14px', () => {
+      expect(stylesContent).toMatch(/body\s*\{[^}]*color:\s*var\(--color-ink\)/i)
       expect(stylesContent).toMatch(/body\s*\{[^}]*font-size:\s*14px/i)
     })
 
-    it('explicitly sets headings h1, h2, h3 to #111111', () => {
-      expect(stylesContent).toMatch(/h1,\s*h2,\s*h3,\s*h4,\s*h5,\s*h6\s*\{[^}]*color:\s*#111111/i)
+    it('explicitly sets headings h1, h2, h3 to var(--color-ink)', () => {
+      expect(stylesContent).toMatch(/h1,\s*h2,\s*h3,\s*h4,\s*h5,\s*h6\s*\{[^}]*color:\s*var\(--color-ink\)/i)
     })
 
-    it('explicitly sets base labels to color #111111', () => {
-      expect(stylesContent).toMatch(/label\s*\{[^}]*color:\s*#111111/i)
+    it('explicitly sets base labels to color var(--color-ink)', () => {
+      expect(stylesContent).toMatch(/label\s*\{[^}]*color:\s*var\(--color-ink\)/i)
     })
 
-    it('explicitly sets inputs and selects text to color #111111', () => {
-      expect(stylesContent).toMatch(/input,\s*select,\s*textarea\s*\{[^}]*color:\s*#111111/i)
+    it('explicitly sets inputs and selects text to color var(--color-ink)', () => {
+      expect(stylesContent).toMatch(/input,\s*select,\s*textarea\s*\{[^}]*color:\s*var\(--color-ink\)/i)
     })
 
-    it('explicitly sets buttons white text to #ffffff', () => {
-      expect(stylesContent).toMatch(/button\s*\{[^}]*color:\s*#ffffff/i)
+    it('explicitly sets buttons white text to var(--color-surface)', () => {
+      expect(stylesContent).toMatch(/button\s*\{[^}]*color:\s*var\(--color-surface\)/i)
     })
 
     it('contains no softer black text (#222, #333, #444, #555, #666) in styles.css', () => {

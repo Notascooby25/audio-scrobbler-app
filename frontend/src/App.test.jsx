@@ -63,7 +63,7 @@ describe('App', () => {
     fireEvent.change(screen.getByLabelText('Development user ID'), { target: { value: '1' } })
     fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'))
 
-    await waitFor(() => expect(screen.getByText('No listens found for this date range.')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText("It's quiet in here")).toBeInTheDocument())
     expect(fetchMonthlySummary).toHaveBeenCalled()
     expect(requestDevelopmentToken).toHaveBeenCalledWith('1')
   })
@@ -131,7 +131,7 @@ describe('App', () => {
 
     fireEvent.change(screen.getByLabelText('Development user ID'), { target: { value: '1' } })
     fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'))
-    await waitFor(() => expect(screen.getByText('No listens found for this date range.')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText("It's quiet in here")).toBeInTheDocument())
 
     const file = new File([JSON.stringify([{ trackName: 'Slow Show' }])], 'spotify-history.json', { type: 'application/json' })
     file.text = async () => JSON.stringify([{ trackName: 'Slow Show' }])
@@ -153,7 +153,7 @@ describe('App', () => {
 
     fireEvent.change(screen.getByLabelText('Development user ID'), { target: { value: '1' } })
     fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'))
-    await waitFor(() => expect(screen.getByText('No listens found for this date range.')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText("It's quiet in here")).toBeInTheDocument())
 
     const entries = [{ artist: 'The Sherlocks', song: 'Everything Must Make Sense', album: 'Everything Must Make Sense!', time: '2025-10-20T12:33:20.422Z' }]
     const file = new File([JSON.stringify(entries)], 'watch-history.json', { type: 'application/json' })
