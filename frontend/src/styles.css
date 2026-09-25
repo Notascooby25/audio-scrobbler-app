@@ -3443,3 +3443,23 @@ dd {
 .import-picker input[type="file"]::file-selector-button:hover {
   background: #ebebeb;
 }
+
+/* ─── Touch Target Adaptation (Coarse Pointers) ──────────────────────────────── */
+@media (pointer: coarse) {
+  .date-range-pill,
+  .date-field,
+  .settings-form select,
+  .settings-form input,
+  .settings-form textarea,
+  .blocked-unblock,
+  .entry-menu-toggle {
+    min-height: 44px !important;
+  }
+  .entry-menu-toggle {
+    min-width: 44px !important;
+  }
+  .pagination-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
