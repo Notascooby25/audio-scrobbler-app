@@ -34,9 +34,9 @@ export function getSourceLabel(type) {
 function SpotifyIcon() {
   return (
     <svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true" focusable="false">
-      <circle cx="12" cy="12" r="12" fill="#1DB954" />
+      <circle cx="12" cy="12" r="12" fill="var(--color-spotify)" />
       <path
-        fill="#FFFFFF"
+        fill="var(--color-surface)"
         d="M17.9 10.9C14.3 8.8 8.3 8.6 4.9 9.6c-.6.2-1.1-.2-1.3-.7-.2-.6.2-1.1.7-1.3 4-1.2 10.5-1 14.7 1.5.5.3.7 1 .4 1.5-.3.5-1 .7-1.5.3zm-.2 2.9c-.3.4-.8.5-1.2.3-3-1.8-7.5-2.4-11-1.3-.4.1-.9-.1-1-.6-.1-.4.1-.9.6-1 4-1.2 9-.6 12.3 1.4.4.2.5.8.3 1.2zm-1.4 2.8c-.2.3-.6.4-1 .2-2.6-1.6-5.8-2-9.6-1.1-.4.1-.7-.2-.8-.5-.1-.4.2-.7.5-.8 4.2-1 7.8-.5 10.7 1.3.3.1.4.6.2.9z"
       />
     </svg>
@@ -46,8 +46,8 @@ function SpotifyIcon() {
 function YouTubeIcon() {
   return (
     <svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true" focusable="false">
-      <circle cx="12" cy="12" r="12" fill="#FF0000" />
-      <polygon points="9.5,7.5 16.5,12 9.5,16.5" fill="#FFFFFF" />
+      <circle cx="12" cy="12" r="12" fill="var(--color-youtube)" />
+      <polygon points="9.5,7.5 16.5,12 9.5,16.5" fill="var(--color-surface)" />
     </svg>
   )
 }
@@ -62,16 +62,16 @@ function SplitIcon() {
         </clipPath>
       </defs>
       {/* Left half - Spotify */}
-      <path d="M12 0 A12 12 0 0 0 12 24 Z" fill="#1DB954" />
+      <path d="M12 0 A12 12 0 0 0 12 24 Z" fill="var(--color-spotify)" />
       <g clipPath={`url(#${clipId})`}>
         <path
-          fill="#FFFFFF"
+          fill="var(--color-surface)"
           d="M17.9 10.9C14.3 8.8 8.3 8.6 4.9 9.6c-.6.2-1.1-.2-1.3-.7-.2-.6.2-1.1.7-1.3 4-1.2 10.5-1 14.7 1.5.5.3.7 1 .4 1.5-.3.5-1 .7-1.5.3zm-.2 2.9c-.3.4-.8.5-1.2.3-3-1.8-7.5-2.4-11-1.3-.4.1-.9-.1-1-.6-.1-.4.1-.9.6-1 4-1.2 9-.6 12.3 1.4.4.2.5.8.3 1.2zm-1.4 2.8c-.2.3-.6.4-1 .2-2.6-1.6-5.8-2-9.6-1.1-.4.1-.7-.2-.8-.5-.1-.4.2-.7.5-.8 4.2-1 7.8-.5 10.7 1.3.3.1.4.6.2.9z"
         />
       </g>
       {/* Right half - YouTube */}
-      <path d="M12 0 A12 12 0 0 1 12 24 Z" fill="#FF0000" />
-      <polygon points="14,8 19.5,12 14,16" fill="#FFFFFF" />
+      <path d="M12 0 A12 12 0 0 1 12 24 Z" fill="var(--color-youtube)" />
+      <polygon points="14,8 19.5,12 14,16" fill="var(--color-surface)" />
     </svg>
   )
 }
@@ -79,13 +79,13 @@ function SplitIcon() {
 function ImportIcon() {
   return (
     <svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true" focusable="false">
-      <circle cx="12" cy="12" r="12" fill="#666666" />
+      <circle cx="12" cy="12" r="12" fill="var(--color-muted)" />
       <path
-        fill="#FFFFFF"
+        fill="var(--color-surface)"
         d="M11 5v7.586l-2.293-2.293a1 1 0 00-1.414 1.414l4 4a1 1 0 001.414 0l4-4a1 1 0 00-1.414-1.414L13 12.586V5a1 1 0 10-2 0z"
       />
       <path
-        fill="#FFFFFF"
+        fill="var(--color-surface)"
         d="M6 17a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1z"
       />
     </svg>
