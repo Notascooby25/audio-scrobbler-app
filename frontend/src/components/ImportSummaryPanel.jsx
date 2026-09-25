@@ -2,7 +2,7 @@ export default function ImportSummaryPanel({ result, error, onDismiss }) {
   if (!result && !error) return null
 
   return (
-    <div className={`import-summary${error ? ' import-summary-error' : ''}`} role="status">
+    <section className={`import-summary${error ? ' import-summary-error' : ''}`} role="status" aria-label="Import Summary">
       {error && <p className="notice notice-error">{error}</p>}
       {result && (
         <>
@@ -17,6 +17,6 @@ export default function ImportSummaryPanel({ result, error, onDismiss }) {
         </>
       )}
       <button type="button" className="import-summary-dismiss" onClick={onDismiss}>Dismiss</button>
-    </div>
+    </section>
   )
 }

@@ -14,7 +14,7 @@ export default function ImportProgressBar({ progress }) {
   const stageName = stageLabels[stage] || 'Importing'
 
   return (
-    <div className="import-progress-card" role="region" aria-label="Import progress">
+    <section className="import-progress-card" aria-label="Import progress">
       <div className="import-progress-header">
         <span className="import-progress-stage">{stageName}</span>
         <span className="import-progress-percent">{percent}%</span>
@@ -50,7 +50,7 @@ export default function ImportProgressBar({ progress }) {
           </ul>
         </details>
       )}
-    </div>
+    </section>
   )
 }
 

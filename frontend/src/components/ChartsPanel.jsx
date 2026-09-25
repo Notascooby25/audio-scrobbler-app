@@ -39,10 +39,10 @@ export default function ChartsPanel({ token, userId }) {
   if (!token || !userId) return null
 
   return (
-    <div className="charts-panel">
+    <section className="charts-panel" aria-labelledby="charts-panel-heading">
       <div className="section-heading">
         <div>
-          <h2>Top charts</h2>
+          <h2 id="charts-panel-heading">Top charts</h2>
         </div>
       </div>
       <div className="charts-controls">
@@ -121,6 +121,6 @@ export default function ChartsPanel({ token, userId }) {
           ))}
         </ol>
       )}
-    </div>
+    </section>
   )
 }
