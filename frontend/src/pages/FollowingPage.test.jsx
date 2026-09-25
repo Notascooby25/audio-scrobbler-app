@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import FollowingPage from './FollowingPage'
@@ -6,9 +6,10 @@ import FollowingPage from './FollowingPage'
 vi.mock('../api', () => ({
   fetchFollowing: vi.fn(),
   searchUsers: vi.fn(),
+  fetchLeaderboard: vi.fn(),
 }))
 
-import { fetchFollowing, searchUsers } from '../api'
+import { fetchFollowing, searchUsers, fetchLeaderboard } from '../api'
 
 describe('FollowingPage', () => {
   afterEach(() => {
@@ -52,5 +53,25 @@ describe('FollowingPage', () => {
     render(<MemoryRouter><FollowingPage /></MemoryRouter>)
 
     await waitFor(() => expect(screen.getByText(/not following anyone yet/)).toBeInTheDocument())
+  })
+
+  it('can switch to leaderboard tab and fetch data', async () => {
+    localStorage.setItem('audio-scrobbler-session', JSON.stringify({ userId: 1, accessToken: 'demo-token' }))
+    fetchFollowing.mockResolvedValue({ results: [] })
+    searchUsers.mockResolvedValue({ results: [] })
+    fetchLeaderboard.mockResolvedValue({
+      results: [
+        { user: { id: 1, username: 'viewer', display_name: 'Viewer' }, scrobble_count: 500, unique_artists: 10 },
+      ]
+    })
+
+    render(<MemoryRouter><FollowingPage /></MemoryRouter>)
+
+    const leaderboardTab = screen.getByRole('tab', { name: /Leaderboard/i })
+    fireEvent.click(leaderboardTab)
+
+    await waitFor(() => expect(fetchLeaderboard).toHaveBeenCalled())
+    expect(screen.getByText(/500 scrobbles/i)).toBeInTheDocument()
+    expect(screen.getByText(/Viewer \(You\)/i)).toBeInTheDocument()
   })
 })

@@ -384,6 +384,11 @@ export function fetchFollowing({ token }) {
   return fetchAnalyticsResource('/users/me/following', { token })
 }
 
+export function fetchLeaderboard({ token, dateRange }) {
+  const params = dateRange ? toQueryParams(dateRange) : {}
+  return fetchAnalyticsResource('/users/me/leaderboard', { token, params })
+}
+
 export function fetchBlocks({ token }) {
   return fetchAnalyticsResource('/users/me/blocks', { token })
 }
