@@ -810,8 +810,8 @@ button:disabled {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #FFFFFF;
-  box-shadow: 0 0 0 0.5px #E5E5E5;
+  background: var(--color-surface);
+  border: 0.5px solid var(--color-border);
   overflow: hidden;
   flex-shrink: 0;
   line-height: 0;
@@ -921,11 +921,11 @@ button:disabled {
   transition: border-color 140ms ease, box-shadow 140ms ease;
 }
 
-.settings-form select:focus,
-.settings-form input:not([type="checkbox"]):not([type="radio"]):focus {
-  border-color: #0066FF;
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.1);
+.settings-form select:focus-visible,
+.settings-form input:not([type="checkbox"]):not([type="radio"]):focus-visible {
+  border-color: var(--color-accent);
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
 }
 
 .settings-checkbox {
