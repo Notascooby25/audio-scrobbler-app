@@ -19,13 +19,14 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # Add theme column with default value
-    op.add_column('user_preferences', sa.Column('theme', sa.String(length=16), server_default='system', nullable=False))
-    
-    # Add the check constraint
-    op.create_check_constraint('ck_user_preferences_theme', 'user_preferences', "theme IN ('light', 'dark', 'system')")
+    with op.batch_alter_table('user_preferences') as batch_op:
+        batch_op.add_column(sa.Column('theme', sa.String(length=16), server_default='system', nullable=False))
+        # Add the check constraint
+        batch_op.create_check_constraint('ck_user_preferences_theme', "theme IN ('light', 'dark', 'system')")
 
 
 def downgrade() -> None:
     # Drop the constraint and column
-    op.drop_constraint('ck_user_preferences_theme', 'user_preferences', type_='check')
-    op.drop_column('user_preferences', 'theme')
+    with op.batch_alter_table('user_preferences') as batch_op:
+        batch_op.drop_constraint('ck_user_preferences_theme', type_='check')
+        batch_op.drop_column('theme')
