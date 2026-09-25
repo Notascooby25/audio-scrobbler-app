@@ -42,7 +42,6 @@ export default function ChartsPanel({ token, userId }) {
     <div className="charts-panel">
       <div className="section-heading">
         <div>
-          <p className="section-kicker">Personal archive</p>
           <h2>Top charts</h2>
         </div>
       </div>

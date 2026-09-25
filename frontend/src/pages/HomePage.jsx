@@ -218,7 +218,6 @@ export default function HomePage() {
     <section className="dashboard" aria-labelledby="summary-heading">
       <div className="section-heading">
         <div>
-          <p className="section-kicker">Personal archive</p>
           <h2 id="summary-heading">Monthly summary</h2>
         </div>
         {summary && <p className="month-count">{summary.total_months} months found</p>}
@@ -249,10 +248,10 @@ export default function HomePage() {
               placeholder="Any date"
             />
           </label>
-          <button type="submit" disabled={status === 'loading'}>
+          <button type="submit" className="btn-secondary" disabled={status === 'loading'}>
             {status === 'loading' ? 'Loading...' : token ? 'Refresh summary' : 'Sign in'}
           </button>
-          {token && <button type="button" onClick={clearSession}>Sign out</button>}
+          {token && <button type="button" className="btn-secondary" onClick={clearSession}>Sign out</button>}
         </form>
         {!token && (
           <>
