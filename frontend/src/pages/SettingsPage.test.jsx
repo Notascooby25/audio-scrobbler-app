@@ -32,6 +32,7 @@ vi.mock('../api', () => ({
 const settings = {
   user_id: 1,
   default_date_range: 'last.week',
+  theme: 'system',
   default_page_size: 50,
   default_library_view: 'list',
   scrobbles_view: null,
@@ -77,6 +78,19 @@ describe('SettingsPage', () => {
     fireEvent.change(screen.getByLabelText('Default date range'), { target: { value: 'last.month' } })
 
     await waitFor(() => expect(updateUserSettings).toHaveBeenCalledWith({ token: 'token', changes: { default_date_range: 'last.month' } }), { timeout: 1000 })
+  })
+
+  it('updates the theme setting and saves it', async () => {
+    fetchUserSettings.mockResolvedValue(settings)
+    updateUserSettings.mockResolvedValue({ ...settings, theme: 'dark' })
+    render(<MemoryRouter><SettingsPage /></MemoryRouter>)
+
+    await waitFor(() => expect(screen.getByLabelText('Theme')).toHaveValue('system'))
+    fireEvent.change(screen.getByLabelText('Theme'), { target: { value: 'dark' } })
+
+    await waitFor(() => expect(updateUserSettings).toHaveBeenCalledWith({ token: 'token', changes: { theme: 'dark' } }), { timeout: 1000 })
+    expect(localStorage.getItem('audio-scrobbler-theme')).toBe('dark')
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
   })
 
   it('lists blocked items and unblocks them individually', async () => {

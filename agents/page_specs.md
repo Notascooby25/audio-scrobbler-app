@@ -155,7 +155,7 @@ Sections in page order:
 
 | Section | Endpoint |
 |---|---|
-| Preferences, e.g. page sizes | `GET` and `PATCH /users/me/settings` |
+| Preferences, e.g. theme, page sizes | `GET` and `PATCH /users/me/settings` |
 | Scrobble settings: `poll_interval_minutes`, and "Liked Songs" (opt-in `liked_tracks_sync_enabled`) | `GET` and `PATCH /users/me/settings/scrobble` |
 | Blocked items | `GET` and `DELETE /users/me/blocks` |
 | Backfill Missing Artwork (Deezer/iTunes, **not** Spotify) | `POST /artwork/backfill` |

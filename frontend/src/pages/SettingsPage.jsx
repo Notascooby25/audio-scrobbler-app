@@ -76,6 +76,12 @@ export default function SettingsPage() {
     const next = { ...settings, [key]: value }
     setSettings(next)
     setStatus('saving')
+
+    if (key === 'theme') {
+      localStorage.setItem('audio-scrobbler-theme', value)
+      document.documentElement.setAttribute('data-theme', value)
+    }
+
     clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => {
       updateUserSettings({ token: session.accessToken, changes: { [key]: value } })
@@ -267,6 +273,14 @@ export default function SettingsPage() {
             id="settings-panel-general"
             aria-labelledby="settings-tab-general"
           >
+            <label>
+              Theme
+              <select value={settings.theme || 'system'} onChange={(event) => changeSetting('theme', event.target.value)}>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+                <option value="system">System Default</option>
+              </select>
+            </label>
             <label>
               Default date range
               <select value={settings.default_date_range} onChange={(event) => changeSetting('default_date_range', event.target.value)}>
