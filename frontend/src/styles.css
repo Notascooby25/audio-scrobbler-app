@@ -29,6 +29,21 @@
   font-size: 14px;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-ink: #f7f7f7;
+    --color-muted: #a0a0a0;
+    --color-canvas: #111111;
+    --color-surface: #1e1e1e;
+    --color-surface-raised: #2a2a2a;
+    --color-border: #333333;
+    --color-border-subtle: #222222;
+    --color-danger-soft: rgba(211, 47, 47, 0.15);
+    --color-warning-soft: rgba(217, 119, 6, 0.15);
+    --color-accent-soft: rgba(0, 102, 255, 0.15);
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -37,13 +52,13 @@ body {
   margin: 0;
   min-height: 100vh;
   background: var(--color-canvas);
-  color: #111111;
+  color: var(--color-ink);
   font-family: inherit;
   font-size: 14px;
 }
 
 p {
-  color: #111111;
+  color: var(--color-ink);
 }
 
 #root {
@@ -175,7 +190,7 @@ p {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  color: #111111;
+  color: var(--color-ink);
 }
 
 h1 {
@@ -185,7 +200,7 @@ h1 {
   font-weight: 600;
   letter-spacing: -0.02em;
   margin: 0;
-  color: #111111;
+  color: var(--color-ink);
 }
 
 h2 {
@@ -193,14 +208,14 @@ h2 {
   font-weight: 600;
   letter-spacing: -0.02em;
   margin: 0;
-  color: #111111;
+  color: var(--color-ink);
 }
 
 h3 {
   font-size: 1.1rem;
   font-weight: 600;
   margin: 0;
-  color: #111111;
+  color: var(--color-ink);
 }
 
 .status-mark {
@@ -347,12 +362,12 @@ h3 {
 .date-field {
   padding: 8px 12px;
   height: 36px;
-  border: 0.5px solid #E5E5E5;
+  border: 0.5px solid var(--color-border);
   border-radius: 8px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 14px;
-  color: #111111;
-  background: #FFFFFF;
+  color: var(--color-ink);
+  background: var(--color-surface);
   box-sizing: border-box;
   width: 100%;
 }
@@ -550,12 +565,12 @@ h3 {
   min-width: 16px;
   padding: 0;
   margin: 0;
-  accent-color: #0066FF;
+  accent-color: var(--color-accent);
   cursor: pointer;
 }
 
 label {
-  color: #111111;
+  color: var(--color-ink);
   display: flex;
   flex-direction: column;
   font-size: 12px;
@@ -570,7 +585,7 @@ textarea {
   background: var(--color-surface);
   border: 0.5px solid var(--color-border);
   border-radius: var(--radius-sm);
-  color: #111111;
+  color: var(--color-ink);
   font: 14px inherit, system-ui, sans-serif;
   min-height: 2.5rem;
   padding: 0.5rem 0.75rem;
@@ -895,7 +910,7 @@ button:disabled {
 }
 
 .settings-form label {
-  color: #111111;
+  color: var(--color-ink);
   display: flex;
   flex-direction: column;
   font-size: 12px;
@@ -909,11 +924,11 @@ button:disabled {
 .settings-form select,
 .settings-form input:not([type="checkbox"]):not([type="radio"]) {
   background: var(--color-surface);
-  border: 0.5px solid #E5E5E5;
+  border: 0.5px solid var(--color-border);
   border-radius: 8px;
   box-shadow: none;
   box-sizing: border-box;
-  color: #111111;
+  color: var(--color-ink);
   font: 14px/20px inherit, system-ui, sans-serif;
   height: 36px;
   min-height: 36px;
@@ -943,7 +958,7 @@ button:disabled {
   min-width: 16px;
   padding: 0;
   margin: 0;
-  accent-color: #0066FF;
+  accent-color: var(--color-accent);
   cursor: pointer;
 }
 
@@ -961,7 +976,7 @@ button:disabled {
   min-width: 16px;
   padding: 0;
   margin: 0;
-  accent-color: #0066FF;
+  accent-color: var(--color-accent);
   cursor: pointer;
 }
 
@@ -1846,7 +1861,7 @@ button.btn-secondary:hover:not(:disabled) {
 }
 
 .bulk-action-bar button {
-  background: #ffffff;
+  background: var(--color-surface);
   color: var(--color-ink);
   min-height: 40px;
   padding: 0.45rem 0.85rem;
@@ -1994,14 +2009,14 @@ button.btn-secondary:hover:not(:disabled) {
 }
 
 .library-row-copy strong {
-  color: #111111;
+  color: var(--color-ink);
   font-size: 15px;
   font-weight: 600;
   line-height: 1.3;
 }
 
 .library-row-copy small {
-  color: #888888;
+  color: var(--color-muted);
   font-size: 12px;
   font-weight: 400;
   line-height: 1.25;
@@ -2009,7 +2024,7 @@ button.btn-secondary:hover:not(:disabled) {
 
 .library-count-bar {
   background: #f0f0f0;
-  color: #888888;
+  color: var(--color-muted);
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -2053,7 +2068,7 @@ button.btn-secondary:hover:not(:disabled) {
 
 .library-scrobble-row time {
   order: 4;
-  color: #888888;
+  color: var(--color-muted);
   font-size: 12px;
   font-weight: 500;
   min-width: 5rem;
@@ -2108,7 +2123,7 @@ button.btn-secondary:hover:not(:disabled) {
 
 .library-rank-panel-grid .library-rank-row {
   align-items: stretch;
-  background: #ffffff;
+  background: var(--color-surface);
   border: 0.5px solid var(--color-border);
   border-radius: 12px;
   box-shadow: none;
@@ -2189,7 +2204,7 @@ button.btn-secondary:hover:not(:disabled) {
   margin: 0;
   width: 16px;
   height: 16px;
-  accent-color: #0066FF;
+  accent-color: var(--color-accent);
 }
 
 .grid-select-scrim span {
@@ -2253,19 +2268,19 @@ button.btn-secondary:hover:not(:disabled) {
   font-size: 14px;
   font-weight: 500;
   line-height: 1.3;
-  color: #111111;
+  color: var(--color-ink);
   min-width: 0;
 }
 
 .grid-card-rank {
-  color: #888888;
+  color: var(--color-muted);
   font-size: 14px;
   font-weight: 500;
   flex-shrink: 0;
 }
 
 .grid-card-title {
-  color: #111111;
+  color: var(--color-ink);
   font-size: 14px;
   font-weight: 500;
   text-decoration: none;
@@ -2283,7 +2298,7 @@ button.btn-secondary:hover:not(:disabled) {
 
 .grid-card-artist {
   font-size: 12px;
-  color: #888888;
+  color: var(--color-muted);
   line-height: 1.3;
   margin-top: 2px;
   overflow: hidden;
@@ -2301,13 +2316,13 @@ button.btn-secondary:hover:not(:disabled) {
   align-items: center;
   gap: 5px;
   font-size: 12px;
-  color: #888888;
+  color: var(--color-muted);
   line-height: 1;
 }
 
 .grid-card-count-icon {
   flex-shrink: 0;
-  color: #888888;
+  color: var(--color-muted);
 }
 
 .grid-card-bar-track {
@@ -2321,7 +2336,7 @@ button.btn-secondary:hover:not(:disabled) {
 
 .grid-card-bar-fill {
   height: 100%;
-  background: #0066FF;
+  background: var(--color-accent);
   border-radius: 2px;
   transition: width 200ms ease;
 }
