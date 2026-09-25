@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from ..api.deps import get_current_user
 from ..db import get_db
 from ..models import User
-from ..schemas.users import FollowActionResponse, FollowingListResponse, UserProfileResponse, UserSearchResponse, NowPlayingResponse
+from ..schemas.users import FollowActionResponse, FollowingListResponse, UserProfileResponse, UserSearchResponse, NowPlayingResponse, LeaderboardResponse
 from ..services import social_service
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -52,6 +52,25 @@ def following(
     current_user: User = Depends(get_current_user),
 ) -> FollowingListResponse:
     return FollowingListResponse(results=social_service.get_following(db, current_user.id, limit, offset))
+
+
+@router.get("/me/leaderboard", response_model=LeaderboardResponse, status_code=status.HTTP_200_OK)
+def leaderboard(
+    range: str = Query(default="last.week", description="One of: last.week, last.month, last.year, all.time, custom"),
+    start_date: str | None = Query(default=None, description="Required for range=custom (ISO date)."),
+    end_date: str | None = Query(default=None, description="Required for range=custom (ISO date)."),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> LeaderboardResponse:
+    from ..queries.analytics_queries import DATE_RANGE_PRESETS, resolve_date_range
+    if range not in DATE_RANGE_PRESETS:
+        raise HTTPException(status_code=400, detail=f"Unsupported range: {range!r}")
+    try:
+        period_start, period_end, _, _, _ = resolve_date_range(range, start_date, end_date)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    
+    return LeaderboardResponse(results=social_service.get_community_leaderboard(db, current_user.id, period_start, period_end))
 
 
 @router.get("/search", response_model=UserSearchResponse, status_code=status.HTTP_200_OK)

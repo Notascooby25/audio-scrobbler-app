@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -148,3 +150,44 @@ def get_user_profile(db: Session, viewer_id: int, target_user: User) -> UserProf
         can_view_details=can_view,
         last_scrobble=last_scrobble,
     )
+
+
+def get_community_leaderboard(db: Session, user_id: int, start: datetime | None, end: datetime | None) -> list[dict]:
+    from ..queries.analytics_queries import build_report_period_count_query
+    from datetime import datetime
+
+    # Get current user and active followed users
+    users = (
+        db.query(User)
+        .outerjoin(Follow, Follow.followee_id == User.id)
+        .filter(
+            User.is_active.is_(True),
+            or_(User.id == user_id, Follow.follower_id == user_id)
+        )
+        .all()
+    )
+    
+    # We need to deduplicate in case of weird cross-follows, though outerjoin + filter handles it
+    unique_users = {u.id: u for u in users}.values()
+    
+    # Attach last scrobble
+    users_with_scrobbles = _attach_last_scrobbles(db, list(unique_users))
+    user_dict = {u["id"]: u for u in users_with_scrobbles}
+    
+    results = []
+    # Using datetime.min/max if start/end are None, though analytics_queries might expect actual datetimes.
+    # Actually, `build_report_period_count_query` requires datetime.
+    real_start = start if start else datetime.min
+    real_end = end if end else datetime.max
+
+    for uid, uinfo in user_dict.items():
+        count_row = db.execute(build_report_period_count_query(uid, real_start, real_end)).one()
+        results.append({
+            "user": uinfo,
+            "scrobble_count": int(count_row.scrobble_count or 0),
+            "unique_artists": int(count_row.unique_artists or 0)
+        })
+
+    # Sort primarily by scrobble_count descending, then unique_artists descending
+    results.sort(key=lambda x: (x["scrobble_count"], x["unique_artists"]), reverse=True)
+    return results

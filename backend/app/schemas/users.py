@@ -67,3 +67,15 @@ class NowPlayingResponse(BaseModel):
     raw_metadata: dict | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class LeaderboardItem(BaseModel):
+    user: UserSearchResult
+    scrobble_count: int
+    unique_artists: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LeaderboardResponse(BaseModel):
+    results: list[LeaderboardItem]

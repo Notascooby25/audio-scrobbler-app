@@ -218,3 +218,27 @@ def test_profile_always_reveals_last_scrobble_to_self():
     assert payload["is_self"] is True
     assert payload["can_view_details"] is True
     assert payload["last_scrobble"]["track_name"] == "Slow Show"
+
+
+def test_leaderboard_includes_self_and_followers():
+    db = TestingSession()
+    _seed_users(db)
+    _seed_scrobble(db, 1)
+    _seed_scrobble(db, 2)
+    app.dependency_overrides[users_module.get_db] = lambda: db
+    app.dependency_overrides[users_module.get_current_user] = lambda: ViewerUser()
+    try:
+        client.post("/users/2/follow", headers={"Authorization": "Bearer test"})
+        response = client.get("/users/me/leaderboard?range=all.time", headers={"Authorization": "Bearer test"})
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+
+    assert response.status_code == 200
+    payload = response.json()
+    results = payload["results"]
+    assert len(results) == 2
+    assert results[0]["scrobble_count"] == 1
+    assert results[1]["scrobble_count"] == 1
+    usernames = {r["user"]["username"] for r in results}
+    assert usernames == {"viewer", "music-fan"}
