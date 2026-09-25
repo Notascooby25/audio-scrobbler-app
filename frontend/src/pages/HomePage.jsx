@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { fetchMonthlySummary, fetchRecentScrobbles, fetchSpotifyStatus, redirectToAuthorization, requestDevelopmentToken, requestSpotifyAuthorization, submitImportScrobbles, submitUnifiedImport } from '../api'
 import ChartsPanel from '../components/ChartsPanel'
+import EmptyState, { HeadphonesIcon, AlertIcon, GhostIcon } from "../components/EmptyState"
 import CustomDateField from '../components/CustomDateField'
 import ImportProgressBar from '../components/ImportProgressBar'
 import ImportSummaryPanel from '../components/ImportSummaryPanel'
@@ -280,9 +281,28 @@ export default function HomePage() {
           </div>
         )}
 
-        {status === 'idle' && <p className="notice">Connect your account to see your listening history.</p>}
-        {status === 'error' && <p className="notice notice-error" role="alert">{error}</p>}
-        {status === 'ready' && summary?.summary.length === 0 && <p className="notice">No listens found for this date range.</p>}
+        {status === 'idle' && (
+          <EmptyState
+            icon={HeadphonesIcon}
+            title="Welcome to Audio Scrobbler"
+            description="Connect your Spotify account to see your listening history and start analyzing your music trends."
+          />
+        )}
+        {status === 'error' && (
+          <EmptyState
+            icon={AlertIcon}
+            title="Something went wrong"
+            description={error}
+            error
+          />
+        )}
+        {status === 'ready' && summary?.summary.length === 0 && (
+          <EmptyState
+            icon={GhostIcon}
+            title="It's quiet in here"
+            description="We couldn't find any scrobbles for this date range."
+          />
+        )}
         {status === 'ready' && summary?.summary.length > 0 && (
           <div className="summary-grid">
             {summary.summary.map((month) => (
