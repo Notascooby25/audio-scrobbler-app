@@ -11,6 +11,7 @@ PAGE_SIZES = {10, 25, 50, 100}
 class UserPreferencesResponse(BaseModel):
     user_id: int
     default_date_range: str
+    theme: str
     default_page_size: int
     default_library_view: str
     scrobbles_view: str | None
@@ -26,6 +27,7 @@ class UserPreferencesResponse(BaseModel):
 
 class UserPreferencesUpdate(BaseModel):
     default_date_range: str | None = None
+    theme: str | None = None
     default_page_size: int | None = Field(default=None)
     default_library_view: str | None = None
     scrobbles_view: str | None = None

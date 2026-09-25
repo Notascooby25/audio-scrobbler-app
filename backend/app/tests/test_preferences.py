@@ -33,6 +33,8 @@ class FakeDB:
         return FakeQuery(self.preferences if model is UserPreferences else None)
 
     def add(self, value):
+        if getattr(value, "theme", None) is None:
+            value.theme = "system"
         self.preferences = value
 
     def commit(self):
@@ -57,6 +59,17 @@ def test_settings_returns_last_week_defaults():
     assert response.json()["default_date_range"] == "last.week"
     assert response.json()["default_page_size"] == 50
     assert response.json()["default_library_view"] == "list"
+    assert response.json()["theme"] == "system"
+
+
+def test_settings_updates_theme():
+    response = client.patch(
+        "/users/me/settings",
+        json={"theme": "dark"},
+        headers={"Authorization": "Bearer demo"},
+    )
+    assert response.status_code == 200
+    assert response.json()["theme"] == "dark"
 
 
 def test_settings_rejects_invalid_page_size():

@@ -36,11 +36,13 @@ class UserPreferences(Base):
         UniqueConstraint("user_id", name="uq_user_preferences_user_id"),
         CheckConstraint("default_page_size IN (10, 25, 50, 100, 150, 200, 250)", name="ck_user_preferences_page_size"),
         CheckConstraint("default_library_view IN ('list', 'grid')", name="ck_user_preferences_library_view"),
+        CheckConstraint("theme IN ('light', 'dark', 'system')", name="ck_user_preferences_theme"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
     default_date_range: Mapped[str] = mapped_column(String(32), nullable=False, default="last.week")
+    theme: Mapped[str] = mapped_column(String(16), nullable=False, default="system")
     default_page_size: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
     default_library_view: Mapped[str] = mapped_column(String(16), nullable=False, default="list")
     scrobbles_view: Mapped[str | None] = mapped_column(String(16), nullable=True)
