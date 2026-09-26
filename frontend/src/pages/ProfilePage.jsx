@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { fetchSpotifyStatus, fetchUserProfile, fetchNowPlaying, followUser, redirectToAuthorization, requestSpotifyAuthorization, unfollowUser } from '../api'
 import FollowButton from '../components/FollowButton'
 import Artwork from '../components/Artwork'
+import CopyScrobblesModal from '../components/profile/CopyScrobblesModal'
 import { formatScrobbleTime } from '../timeFormatting'
 
 function readSavedSession() {
@@ -26,6 +27,7 @@ export default function ProfilePage() {
   const [error, setError] = useState('')
   const [connectError, setConnectError] = useState('')
   const [spotifyRetryAfter, setSpotifyRetryAfter] = useState(null)
+  const [showCopyModal, setShowCopyModal] = useState(false)
 
   useEffect(() => {
     fetchSpotifyStatus()
@@ -223,11 +225,22 @@ export default function ProfilePage() {
                 <Link to={profile.is_self ? '/reports?range=last.month' : `/reports?userId=${profile.id}&range=last.month`}>View Last Month</Link>
                 <Link to={profile.is_self ? '/reports?range=last.year' : `/reports?userId=${profile.id}&range=last.year`}>View Last Year</Link>
                 <Link to={profile.is_self ? '/reports?range=all.time' : `/reports?userId=${profile.id}&range=all.time`}>View All Time</Link>
+                {!profile.is_self && (
+                  <button type="button" onClick={() => setShowCopyModal(true)}>Copy Scrobbles</button>
+                )}
               </nav>
             )}
 
             {!profile.can_view_details && <p className="notice">Follow this user to see their last scrobbled track.</p>}
           </div>
+        )}
+
+        {showCopyModal && profile && (
+          <CopyScrobblesModal
+            userId={profile.id}
+            username={profile.username}
+            onClose={() => setShowCopyModal(false)}
+          />
         )}
     </section>
   )
