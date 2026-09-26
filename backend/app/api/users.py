@@ -6,7 +6,11 @@ from sqlalchemy.orm import Session
 from ..api.deps import get_current_user
 from ..db import get_db
 from ..models import User
-from ..schemas.users import FollowActionResponse, FollowingListResponse, UserProfileResponse, UserSearchResponse, NowPlayingResponse, LeaderboardResponse
+from ..schemas.users import (
+    FollowActionResponse, FollowingListResponse, UserProfileResponse, 
+    UserSearchResponse, NowPlayingResponse, LeaderboardResponse,
+    CopyScrobblesRequest, CopyScrobblesResponse
+)
 from ..services import social_service
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -139,3 +143,24 @@ def now_playing(
         duration_ms=state.duration_ms,
         raw_metadata=state.raw_metadata
     )
+
+
+@router.post("/{user_id}/copy-scrobbles", response_model=CopyScrobblesResponse, status_code=status.HTTP_200_OK)
+def copy_scrobbles_endpoint(
+    user_id: int,
+    payload: CopyScrobblesRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> CopyScrobblesResponse:
+    target_user = _get_active_user_or_404(db, user_id)
+    if not social_service.can_view_details(db, current_user.id, target_user.id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Must follow user to copy their scrobbles")
+        
+    copied = social_service.copy_scrobbles(
+        db=db,
+        target_user_id=target_user.id,
+        current_user_id=current_user.id,
+        start_date=payload.start_date,
+        end_date=payload.end_date
+    )
+    return CopyScrobblesResponse(copied_count=copied)

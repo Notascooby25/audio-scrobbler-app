@@ -242,3 +242,79 @@ def test_leaderboard_includes_self_and_followers():
     assert results[1]["scrobble_count"] == 1
     usernames = {r["user"]["username"] for r in results}
     assert usernames == {"viewer", "music-fan"}
+
+
+def test_copy_scrobbles_requires_following():
+    db = TestingSession()
+    _seed_users(db)
+    _seed_scrobble(db, 2)
+    app.dependency_overrides[users_module.get_db] = lambda: db
+    app.dependency_overrides[users_module.get_current_user] = lambda: ViewerUser()
+    try:
+        response = client.post(
+            "/users/2/copy-scrobbles", 
+            json={"start_date": "2026-01-01T00:00:00Z", "end_date": "2026-12-31T23:59:59Z"},
+            headers={"Authorization": "Bearer test"}
+        )
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+
+    assert response.status_code == 403
+
+
+def test_copy_scrobbles_works_when_following():
+    db = TestingSession()
+    _seed_users(db)
+    _seed_scrobble(db, 2)
+    app.dependency_overrides[users_module.get_db] = lambda: db
+    app.dependency_overrides[users_module.get_current_user] = lambda: ViewerUser()
+    try:
+        client.post("/users/2/follow", headers={"Authorization": "Bearer test"})
+        response = client.post(
+            "/users/2/copy-scrobbles", 
+            json={"start_date": "2026-01-01T00:00:00Z", "end_date": "2026-12-31T23:59:59Z"},
+            headers={"Authorization": "Bearer test"}
+        )
+        
+        # Verify it was copied to user 1
+        scrobbles = db.query(ListeningEvent).filter(ListeningEvent.user_id == 1).all()
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+
+    assert response.status_code == 200
+    assert response.json()["copied_count"] == 1
+    assert len(scrobbles) == 1
+    assert scrobbles[0].track_name == "Slow Show"
+
+
+def test_copy_scrobbles_deduplicates():
+    db = TestingSession()
+    _seed_users(db)
+    _seed_scrobble(db, 2)
+    app.dependency_overrides[users_module.get_db] = lambda: db
+    app.dependency_overrides[users_module.get_current_user] = lambda: ViewerUser()
+    try:
+        client.post("/users/2/follow", headers={"Authorization": "Bearer test"})
+        # First copy
+        client.post(
+            "/users/2/copy-scrobbles", 
+            json={"start_date": "2026-01-01T00:00:00Z", "end_date": "2026-12-31T23:59:59Z"},
+            headers={"Authorization": "Bearer test"}
+        )
+        # Second copy (should deduplicate)
+        response = client.post(
+            "/users/2/copy-scrobbles", 
+            json={"start_date": "2026-01-01T00:00:00Z", "end_date": "2026-12-31T23:59:59Z"},
+            headers={"Authorization": "Bearer test"}
+        )
+        
+        scrobbles = db.query(ListeningEvent).filter(ListeningEvent.user_id == 1).all()
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+
+    assert response.status_code == 200
+    assert response.json()["copied_count"] == 0
+    assert len(scrobbles) == 1
