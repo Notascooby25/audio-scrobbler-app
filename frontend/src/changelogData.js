@@ -3,7 +3,8 @@ export const CHANGELOG = [
     version: '0.9.0',
     date: '2026-09-26',
     changes: [
-      'Added ability to copy someone\'s scrobbles (Designed to be used if shared a car journey for example).'
+      'Added ability to copy someone\'s scrobbles (Designed to be used if shared a car journey for example).',
+      'Added Scope Creep tool to automatically generate a Spotify playlist from a BBC Sounds show URL.'
     ]
   },
   {

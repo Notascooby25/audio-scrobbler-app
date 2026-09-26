@@ -17,6 +17,7 @@ from .api.users import router as users_router
 from .api.preferences import router as preferences_router
 from .api.settings import router as scrobble_settings_router
 from .api.blocks import router as blocks_router
+from .api.tools import router as tools_router
 from .config import settings
 from .db import SessionLocal
 from .db import engine
@@ -42,6 +43,7 @@ app.include_router(users_router)
 app.include_router(preferences_router)
 app.include_router(scrobble_settings_router)
 app.include_router(blocks_router)
+app.include_router(tools_router)
 
 app.add_middleware(
     CORSMiddleware,

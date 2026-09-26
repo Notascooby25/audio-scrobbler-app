@@ -5,6 +5,7 @@ import { deleteImportedScrobbles, enableLikedTracksSync, fetchBlocks, fetchScrob
 import { readSession } from '../session'
 import ImportProgressBar from '../components/ImportProgressBar'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
+import ScopeCreepTools from '../components/ScopeCreepTools'
 import { CHANGELOG } from '../changelogData'
 
 const SETTINGS_TABS = [
@@ -13,6 +14,7 @@ const SETTINGS_TABS = [
   ['scrobble', 'Scrobble'],
   ['data', 'Data'],
   ['changelog', 'Changelog'],
+  ['scopecreep', 'Scope Creep'],
   ['danger', 'Danger Zone'],
 ]
 
@@ -31,7 +33,7 @@ export default function SettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const tabParam = searchParams.get('tab')
   const [activeTab, setActiveTab] = useState(() => {
-    if (['general', 'views', 'scrobble', 'data', 'changelog', 'danger'].includes(tabParam)) {
+    if (['general', 'views', 'scrobble', 'data', 'changelog', 'scopecreep', 'danger'].includes(tabParam)) {
       return tabParam
     }
     return 'general'
@@ -507,6 +509,16 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
+        </section>
+      )}
+      {activeTab === 'scopecreep' && session?.accessToken && (
+        <section
+          className="settings-form"
+          role="tabpanel"
+          id="settings-panel-scopecreep"
+          aria-labelledby="settings-tab-scopecreep"
+        >
+          <ScopeCreepTools />
         </section>
       )}
       {activeTab === 'danger' && session?.accessToken && (
