@@ -5,12 +5,14 @@ import { deleteImportedScrobbles, enableLikedTracksSync, fetchBlocks, fetchScrob
 import { readSession } from '../session'
 import ImportProgressBar from '../components/ImportProgressBar'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
+import { CHANGELOG } from '../changelogData'
 
 const SETTINGS_TABS = [
   ['general', 'General'],
   ['views', 'Views'],
   ['scrobble', 'Scrobble'],
   ['data', 'Data'],
+  ['changelog', 'Changelog'],
   ['danger', 'Danger Zone'],
 ]
 
@@ -29,7 +31,7 @@ export default function SettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const tabParam = searchParams.get('tab')
   const [activeTab, setActiveTab] = useState(() => {
-    if (['general', 'views', 'scrobble', 'data', 'danger'].includes(tabParam)) {
+    if (['general', 'views', 'scrobble', 'data', 'changelog', 'danger'].includes(tabParam)) {
       return tabParam
     }
     return 'general'
@@ -480,6 +482,30 @@ export default function SettingsPage() {
                 </button>
               )}
             </div>
+          </div>
+        </section>
+      )}
+      {activeTab === 'changelog' && (
+        <section
+          className="settings-form"
+          role="tabpanel"
+          id="settings-panel-changelog"
+          aria-labelledby="settings-tab-changelog"
+        >
+          <div className="changelog-container">
+            {CHANGELOG.map(release => (
+              <div key={release.version} style={{ marginBottom: '1.5rem' }}>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span>v{release.version}</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', fontWeight: 'normal' }}>{release.date}</span>
+                </h3>
+                <ul style={{ paddingLeft: '1.25rem', color: 'var(--color-text-muted)' }}>
+                  {release.changes.map((change, index) => (
+                    <li key={index} style={{ marginBottom: '0.25rem' }}>{change}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </section>
       )}

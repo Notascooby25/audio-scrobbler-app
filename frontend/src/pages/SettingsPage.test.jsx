@@ -106,11 +106,12 @@ describe('SettingsPage', () => {
     expect(removeBlock).toHaveBeenCalledWith({ token: 'token', blockId: 7 })
   })
 
-  it('renders all 5 tabs with Danger Zone visually distinct and switches between them', async () => {
+  it('renders all 6 tabs with Danger Zone visually distinct and switches between them', async () => {
     render(<MemoryRouter><SettingsPage /></MemoryRouter>)
 
-    // All 5 tabs present
+    // All 6 tabs present
     const generalTab = await screen.findByRole('tab', { name: 'General' })
+    const changelogTab = screen.getByRole('tab', { name: 'Changelog' })
     const viewsTab = screen.getByRole('tab', { name: 'Views' })
     const scrobbleTab = screen.getByRole('tab', { name: 'Scrobble' })
     const dataTab = screen.getByRole('tab', { name: 'Data' })
