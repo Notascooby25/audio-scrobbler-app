@@ -432,3 +432,14 @@ export function advancedDeleteImports({ token, source, startDate, endDate, batch
     }
   })
 }
+
+export function copyScrobbles({ token, userId, startDate, endDate }) {
+  return fetchAnalyticsResource(`/users/${userId}/copy-scrobbles`, {
+    token,
+    method: 'POST',
+    body: {
+      start_date: startDate,
+      end_date: endDate,
+    }
+  })
+}
