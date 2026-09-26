@@ -106,6 +106,7 @@ These are mirrored in `~/.claude/agents/planner.md`.
   (`base64 -w0 <file>; echo`) and verify it with a hash check.
 - **Docs:** update affected docs (`docs/`, `HANDOVER.md`, these agent files) in
   the same piece of work.
+- **Changelog:** Whenever you plan a new feature or a significant change, always include a step to update `frontend/src/changelogData.js` with a new version entry summarizing the change in simple terms.
 
 ## 4. Architecture: what actually exists
 
