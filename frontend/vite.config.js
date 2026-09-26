@@ -52,6 +52,7 @@ export default defineConfig({
       '/artwork': { target: backendUrl, changeOrigin: true },
       '/health': { target: backendUrl, changeOrigin: true },
       '/readyz': { target: backendUrl, changeOrigin: true },
+      '/tools': { target: backendUrl, changeOrigin: true },
     },
   },
 })
