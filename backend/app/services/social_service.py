@@ -191,3 +191,56 @@ def get_community_leaderboard(db: Session, user_id: int, start: datetime | None,
     # Sort primarily by scrobble_count descending, then unique_artists descending
     results.sort(key=lambda x: (x["scrobble_count"], x["unique_artists"]), reverse=True)
     return results
+
+
+def copy_scrobbles(db: Session, target_user_id: int, current_user_id: int, start_date: datetime, end_date: datetime) -> int:
+    events = (
+        db.query(ListeningEvent)
+        .filter(
+            ListeningEvent.user_id == target_user_id,
+            ListeningEvent.played_at >= start_date,
+            ListeningEvent.played_at <= end_date,
+        )
+        .all()
+    )
+    
+    if not events:
+        return 0
+        
+    # to be absolutely bulletproof against IntegrityError without raw SQL UPSERT:
+    all_existing_keys = {
+        (row[0], row[1]) for row in db.query(ListeningEvent.source, ListeningEvent.play_id)
+        .filter(
+            ListeningEvent.user_id == current_user_id,
+            ListeningEvent.play_id.in_([e.play_id for e in events])
+        ).all()
+    }
+    
+    new_events = []
+    for ev in events:
+        if (ev.source, ev.play_id) not in all_existing_keys:
+            new_events.append(
+                ListeningEvent(
+                    user_id=current_user_id,
+                    track_id=ev.track_id,
+                    track_name=ev.track_name,
+                    artist_name=ev.artist_name,
+                    album_name=ev.album_name,
+                    artwork_url=ev.artwork_url,
+                    artist_artwork_url=ev.artist_artwork_url,
+                    played_at=ev.played_at,
+                    duration_ms=ev.duration_ms,
+                    source=ev.source,
+                    play_id=ev.play_id,
+                    payload=ev.payload,
+                    raw_metadata=ev.raw_metadata,
+                    created_at=datetime.utcnow()
+                )
+            )
+            
+    if new_events:
+        db.bulk_save_objects(new_events)
+        db.commit()
+        
+    return len(new_events)
+

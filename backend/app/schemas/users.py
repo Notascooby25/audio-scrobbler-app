@@ -79,3 +79,12 @@ class LeaderboardItem(BaseModel):
 
 class LeaderboardResponse(BaseModel):
     results: list[LeaderboardItem]
+
+class CopyScrobblesRequest(BaseModel):
+    start_date: datetime
+    end_date: datetime
+
+
+class CopyScrobblesResponse(BaseModel):
+    copied_count: int
+
