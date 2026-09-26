@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: '0.9.1',
+    date: '2026-09-26',
+    changes: [
+      'Enhanced Scope Creep with track selection and direct scrobbling: preview show tracklists, uncheck tracks you skipped, and mark them as listened directly in your history.',
+    ]
+  },
+  {
     version: '0.9.0',
     date: '2026-09-26',
     changes: [
