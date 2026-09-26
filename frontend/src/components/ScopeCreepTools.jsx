@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { readSession } from '../session'
 
 export default function ScopeCreepTools() {
   const [url, setUrl] = useState('')
@@ -15,10 +16,14 @@ export default function ScopeCreepTools() {
     setError(null)
 
     try {
+      const session = readSession()
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
       const response = await fetch(`${API_BASE_URL}/tools/scope-creep`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.accessToken}`
+        },
         body: JSON.stringify({ url: url.trim() })
       })
       const data = await response.json()
