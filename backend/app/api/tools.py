@@ -51,7 +51,7 @@ def scope_creep(
             bbc_data["spotify_uris"]
         )
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to create Spotify playlist: {str(e)}. Make sure you have re-authenticated to grant playlist-modify-private scope.")
+        raise HTTPException(status_code=400, detail=f"Failed to create Spotify playlist: {str(e)}")
         
     return ScopeCreepResponse(
         message=f"Created playlist '{bbc_data['title']}' with {len(bbc_data['spotify_uris'])} tracks.",
