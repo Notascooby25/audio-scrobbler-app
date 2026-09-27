@@ -59,9 +59,23 @@ describe('Primary Text Color & WCAG AA Contrast Verification', () => {
       const ratio = getContrastRatio('#FFFFFF', '#111111')
       expect(ratio).toBeGreaterThanOrEqual(4.5)
     })
+
+    it('confirms #707070 (--color-muted) on #FFFFFF meets WCAG AA (≥ 4.5:1)', () => {
+      const ratio = getContrastRatio('#707070', '#FFFFFF')
+      expect(ratio).toBeGreaterThanOrEqual(4.5)
+    })
+
+    it('confirms #707070 (--color-muted) on #F7F7F7 off-white canvas meets WCAG AA (≥ 4.5:1)', () => {
+      const ratio = getContrastRatio('#707070', '#F7F7F7')
+      expect(ratio).toBeGreaterThanOrEqual(4.5)
+    })
   })
 
   describe('CSS Audit for Design Tokens Declarations', () => {
+    it('sets --color-muted to #707070 in :root', () => {
+      expect(stylesContent).toMatch(/--color-muted:\s*#707070;/)
+    })
+
     it('sets --color-ink to #111111 in :root', () => {
       expect(stylesContent).toMatch(/--color-ink:\s*#111111;/)
     })

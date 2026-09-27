@@ -490,6 +490,7 @@ export default function ScopeCreepTools() {
                 <input
                   type="text"
                   className="form-input"
+                  aria-label="Search BBC shows"
                   placeholder="Search BBC shows (e.g. Gilles Peterson, Mary Anne Hobbs, Indie Chill)..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -610,7 +611,7 @@ export default function ScopeCreepTools() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.5rem',
-                      padding: '0.5rem 0.65rem',
+                      padding: '0.35rem 0.5rem',
                       borderRadius: '6px',
                       border: isActive
                         ? '1px solid var(--color-primary, #1db954)'
@@ -618,30 +619,44 @@ export default function ScopeCreepTools() {
                       backgroundColor: isActive
                         ? 'rgba(29, 185, 84, 0.08)'
                         : 'transparent',
-                      cursor: 'pointer',
                       transition: 'background-color 0.15s, border-color 0.15s',
                     }}
-                    onClick={() => setSelectedBrandId(isActive ? '' : s.brand_id)}
-                    role="button"
-                    tabIndex={0}
-                    aria-pressed={isActive}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        setSelectedBrandId(isActive ? '' : s.brand_id)
-                      }
-                    }}
                   >
-                    {s.image_url && (
-                      <img
-                        src={s.image_url}
-                        alt=""
-                        style={{ width: 32, height: 32, borderRadius: '4px', objectFit: 'cover', flexShrink: 0 }}
-                      />
-                    )}
-                    <span style={{ flex: 1, fontSize: '0.85rem', fontWeight: isActive ? 600 : 400, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {s.title}
-                    </span>
+                    <button
+                      type="button"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        flex: 1,
+                        minWidth: 0,
+                        background: 'transparent',
+                        border: 'none',
+                        padding: '0.2rem 0',
+                        color: 'inherit',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        textTransform: 'none',
+                        letterSpacing: 'normal',
+                        fontWeight: 'normal',
+                        minHeight: 'auto',
+                      }}
+                      onClick={() => setSelectedBrandId(isActive ? '' : s.brand_id)}
+                      aria-pressed={isActive}
+                    >
+                      {s.image_url && (
+                        <img
+                          src={s.image_url}
+                          alt={`${s.title} artwork`}
+                          loading="lazy"
+                          decoding="async"
+                          style={{ width: 32, height: 32, borderRadius: '4px', objectFit: 'cover', flexShrink: 0 }}
+                        />
+                      )}
+                      <span style={{ flex: 1, fontSize: '0.85rem', fontWeight: isActive ? 600 : 400, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {s.title}
+                      </span>
+                    </button>
                     <button
                       type="button"
                       className="button button-secondary"
@@ -652,12 +667,10 @@ export default function ScopeCreepTools() {
                         padding: '0.2rem 0.5rem',
                         color: 'var(--color-error, #f44336)',
                         flexShrink: 0,
+                        minHeight: 'auto',
                         lineHeight: 1,
                       }}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleUnfollowShow(s.brand_id)
-                      }}
+                      onClick={() => handleUnfollowShow(s.brand_id)}
                       disabled={actionLoading}
                     >
                       ✕ Unfollow
@@ -804,9 +817,8 @@ export default function ScopeCreepTools() {
                 {showData.tracks.map((track) => {
                   const isSelected = selectedSegments.has(track.segment_id)
                   return (
-                    <div
+                    <label
                       key={track.segment_id}
-                      onClick={() => toggleSelectTrack(track.segment_id)}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -820,13 +832,16 @@ export default function ScopeCreepTools() {
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => {}}
+                        onChange={() => toggleSelectTrack(track.segment_id)}
+                        aria-label={`Select ${track.title} by ${track.artist}`}
                         style={{ cursor: 'pointer' }}
                       />
                       {track.image_url ? (
                         <img
                           src={track.image_url}
-                          alt=""
+                          alt={`${track.title} artwork`}
+                          loading="lazy"
+                          decoding="async"
                           style={{ width: 40, height: 40, borderRadius: '4px', objectFit: 'cover', flexShrink: 0 }}
                         />
                       ) : (
@@ -867,7 +882,7 @@ export default function ScopeCreepTools() {
                           </span>
                         )}
                       </div>
-                    </div>
+                    </label>
                   )
                 })}
               </div>

@@ -64,6 +64,7 @@ def test_fixture_ingestion_retries_server_errors(monkeypatch):
 def test_health_reports_scheduler_and_fixture_status(monkeypatch):
     monkeypatch.setattr(app, "scheduler", SimpleNamespace(running=True))
     monkeypatch.setattr(app, "fixture_enabled", False)
+    monkeypatch.setattr(app, "spotify_enabled", False)
 
     assert app.health_check() == {
         "status": "ok",

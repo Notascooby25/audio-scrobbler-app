@@ -42,74 +42,102 @@ export default function CopyScrobblesModal({ userId, username, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full border border-gray-700 shadow-xl">
-        <h3 className="text-xl font-bold mb-2">Copy Scrobbles</h3>
+    <div
+      className="modal-backdrop"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && status !== 'loading') onClose()
+      }}
+    >
+      <div
+        className="modal-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="copy-scrobbles-title"
+      >
+        <h3 id="copy-scrobbles-title" style={{ fontSize: '1.25rem', fontWeight: 600, margin: '0 0 0.75rem', color: 'var(--color-ink)' }}>
+          Copy Scrobbles
+        </h3>
         
         {status === 'success' ? (
-          <div className="space-y-4">
-            <p className="text-gray-300">
-              Successfully copied <span className="font-bold text-white">{copiedCount}</span> scrobbles from @{username}.
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <p style={{ margin: 0, color: 'var(--color-ink)' }}>
+              Successfully copied <strong style={{ color: 'var(--color-ink)' }}>{copiedCount}</strong> scrobbles from @{username}.
             </p>
-            <div className="flex justify-end pt-2">
+            <div className="modal-actions">
               <button 
+                type="button"
                 onClick={onClose}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded transition"
+                className="btn-secondary"
               >
                 Close
               </button>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleCopy} className="space-y-4">
-            <p className="text-gray-400 text-sm mb-4">
+          <form onSubmit={handleCopy} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--color-muted)' }}>
               Select a time range to copy scrobbles from @{username}. 
               Any scrobbles you already have in this period will be safely skipped.
             </p>
             
-            <div>
-              <label htmlFor="start-date" className="block text-sm text-gray-400 mb-1">Start Time</label>
+            <label htmlFor="start-date" style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.85rem', color: 'var(--color-ink)' }}>
+              Start Time
               <input 
                 id="start-date"
                 type="datetime-local" 
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
                 required
-                className="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white focus:border-green-500 focus:outline-none"
+                style={{
+                  width: '100%',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '0.5px solid var(--color-border)',
+                  background: 'var(--color-surface)',
+                  color: 'var(--color-ink)',
+                  fontSize: '0.9rem',
+                }}
               />
-            </div>
+            </label>
             
-            <div>
-              <label htmlFor="end-date" className="block text-sm text-gray-400 mb-1">End Time</label>
+            <label htmlFor="end-date" style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.85rem', color: 'var(--color-ink)' }}>
+              End Time
               <input 
                 id="end-date"
                 type="datetime-local" 
                 value={endDate}
                 onChange={e => setEndDate(e.target.value)}
                 required
-                className="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white focus:border-green-500 focus:outline-none"
+                style={{
+                  width: '100%',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '0.5px solid var(--color-border)',
+                  background: 'var(--color-surface)',
+                  color: 'var(--color-ink)',
+                  fontSize: '0.9rem',
+                }}
               />
-            </div>
+            </label>
 
             {status === 'error' && (
-              <div className="p-3 bg-red-900/50 border border-red-500 rounded text-red-200 text-sm">
+              <div className="notice notice-error" style={{ margin: 0, padding: '0.75rem', borderRadius: 'var(--radius-sm)', background: 'var(--color-danger-soft)', color: 'var(--color-danger)', fontSize: '0.85rem' }}>
                 {errorMsg}
               </div>
             )}
 
-            <div className="flex justify-end space-x-3 pt-2">
+            <div className="modal-actions">
               <button 
                 type="button" 
                 onClick={onClose}
                 disabled={status === 'loading'}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded transition disabled:opacity-50"
+                className="modal-cancel-button"
               >
                 Cancel
               </button>
               <button 
-                type="submit"
+                type="submit" 
                 disabled={status === 'loading' || !startDate || !endDate}
-                className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white font-medium rounded transition disabled:opacity-50"
               >
                 {status === 'loading' ? 'Copying...' : 'Copy Scrobbles'}
               </button>

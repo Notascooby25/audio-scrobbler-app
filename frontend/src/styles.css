@@ -5,7 +5,7 @@
   --color-accent-soft: rgba(0, 102, 255, 0.08);
   --color-accent-hover: #0052cc;
   --color-ink: #111111;
-  --color-muted: #888888;
+  --color-muted: #707070;
   --color-canvas: #f7f7f7;
   --color-surface: #ffffff;
   --color-surface-raised: #ffffff;
@@ -372,7 +372,7 @@ h3 {
 
 .date-range-pill:hover {
   border-color: var(--color-accent);
-  background: #fdfdfd;
+  background: var(--color-surface-raised);
 }
 
 .date-range-pill.active {
@@ -517,7 +517,7 @@ h3 {
 }
 
 .calendar-nav-btn:hover {
-  background: #f5f5f5;
+  background: var(--color-surface-raised);
   color: var(--color-ink);
 }
 
@@ -592,7 +592,7 @@ h3 {
   padding: 3px 8px;
   font-size: 0.7rem;
   font-weight: 500;
-  background: #f2f2f2;
+  background: var(--color-surface-raised);
   border: 0.5px solid var(--color-border);
   border-radius: 4px;
   color: var(--color-ink);
@@ -600,7 +600,7 @@ h3 {
 }
 
 .calendar-preset-chip:hover {
-  background: #e8e8e8;
+  background: var(--color-border);
 }
 
 .calendar-done-btn {
@@ -749,7 +749,7 @@ button:disabled {
 
 .segmented-tab:hover:not(.active):not(:disabled) {
   color: var(--color-ink);
-  background: #f0f0f0;
+  background: var(--color-surface-raised);
 }
 
 .segmented-tab.active {
@@ -772,7 +772,7 @@ button:disabled {
 
 /* ─── Notices & Summaries ───────────────────────────────────────────────────── */
 .notice {
-  background: #f0f0f0;
+  background: var(--color-surface-raised);
   border: 0.5px solid var(--color-border);
   border-radius: var(--radius-sm);
   color: var(--color-ink);
@@ -913,7 +913,7 @@ button:disabled {
   right: 6px;
   width: 20px;
   height: 20px;
-  border: 2px solid #FFFFFF;
+  border: 2px solid var(--color-surface);
   z-index: 5;
 }
 
@@ -921,7 +921,7 @@ button:disabled {
 .source-badge-sm {
   width: 16px;
   height: 16px;
-  border: 1.5px solid #FFFFFF;
+  border: 1.5px solid var(--color-surface);
   vertical-align: middle;
 }
 
@@ -1065,19 +1065,19 @@ button:disabled {
 }
 
 .settings-tab.destructive {
-  color: #dc2626;
-  border-color: rgba(220, 38, 38, 0.4);
+  color: var(--color-danger);
+  border-color: rgba(211, 47, 47, 0.4);
 }
 
 .settings-tab.destructive.active {
-  background: #dc2626;
-  border-color: #dc2626;
-  color: #FFFFFF;
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: var(--color-surface);
 }
 
 .settings-tab.destructive:hover:not(.active):not(:disabled) {
-  background: rgba(220, 38, 38, 0.06);
-  border-color: #dc2626;
+  background: var(--color-danger-soft);
+  border-color: var(--color-danger);
 }
 
 .settings-blocks {
@@ -1106,7 +1106,7 @@ button:disabled {
 
 .notice-warning {
   background: var(--color-warning-soft);
-  border-left: 3px solid var(--color-warning);
+  border: 0.5px solid var(--color-warning);
 }
 
 .danger-button {
@@ -1116,7 +1116,7 @@ button:disabled {
 }
 
 .danger-button:hover:not(:disabled) {
-  background: #b71c1c;
+  opacity: 0.9;
 }
 
 button.btn-secondary {
@@ -1411,7 +1411,7 @@ button.btn-secondary:hover:not(:disabled) {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--color-spotify);
+  color: var(--color-ink);
 }
 
 .profile-live-dot {
@@ -1711,7 +1711,7 @@ button.btn-secondary:hover:not(:disabled) {
 
 .rank-artwork,
 .scrobble-artwork {
-  background: #eeeeee;
+  background: var(--color-border-subtle);
   height: 2.5rem;
   object-fit: cover;
   width: 2.5rem;
@@ -1804,7 +1804,7 @@ button.btn-secondary:hover:not(:disabled) {
 
 .library-tabs button:hover:not(.active):not(:disabled) {
   color: var(--color-ink);
-  background: #f0f0f0;
+  background: var(--color-surface-raised);
 }
 
 .library-tabs button.active {
@@ -2031,7 +2031,7 @@ button.btn-secondary:hover:not(:disabled) {
 }
 
 .library-row-artwork {
-  background: #f0f0f0;
+  background: var(--color-border-subtle);
   flex: 0 0 48px;
   height: 48px;
   object-fit: cover;
@@ -2051,7 +2051,8 @@ button.btn-secondary:hover:not(:disabled) {
 
 .artwork-fallback {
   align-items: center;
-  background: #f0f0f0;
+  background: var(--color-surface-raised);
+  border: 0.5px solid var(--color-border-subtle);
   color: var(--color-muted);
   display: flex;
   font: 600 0.85rem inherit, sans-serif;
@@ -2091,7 +2092,7 @@ button.btn-secondary:hover:not(:disabled) {
 }
 
 .library-count-bar {
-  background: #f0f0f0;
+  background: var(--color-surface-raised);
   color: var(--color-muted);
   display: flex;
   align-items: center;
@@ -2396,7 +2397,7 @@ button.btn-secondary:hover:not(:disabled) {
 .grid-card-bar-track {
   width: 100%;
   height: 3px;
-  background: #F0F0F0;
+  background: var(--color-border-subtle);
   border-radius: 2px;
   margin-top: 6px;
   overflow: hidden;
@@ -2406,7 +2407,6 @@ button.btn-secondary:hover:not(:disabled) {
   height: 100%;
   background: var(--color-accent);
   border-radius: 2px;
-  transition: width 200ms ease;
 }
 
 .library-scrobble-panel-grid .library-scrobble-row {
@@ -3352,15 +3352,17 @@ dd {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto !important;
+  }
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
-  .modal-dialog {
+  .modal-dialog,
+  .profile-live-dot,
+  .liked-heart-active svg {
     animation: none !important;
   }
   .report-card:hover,
@@ -3372,9 +3374,14 @@ dd {
 .heatmap-container {
   display: flex;
   flex-direction: column;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  padding-bottom: 4px;
 }
 .heatmap-body {
   display: flex;
+  min-width: max-content;
 }
 .heatmap-y-axis {
   display: flex;
@@ -3418,6 +3425,7 @@ dd {
   margin-top: 8px;
   color: var(--color-muted);
   font-size: 12px;
+  min-width: max-content;
 }
 .heatmap-x-label { grid-column: span 6; text-align: left; }
 .chart-caption {
@@ -3492,7 +3500,6 @@ dd {
 .import-progress-fill {
   height: 100%;
   background: var(--color-accent);
-  transition: width 200ms ease;
 }
 .import-progress-footer {
   display: flex;
@@ -3524,7 +3531,7 @@ dd {
   transition: background 150ms ease;
 }
 .import-picker input[type="file"]::file-selector-button:hover {
-  background: #ebebeb;
+  background: var(--color-surface-raised);
 }
 
 /* ─── Touch Target Adaptation (Coarse Pointers) ──────────────────────────────── */
@@ -3544,6 +3551,24 @@ dd {
   .pagination-btn {
     min-width: 44px;
     min-height: 44px;
+  }
+  .calendar-nav-btn {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+  .calendar-preset-chip {
+    min-height: 38px !important;
+    padding: 6px 12px !important;
+    display: inline-flex;
+    align-items: center;
+  }
+  .calendar-day-btn {
+    min-height: 38px !important;
+  }
+  .grid-card-like,
+  .grid-select-scrim {
+    width: 44px !important;
+    height: 44px !important;
   }
 }
 
@@ -3615,11 +3640,5 @@ dd {
 }
 
 .liked-heart-active svg {
-  animation: heart-burst 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .liked-heart-active svg {
-    animation: none;
-  }
+  animation: heart-burst 240ms cubic-bezier(0.16, 1, 0.3, 1);
 }

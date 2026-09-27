@@ -1,5 +1,17 @@
 export const CHANGELOG = [
   {
+    version: '0.9.8',
+    date: '2026-09-27',
+    changes: [
+      'Design system & accessibility overhaul: refactored Copy Scrobbles modal to native design tokens and standard modal primitives.',
+      'Improved text contrast to meet WCAG AA standards (≥ 4.5:1) for secondary metadata and timestamps.',
+      'Eradicated hard-coded light colors across cards, badges, and calendar controls, ensuring clean dark theme rendering.',
+      'Expanded mobile touch targets (≥ 44px) for calendar buttons, date presets, and track controls on touchscreen devices.',
+      'Made listening heatmap responsive with horizontal scrolling to prevent layout clipping on small viewports.',
+      'Enhanced motion performance: removed layout reflows on progress bars and refined like heart animations with clean deceleration.',
+    ]
+  },
+  {
     version: '0.9.7',
     date: '2026-09-27',
     changes: [
