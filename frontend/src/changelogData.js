@@ -3,15 +3,10 @@ export const CHANGELOG = [
     version: '0.9.3',
     date: '2026-09-27',
     changes: [
-      'Added the official BBC Sounds logo badge for tracks and scrobbles imported from BBC Sounds.',
-      'Added automatic album artwork resolution for BBC Sounds tracks, displaying album covers in the tracklist and scrobble history.',
-    ]
-  },
-  {
-    version: '0.9.2',
-    date: '2026-09-27',
-    changes: [
-      'Fixed timezone display for scrobbles to accurately show your local listening time (e.g. BST) instead of UTC.',
+      'Added the official BBC Sounds logo badge for all tracks and scrobbles imported from BBC Sounds.',
+      'Added automatic album artwork resolution for BBC Sounds tracks, displaying official album covers in the tracklist preview and scrobble history.',
+      'Fixed Spotify playlist creation error by migrating to Spotify\'s latest API specifications.',
+      'Fixed scrobble timestamps to accurately display your local listening time (e.g. BST) instead of UTC.',
     ]
   },
   {
