@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: '0.9.2',
+    date: '2026-09-27',
+    changes: [
+      'Fixed timezone display for scrobbles to accurately show your local listening time (e.g. BST) instead of UTC.',
+    ]
+  },
+  {
     version: '0.9.1',
     date: '2026-09-26',
     changes: [
