@@ -42,22 +42,31 @@ def get_playlist_info(access_token: str, playlist_id: str) -> dict:
 def get_user_playlists(db: Session, user: User) -> dict:
     access_token = _refresh_access_token(db, user)
     headers = {"Authorization": f"Bearer {access_token}"}
-    url = f"{SPOTIFY_API_BASE}/me/playlists?limit=50"
-    resp = _request("GET", url, headers=headers)
-    if resp.status_code == 403:
-        return {"playlists": [], "needs_scope": True}
-    resp.raise_for_status()
-    data = resp.json()
-    playlists = [
-        {
-            "id": item["id"],
-            "name": item.get("name", "Untitled Playlist"),
-            "url": item.get("external_urls", {}).get("spotify", f"https://open.spotify.com/playlist/{item['id']}"),
-        }
-        for item in data.get("items", [])
-        if item and "id" in item
-    ]
-    return {"playlists": playlists, "needs_scope": False}
+    next_url: str | None = f"{SPOTIFY_API_BASE}/me/playlists?limit=50"
+    all_playlists = []
+
+    while next_url and len(all_playlists) < 200:
+        try:
+            resp = requests.get(next_url, headers=headers, timeout=10)
+            if resp.status_code == 403:
+                return {"playlists": [], "needs_scope": True}
+            resp.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            if e.response is not None and e.response.status_code == 403:
+                return {"playlists": [], "needs_scope": True}
+            raise
+
+        data = resp.json()
+        for item in data.get("items", []):
+            if item and "id" in item:
+                all_playlists.append({
+                    "id": item["id"],
+                    "name": item.get("name", "Untitled Playlist"),
+                    "url": item.get("external_urls", {}).get("spotify", f"https://open.spotify.com/playlist/{item['id']}"),
+                })
+        next_url = data.get("next")
+
+    return {"playlists": all_playlists, "needs_scope": False}
 
 def add_tracks_to_playlist(db: Session, user: User, playlist_id: str, track_uris: list[str]) -> tuple[str, str, int]:
     clean_id = _extract_playlist_id(playlist_id)

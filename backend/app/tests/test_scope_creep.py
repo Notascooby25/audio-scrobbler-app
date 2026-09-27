@@ -14,7 +14,7 @@ from backend.app.db import Base, get_db
 from backend.app.main import app
 from backend.app.models import ListeningEvent, User
 from backend.app.services.bbc_sounds_service import _normalize_spotify_uri
-from backend.app.services.spotify_playlist_service import _extract_playlist_id
+from backend.app.services.spotify_playlist_service import _extract_playlist_id, get_user_playlists
 
 engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
 TestingSession = sessionmaker(bind=engine)
@@ -214,4 +214,62 @@ def test_scope_creep_scrobble():
     dup_data = res_dup.json()
     assert dup_data["scrobbled_count"] == 0
     assert dup_data["duplicate_count"] == 2
+    db.close()
+
+
+@patch("backend.app.services.spotify_playlist_service._refresh_access_token")
+@patch("backend.app.services.spotify_playlist_service.requests.get")
+def test_get_user_playlists_service_403_and_pagination(mock_get, mock_refresh):
+    mock_refresh.return_value = "fake-token"
+
+    # 1. Test 403 Forbidden handling
+    class Fake403Response:
+        status_code = 403
+        ok = False
+
+        def raise_for_status(self):
+            import requests
+            raise requests.exceptions.HTTPError(response=self)
+
+    mock_get.return_value = Fake403Response()
+    db = TestingSession()
+    user = User(id=1, spotify_user_id="testuser", refresh_token_cipher="cipher")
+
+    res = get_user_playlists(db, user)
+    assert res["needs_scope"] is True
+    assert res["playlists"] == []
+
+    # 2. Test pagination handling
+    class FakePage1Response:
+        status_code = 200
+        ok = True
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {
+                "items": [{"id": "pl1", "name": "Playlist 1", "external_urls": {"spotify": "https://open.spotify.com/playlist/pl1"}}],
+                "next": "https://api.spotify.com/v1/me/playlists?offset=50&limit=50",
+            }
+
+    class FakePage2Response:
+        status_code = 200
+        ok = True
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {
+                "items": [{"id": "pl2", "name": "Playlist 2", "external_urls": {"spotify": "https://open.spotify.com/playlist/pl2"}}],
+                "next": None,
+            }
+
+    mock_get.side_effect = [FakePage1Response(), FakePage2Response()]
+    res_paginated = get_user_playlists(db, user)
+    assert res_paginated["needs_scope"] is False
+    assert len(res_paginated["playlists"]) == 2
+    assert res_paginated["playlists"][0]["id"] == "pl1"
+    assert res_paginated["playlists"][1]["id"] == "pl2"
     db.close()
