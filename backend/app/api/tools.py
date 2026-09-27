@@ -14,7 +14,7 @@ from ..schemas.ingestion import ListeningEventCreate
 from ..services.bbc_sounds_service import fetch_bbc_playlist
 from ..services.ingestion_service import ingest_listening_event
 from ..services.processed_import_service import deezer_artwork, deezer_search, itunes_artwork
-from ..services.spotify_playlist_service import create_playlist
+from ..services.spotify_playlist_service import add_tracks_to_playlist, create_playlist, get_user_playlists
 
 router = APIRouter(prefix="/tools", tags=["tools"])
 
@@ -73,9 +73,20 @@ class ScopeCreepFetchResponse(BaseModel):
     title: str
     tracks: list[ScopeCreepTrackItem]
 
-class ScopeCreepPlaylistCreateRequest(BaseModel):
+class ScopeCreepPlaylistItem(BaseModel):
+    id: str
+    name: str
     url: str
-    title: str
+
+class ScopeCreepPlaylistsResponse(BaseModel):
+    playlists: list[ScopeCreepPlaylistItem]
+    needs_scope: bool = False
+
+class ScopeCreepPlaylistCreateRequest(BaseModel):
+    url: str = ""
+    title: str | None = None
+    mode: str = "create"  # "create" or "existing"
+    playlist_id: str | None = None
     spotify_uris: list[str]
 
 class ScopeCreepScrobbleTrack(BaseModel):
@@ -158,6 +169,23 @@ def scope_creep_fetch(
         tracks=resolved_tracks
     )
 
+@router.get("/scope-creep/playlists", response_model=ScopeCreepPlaylistsResponse)
+def scope_creep_playlists(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        data = get_user_playlists(db, current_user)
+        return ScopeCreepPlaylistsResponse(
+            playlists=[
+                ScopeCreepPlaylistItem(id=p["id"], name=p["name"], url=p["url"])
+                for p in data.get("playlists", [])
+            ],
+            needs_scope=data.get("needs_scope", False),
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to fetch user playlists: {str(e)}")
+
 @router.post("/scope-creep/playlist", response_model=ScopeCreepResponse)
 def scope_creep_playlist(
     req: ScopeCreepPlaylistCreateRequest,
@@ -168,19 +196,40 @@ def scope_creep_playlist(
         raise HTTPException(status_code=400, detail="No Spotify tracks selected to create playlist.")
 
     try:
-        playlist_url = create_playlist(
-            db,
-            current_user,
-            req.title,
-            f"Generated from {req.url} via Audio Scrobbler App Scope Creep",
-            req.spotify_uris
-        )
+        if req.mode == "existing":
+            if not req.playlist_id or not req.playlist_id.strip():
+                raise HTTPException(status_code=400, detail="Please select or provide a Spotify playlist ID or URL.")
+            playlist_name, playlist_url, count = add_tracks_to_playlist(
+                db,
+                current_user,
+                req.playlist_id,
+                req.spotify_uris,
+            )
+            message = f"Added {count} tracks to playlist '{playlist_name}'."
+        else:
+            playlist_title = req.title.strip() if req.title and req.title.strip() else "BBC Sounds Playlist"
+            description = (
+                f"Generated from {req.url} via Audio Scrobbler App Scope Creep"
+                if req.url
+                else "Generated via Audio Scrobbler App Scope Creep"
+            )
+            playlist_name, playlist_url, count = create_playlist(
+                db,
+                current_user,
+                playlist_title,
+                description,
+                req.spotify_uris,
+            )
+            message = f"Created playlist '{playlist_name}' with {count} tracks."
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to create Spotify playlist: {str(e)}")
+        action = "add tracks to" if req.mode == "existing" else "create"
+        raise HTTPException(status_code=400, detail=f"Failed to {action} Spotify playlist: {str(e)}")
 
     return ScopeCreepResponse(
-        message=f"Created playlist '{req.title}' with {len(req.spotify_uris)} tracks.",
-        playlist_url=playlist_url
+        message=message,
+        playlist_url=playlist_url,
     )
 
 @router.post("/scope-creep/scrobble", response_model=ScopeCreepScrobbleResponse)
@@ -255,7 +304,7 @@ def scope_creep(
         raise HTTPException(status_code=400, detail="No Spotify tracks found for this BBC Sounds episode.")
         
     try:
-        playlist_url = create_playlist(
+        playlist_name, playlist_url, count = create_playlist(
             db, 
             current_user, 
             bbc_data["title"], 
@@ -266,6 +315,6 @@ def scope_creep(
         raise HTTPException(status_code=400, detail=f"Failed to create Spotify playlist: {str(e)}")
         
     return ScopeCreepResponse(
-        message=f"Created playlist '{bbc_data['title']}' with {len(bbc_data['spotify_uris'])} tracks.",
+        message=f"Created playlist '{playlist_name}' with {count} tracks.",
         playlist_url=playlist_url
     )

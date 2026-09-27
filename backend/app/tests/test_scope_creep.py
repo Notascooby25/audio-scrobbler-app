@@ -14,6 +14,7 @@ from backend.app.db import Base, get_db
 from backend.app.main import app
 from backend.app.models import ListeningEvent, User
 from backend.app.services.bbc_sounds_service import _normalize_spotify_uri
+from backend.app.services.spotify_playlist_service import _extract_playlist_id
 
 engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
 TestingSession = sessionmaker(bind=engine)
@@ -65,6 +66,15 @@ def test_normalize_spotify_uri():
     )
 
 
+def test_extract_playlist_id():
+    assert _extract_playlist_id("37i9dQZF1DXcBWIGoYBM5M") == "37i9dQZF1DXcBWIGoYBM5M"
+    assert _extract_playlist_id("spotify:playlist:37i9dQZF1DXcBWIGoYBM5M") == "37i9dQZF1DXcBWIGoYBM5M"
+    assert (
+        _extract_playlist_id("https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M?si=abcdef123456")
+        == "37i9dQZF1DXcBWIGoYBM5M"
+    )
+
+
 @patch("backend.app.api.tools.fetch_bbc_playlist")
 def test_scope_creep_fetch(mock_fetch):
     mock_fetch.return_value = {
@@ -95,7 +105,7 @@ def test_scope_creep_fetch(mock_fetch):
 
 @patch("backend.app.api.tools.create_playlist")
 def test_scope_creep_playlist(mock_create):
-    mock_create.return_value = "https://open.spotify.com/playlist/test12345"
+    mock_create.return_value = ("Indie Chill", "https://open.spotify.com/playlist/test12345", 1)
 
     res = client.post(
         "/tools/scope-creep/playlist",
@@ -108,7 +118,51 @@ def test_scope_creep_playlist(mock_create):
     assert res.status_code == 200
     data = res.json()
     assert data["playlist_url"] == "https://open.spotify.com/playlist/test12345"
-    assert "Created playlist" in data["message"]
+    assert "Created playlist 'Indie Chill' with 1 tracks." in data["message"]
+
+
+@patch("backend.app.api.tools.add_tracks_to_playlist")
+def test_scope_creep_playlist_existing(mock_add):
+    mock_add.return_value = ("My Favs", "https://open.spotify.com/playlist/existing123", 1)
+
+    res = client.post(
+        "/tools/scope-creep/playlist",
+        json={
+            "mode": "existing",
+            "playlist_id": "existing123",
+            "spotify_uris": ["spotify:track:0fBSs3fRoh1yJcne77fdu9"],
+        },
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["playlist_url"] == "https://open.spotify.com/playlist/existing123"
+    assert "Added 1 tracks to playlist 'My Favs'." in data["message"]
+
+    # Test missing playlist_id returns 400
+    bad_res = client.post(
+        "/tools/scope-creep/playlist",
+        json={
+            "mode": "existing",
+            "playlist_id": "",
+            "spotify_uris": ["spotify:track:0fBSs3fRoh1yJcne77fdu9"],
+        },
+    )
+    assert bad_res.status_code == 400
+
+
+@patch("backend.app.api.tools.get_user_playlists")
+def test_scope_creep_playlists(mock_get):
+    mock_get.return_value = {
+        "playlists": [{"id": "pl1", "name": "Chill Hits", "url": "https://open.spotify.com/playlist/pl1"}],
+        "needs_scope": False,
+    }
+
+    res = client.get("/tools/scope-creep/playlists")
+    assert res.status_code == 200
+    data = res.json()
+    assert len(data["playlists"]) == 1
+    assert data["playlists"][0]["name"] == "Chill Hits"
+    assert data["needs_scope"] is False
 
 
 def test_scope_creep_scrobble():
