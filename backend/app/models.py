@@ -191,3 +191,19 @@ class GenreCache(Base):
     artist_spotify_id: Mapped[str] = mapped_column(String(255), primary_key=True, index=True)
     genres: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     cached_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class FollowedShow(Base):
+    __tablename__ = "followed_shows"
+    __table_args__ = (
+        UniqueConstraint("user_id", "brand_id", name="uq_followed_show_user_brand"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    brand_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    synopsis: Mapped[str | None] = mapped_column(Text, nullable=True)
+    image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+

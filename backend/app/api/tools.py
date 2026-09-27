@@ -9,9 +9,14 @@ from sqlalchemy.orm import Session
 
 from ..api.deps import get_current_user
 from ..db import get_db
-from ..models import ArtworkCache, ListeningEvent, User
+from ..models import ArtworkCache, FollowedShow, ListeningEvent, User
 from ..schemas.ingestion import ListeningEventCreate
-from ..services.bbc_sounds_service import fetch_bbc_playlist
+from ..services.bbc_sounds_service import (
+    fetch_bbc_playlist,
+    fetch_brand_episodes,
+    resolve_brand_info,
+    search_bbc_shows,
+)
 from ..services.ingestion_service import ingest_listening_event
 from ..services.processed_import_service import deezer_artwork, deezer_search, itunes_artwork
 from ..services.spotify_playlist_service import add_tracks_to_playlist, create_playlist, get_user_playlists
@@ -68,10 +73,56 @@ class ScopeCreepTrackItem(BaseModel):
     spotify_uri: str | None = None
     image_url: str | None = None
 
+class ScopeCreepBrandInfo(BaseModel):
+    brand_id: str
+    title: str
+    synopsis: str | None = None
+    image_url: str | None = None
+    is_followed: bool = False
+
 class ScopeCreepFetchResponse(BaseModel):
     play_id: str
     title: str
     tracks: list[ScopeCreepTrackItem]
+    brand_info: ScopeCreepBrandInfo | None = None
+
+class FollowedShowItem(BaseModel):
+    id: int
+    brand_id: str
+    title: str
+    synopsis: str | None = None
+    image_url: str | None = None
+    created_at: datetime
+
+class FollowShowRequest(BaseModel):
+    url_or_id: str
+
+class FollowedShowsListResponse(BaseModel):
+    shows: list[FollowedShowItem]
+
+class ShowEpisodeItem(BaseModel):
+    play_id: str
+    title: str
+    synopsis: str | None = None
+    release_date: str | None = None
+    availability: str | None = None
+    duration: str | None = None
+    image_url: str | None = None
+    url: str
+
+class ShowEpisodesResponse(BaseModel):
+    brand_id: str
+    episodes: list[ShowEpisodeItem]
+
+class ShowSearchResultItem(BaseModel):
+    brand_id: str
+    title: str
+    synopsis: str | None = None
+    image_url: str | None = None
+    is_followed: bool = False
+
+class ShowSearchResponse(BaseModel):
+    results: list[ShowSearchResultItem]
 
 class ScopeCreepPlaylistItem(BaseModel):
     id: str
@@ -163,10 +214,183 @@ def scope_creep_fetch(
         for t in bbc_data["tracks"]
     ]
 
+    brand_info = None
+    if bbc_data.get("brand_info"):
+        b_info = bbc_data["brand_info"]
+        is_followed = db.query(FollowedShow).filter(
+            FollowedShow.user_id == current_user.id,
+            FollowedShow.brand_id == b_info["brand_id"]
+        ).first() is not None
+        brand_info = ScopeCreepBrandInfo(
+            brand_id=b_info["brand_id"],
+            title=b_info["title"],
+            synopsis=b_info.get("synopsis"),
+            image_url=b_info.get("image_url"),
+            is_followed=is_followed,
+        )
+
     return ScopeCreepFetchResponse(
         play_id=play_id,
         title=bbc_data["title"],
-        tracks=resolved_tracks
+        tracks=resolved_tracks,
+        brand_info=brand_info,
+    )
+
+@router.get("/scope-creep/followed-shows", response_model=FollowedShowsListResponse)
+def get_followed_shows(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    shows = (
+        db.query(FollowedShow)
+        .filter(FollowedShow.user_id == current_user.id)
+        .order_by(FollowedShow.title.asc())
+        .all()
+    )
+    return FollowedShowsListResponse(
+        shows=[
+            FollowedShowItem(
+                id=s.id,
+                brand_id=s.brand_id,
+                title=s.title,
+                synopsis=s.synopsis,
+                image_url=s.image_url,
+                created_at=s.created_at,
+            )
+            for s in shows
+        ]
+    )
+
+@router.post("/scope-creep/followed-shows", response_model=FollowedShowItem)
+def follow_show(
+    req: FollowShowRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        info = resolve_brand_info(req.url_or_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    existing = (
+        db.query(FollowedShow)
+        .filter(
+            FollowedShow.user_id == current_user.id,
+            FollowedShow.brand_id == info["brand_id"],
+        )
+        .first()
+    )
+
+    if existing:
+        return FollowedShowItem(
+            id=existing.id,
+            brand_id=existing.brand_id,
+            title=existing.title,
+            synopsis=existing.synopsis,
+            image_url=existing.image_url,
+            created_at=existing.created_at,
+        )
+
+    show = FollowedShow(
+        user_id=current_user.id,
+        brand_id=info["brand_id"],
+        title=info["title"],
+        synopsis=info.get("synopsis"),
+        image_url=info.get("image_url"),
+    )
+    db.add(show)
+    db.commit()
+    db.refresh(show)
+    return FollowedShowItem(
+        id=show.id,
+        brand_id=show.brand_id,
+        title=show.title,
+        synopsis=show.synopsis,
+        image_url=show.image_url,
+        created_at=show.created_at,
+    )
+
+@router.delete("/scope-creep/followed-shows/{brand_id}")
+def unfollow_show(
+    brand_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    show = (
+        db.query(FollowedShow)
+        .filter(
+            FollowedShow.user_id == current_user.id,
+            FollowedShow.brand_id == brand_id,
+        )
+        .first()
+    )
+    if not show:
+        raise HTTPException(status_code=404, detail="Followed show not found")
+
+    db.delete(show)
+    db.commit()
+    return {"message": "Show unfollowed successfully", "brand_id": brand_id}
+
+@router.get("/scope-creep/followed-shows/{brand_id}/episodes", response_model=ShowEpisodesResponse)
+def get_show_episodes(
+    brand_id: str,
+    limit: int = 30,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        episodes_data = fetch_brand_episodes(brand_id, limit=limit)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to fetch episodes from BBC Sounds: {str(e)}")
+
+    return ShowEpisodesResponse(
+        brand_id=brand_id,
+        episodes=[
+            ShowEpisodeItem(
+                play_id=ep["play_id"],
+                title=ep["title"],
+                synopsis=ep.get("synopsis"),
+                release_date=ep.get("release_date"),
+                availability=ep.get("availability"),
+                duration=ep.get("duration"),
+                image_url=ep.get("image_url"),
+                url=ep["url"],
+            )
+            for ep in episodes_data
+        ],
+    )
+
+@router.get("/scope-creep/search-shows", response_model=ShowSearchResponse)
+def search_shows(
+    q: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    query = q.strip()
+    if not query:
+        return ShowSearchResponse(results=[])
+
+    try:
+        results = search_bbc_shows(query)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to search BBC Sounds: {str(e)}")
+
+    followed_brands = {
+        s.brand_id
+        for s in db.query(FollowedShow.brand_id).filter(FollowedShow.user_id == current_user.id).all()
+    }
+
+    return ShowSearchResponse(
+        results=[
+            ShowSearchResultItem(
+                brand_id=r["brand_id"],
+                title=r["title"],
+                synopsis=r.get("synopsis"),
+                image_url=r.get("image_url"),
+                is_followed=r["brand_id"] in followed_brands,
+            )
+            for r in results
+        ]
     )
 
 @router.get("/scope-creep/playlists", response_model=ScopeCreepPlaylistsResponse)

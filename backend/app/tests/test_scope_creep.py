@@ -12,7 +12,7 @@ from sqlalchemy.pool import StaticPool
 from backend.app.api.deps import get_current_user
 from backend.app.db import Base, get_db
 from backend.app.main import app
-from backend.app.models import ListeningEvent, User
+from backend.app.models import FollowedShow, ListeningEvent, User
 from backend.app.services.bbc_sounds_service import _normalize_spotify_uri
 from backend.app.services.spotify_playlist_service import _extract_playlist_id, get_user_playlists
 
@@ -40,6 +40,7 @@ def setup_function():
     app.dependency_overrides[get_current_user] = lambda: DemoUser()
     db = TestingSession()
     db.query(ListeningEvent).delete()
+    db.query(FollowedShow).delete()
     db.query(User).delete()
     db.add(User(
         id=1,
@@ -273,3 +274,113 @@ def test_get_user_playlists_service_403_and_pagination(mock_get, mock_refresh):
     assert res_paginated["playlists"][0]["id"] == "pl1"
     assert res_paginated["playlists"][1]["id"] == "pl2"
     db.close()
+
+
+@patch("backend.app.api.tools.resolve_brand_info")
+@patch("backend.app.api.tools.fetch_brand_episodes")
+@patch("backend.app.api.tools.search_bbc_shows")
+def test_followed_shows_endpoints(mock_search, mock_episodes, mock_resolve):
+    mock_resolve.return_value = {
+        "brand_id": "b01fm4ss",
+        "title": "Gilles Peterson",
+        "synopsis": "Joining the musical dots",
+        "image_url": "https://example.com/gilles.jpg",
+    }
+    mock_episodes.return_value = [
+        {
+            "play_id": "m0031w3y",
+            "title": "Gilles Peterson: In session",
+            "synopsis": "Fiery session with Knats",
+            "release_date": "26 Sep 2026",
+            "availability": "Available for 29 days",
+            "duration": "180 mins",
+            "image_url": "https://example.com/gilles.jpg",
+            "url": "https://www.bbc.co.uk/sounds/play/m0031w3y",
+        }
+    ]
+    mock_search.return_value = [
+        {
+            "brand_id": "b01fm4ss",
+            "title": "Gilles Peterson",
+            "synopsis": "Joining the musical dots",
+            "image_url": "https://example.com/gilles.jpg",
+        }
+    ]
+
+    # 1. Search shows
+    search_res = client.get("/tools/scope-creep/search-shows?q=gilles")
+    assert search_res.status_code == 200
+    search_data = search_res.json()
+    assert len(search_data["results"]) == 1
+    assert search_data["results"][0]["is_followed"] is False
+
+    # 2. Follow show
+    follow_res = client.post("/tools/scope-creep/followed-shows", json={"url_or_id": "https://www.bbc.co.uk/sounds/brand/b01fm4ss"})
+    assert follow_res.status_code == 200
+    follow_data = follow_res.json()
+    assert follow_data["brand_id"] == "b01fm4ss"
+    assert follow_data["title"] == "Gilles Peterson"
+
+    # Search again and verify is_followed is True
+    search_res2 = client.get("/tools/scope-creep/search-shows?q=gilles")
+    assert search_res2.status_code == 200
+    assert search_res2.json()["results"][0]["is_followed"] is True
+
+    # 3. List followed shows
+    list_res = client.get("/tools/scope-creep/followed-shows")
+    assert list_res.status_code == 200
+    list_data = list_res.json()
+    assert len(list_data["shows"]) == 1
+    assert list_data["shows"][0]["brand_id"] == "b01fm4ss"
+
+    # 4. Fetch episodes for followed show
+    ep_res = client.get("/tools/scope-creep/followed-shows/b01fm4ss/episodes")
+    assert ep_res.status_code == 200
+    ep_data = ep_res.json()
+    assert ep_data["brand_id"] == "b01fm4ss"
+    assert len(ep_data["episodes"]) == 1
+    assert ep_data["episodes"][0]["play_id"] == "m0031w3y"
+
+    # 5. Unfollow show
+    del_res = client.delete("/tools/scope-creep/followed-shows/b01fm4ss")
+    assert del_res.status_code == 200
+    assert del_res.json()["brand_id"] == "b01fm4ss"
+
+    # List again and verify empty
+    list_res2 = client.get("/tools/scope-creep/followed-shows")
+    assert list_res2.status_code == 200
+    assert len(list_res2.json()["shows"]) == 0
+
+
+@patch("backend.app.api.tools.fetch_bbc_playlist")
+def test_scope_creep_fetch_brand_info(mock_fetch):
+    mock_fetch.return_value = {
+        "title": "Indie Chill - 23 Sep 2026",
+        "tracks": [],
+        "spotify_uris": [],
+        "brand_info": {
+            "brand_id": "m002zttt",
+            "title": "Indie Chill",
+            "synopsis": "Chill indie music",
+            "image_url": "https://example.com/indie.jpg",
+        },
+    }
+
+    res = client.post("/tools/scope-creep/fetch", json={"url": "https://www.bbc.co.uk/sounds/play/m0031tc6"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["brand_info"] is not None
+    assert data["brand_info"]["brand_id"] == "m002zttt"
+    assert data["brand_info"]["is_followed"] is False
+
+    # Add to followed shows in DB
+    db = TestingSession()
+    db.add(FollowedShow(user_id=1, brand_id="m002zttt", title="Indie Chill"))
+    db.commit()
+    db.close()
+
+    res2 = client.post("/tools/scope-creep/fetch", json={"url": "https://www.bbc.co.uk/sounds/play/m0031tc6"})
+    assert res2.status_code == 200
+    data2 = res2.json()
+    assert data2["brand_info"]["is_followed"] is True
+
