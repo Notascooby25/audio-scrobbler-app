@@ -14,7 +14,6 @@ const SETTINGS_TABS = [
   ['scrobble', 'Scrobble'],
   ['data', 'Data'],
   ['changelog', 'Changelog'],
-  ['scopecreep', 'Scope Creep'],
   ['danger', 'Danger Zone'],
 ]
 
@@ -33,7 +32,8 @@ export default function SettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const tabParam = searchParams.get('tab')
   const [activeTab, setActiveTab] = useState(() => {
-    if (['general', 'views', 'scrobble', 'data', 'changelog', 'scopecreep', 'danger'].includes(tabParam)) {
+    if (tabParam === 'scopecreep') return 'scrobble'
+    if (['general', 'views', 'scrobble', 'data', 'changelog', 'danger'].includes(tabParam)) {
       return tabParam
     }
     return 'general'
@@ -358,58 +358,70 @@ export default function SettingsPage() {
           {status === 'saved' && <p role="status">Saved</p>}
         </div>
       )}
-      {activeTab === 'scrobble' && scrobbleSettings && (
+      {activeTab === 'scrobble' && (
         <div
           className="settings-form"
           role="tabpanel"
           id="settings-panel-scrobble"
           aria-labelledby="settings-tab-scrobble"
         >
-          <label className="settings-checkbox">
-            <input
-              type="checkbox"
-              checked={scrobbleSettings.strip_remaster_tags}
-              onChange={(event) => changeScrobbleSetting('strip_remaster_tags', event.target.checked)}
-            />
-            Strip remaster tags (e.g. "(Remastered)", "[Live]") from track titles
-          </label>
-          <label>
-            Poll frequency
-            <select
-              value={scrobbleSettings.poll_interval_minutes}
-              onChange={(event) => changeScrobbleSetting('poll_interval_minutes', Number(event.target.value))}
-            >
-              {POLL_INTERVAL_OPTIONS.map((minutes) => (
-                <option key={minutes} value={minutes}>Every {minutes} minutes</option>
-              ))}
-            </select>
-          </label>
-          <label className="settings-checkbox">
-            <input
-              type="checkbox"
-              checked={scrobbleSettings.realtime_sync_enabled}
-              onChange={(event) => changeScrobbleSetting('realtime_sync_enabled', event.target.checked)}
-            />
-            Enable Real-time Scrobbling (requires Spotify Premium, polls every 10s)
-          </label>
-          {scrobbleSettings.realtime_sync_enabled && (
-            <label style={{ marginLeft: '1.5rem' }}>
-              Scrobble completion threshold
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {scrobbleSettings ? (
+            <>
+              <label className="settings-checkbox">
                 <input
-                  type="range"
-                  min="1"
-                  max="100"
-                  value={scrobbleSettings.scrobble_threshold_percent}
-                  onChange={(event) => changeScrobbleSetting('scrobble_threshold_percent', Number(event.target.value))}
+                  type="checkbox"
+                  checked={scrobbleSettings.strip_remaster_tags}
+                  onChange={(event) => changeScrobbleSetting('strip_remaster_tags', event.target.checked)}
                 />
-                <span>{scrobbleSettings.scrobble_threshold_percent}%</span>
-              </div>
-              <small className="panel-meta">Track will scrobble immediately when this percentage of its duration is played.</small>
-            </label>
+                Strip remaster tags (e.g. "(Remastered)", "[Live]") from track titles
+              </label>
+              <label>
+                Poll frequency
+                <select
+                  value={scrobbleSettings.poll_interval_minutes}
+                  onChange={(event) => changeScrobbleSetting('poll_interval_minutes', Number(event.target.value))}
+                >
+                  {POLL_INTERVAL_OPTIONS.map((minutes) => (
+                    <option key={minutes} value={minutes}>Every {minutes} minutes</option>
+                  ))}
+                </select>
+              </label>
+              <label className="settings-checkbox">
+                <input
+                  type="checkbox"
+                  checked={scrobbleSettings.realtime_sync_enabled}
+                  onChange={(event) => changeScrobbleSetting('realtime_sync_enabled', event.target.checked)}
+                />
+                Enable Real-time Scrobbling (requires Spotify Premium, polls every 10s)
+              </label>
+              {scrobbleSettings.realtime_sync_enabled && (
+                <label style={{ marginLeft: '1.5rem' }}>
+                  Scrobble completion threshold
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input
+                      type="range"
+                      min="1"
+                      max="100"
+                      value={scrobbleSettings.scrobble_threshold_percent}
+                      onChange={(event) => changeScrobbleSetting('scrobble_threshold_percent', Number(event.target.value))}
+                    />
+                    <span>{scrobbleSettings.scrobble_threshold_percent}%</span>
+                  </div>
+                  <small className="panel-meta">Track will scrobble immediately when this percentage of its duration is played.</small>
+                </label>
+              )}
+              {scrobbleStatus === 'saving' && <p role="status">Saving...</p>}
+              {scrobbleStatus === 'saved' && <p role="status">Saved</p>}
+            </>
+          ) : (
+            <p className="panel-meta">Loading scrobble settings...</p>
           )}
-          {scrobbleStatus === 'saving' && <p role="status">Saving...</p>}
-          {scrobbleStatus === 'saved' && <p role="status">Saved</p>}
+
+          {session?.accessToken && (
+            <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '0.5px solid var(--color-border)' }}>
+              <ScopeCreepTools />
+            </div>
+          )}
         </div>
       )}
       {activeTab === 'data' && session?.accessToken && (
@@ -509,16 +521,6 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
-        </section>
-      )}
-      {activeTab === 'scopecreep' && session?.accessToken && (
-        <section
-          className="settings-form"
-          role="tabpanel"
-          id="settings-panel-scopecreep"
-          aria-labelledby="settings-tab-scopecreep"
-        >
-          <ScopeCreepTools />
         </section>
       )}
       {activeTab === 'danger' && session?.accessToken && (

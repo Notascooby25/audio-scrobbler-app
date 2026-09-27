@@ -156,9 +156,9 @@ Sections in page order:
 | Section | Endpoint |
 |---|---|
 | Preferences, e.g. theme, page sizes | `GET` and `PATCH /users/me/settings` |
-| Scrobble settings: `poll_interval_minutes`, and "Liked Songs" (opt-in `liked_tracks_sync_enabled`) | `GET` and `PATCH /users/me/settings/scrobble` |
+| Scrobble settings: `poll_interval_minutes`, realtime sync, and BBC Sounds Scope Creep import tool | `GET` and `PATCH /users/me/settings/scrobble`, `POST /tools/scope-creep/*` |
+| Data settings: Liked songs sync, Backfill Missing Artwork (Deezer/iTunes, **not** Spotify) | `POST /artwork/backfill`, `PATCH /users/me/settings/scrobble` |
 | Blocked items | `GET` and `DELETE /users/me/blocks` |
-| Backfill Missing Artwork (Deezer/iTunes, **not** Spotify) | `POST /artwork/backfill` |
 | Delete Scrobbles (permanent; confirmation modal) | `/import/*` delete endpoints |
 
 ## 8. Connect: `/connect`
