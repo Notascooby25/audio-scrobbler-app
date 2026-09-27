@@ -20,7 +20,9 @@ describe('ScopeCreepTools', () => {
       </MemoryRouter>
     )
 
-    expect(screen.getByText('BBC Sounds: Scope Creep')).toBeInTheDocument()
+    expect(screen.getByText('BBC Sounds - Scope Creep')).toBeInTheDocument()
+    expect(screen.getByText('Followed shows')).toBeInTheDocument()
+    expect(screen.getByText('Track listing extraction')).toBeInTheDocument()
     expect(screen.getByLabelText('BBC Sounds URL')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Fetch Show' })).toBeInTheDocument()
   })
@@ -49,12 +51,19 @@ describe('ScopeCreepTools', () => {
       ],
     }
 
-    vi.spyOn(global, 'fetch').mockImplementationOnce(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockShowData),
-      })
-    )
+    vi.spyOn(global, 'fetch')
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ shows: [] }),
+        })
+      )
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockShowData),
+        })
+      )
 
     render(
       <MemoryRouter>
@@ -108,6 +117,12 @@ describe('ScopeCreepTools', () => {
     }
 
     vi.spyOn(global, 'fetch')
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ shows: [] }),
+        })
+      )
       .mockImplementationOnce(() =>
         Promise.resolve({
           ok: true,
@@ -173,6 +188,12 @@ describe('ScopeCreepTools', () => {
     }
 
     vi.spyOn(global, 'fetch')
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ shows: [] }),
+        })
+      )
       .mockImplementationOnce(() =>
         Promise.resolve({
           ok: true,
@@ -251,6 +272,12 @@ describe('ScopeCreepTools', () => {
     }
 
     vi.spyOn(global, 'fetch')
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ shows: [] }),
+        })
+      )
       .mockImplementationOnce(() =>
         Promise.resolve({
           ok: true,
@@ -339,6 +366,12 @@ describe('ScopeCreepTools', () => {
       .mockImplementationOnce(() =>
         Promise.resolve({
           ok: true,
+          json: () => Promise.resolve({ shows: [] }),
+        })
+      )
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
           json: () => Promise.resolve(mockShowData),
         })
       )
@@ -368,7 +401,7 @@ describe('ScopeCreepTools', () => {
     fireEvent.click(screen.getByLabelText('Add to existing playlist'))
 
     await waitFor(() => {
-      expect(screen.getByText('Authorize Spotify Playlists')).toBeInTheDocument()
+      expect(screen.getByText(/Spotify requires additional permissions/)).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Connect Spotify Playlists' })).toBeInTheDocument()
     })
   })
@@ -403,6 +436,12 @@ describe('ScopeCreepTools', () => {
     }
 
     vi.spyOn(global, 'fetch')
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ shows: [] }),
+        })
+      )
       .mockImplementationOnce(() =>
         Promise.resolve({
           ok: true,
@@ -446,5 +485,97 @@ describe('ScopeCreepTools', () => {
     const select = screen.getByLabelText('Select Playlist')
     expect(select).toHaveTextContent('Ambient Chill')
     expect(select).not.toHaveTextContent('Roadtrip Beats')
+  })
+
+  it('loads followed shows, selects episode, and loads tracklist into extraction tool', async () => {
+    const mockShows = {
+      shows: [
+        { brand_id: 'b01fm4ss', title: 'Gilles Peterson' },
+      ],
+    }
+    const mockEpisodes = {
+      brand_id: 'b01fm4ss',
+      episodes: [
+        {
+          play_id: 'm0031w3y',
+          title: 'Gilles Peterson: In session',
+          release_date: '26 Sep 2026',
+          duration: '180 mins',
+          url: 'https://www.bbc.co.uk/sounds/play/m0031w3y',
+        },
+      ],
+    }
+    const mockShowData = {
+      play_id: 'm0031w3y',
+      title: 'Gilles Peterson: In session',
+      tracks: [
+        {
+          segment_id: 'seg_1',
+          artist: 'Knats',
+          title: 'Newcastle Jazz',
+          offset_seconds: 0,
+          duration_seconds: 180,
+          spotify_uri: 'spotify:track:222',
+        },
+      ],
+      brand_info: {
+        brand_id: 'b01fm4ss',
+        title: 'Gilles Peterson',
+        is_followed: true,
+      },
+    }
+
+    vi.spyOn(global, 'fetch').mockImplementation((url) => {
+      const urlStr = String(url)
+      if (urlStr.includes('/tools/scope-creep/followed-shows/b01fm4ss/episodes')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockEpisodes),
+        })
+      }
+      if (urlStr.includes('/tools/scope-creep/followed-shows')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockShows),
+        })
+      }
+      if (urlStr.includes('/tools/scope-creep/fetch')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockShowData),
+        })
+      }
+      return Promise.reject(new Error(`Unhandled fetch: ${urlStr}`))
+    })
+
+    render(
+      <MemoryRouter>
+        <ScopeCreepTools />
+      </MemoryRouter>
+    )
+
+    // Wait for followed shows to load into select
+    await waitFor(() => {
+      expect(screen.getByText('Gilles Peterson')).toBeInTheDocument()
+    })
+
+    // Select Gilles Peterson
+    fireEvent.change(screen.getByLabelText('Select Show'), {
+      target: { value: 'b01fm4ss' },
+    })
+
+    // Wait for episodes to load
+    await waitFor(() => {
+      expect(screen.getByText(/Gilles Peterson: In session/)).toBeInTheDocument()
+    })
+
+    // Click Load Tracklist
+    fireEvent.click(screen.getByRole('button', { name: 'Load Tracklist' }))
+
+    // Verify tracklist is extracted and displayed
+    await waitFor(() => {
+      expect(screen.getByText('Newcastle Jazz')).toBeInTheDocument()
+      expect(screen.getByText('✓ Following Show')).toBeInTheDocument()
+    })
   })
 })

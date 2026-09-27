@@ -21,7 +21,6 @@ async function parseResponse(response, fallbackMsg) {
   try {
     data = await response.json()
   } catch {
-    // Non-JSON response (e.g. 500 Internal Server Error text from proxy)
     let errText = ''
     try {
       if (typeof response.text === 'function') {
@@ -46,6 +45,19 @@ export default function ScopeCreepTools() {
   const [selectedSegments, setSelectedSegments] = useState(new Set())
   const [listenedAt, setListenedAt] = useState(getLocalDefaultDateTime)
 
+  // Followed shows state
+  const [followedShows, setFollowedShows] = useState([])
+  const [loadingFollowed, setLoadingFollowed] = useState(false)
+  const [selectedBrandId, setSelectedBrandId] = useState('')
+  const [episodes, setEpisodes] = useState([])
+  const [loadingEpisodes, setLoadingEpisodes] = useState(false)
+  const [selectedEpisodePlayId, setSelectedEpisodePlayId] = useState('')
+  const [showAddShow, setShowAddShow] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [searching, setSearching] = useState(false)
+  const [manualShowInput, setManualShowInput] = useState('')
+
   // Playlist options
   const [playlistMode, setPlaylistMode] = useState('create') // 'create' | 'existing'
   const [newPlaylistTitle, setNewPlaylistTitle] = useState('')
@@ -67,6 +79,67 @@ export default function ScopeCreepTools() {
   const [error, setError] = useState(null)
   const [playlistResult, setPlaylistResult] = useState(null)
   const [scrobbleResult, setScrobbleResult] = useState(null)
+
+  const fetchFollowedShows = async () => {
+    setLoadingFollowed(true)
+    try {
+      const session = readSession()
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+      const response = await fetch(`${API_BASE_URL}/tools/scope-creep/followed-shows`, {
+        headers: {
+          'Authorization': `Bearer ${session?.accessToken}`,
+        },
+      })
+      const data = await parseResponse(response, 'Failed to fetch followed shows')
+      setFollowedShows(data.shows || [])
+    } catch (err) {
+      console.error('Error fetching followed shows:', err)
+      setFollowedShows([])
+    } finally {
+      setLoadingFollowed(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchFollowedShows()
+  }, [])
+
+  useEffect(() => {
+    if (!selectedBrandId) {
+      setEpisodes([])
+      setSelectedEpisodePlayId('')
+      return
+    }
+
+    const fetchEpisodes = async () => {
+      setLoadingEpisodes(true)
+      try {
+        const session = readSession()
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+        const response = await fetch(`${API_BASE_URL}/tools/scope-creep/followed-shows/${selectedBrandId}/episodes`, {
+          headers: {
+            'Authorization': `Bearer ${session?.accessToken}`,
+          },
+        })
+        const data = await parseResponse(response, 'Failed to fetch episodes')
+        const eps = data.episodes || []
+        setEpisodes(eps)
+        if (eps.length > 0) {
+          setSelectedEpisodePlayId(eps[0].play_id)
+        } else {
+          setSelectedEpisodePlayId('')
+        }
+      } catch (err) {
+        console.error('Error fetching episodes:', err)
+        setEpisodes([])
+        setSelectedEpisodePlayId('')
+      } finally {
+        setLoadingEpisodes(false)
+      }
+    }
+
+    fetchEpisodes()
+  }, [selectedBrandId])
 
   const fetchPlaylists = async () => {
     setLoadingPlaylists(true)
@@ -105,9 +178,15 @@ export default function ScopeCreepTools() {
     }
   }
 
-  const handleFetch = async (e) => {
-    e.preventDefault()
-    if (!url.trim()) return
+  const handleFetch = async (e, overrideUrl = null) => {
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault()
+    }
+    const targetUrl = (overrideUrl || url).trim()
+    if (!targetUrl) return
+    if (overrideUrl) {
+      setUrl(overrideUrl)
+    }
 
     setFetching(true)
     setError(null)
@@ -124,7 +203,7 @@ export default function ScopeCreepTools() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.accessToken}`,
         },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify({ url: targetUrl }),
       })
       const data = await parseResponse(response, 'Failed to fetch BBC show')
 
@@ -136,6 +215,102 @@ export default function ScopeCreepTools() {
       setError(err.message)
     } finally {
       setFetching(false)
+    }
+  }
+
+  const handleFollowShow = async (urlOrId) => {
+    setActionLoading(true)
+    setError(null)
+    try {
+      const session = readSession()
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+      const response = await fetch(`${API_BASE_URL}/tools/scope-creep/followed-shows`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.accessToken}`,
+        },
+        body: JSON.stringify({ url_or_id: urlOrId }),
+      })
+      const newShow = await parseResponse(response, 'Failed to follow show')
+      await fetchFollowedShows()
+      setSelectedBrandId(newShow.brand_id)
+      setShowAddShow(false)
+      setSearchQuery('')
+      setSearchResults([])
+      setManualShowInput('')
+
+      if (showData?.brand_info && showData.brand_info.brand_id === newShow.brand_id) {
+        setShowData((prev) => ({
+          ...prev,
+          brand_info: { ...prev.brand_info, is_followed: true },
+        }))
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleUnfollowShow = async (brandId) => {
+    setActionLoading(true)
+    setError(null)
+    try {
+      const session = readSession()
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+      const response = await fetch(`${API_BASE_URL}/tools/scope-creep/followed-shows/${brandId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session?.accessToken}`,
+        },
+      })
+      await parseResponse(response, 'Failed to unfollow show')
+      if (selectedBrandId === brandId) {
+        setSelectedBrandId('')
+        setEpisodes([])
+        setSelectedEpisodePlayId('')
+      }
+      await fetchFollowedShows()
+
+      if (showData?.brand_info && showData.brand_info.brand_id === brandId) {
+        setShowData((prev) => ({
+          ...prev,
+          brand_info: { ...prev.brand_info, is_followed: false },
+        }))
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleSearchShows = async (e) => {
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault()
+    }
+    const q = searchQuery.trim()
+    if (!q) return
+    setSearching(true)
+    setError(null)
+    try {
+      const session = readSession()
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+      const response = await fetch(
+        `${API_BASE_URL}/tools/scope-creep/search-shows?q=${encodeURIComponent(q)}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${session?.accessToken}`,
+          },
+        }
+      )
+      const data = await parseResponse(response, 'Failed to search BBC shows')
+      setSearchResults(data.results || [])
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSearching(false)
     }
   }
 
@@ -208,29 +383,24 @@ export default function ScopeCreepTools() {
         },
         body: JSON.stringify(payload),
       })
-      const data = await parseResponse(
-        response,
-        playlistMode === 'existing' ? 'Failed to add tracks to Spotify playlist' : 'Failed to create Spotify playlist'
-      )
+      const data = await parseResponse(response, 'Failed to save Spotify playlist')
 
-      setPlaylistResult(data)
-
-      if (playlistMode === 'existing' && targetPlaylistId) {
+      if (playlistMode === 'existing') {
         try {
-          const currentRecents = JSON.parse(localStorage.getItem('scope-creep-recent-playlists') || '[]')
-          const found = userPlaylists?.find((p) => p.id === targetPlaylistId)
-          const nameMatch = data.message.match(/playlist '([^']+)'/)
-          const nameToSave = found?.name || (nameMatch ? nameMatch[1] : targetPlaylistId)
-          const updated = [
-            { id: targetPlaylistId, name: nameToSave },
-            ...currentRecents.filter((r) => r.id !== targetPlaylistId),
+          const matched = userPlaylists?.find((p) => p.id === targetPlaylistId)
+          const playlistName = matched ? matched.name : targetPlaylistId
+          const updatedRecent = [
+            { id: targetPlaylistId, name: playlistName },
+            ...recentPlaylists.filter((p) => p.id !== targetPlaylistId),
           ].slice(0, 5)
-          localStorage.setItem('scope-creep-recent-playlists', JSON.stringify(updated))
-          setRecentPlaylists(updated)
+          setRecentPlaylists(updatedRecent)
+          localStorage.setItem('scope-creep-recent-playlists', JSON.stringify(updatedRecent))
         } catch {
-          // ignore localStorage error
+          // ignore
         }
       }
+
+      setPlaylistResult(data)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -287,382 +457,628 @@ export default function ScopeCreepTools() {
   return (
     <div className="card">
       <div className="card-header">
-        <h2 className="card-title">BBC Sounds: Scope Creep</h2>
+        <h2 className="card-title">BBC Sounds - Scope Creep</h2>
       </div>
       <div className="card-body">
-        <p>Extract radio show tracklists from BBC Sounds to create Spotify playlists or scrobble directly to your music history.</p>
-        <p className="help-text">Example: <code>https://www.bbc.co.uk/sounds/play/m0031tc6</code></p>
+        <p style={{ marginBottom: '1.5rem', color: 'var(--color-text-muted)' }}>
+          Extract radio show tracklists from BBC Sounds to create Spotify playlists or scrobble directly to your music history.
+        </p>
 
-        {!showData ? (
-          <form onSubmit={handleFetch} style={{ marginTop: '1rem' }}>
-            <div className="form-group">
-              <label htmlFor="bbc-url" className="form-label">BBC Sounds URL</label>
-              <input
-                id="bbc-url"
-                type="url"
-                className="form-input"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://www.bbc.co.uk/sounds/play/..."
-                disabled={fetching}
-                required
-              />
-            </div>
-            <button type="submit" className="button button-primary" disabled={fetching}>
-              {fetching ? 'Fetching Show...' : 'Fetch Show'}
+        {/* ─── SECTION 1: Followed shows ─── */}
+        <section className="scope-creep-section" style={{ marginBottom: '2rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--color-border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.5rem' }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Followed shows</h3>
+            <button
+              type="button"
+              className="button button-secondary"
+              style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+              onClick={() => setShowAddShow((v) => !v)}
+              disabled={actionLoading}
+            >
+              {showAddShow ? 'Close Search' : '+ Follow a Show'}
             </button>
-          </form>
-        ) : (
-          <div style={{ marginTop: '1rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-color, #333)', paddingBottom: '0.75rem' }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1.15rem' }}>{showData.title}</h3>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-muted, #888)' }}>
-                  {showData.tracks.length} tracks found ({selectedSegments.size} selected)
-                </p>
-              </div>
-              <button
-                type="button"
-                className="button button-secondary"
-                onClick={() => {
-                  setShowData(null)
-                  setPlaylistResult(null)
-                  setScrobbleResult(null)
-                  setPlaylistMode('create')
-                  setSelectedPlaylistId('')
-                  setCustomPlaylistInput('')
-                }}
-                disabled={actionLoading}
-              >
-                Change URL
-              </button>
-            </div>
+          </div>
+          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
+            Select from your saved BBC shows to load the latest broadcast episodes without copying URLs.
+          </p>
 
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-              <button type="button" className="button button-secondary" onClick={selectAll} disabled={actionLoading}>
-                Select All
-              </button>
-              <button type="button" className="button button-secondary" onClick={deselectAll} disabled={actionLoading}>
-                Deselect All
-              </button>
-            </div>
+          {/* Add / Search show drawer */}
+          {showAddShow && (
+            <div style={{ padding: '1rem', marginBottom: '1.25rem', backgroundColor: 'var(--color-surface-hover, rgba(255,255,255,0.03))', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
+              <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem' }}>Search BBC Shows</h4>
+              <form onSubmit={handleSearchShows} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Search BBC shows (e.g. Gilles Peterson, Mary Anne Hobbs, Indie Chill)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  disabled={searching || actionLoading}
+                  style={{ flex: '1 1 240px', fontSize: '0.85rem' }}
+                />
+                <button
+                  type="submit"
+                  className="button button-primary"
+                  style={{ fontSize: '0.85rem', padding: '0.45rem 1rem' }}
+                  disabled={searching || !searchQuery.trim() || actionLoading}
+                >
+                  {searching ? 'Searching...' : 'Search'}
+                </button>
+              </form>
 
-            <div style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid var(--border-color, #333)', borderRadius: '4px', padding: '0.5rem', marginBottom: '1.25rem' }}>
-              {showData.tracks.map((track) => {
-                const isSelected = selectedSegments.has(track.segment_id)
-                return (
-                  <div
-                    key={track.segment_id}
-                    onClick={() => toggleSelectTrack(track.segment_id)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      padding: '0.5rem',
-                      borderBottom: '1px solid var(--border-color, #222)',
-                      cursor: 'pointer',
-                      background: isSelected ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => {}} // handled by parent onClick
-                      style={{ cursor: 'pointer' }}
-                    />
-                    {track.image_url ? (
-                      <img
-                        src={track.image_url}
-                        alt=""
-                        style={{
-                          width: '38px',
-                          height: '38px',
-                          borderRadius: '4px',
-                          objectFit: 'cover',
-                          flexShrink: 0,
-                        }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: '38px',
-                          height: '38px',
-                          borderRadius: '4px',
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          fontSize: '0.85rem',
-                          color: 'var(--color-muted, #888)',
-                          border: '1px solid var(--border-color, #333)',
-                        }}
-                      >
-                        🎵
+              {searchResults.length > 0 && (
+                <div style={{ maxHeight: '220px', overflowY: 'auto', marginBottom: '1rem', border: '1px solid var(--color-border)', borderRadius: '4px', padding: '0.5rem' }}>
+                  {searchResults.map((res) => (
+                    <div
+                      key={res.brand_id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '0.75rem',
+                        padding: '0.4rem 0.5rem',
+                        borderBottom: '1px solid rgba(255,255,255,0.05)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', overflow: 'hidden' }}>
+                        {res.image_url && (
+                          <img
+                            src={res.image_url}
+                            alt=""
+                            style={{ width: 36, height: 36, borderRadius: '4px', objectFit: 'cover', flexShrink: 0 }}
+                          />
+                        )}
+                        <div style={{ minWidth: 0 }}>
+                          <strong style={{ fontSize: '0.85rem', display: 'block' }}>{res.title}</strong>
+                          {res.synopsis && (
+                            <small style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                              {res.synopsis}
+                            </small>
+                          )}
+                        </div>
                       </div>
-                    )}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: '0.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {track.title}
-                      </div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--color-muted, #aaa)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {track.artist}
-                      </div>
-                    </div>
-                    {track.offset_seconds != null && (
-                      <span style={{ fontSize: '0.8rem', color: 'var(--color-muted, #888)', fontFamily: 'monospace' }}>
-                        {formatOffset(track.offset_seconds)}
-                      </span>
-                    )}
-                    {track.spotify_uri ? (
-                      <span title="Available on Spotify" style={{ fontSize: '0.75rem', color: '#1db954' }}>● Spotify</span>
-                    ) : (
-                      <span title="No Spotify track match" style={{ fontSize: '0.75rem', color: 'var(--color-muted, #666)' }}>○ No Spotify URI</span>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-
-            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-              <label htmlFor="listened-at" className="form-label">When did you listen?</label>
-              <input
-                id="listened-at"
-                type="datetime-local"
-                className="form-input"
-                value={listenedAt}
-                onChange={(e) => setListenedAt(e.target.value)}
-                disabled={actionLoading}
-              />
-              <p className="help-text" style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>
-                Tracks will be timestamped starting from this time, spaced out by their broadcast offsets.
-              </p>
-            </div>
-
-            <div style={{ marginTop: '1.25rem', marginBottom: '1.25rem', padding: '1rem', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '6px', border: '1px solid var(--border-color, #333)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                <span style={{ fontSize: '0.95rem', fontWeight: 600 }}>Spotify Playlist Destination</span>
-              </div>
-              
-              <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', cursor: 'pointer', fontSize: '0.9rem' }}>
-                  <input
-                    type="radio"
-                    name="playlist-mode"
-                    value="create"
-                    checked={playlistMode === 'create'}
-                    onChange={() => setPlaylistMode('create')}
-                    disabled={actionLoading}
-                  />
-                  Create brand new playlist
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', cursor: 'pointer', fontSize: '0.9rem' }}>
-                  <input
-                    type="radio"
-                    name="playlist-mode"
-                    value="existing"
-                    checked={playlistMode === 'existing'}
-                    onChange={() => setPlaylistMode('existing')}
-                    disabled={actionLoading}
-                  />
-                  Add to existing playlist
-                </label>
-              </div>
-
-              {playlistMode === 'create' ? (
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label htmlFor="new-playlist-title" className="form-label" style={{ fontSize: '0.85rem' }}>Playlist Name</label>
-                  <input
-                    id="new-playlist-title"
-                    type="text"
-                    className="form-input"
-                    value={newPlaylistTitle}
-                    onChange={(e) => setNewPlaylistTitle(e.target.value)}
-                    disabled={actionLoading}
-                    placeholder="Enter playlist name..."
-                  />
-                </div>
-              ) : (
-                <div>
-                  {loadingPlaylists ? (
-                    <p style={{ fontSize: '0.85rem', color: 'var(--color-muted, #888)', margin: 0 }}>Loading your Spotify playlists...</p>
-                  ) : (
-                    <>
-                      {needsPlaylistsScope && (
-                        <div style={{ padding: '0.85rem 1rem', backgroundColor: 'rgba(29, 185, 84, 0.12)', border: '1px solid #1db954', borderRadius: '6px', marginBottom: '1rem' }}>
-                          <p style={{ margin: '0 0 0.35rem 0', fontSize: '0.95rem', fontWeight: 600, color: '#1db954' }}>
-                            Authorize Spotify Playlists
-                          </p>
-                          <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.85rem', color: 'var(--color-text-muted, #ccc)', lineHeight: 1.4 }}>
-                            Grant permission to read your Spotify playlists so you can automatically select from your playlist library without having to copy and paste links.
-                          </p>
+                      <div>
+                        {res.is_followed ? (
+                          <span style={{ fontSize: '0.8rem', color: 'var(--color-primary, #1db954)', fontWeight: 500 }}>
+                            Followed
+                          </span>
+                        ) : (
                           <button
                             type="button"
                             className="button button-primary"
-                            style={{ fontSize: '0.85rem', padding: '0.45rem 1rem' }}
-                            onClick={handleAuthorizePlaylists}
+                            style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+                            onClick={() => handleFollowShow(res.brand_id)}
                             disabled={actionLoading}
                           >
-                            Connect Spotify Playlists
+                            + Follow
                           </button>
-                        </div>
-                      )}
-
-                      {userPlaylists && userPlaylists.length > 0 && (
-                        <div style={{ marginBottom: '0.75rem' }}>
-                          {userPlaylists.length > 5 && (
-                            <div className="form-group" style={{ marginBottom: '0.5rem' }}>
-                              <label htmlFor="playlist-search" className="form-label" style={{ fontSize: '0.85rem' }}>Search Playlists</label>
-                              <input
-                                id="playlist-search"
-                                type="text"
-                                className="form-input"
-                                placeholder="Search by playlist name..."
-                                value={playlistSearch}
-                                onChange={(e) => setPlaylistSearch(e.target.value)}
-                                disabled={actionLoading}
-                                style={{ width: '100%', fontSize: '0.85rem' }}
-                              />
-                            </div>
-                          )}
-
-                          <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label htmlFor="select-playlist" className="form-label" style={{ fontSize: '0.85rem' }}>Select Playlist</label>
-                            <select
-                              id="select-playlist"
-                              className="form-input"
-                              value={selectedPlaylistId}
-                              onChange={(e) => setSelectedPlaylistId(e.target.value)}
-                              disabled={actionLoading}
-                              style={{ width: '100%' }}
-                            >
-                              <option value="">
-                                {playlistSearch
-                                  ? `-- ${userPlaylists.filter((p) => p.name.toLowerCase().includes(playlistSearch.toLowerCase())).length} playlists matching "${playlistSearch}" --`
-                                  : `-- Choose from your ${userPlaylists.length} playlists --`}
-                              </option>
-                              {recentPlaylists.length > 0 && !playlistSearch && (
-                                <optgroup label="Recently Used">
-                                  {recentPlaylists.map((p) => (
-                                    <option key={`recent-${p.id}`} value={p.id}>
-                                      {p.name}
-                                    </option>
-                                  ))}
-                                </optgroup>
-                              )}
-                              <optgroup label="Your Spotify Playlists">
-                                {userPlaylists
-                                  .filter((p) => p.name.toLowerCase().includes(playlistSearch.toLowerCase()))
-                                  .map((p) => (
-                                    <option key={p.id} value={p.id}>
-                                      {p.name}
-                                    </option>
-                                  ))}
-                              </optgroup>
-                              <option value="custom">-- Paste a different playlist link or ID manually --</option>
-                            </select>
-                          </div>
-                        </div>
-                      )}
-
-                      {(!userPlaylists || userPlaylists.length === 0 || selectedPlaylistId === 'custom' || (!selectedPlaylistId && needsPlaylistsScope)) && (
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                          <label htmlFor="custom-playlist-id" className="form-label" style={{ fontSize: '0.85rem' }}>
-                            {userPlaylists && userPlaylists.length > 0 ? 'Custom Spotify Playlist Link or ID' : 'Or paste Spotify Playlist Link / ID'}
-                          </label>
-                          <input
-                            id="custom-playlist-id"
-                            type="text"
-                            className="form-input"
-                            value={customPlaylistInput}
-                            onChange={(e) => setCustomPlaylistInput(e.target.value)}
-                            disabled={actionLoading}
-                            placeholder="https://open.spotify.com/playlist/... or spotify:playlist:..."
-                          />
-                          {recentPlaylists.length > 0 && (!userPlaylists || userPlaylists.length === 0) && (
-                            <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                              <span style={{ fontSize: '0.8rem', color: 'var(--color-muted, #888)' }}>Recent:</span>
-                              {recentPlaylists.map((rec) => (
-                                <button
-                                  key={rec.id}
-                                  type="button"
-                                  className="button button-secondary"
-                                  style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', height: 'auto' }}
-                                  onClick={() => {
-                                    setCustomPlaylistInput(rec.id)
-                                  }}
-                                >
-                                  {rec.name}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </>
-                  )}
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
+
+              <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem' }}>
+                <label htmlFor="manual-show-url" className="form-label" style={{ fontSize: '0.8rem' }}>
+                  Or follow via BBC show link / episode URL:
+                </label>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <input
+                    id="manual-show-url"
+                    type="text"
+                    className="form-input"
+                    placeholder="https://www.bbc.co.uk/sounds/brand/... or /play/..."
+                    value={manualShowInput}
+                    onChange={(e) => setManualShowInput(e.target.value)}
+                    disabled={actionLoading}
+                    style={{ flex: '1 1 240px', fontSize: '0.85rem' }}
+                  />
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    style={{ fontSize: '0.85rem', padding: '0.45rem 1rem' }}
+                    onClick={() => {
+                      if (manualShowInput.trim()) {
+                        handleFollowShow(manualShowInput.trim())
+                      }
+                    }}
+                    disabled={actionLoading || !manualShowInput.trim()}
+                  >
+                    Follow Link
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Followed shows picker */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem', alignItems: 'flex-end' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label htmlFor="select-followed-show" className="form-label" style={{ fontSize: '0.85rem' }}>
+                Select Show
+              </label>
+              <select
+                id="select-followed-show"
+                className="form-input"
+                value={selectedBrandId}
+                onChange={(e) => setSelectedBrandId(e.target.value)}
+                disabled={loadingFollowed || actionLoading}
+                style={{ width: '100%' }}
+              >
+                <option value="">
+                  {loadingFollowed
+                    ? 'Loading saved shows...'
+                    : followedShows.length === 0
+                      ? '-- No followed shows yet (click + Follow a Show) --'
+                      : `-- Choose from your ${followedShows.length} followed shows --`}
+                </option>
+                {followedShows.map((s) => (
+                  <option key={s.brand_id} value={s.brand_id}>
+                    {s.title}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {selectedBrandId && (
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label htmlFor="select-show-episode" className="form-label" style={{ fontSize: '0.85rem' }}>
+                  Select Broadcast Episode
+                </label>
+                <select
+                  id="select-show-episode"
+                  className="form-input"
+                  value={selectedEpisodePlayId}
+                  onChange={(e) => setSelectedEpisodePlayId(e.target.value)}
+                  disabled={loadingEpisodes || actionLoading}
+                  style={{ width: '100%' }}
+                >
+                  {loadingEpisodes ? (
+                    <option value="">Loading latest broadcast episodes...</option>
+                  ) : episodes.length === 0 ? (
+                    <option value="">No playable episodes available right now</option>
+                  ) : (
+                    episodes.map((ep) => (
+                      <option key={ep.play_id} value={ep.play_id}>
+                        {ep.release_date ? `${ep.release_date}: ` : ''}{ep.title}{ep.duration ? ` (${ep.duration})` : ''}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {selectedBrandId && (
+            <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <button
                 type="button"
                 className="button button-primary"
-                onClick={handleCreatePlaylist}
-                disabled={actionLoading || selectedSpotifyCount === 0}
+                style={{ fontSize: '0.85rem', padding: '0.45rem 1.1rem' }}
+                onClick={() => {
+                  if (selectedEpisodePlayId) {
+                    handleFetch(null, `https://www.bbc.co.uk/sounds/play/${selectedEpisodePlayId}`)
+                  }
+                }}
+                disabled={!selectedEpisodePlayId || fetching || actionLoading}
               >
-                {actionLoading
-                  ? 'Working...'
-                  : playlistMode === 'existing'
-                    ? `Add to Existing Playlist (${selectedSpotifyCount})`
-                    : `Create Spotify Playlist (${selectedSpotifyCount})`}
+                {fetching ? 'Loading Tracklist...' : 'Load Tracklist'}
               </button>
               <button
                 type="button"
                 className="button button-secondary"
-                onClick={handleScrobble}
-                disabled={actionLoading || selectedSegments.size === 0}
+                style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem', color: 'var(--color-error, #f44336)' }}
+                onClick={() => handleUnfollowShow(selectedBrandId)}
+                disabled={actionLoading}
               >
-                {actionLoading ? 'Working...' : `Scrobble Selected (${selectedSegments.size})`}
+                Unfollow Show
               </button>
             </div>
-          </div>
-        )}
+          )}
+        </section>
 
-        {error && (
-          <div className="error-message" style={{ marginTop: '1rem', color: 'var(--color-error, #f44336)' }}>
-            <strong>Error:</strong> {error}
+        {/* ─── SECTION 2: Track listing extraction ─── */}
+        <section className="scope-creep-section">
+          <div style={{ marginBottom: '0.75rem' }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Track listing extraction</h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: '0.25rem 0 0 0' }}>
+              Extract tracks from any BBC Sounds episode URL directly.
+            </p>
           </div>
-        )}
 
-        {playlistResult && (
-          <div className="success-message" style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'rgba(29, 185, 84, 0.15)', borderRadius: '4px', border: '1px solid #1db954' }}>
-            <p><strong>Success!</strong> {playlistResult.message}</p>
-            <a
-              href={playlistResult.playlist_url}
-              target="_blank"
-              rel="noreferrer"
-              className="button button-secondary"
-              style={{ marginTop: '0.5rem', display: 'inline-block' }}
-            >
-              Open on Spotify
-            </a>
-          </div>
-        )}
+          {!showData ? (
+            <form onSubmit={handleFetch} style={{ marginTop: '0.75rem' }}>
+              <div className="form-group">
+                <label htmlFor="bbc-url" className="form-label" style={{ fontSize: '0.85rem' }}>BBC Sounds URL</label>
+                <input
+                  id="bbc-url"
+                  type="url"
+                  className="form-input"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="https://www.bbc.co.uk/sounds/play/..."
+                  disabled={fetching}
+                  required
+                />
+              </div>
+              <p className="help-text" style={{ marginTop: '-0.25rem', marginBottom: '0.75rem', fontSize: '0.8rem' }}>
+                Example: <code>https://www.bbc.co.uk/sounds/play/m0031tc6</code>
+              </p>
+              <button type="submit" className="button button-primary" disabled={fetching}>
+                {fetching ? 'Fetching Show...' : 'Fetch Show'}
+              </button>
+            </form>
+          ) : (
+            <div style={{ marginTop: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-color, #333)', paddingBottom: '0.75rem' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.15rem' }}>{showData.title}</h3>
+                  <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.85rem', color: 'var(--color-muted, #888)' }}>
+                    {showData.tracks.length} tracks found ({selectedSegments.size} selected)
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {showData.brand_info && (
+                    showData.brand_info.is_followed ? (
+                      <span style={{ fontSize: '0.8rem', color: 'var(--color-primary, #1db954)', fontWeight: 500 }}>
+                        ✓ Following Show
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="button button-secondary"
+                        style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+                        onClick={() => handleFollowShow(showData.brand_info.brand_id)}
+                        disabled={actionLoading}
+                      >
+                        + Follow "{showData.brand_info.title}"
+                      </button>
+                    )
+                  )}
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+                    onClick={() => {
+                      setShowData(null)
+                      setPlaylistResult(null)
+                      setScrobbleResult(null)
+                      setPlaylistMode('create')
+                      setSelectedPlaylistId('')
+                      setCustomPlaylistInput('')
+                    }}
+                    disabled={actionLoading}
+                  >
+                    Change URL
+                  </button>
+                </div>
+              </div>
 
-        {scrobbleResult && (
-          <div className="success-message" style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'rgba(29, 185, 84, 0.15)', borderRadius: '4px', border: '1px solid #1db954' }}>
-            <p><strong>Success!</strong> {scrobbleResult.message}</p>
-            <Link
-              to="/library"
-              className="button button-secondary"
-              style={{ marginTop: '0.5rem', display: 'inline-block' }}
-            >
-              View in Library
-            </Link>
-          </div>
-        )}
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                <button type="button" className="button button-secondary" onClick={selectAll} disabled={actionLoading}>
+                  Select All
+                </button>
+                <button type="button" className="button button-secondary" onClick={deselectAll} disabled={actionLoading}>
+                  Deselect All
+                </button>
+              </div>
+
+              <div style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid var(--border-color, #333)', borderRadius: '4px', padding: '0.5rem', marginBottom: '1.25rem' }}>
+                {showData.tracks.map((track) => {
+                  const isSelected = selectedSegments.has(track.segment_id)
+                  return (
+                    <div
+                      key={track.segment_id}
+                      onClick={() => toggleSelectTrack(track.segment_id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        padding: '0.5rem',
+                        borderBottom: '1px solid rgba(255,255,255,0.05)',
+                        cursor: 'pointer',
+                        backgroundColor: isSelected ? 'rgba(29, 185, 84, 0.05)' : 'transparent',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => {}}
+                        style={{ cursor: 'pointer' }}
+                      />
+                      {track.image_url ? (
+                        <img
+                          src={track.image_url}
+                          alt=""
+                          style={{ width: 40, height: 40, borderRadius: '4px', objectFit: 'cover', flexShrink: 0 }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: '4px',
+                            backgroundColor: 'rgba(255,255,255,0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.7rem',
+                            color: 'var(--color-muted, #888)',
+                            flexShrink: 0,
+                          }}
+                        >
+                          🎵
+                        </div>
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <span>{track.artist}</span> - <span>{track.title}</span>
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--color-muted, #888)' }}>
+                          {formatOffset(track.offset_seconds)}
+                          {track.duration_seconds ? ` (${formatOffset(track.duration_seconds)})` : ''}
+                        </div>
+                      </div>
+                      <div>
+                        {track.spotify_uri ? (
+                          <span className="badge badge-success" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', backgroundColor: '#1db954', color: '#000', borderRadius: '3px', fontWeight: 'bold' }}>
+                            Spotify Match
+                          </span>
+                        ) : (
+                          <span className="badge badge-secondary" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', backgroundColor: '#444', color: '#ccc', borderRadius: '3px' }}>
+                            No Match
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Scrobble timestamp config */}
+              <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                <label htmlFor="listened-at" className="form-label">Mark Listened At</label>
+                <input
+                  id="listened-at"
+                  type="datetime-local"
+                  className="form-input"
+                  value={listenedAt}
+                  onChange={(e) => setListenedAt(e.target.value)}
+                  disabled={actionLoading}
+                />
+                <small className="help-text">
+                  Tracks will be scrobbled starting at this time, preserving original broadcast spacing.
+                </small>
+              </div>
+
+              {/* Spotify Playlist Destination Selection */}
+              <div style={{ marginBottom: '1.5rem', padding: '1rem', border: '1px solid var(--border-color, #333)', borderRadius: '4px', backgroundColor: 'var(--color-surface, rgba(255,255,255,0.02))' }}>
+                <label className="form-label" style={{ fontWeight: 'bold', marginBottom: '0.5rem', display: 'block' }}>
+                  Spotify Playlist Destination
+                </label>
+                
+                <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="playlist-mode"
+                      value="create"
+                      checked={playlistMode === 'create'}
+                      onChange={() => setPlaylistMode('create')}
+                      disabled={actionLoading}
+                    />
+                    <span>Create brand new playlist</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="playlist-mode"
+                      value="existing"
+                      checked={playlistMode === 'existing'}
+                      onChange={() => setPlaylistMode('existing')}
+                      disabled={actionLoading}
+                    />
+                    <span>Add to existing playlist</span>
+                  </label>
+                </div>
+
+                {playlistMode === 'create' ? (
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="new-playlist-title" className="form-label" style={{ fontSize: '0.85rem' }}>Playlist Name</label>
+                    <input
+                      id="new-playlist-title"
+                      type="text"
+                      className="form-input"
+                      value={newPlaylistTitle}
+                      onChange={(e) => setNewPlaylistTitle(e.target.value)}
+                      disabled={actionLoading}
+                      placeholder={showData.title}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    {loadingPlaylists && (
+                      <p style={{ fontSize: '0.85rem', color: 'var(--color-muted, #888)', margin: '0.5rem 0' }}>
+                        Loading your Spotify playlists...
+                      </p>
+                    )}
+
+                    {!loadingPlaylists && (
+                      <>
+                        {needsPlaylistsScope && (
+                          <div style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: 'rgba(255, 193, 7, 0.1)', border: '1px solid rgba(255, 193, 7, 0.4)', borderRadius: '4px' }}>
+                            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem' }}>
+                              Spotify requires additional permissions to list your existing playlists. Click below to authorize:
+                            </p>
+                            <button
+                              type="button"
+                              className="button button-primary"
+                              style={{ fontSize: '0.85rem', padding: '0.45rem 1rem' }}
+                              onClick={handleAuthorizePlaylists}
+                              disabled={actionLoading}
+                            >
+                              Connect Spotify Playlists
+                            </button>
+                          </div>
+                        )}
+
+                        {userPlaylists && userPlaylists.length > 0 && (
+                          <div style={{ marginBottom: '0.75rem' }}>
+                            {userPlaylists.length > 5 && (
+                              <div className="form-group" style={{ marginBottom: '0.5rem' }}>
+                                <label htmlFor="playlist-search" className="form-label" style={{ fontSize: '0.85rem' }}>Search Playlists</label>
+                                <input
+                                  id="playlist-search"
+                                  type="text"
+                                  className="form-input"
+                                  placeholder="Search by playlist name..."
+                                  value={playlistSearch}
+                                  onChange={(e) => setPlaylistSearch(e.target.value)}
+                                  disabled={actionLoading}
+                                  style={{ width: '100%', fontSize: '0.85rem' }}
+                                />
+                              </div>
+                            )}
+
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                              <label htmlFor="select-playlist" className="form-label" style={{ fontSize: '0.85rem' }}>Select Playlist</label>
+                              <select
+                                id="select-playlist"
+                                className="form-input"
+                                value={selectedPlaylistId}
+                                onChange={(e) => setSelectedPlaylistId(e.target.value)}
+                                disabled={actionLoading}
+                                style={{ width: '100%' }}
+                              >
+                                <option value="">
+                                  {playlistSearch
+                                    ? `-- ${userPlaylists.filter((p) => p.name.toLowerCase().includes(playlistSearch.toLowerCase())).length} playlists matching "${playlistSearch}" --`
+                                    : `-- Choose from your ${userPlaylists.length} playlists --`}
+                                </option>
+                                {recentPlaylists.length > 0 && !playlistSearch && (
+                                  <optgroup label="Recently Used">
+                                    {recentPlaylists.map((p) => (
+                                      <option key={`recent-${p.id}`} value={p.id}>
+                                        {p.name}
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                )}
+                                <optgroup label="Your Spotify Playlists">
+                                  {userPlaylists
+                                    .filter((p) => p.name.toLowerCase().includes(playlistSearch.toLowerCase()))
+                                    .map((p) => (
+                                      <option key={p.id} value={p.id}>
+                                        {p.name}
+                                      </option>
+                                    ))}
+                                </optgroup>
+                                <option value="custom">-- Paste a different playlist link or ID manually --</option>
+                              </select>
+                            </div>
+                          </div>
+                        )}
+
+                        {(!userPlaylists || userPlaylists.length === 0 || selectedPlaylistId === 'custom' || (!selectedPlaylistId && needsPlaylistsScope)) && (
+                          <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label htmlFor="custom-playlist-id" className="form-label" style={{ fontSize: '0.85rem' }}>
+                              {userPlaylists && userPlaylists.length > 0 ? 'Custom Spotify Playlist Link or ID' : 'Or paste Spotify Playlist Link / ID'}
+                            </label>
+                            <input
+                              id="custom-playlist-id"
+                              type="text"
+                              className="form-input"
+                              value={customPlaylistInput}
+                              onChange={(e) => setCustomPlaylistInput(e.target.value)}
+                              disabled={actionLoading}
+                              placeholder="https://open.spotify.com/playlist/... or spotify:playlist:..."
+                            />
+                            {recentPlaylists.length > 0 && (!userPlaylists || userPlaylists.length === 0) && (
+                              <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--color-muted, #888)' }}>Recent:</span>
+                                {recentPlaylists.map((rec) => (
+                                  <button
+                                    key={rec.id}
+                                    type="button"
+                                    className="button button-secondary"
+                                    style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', height: 'auto' }}
+                                    onClick={() => {
+                                      setCustomPlaylistInput(rec.id)
+                                    }}
+                                  >
+                                    {rec.name}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="button button-primary"
+                  onClick={handleCreatePlaylist}
+                  disabled={actionLoading || selectedSpotifyCount === 0}
+                >
+                  {actionLoading
+                    ? 'Working...'
+                    : playlistMode === 'existing'
+                      ? `Add to Existing Playlist (${selectedSpotifyCount})`
+                      : `Create Spotify Playlist (${selectedSpotifyCount})`}
+                </button>
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  onClick={handleScrobble}
+                  disabled={actionLoading || selectedSegments.size === 0}
+                >
+                  {actionLoading ? 'Working...' : `Scrobble Selected (${selectedSegments.size})`}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="error-message" style={{ marginTop: '1rem', color: 'var(--color-error, #f44336)' }}>
+              <strong>Error:</strong> {error}
+            </div>
+          )}
+
+          {playlistResult && (
+            <div className="success-message" style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'rgba(29, 185, 84, 0.15)', borderRadius: '4px', border: '1px solid #1db954' }}>
+              <p><strong>Success!</strong> {playlistResult.message}</p>
+              <a
+                href={playlistResult.playlist_url}
+                target="_blank"
+                rel="noreferrer"
+                className="button button-secondary"
+                style={{ marginTop: '0.5rem', display: 'inline-block' }}
+              >
+                Open on Spotify
+              </a>
+            </div>
+          )}
+
+          {scrobbleResult && (
+            <div className="success-message" style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'rgba(29, 185, 84, 0.15)', borderRadius: '4px', border: '1px solid #1db954' }}>
+              <p><strong>Success!</strong> {scrobbleResult.message}</p>
+              <Link
+                to="/library"
+                className="button button-secondary"
+                style={{ marginTop: '0.5rem', display: 'inline-block' }}
+              >
+                View in Library
+              </Link>
+            </div>
+          )}
+        </section>
       </div>
     </div>
   )

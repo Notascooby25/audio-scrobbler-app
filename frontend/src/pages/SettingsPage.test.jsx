@@ -225,7 +225,7 @@ describe('SettingsPage', () => {
     const scrobbleTab = await screen.findByRole('tab', { name: 'Scrobble' })
     fireEvent.click(scrobbleTab)
 
-    expect(screen.getByText('BBC Sounds: Scope Creep')).toBeInTheDocument()
+    expect(screen.getByText('BBC Sounds - Scope Creep')).toBeInTheDocument()
 
     const stripToggle = await screen.findByLabelText(/Strip remaster tags/)
     expect(stripToggle).toBeChecked()

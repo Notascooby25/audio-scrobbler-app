@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: '0.9.6',
+    date: '2026-09-27',
+    changes: [
+      'Added Followed Shows UI and backend support in Scope Creep, allowing you to follow BBC Sounds shows, select episodes, and load tracklists without manual URLs.',
+      'Implemented FollowedShow model, migration, and API endpoints for listing, following, unfollowing, fetching episodes, and searching shows.',
+      'Updated changelog and bumped frontend version.',
+    ]
+  },
+  {
     version: '0.9.5',
     date: '2026-09-27',
     changes: [
