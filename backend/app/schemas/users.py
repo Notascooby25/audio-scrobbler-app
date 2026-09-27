@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 
 class FollowActionResponse(BaseModel):
@@ -20,6 +20,12 @@ class LastScrobble(BaseModel):
     played_at: datetime
     track_id: str | None = None
     artwork_url: str | None = None
+
+    @field_serializer("played_at")
+    def serialize_played_at(self, dt: datetime) -> str:
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.isoformat()
 
     model_config = ConfigDict(from_attributes=True)
 

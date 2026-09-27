@@ -32,12 +32,11 @@ def override_get_db():
     finally:
         db.close()
 
-app.dependency_overrides[get_db] = override_get_db
-app.dependency_overrides[get_current_user] = lambda: DemoUser()
-
 client = TestClient(app)
 
 def setup_function():
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = lambda: DemoUser()
     db = TestingSession()
     db.query(ListeningEvent).delete()
     db.query(User).delete()
@@ -51,6 +50,9 @@ def setup_function():
     ))
     db.commit()
     db.close()
+
+def teardown_function():
+    app.dependency_overrides.clear()
 
 
 def test_normalize_spotify_uri():
