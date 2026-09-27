@@ -24,4 +24,5 @@
 - Open tasks as of 2026-09-23: dated cleanups (~Oct 2026).
 
 # Changelog
-- When implementing a new feature or making a significant change, always update `frontend/src/changelogData.js` to add an entry summarizing the change in simple terms.
+- ALWAYS update `frontend/src/changelogData.js` whenever implementing a new feature, improvement, or bug fix so the on-website changelog (`/settings?tab=changelog` or `/changelog`) accurately reflects all changes.
+- Add a new version release object at the top of the array with the current date, bump `version` in `frontend/package.json`, and summarize the user-facing changes in clear, simple terms.
