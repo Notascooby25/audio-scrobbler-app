@@ -421,7 +421,7 @@ export default function SettingsPage() {
           )}
 
           {session?.accessToken && (
-            <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '0.5px solid var(--color-border)' }}>
+            <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '0.5px solid var(--color-border)', maxWidth: '100%', boxSizing: 'border-box' }}>
               <ScopeCreepTools />
             </div>
           )}

@@ -484,9 +484,9 @@ export default function ScopeCreepTools() {
 
           {/* Add / Search show drawer */}
           {showAddShow && (
-            <div style={{ padding: '1rem', marginBottom: '1.25rem', backgroundColor: 'var(--color-surface-hover, rgba(255,255,255,0.03))', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
+            <div style={{ padding: '1rem', marginBottom: '1.25rem', backgroundColor: 'var(--color-surface-hover, rgba(255,255,255,0.03))', borderRadius: '6px', border: '1px solid var(--color-border)', maxWidth: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
               <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem' }}>Search BBC Shows</h4>
-              <form onSubmit={handleSearchShows} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+              <form onSubmit={handleSearchShows} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                 <input
                   type="text"
                   className="form-input"
@@ -495,12 +495,12 @@ export default function ScopeCreepTools() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   disabled={searching || actionLoading}
-                  style={{ flex: '1 1 240px', fontSize: '0.85rem' }}
+                  style={{ flex: '1 1 180px', minWidth: 0, maxWidth: '100%', boxSizing: 'border-box', fontSize: '0.85rem' }}
                 />
                 <button
                   type="submit"
                   className="button button-primary"
-                  style={{ fontSize: '0.85rem', padding: '0.45rem 1rem' }}
+                  style={{ fontSize: '0.85rem', padding: '0.45rem 1rem', flexShrink: 0 }}
                   disabled={searching || !searchQuery.trim() || actionLoading}
                 >
                   {searching ? 'Searching...' : 'Search'}
@@ -508,7 +508,7 @@ export default function ScopeCreepTools() {
               </form>
 
               {searchResults.length > 0 && (
-                <div style={{ maxHeight: '220px', overflowY: 'auto', marginBottom: '1rem', border: '1px solid var(--color-border)', borderRadius: '4px', padding: '0.5rem' }}>
+                <div style={{ maxHeight: '220px', overflowY: 'auto', overflowX: 'hidden', maxWidth: '100%', boxSizing: 'border-box', marginBottom: '1rem', border: '1px solid var(--color-border)', borderRadius: '4px', padding: '0.5rem' }}>
                   {searchResults.map((res) => (
                     <div
                       key={res.brand_id}
@@ -519,9 +519,11 @@ export default function ScopeCreepTools() {
                         gap: '0.75rem',
                         padding: '0.4rem 0.5rem',
                         borderBottom: '1px solid rgba(255,255,255,0.05)',
+                        maxWidth: '100%',
+                        boxSizing: 'border-box',
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: 0, overflow: 'hidden' }}>
                         {res.image_url && (
                           <img
                             src={res.image_url}
@@ -529,8 +531,8 @@ export default function ScopeCreepTools() {
                             style={{ width: 36, height: 36, borderRadius: '4px', objectFit: 'cover', flexShrink: 0 }}
                           />
                         )}
-                        <div style={{ minWidth: 0 }}>
-                          <strong style={{ fontSize: '0.85rem', display: 'block' }}>{res.title}</strong>
+                        <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                          <strong style={{ fontSize: '0.85rem', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{res.title}</strong>
                           {res.synopsis && (
                             <small style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                               {res.synopsis}
@@ -538,7 +540,7 @@ export default function ScopeCreepTools() {
                           )}
                         </div>
                       </div>
-                      <div>
+                      <div style={{ flexShrink: 0 }}>
                         {res.is_followed ? (
                           <span style={{ fontSize: '0.8rem', color: 'var(--color-primary, #1db954)', fontWeight: 500 }}>
                             Followed
@@ -560,11 +562,11 @@ export default function ScopeCreepTools() {
                 </div>
               )}
 
-              <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem' }}>
+              <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', maxWidth: '100%', boxSizing: 'border-box' }}>
                 <label htmlFor="manual-show-url" className="form-label" style={{ fontSize: '0.8rem' }}>
                   Or follow via BBC show link / episode URL:
                 </label>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                   <input
                     id="manual-show-url"
                     type="text"
@@ -573,12 +575,12 @@ export default function ScopeCreepTools() {
                     value={manualShowInput}
                     onChange={(e) => setManualShowInput(e.target.value)}
                     disabled={actionLoading}
-                    style={{ flex: '1 1 240px', fontSize: '0.85rem' }}
+                    style={{ flex: '1 1 180px', minWidth: 0, maxWidth: '100%', boxSizing: 'border-box', fontSize: '0.85rem' }}
                   />
                   <button
                     type="button"
                     className="button button-secondary"
-                    style={{ fontSize: '0.85rem', padding: '0.45rem 1rem' }}
+                    style={{ fontSize: '0.85rem', padding: '0.45rem 1rem', flexShrink: 0 }}
                     onClick={() => {
                       if (manualShowInput.trim()) {
                         handleFollowShow(manualShowInput.trim())
@@ -659,13 +661,15 @@ export default function ScopeCreepTools() {
                     </button>
                     <button
                       type="button"
-                      className="button button-secondary"
+                      className="button scope-creep-unfollow-btn"
                       title={`Unfollow ${s.title}`}
                       aria-label={`Unfollow ${s.title}`}
                       style={{
+                        background: 'transparent',
+                        border: '0.5px solid var(--color-danger, #d32f2f)',
+                        color: 'var(--color-danger, #d32f2f)',
                         fontSize: '0.75rem',
                         padding: '0.2rem 0.5rem',
-                        color: 'var(--color-error, #f44336)',
                         flexShrink: 0,
                         minHeight: 'auto',
                         lineHeight: 1,

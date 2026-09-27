@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: '0.9.9',
+    date: '2026-09-27',
+    changes: [
+      'Fixed Scope Creep unfollow button contrast: replaced red-on-blue styling with a high-contrast danger outline design on a transparent background.',
+      'Fixed mobile horizontal scrolling in Scope Creep: constrained the "Search BBC Shows" drawer and search results flex layout with text truncation to prevent page overflow on mobile screens.',
+      'Added secondary button styling aliases and viewport-safe card constraints in CSS.',
+    ]
+  },
+  {
     version: '0.9.8',
     date: '2026-09-27',
     changes: [

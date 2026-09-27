@@ -302,6 +302,8 @@ h3 {
   border-radius: var(--radius-md);
   box-shadow: none;
   padding: 16px;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .dashboard {
@@ -697,14 +699,37 @@ a:focus-visible {
   outline-offset: 2px;
 }
 
-button.btn-secondary {
+button.btn-secondary,
+button.button-secondary,
+.button-secondary {
   background: transparent;
   border-color: var(--color-border);
   color: var(--color-ink);
 }
 
-button.btn-secondary:hover:not(:disabled) {
+button.btn-secondary:hover:not(:disabled),
+button.button-secondary:hover:not(:disabled),
+.button-secondary:hover:not(:disabled) {
   background: rgba(0, 0, 0, 0.04);
+}
+
+button.scope-creep-unfollow-btn,
+.scope-creep-unfollow-btn {
+  background: transparent !important;
+  border: 0.5px solid var(--color-danger);
+  color: var(--color-danger) !important;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.55rem;
+  flex-shrink: 0;
+  min-height: auto;
+  line-height: 1;
+  border-radius: var(--radius-sm);
+  transition: background-color 0.15s, color 0.15s;
+}
+
+button.scope-creep-unfollow-btn:hover:not(:disabled),
+.scope-creep-unfollow-btn:hover:not(:disabled) {
+  background: var(--color-danger-soft) !important;
 }
 
 
