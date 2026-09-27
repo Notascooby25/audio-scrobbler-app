@@ -24,21 +24,24 @@ def _extract_play_id(url: str) -> str:
         raise HTTPException(status_code=400, detail="Invalid BBC Sounds URL. Make sure it contains /play/<id>")
     return match.group(1)
 
-def resolve_artwork(artist: str, title: str, db: Session | None = None, track_id: str | None = None) -> str | None:
-    if db and track_id:
-        cached = db.query(ArtworkCache).filter(ArtworkCache.track_id == track_id).first()
-        if cached and cached.artwork_url:
-            return cached.artwork_url
-
-    art = None
+def fetch_external_artwork(artist: str, title: str) -> str | None:
     try:
         art = itunes_artwork(artist, title)
         if not art:
             dz = deezer_search(artist, title)
             if dz:
                 art = deezer_artwork(dz)
+        return art
     except Exception:
-        art = None
+        return None
+
+def resolve_artwork(artist: str, title: str, db: Session | None = None, track_id: str | None = None) -> str | None:
+    if db and track_id:
+        cached = db.query(ArtworkCache).filter(ArtworkCache.track_id == track_id).first()
+        if cached and cached.artwork_url:
+            return cached.artwork_url
+
+    art = fetch_external_artwork(artist, title)
 
     if art and db and track_id:
         try:
@@ -106,21 +109,48 @@ def scope_creep_fetch(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to fetch BBC Sounds data: {str(e)}")
 
-    def _resolve(t: dict) -> ScopeCreepTrackItem:
+    track_ids = [t.get("spotify_uri") or f"bbc:{t.get('segment_id')}" for t in bbc_data["tracks"]]
+    cached_records = db.query(ArtworkCache).filter(ArtworkCache.track_id.in_(track_ids)).all()
+    cache_map = {c.track_id: c.artwork_url for c in cached_records if c.artwork_url}
+
+    def _lookup(t: dict) -> tuple[str, str | None]:
         t_id = t.get("spotify_uri") or f"bbc:{t.get('segment_id')}"
-        img = t.get("image_url") or resolve_artwork(t["artist"], t["title"], db, t_id)
-        return ScopeCreepTrackItem(
+        if t_id in cache_map:
+            return t_id, cache_map[t_id]
+        if t.get("image_url"):
+            return t_id, t["image_url"]
+        return t_id, fetch_external_artwork(t["artist"], t["title"])
+
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        results = list(executor.map(_lookup, bbc_data["tracks"]))
+
+    resolved_map = dict(results)
+
+    new_entries = [
+        ArtworkCache(track_id=t_id, artwork_url=art)
+        for t_id, art in resolved_map.items()
+        if art and t_id not in cache_map
+    ]
+    if new_entries:
+        try:
+            for entry in new_entries:
+                db.merge(entry)
+            db.commit()
+        except Exception:
+            db.rollback()
+
+    resolved_tracks = [
+        ScopeCreepTrackItem(
             segment_id=t["segment_id"],
             artist=t["artist"],
             title=t["title"],
             offset_seconds=t.get("offset_seconds", 0),
             duration_seconds=t.get("duration_seconds"),
             spotify_uri=t.get("spotify_uri"),
-            image_url=img,
+            image_url=resolved_map.get(t.get("spotify_uri") or f"bbc:{t.get('segment_id')}"),
         )
-
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        resolved_tracks = list(executor.map(_resolve, bbc_data["tracks"]))
+        for t in bbc_data["tracks"]
+    ]
 
     return ScopeCreepFetchResponse(
         play_id=play_id,

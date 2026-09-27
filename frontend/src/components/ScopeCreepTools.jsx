@@ -15,6 +15,29 @@ function getLocalDefaultDateTime() {
   return now.toISOString().slice(0, 16)
 }
 
+async function parseResponse(response, fallbackMsg) {
+  let data
+  try {
+    data = await response.json()
+  } catch {
+    // Non-JSON response (e.g. 500 Internal Server Error text from proxy)
+    let errText = ''
+    try {
+      if (typeof response.text === 'function') {
+        errText = await response.text()
+      }
+    } catch {
+      // ignore
+    }
+    throw new Error(errText || `${fallbackMsg} (status ${response.status || 'unknown'})`)
+  }
+
+  if (!response.ok) {
+    throw new Error(data?.detail || fallbackMsg)
+  }
+  return data
+}
+
 export default function ScopeCreepTools() {
   const [url, setUrl] = useState('')
   const [fetching, setFetching] = useState(false)
@@ -48,11 +71,7 @@ export default function ScopeCreepTools() {
         },
         body: JSON.stringify({ url: url.trim() }),
       })
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Failed to fetch BBC show')
-      }
+      const data = await parseResponse(response, 'Failed to fetch BBC show')
 
       setShowData(data)
       // By default, select all tracks
@@ -111,11 +130,7 @@ export default function ScopeCreepTools() {
           spotify_uris: selectedTracks.map((t) => t.spotify_uri),
         }),
       })
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Failed to create Spotify playlist')
-      }
+      const data = await parseResponse(response, 'Failed to create Spotify playlist')
 
       setPlaylistResult(data)
     } catch (err) {
@@ -157,11 +172,7 @@ export default function ScopeCreepTools() {
           })),
         }),
       })
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Failed to scrobble tracks')
-      }
+      const data = await parseResponse(response, 'Failed to scrobble tracks')
 
       setScrobbleResult(data)
     } catch (err) {
