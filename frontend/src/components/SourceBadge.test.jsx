@@ -13,6 +13,9 @@ describe('SourceBadge', () => {
     expect(resolveSourceType(['youtube'])).toBe('youtube')
     expect(resolveSourceType(['spotify', 'youtube'])).toBe('split')
     expect(resolveSourceType(['youtube', 'spotify'])).toBe('split')
+    expect(resolveSourceType('bbc_sounds')).toBe('bbc')
+    expect(resolveSourceType(['bbc_sounds'])).toBe('bbc')
+    expect(resolveSourceType('bbc')).toBe('bbc')
     expect(resolveSourceType('import')).toBe('import')
     expect(resolveSourceType(['other'])).toBe('import')
   })
@@ -21,6 +24,7 @@ describe('SourceBadge', () => {
     expect(getSourceLabel('split')).toBe('Scrobbled via Spotify and YouTube')
     expect(getSourceLabel('spotify')).toBe('Scrobbled via Spotify')
     expect(getSourceLabel('youtube')).toBe('Scrobbled via YouTube Music')
+    expect(getSourceLabel('bbc')).toBe('Scrobbled via BBC Sounds')
     expect(getSourceLabel('import')).toBe('Imported scrobble')
   })
 
@@ -42,6 +46,14 @@ describe('SourceBadge', () => {
     const badge = screen.getByRole('img', { name: 'Scrobbled via YouTube Music' })
     expect(badge).toBeInTheDocument()
     expect(badge).toHaveClass('source-badge-youtube')
+  })
+
+  it('renders BBC Sounds badge with accessible label', () => {
+    render(<SourceBadge source="bbc_sounds" />)
+    const badge = screen.getByRole('img', { name: 'Scrobbled via BBC Sounds' })
+    expect(badge).toBeInTheDocument()
+    expect(badge).toHaveClass('source-badge-bbc')
+    expect(badge).toHaveClass('source-badge-list')
   })
 
   it('renders split badge when both Spotify and YouTube are present', () => {

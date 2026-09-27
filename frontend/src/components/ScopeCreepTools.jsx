@@ -153,6 +153,7 @@ export default function ScopeCreepTools() {
             offset_seconds: t.offset_seconds || 0,
             duration_seconds: t.duration_seconds || null,
             spotify_uri: t.spotify_uri || null,
+            artwork_url: t.image_url || null,
           })),
         }),
       })
@@ -257,6 +258,37 @@ export default function ScopeCreepTools() {
                       onChange={() => {}} // handled by parent onClick
                       style={{ cursor: 'pointer' }}
                     />
+                    {track.image_url ? (
+                      <img
+                        src={track.image_url}
+                        alt=""
+                        style={{
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '4px',
+                          objectFit: 'cover',
+                          flexShrink: 0,
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '4px',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                          fontSize: '0.85rem',
+                          color: 'var(--color-muted, #888)',
+                          border: '1px solid var(--border-color, #333)',
+                        }}
+                      >
+                        🎵
+                      </div>
+                    )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 600, fontSize: '0.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {track.title}

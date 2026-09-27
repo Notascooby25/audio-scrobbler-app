@@ -96,6 +96,7 @@ describe('ScopeCreepTools', () => {
           offset_seconds: 0,
           duration_seconds: 240,
           spotify_uri: 'spotify:track:111',
+          image_url: 'https://example.com/art.jpg',
         },
       ],
     }
@@ -119,6 +120,7 @@ describe('ScopeCreepTools', () => {
         expect(body.play_id).toBe('m0031tc6')
         expect(body.tracks.length).toBe(1)
         expect(body.tracks[0].title).toBe('Video Games')
+        expect(body.tracks[0].artwork_url).toBe('https://example.com/art.jpg')
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockScrobbleResponse),

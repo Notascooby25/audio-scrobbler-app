@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: '0.9.3',
+    date: '2026-09-27',
+    changes: [
+      'Added the official BBC Sounds logo badge for tracks and scrobbles imported from BBC Sounds.',
+      'Added automatic album artwork resolution for BBC Sounds tracks, displaying album covers in the tracklist and scrobble history.',
+    ]
+  },
+  {
     version: '0.9.2',
     date: '2026-09-27',
     changes: [

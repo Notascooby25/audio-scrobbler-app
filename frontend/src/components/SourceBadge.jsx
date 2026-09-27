@@ -8,10 +8,12 @@ export function resolveSourceType(sourceOrSources) {
 
   const hasSpotify = list.some((s) => s === 'spotify' || s === 'spotify_realtime' || s.startsWith('spotify'))
   const hasYoutube = list.some((s) => s === 'youtube' || s === 'youtube_music' || s === 'youtubemusic')
+  const hasBbc = list.some((s) => s === 'bbc_sounds' || s === 'bbc' || s.includes('bbc'))
 
   if (hasSpotify && hasYoutube) return 'split'
   if (hasSpotify) return 'spotify'
   if (hasYoutube) return 'youtube'
+  if (hasBbc) return 'bbc'
   if (list.some((s) => s.length > 0)) return 'import'
   return null
 }
@@ -24,6 +26,8 @@ export function getSourceLabel(type) {
       return 'Scrobbled via Spotify'
     case 'youtube':
       return 'Scrobbled via YouTube Music'
+    case 'bbc':
+      return 'Scrobbled via BBC Sounds'
     case 'import':
       return 'Imported scrobble'
     default:
@@ -76,6 +80,19 @@ function SplitIcon() {
   )
 }
 
+function BbcSoundsIcon() {
+  return (
+    <svg viewBox="0 0 512 512" width="100%" height="100%" aria-hidden="true" focusable="false">
+      <circle cx="256" cy="256" r="256" fill="var(--color-bbc, #FA6400)" />
+      <g transform="translate(6, 0)">
+        <path fill="#ffffff" d="M122,304H78c-0.552,0-1.052-0.224-1.414-0.586S76,302.552,76,302v-92c0-0.552,0.224-1.052,0.586-1.414 S77.448,208,78,208h44c0.552,0,1.052,0.224,1.414,0.586S124,209.448,124,210v92c0,0.552-0.224,1.052-0.586,1.414 S122.552,304,122,304z" />
+        <path fill="#ffffff" d="M230,376h-80c-0.552,0-1.052-0.224-1.414-0.586S148,374.552,148,374V138c0-0.552,0.224-1.052,0.586-1.414 S149.448,136,150,136h80c0.552,0,1.052,0.224,1.414,0.586S232,137.448,232,138v236c0,0.552-0.224,1.052-0.586,1.414 S230.552,376,230,376z" />
+        <path fill="#ffffff" d="M422,424H258c-0.552,0-1.052-0.224-1.414-0.586S256,422.552,256,422V90c0-0.552,0.224-1.052,0.586-1.414 S257.448,88,258,88h164c0.552,0,1.052,0.224,1.414,0.586S424,89.448,424,90v332c0,0.552-0.224,1.052-0.586,1.414 S422.552,424,422,424z" />
+      </g>
+    </svg>
+  )
+}
+
 function ImportIcon() {
   return (
     <svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true" focusable="false">
@@ -116,6 +133,7 @@ export default function SourceBadge({
       {sourceType === 'spotify' && <SpotifyIcon />}
       {sourceType === 'youtube' && <YouTubeIcon />}
       {sourceType === 'split' && <SplitIcon />}
+      {sourceType === 'bbc' && <BbcSoundsIcon />}
       {sourceType === 'import' && <ImportIcon />}
     </span>
   )
