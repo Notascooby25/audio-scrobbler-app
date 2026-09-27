@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: '0.9.7',
+    date: '2026-09-27',
+    changes: [
+      'Redesigned Followed Shows to a visual list with inline "✕ Unfollow" buttons on every show, so you can unfollow any show directly without selecting it first.',
+      'Replaced the dropdown picker with a clickable list of followed shows — tap a show to select it, tap again to deselect.',
+      'Improved mobile layout for the Followed Shows section with touch-friendly card-style rows.',
+    ]
+  },
+  {
     version: '0.9.6',
     date: '2026-09-27',
     changes: [

@@ -592,37 +592,86 @@ export default function ScopeCreepTools() {
             </div>
           )}
 
-          {/* Followed shows picker */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem', alignItems: 'flex-end' }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label htmlFor="select-followed-show" className="form-label" style={{ fontSize: '0.85rem' }}>
-                Select Show
-              </label>
-              <select
-                id="select-followed-show"
-                className="form-input"
-                value={selectedBrandId}
-                onChange={(e) => setSelectedBrandId(e.target.value)}
-                disabled={loadingFollowed || actionLoading}
-                style={{ width: '100%' }}
-              >
-                <option value="">
-                  {loadingFollowed
-                    ? 'Loading saved shows...'
-                    : followedShows.length === 0
-                      ? '-- No followed shows yet (click + Follow a Show) --'
-                      : `-- Choose from your ${followedShows.length} followed shows --`}
-                </option>
-                {followedShows.map((s) => (
-                  <option key={s.brand_id} value={s.brand_id}>
-                    {s.title}
-                  </option>
-                ))}
-              </select>
+          {/* Followed shows list with inline unfollow */}
+          {loadingFollowed ? (
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Loading saved shows...</p>
+          ) : followedShows.length === 0 ? (
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+              No followed shows yet — click "+ Follow a Show" to get started.
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: selectedBrandId ? '0.75rem' : 0 }}>
+              {followedShows.map((s) => {
+                const isActive = selectedBrandId === s.brand_id
+                return (
+                  <div
+                    key={s.brand_id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.5rem 0.65rem',
+                      borderRadius: '6px',
+                      border: isActive
+                        ? '1px solid var(--color-primary, #1db954)'
+                        : '1px solid var(--color-border, rgba(255,255,255,0.1))',
+                      backgroundColor: isActive
+                        ? 'rgba(29, 185, 84, 0.08)'
+                        : 'transparent',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.15s, border-color 0.15s',
+                    }}
+                    onClick={() => setSelectedBrandId(isActive ? '' : s.brand_id)}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={isActive}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setSelectedBrandId(isActive ? '' : s.brand_id)
+                      }
+                    }}
+                  >
+                    {s.image_url && (
+                      <img
+                        src={s.image_url}
+                        alt=""
+                        style={{ width: 32, height: 32, borderRadius: '4px', objectFit: 'cover', flexShrink: 0 }}
+                      />
+                    )}
+                    <span style={{ flex: 1, fontSize: '0.85rem', fontWeight: isActive ? 600 : 400, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {s.title}
+                    </span>
+                    <button
+                      type="button"
+                      className="button button-secondary"
+                      title={`Unfollow ${s.title}`}
+                      aria-label={`Unfollow ${s.title}`}
+                      style={{
+                        fontSize: '0.75rem',
+                        padding: '0.2rem 0.5rem',
+                        color: 'var(--color-error, #f44336)',
+                        flexShrink: 0,
+                        lineHeight: 1,
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleUnfollowShow(s.brand_id)
+                      }}
+                      disabled={actionLoading}
+                    >
+                      ✕ Unfollow
+                    </button>
+                  </div>
+                )
+              })}
             </div>
+          )}
 
-            {selectedBrandId && (
-              <div className="form-group" style={{ marginBottom: 0 }}>
+          {/* Episode picker — shown when a show is selected */}
+          {selectedBrandId && (
+            <div style={{ marginTop: '0.5rem' }}>
+              <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                 <label htmlFor="select-show-episode" className="form-label" style={{ fontSize: '0.85rem' }}>
                   Select Broadcast Episode
                 </label>
@@ -647,11 +696,7 @@ export default function ScopeCreepTools() {
                   )}
                 </select>
               </div>
-            )}
-          </div>
 
-          {selectedBrandId && (
-            <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <button
                 type="button"
                 className="button button-primary"
@@ -664,15 +709,6 @@ export default function ScopeCreepTools() {
                 disabled={!selectedEpisodePlayId || fetching || actionLoading}
               >
                 {fetching ? 'Loading Tracklist...' : 'Load Tracklist'}
-              </button>
-              <button
-                type="button"
-                className="button button-secondary"
-                style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem', color: 'var(--color-error, #f44336)' }}
-                onClick={() => handleUnfollowShow(selectedBrandId)}
-                disabled={actionLoading}
-              >
-                Unfollow Show
               </button>
             </div>
           )}

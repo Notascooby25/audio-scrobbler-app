@@ -554,15 +554,16 @@ describe('ScopeCreepTools', () => {
       </MemoryRouter>
     )
 
-    // Wait for followed shows to load into select
+    // Wait for followed shows to load into the list
     await waitFor(() => {
       expect(screen.getByText('Gilles Peterson')).toBeInTheDocument()
     })
 
-    // Select Gilles Peterson
-    fireEvent.change(screen.getByLabelText('Select Show'), {
-      target: { value: 'b01fm4ss' },
-    })
+    // Verify inline unfollow button is visible
+    expect(screen.getByRole('button', { name: 'Unfollow Gilles Peterson' })).toBeInTheDocument()
+
+    // Click on the show to select it
+    fireEvent.click(screen.getByText('Gilles Peterson'))
 
     // Wait for episodes to load
     await waitFor(() => {
