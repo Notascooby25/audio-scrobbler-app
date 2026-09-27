@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { redirectToAuthorization, requestSpotifyAuthorization } from '../api'
 import { readSession } from '../session'
 
 function formatOffset(seconds) {
@@ -50,6 +51,7 @@ export default function ScopeCreepTools() {
   const [newPlaylistTitle, setNewPlaylistTitle] = useState('')
   const [selectedPlaylistId, setSelectedPlaylistId] = useState('')
   const [customPlaylistInput, setCustomPlaylistInput] = useState('')
+  const [playlistSearch, setPlaylistSearch] = useState('')
   const [userPlaylists, setUserPlaylists] = useState(null)
   const [loadingPlaylists, setLoadingPlaylists] = useState(false)
   const [needsPlaylistsScope, setNeedsPlaylistsScope] = useState(false)
@@ -92,6 +94,16 @@ export default function ScopeCreepTools() {
       fetchPlaylists()
     }
   }, [playlistMode, userPlaylists, loadingPlaylists])
+
+  const handleAuthorizePlaylists = async () => {
+    try {
+      sessionStorage.setItem('spotify_auth_return_to', '/settings?tab=scrobble')
+      const { authorization_url: authUrl } = await requestSpotifyAuthorization(true)
+      redirectToAuthorization(authUrl)
+    } catch (err) {
+      setError(err.message || 'Failed to start Spotify authorization')
+    }
+  }
 
   const handleFetch = async (e) => {
     e.preventDefault()
@@ -476,43 +488,87 @@ export default function ScopeCreepTools() {
                     <p style={{ fontSize: '0.85rem', color: 'var(--color-muted, #888)', margin: 0 }}>Loading your Spotify playlists...</p>
                   ) : (
                     <>
-                      {userPlaylists && userPlaylists.length > 0 && (
-                        <div className="form-group" style={{ marginBottom: '0.75rem' }}>
-                          <label htmlFor="select-playlist" className="form-label" style={{ fontSize: '0.85rem' }}>Select Playlist</label>
-                          <select
-                            id="select-playlist"
-                            className="form-input"
-                            value={selectedPlaylistId}
-                            onChange={(e) => setSelectedPlaylistId(e.target.value)}
+                      {needsPlaylistsScope && (
+                        <div style={{ padding: '0.85rem 1rem', backgroundColor: 'rgba(29, 185, 84, 0.12)', border: '1px solid #1db954', borderRadius: '6px', marginBottom: '1rem' }}>
+                          <p style={{ margin: '0 0 0.35rem 0', fontSize: '0.95rem', fontWeight: 600, color: '#1db954' }}>
+                            Authorize Spotify Playlists
+                          </p>
+                          <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.85rem', color: 'var(--color-text-muted, #ccc)', lineHeight: 1.4 }}>
+                            Grant permission to read your Spotify playlists so you can automatically select from your playlist library without having to copy and paste links.
+                          </p>
+                          <button
+                            type="button"
+                            className="button button-primary"
+                            style={{ fontSize: '0.85rem', padding: '0.45rem 1rem' }}
+                            onClick={handleAuthorizePlaylists}
                             disabled={actionLoading}
-                            style={{ width: '100%' }}
                           >
-                            <option value="">-- Choose one of your playlists --</option>
-                            {recentPlaylists.length > 0 && (
-                              <optgroup label="Recently Used">
-                                {recentPlaylists.map((p) => (
-                                  <option key={`recent-${p.id}`} value={p.id}>
-                                    {p.name}
-                                  </option>
-                                ))}
+                            Connect Spotify Playlists
+                          </button>
+                        </div>
+                      )}
+
+                      {userPlaylists && userPlaylists.length > 0 && (
+                        <div style={{ marginBottom: '0.75rem' }}>
+                          {userPlaylists.length > 5 && (
+                            <div className="form-group" style={{ marginBottom: '0.5rem' }}>
+                              <label htmlFor="playlist-search" className="form-label" style={{ fontSize: '0.85rem' }}>Search Playlists</label>
+                              <input
+                                id="playlist-search"
+                                type="text"
+                                className="form-input"
+                                placeholder="Search by playlist name..."
+                                value={playlistSearch}
+                                onChange={(e) => setPlaylistSearch(e.target.value)}
+                                disabled={actionLoading}
+                                style={{ width: '100%', fontSize: '0.85rem' }}
+                              />
+                            </div>
+                          )}
+
+                          <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label htmlFor="select-playlist" className="form-label" style={{ fontSize: '0.85rem' }}>Select Playlist</label>
+                            <select
+                              id="select-playlist"
+                              className="form-input"
+                              value={selectedPlaylistId}
+                              onChange={(e) => setSelectedPlaylistId(e.target.value)}
+                              disabled={actionLoading}
+                              style={{ width: '100%' }}
+                            >
+                              <option value="">
+                                {playlistSearch
+                                  ? `-- ${userPlaylists.filter((p) => p.name.toLowerCase().includes(playlistSearch.toLowerCase())).length} playlists matching "${playlistSearch}" --`
+                                  : `-- Choose from your ${userPlaylists.length} playlists --`}
+                              </option>
+                              {recentPlaylists.length > 0 && !playlistSearch && (
+                                <optgroup label="Recently Used">
+                                  {recentPlaylists.map((p) => (
+                                    <option key={`recent-${p.id}`} value={p.id}>
+                                      {p.name}
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              )}
+                              <optgroup label="Your Spotify Playlists">
+                                {userPlaylists
+                                  .filter((p) => p.name.toLowerCase().includes(playlistSearch.toLowerCase()))
+                                  .map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                      {p.name}
+                                    </option>
+                                  ))}
                               </optgroup>
-                            )}
-                            <optgroup label="Your Spotify Playlists">
-                              {userPlaylists.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                  {p.name}
-                                </option>
-                              ))}
-                            </optgroup>
-                            <option value="custom">-- Paste a different playlist link or ID --</option>
-                          </select>
+                              <option value="custom">-- Paste a different playlist link or ID manually --</option>
+                            </select>
+                          </div>
                         </div>
                       )}
 
                       {(!userPlaylists || userPlaylists.length === 0 || selectedPlaylistId === 'custom' || (!selectedPlaylistId && needsPlaylistsScope)) && (
                         <div className="form-group" style={{ marginBottom: 0 }}>
                           <label htmlFor="custom-playlist-id" className="form-label" style={{ fontSize: '0.85rem' }}>
-                            Spotify Playlist Link or ID
+                            {userPlaylists && userPlaylists.length > 0 ? 'Custom Spotify Playlist Link or ID' : 'Or paste Spotify Playlist Link / ID'}
                           </label>
                           <input
                             id="custom-playlist-id"
@@ -523,11 +579,6 @@ export default function ScopeCreepTools() {
                             disabled={actionLoading}
                             placeholder="https://open.spotify.com/playlist/... or spotify:playlist:..."
                           />
-                          {needsPlaylistsScope && (
-                            <p className="help-text" style={{ fontSize: '0.8rem', marginTop: '0.4rem', color: 'var(--color-muted, #aaa)' }}>
-                              Tip: Re-authenticate with Spotify in Settings to browse your private playlists directly. Until then, you can paste any playlist link or ID above.
-                            </p>
-                          )}
                           {recentPlaylists.length > 0 && (!userPlaylists || userPlaylists.length === 0) && (
                             <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                               <span style={{ fontSize: '0.8rem', color: 'var(--color-muted, #888)' }}>Recent:</span>

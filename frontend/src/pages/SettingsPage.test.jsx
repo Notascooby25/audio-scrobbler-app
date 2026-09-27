@@ -152,7 +152,7 @@ describe('SettingsPage', () => {
     // Switch to Changelog tab
     fireEvent.click(changelogTab)
     expect(changelogTab).toHaveClass('active')
-    expect(screen.getByText('v0.9.4')).toBeInTheDocument()
+    expect(screen.getByText('v0.9.5')).toBeInTheDocument()
   })
 
   it('preserves form state when switching tabs', async () => {

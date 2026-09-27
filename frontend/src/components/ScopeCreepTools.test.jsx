@@ -312,4 +312,139 @@ describe('ScopeCreepTools', () => {
       )
     })
   })
+
+  it('shows authorization prompt when needs_scope is true', async () => {
+    const mockShowData = {
+      play_id: 'm0031tc6',
+      title: 'Indie Chill',
+      tracks: [
+        {
+          segment_id: 'seg_1',
+          artist: 'Lana Del Rey',
+          title: 'Video Games',
+          offset_seconds: 0,
+          duration_seconds: 240,
+          spotify_uri: 'spotify:track:111',
+          image_url: 'https://example.com/art.jpg',
+        },
+      ],
+    }
+
+    const mockPlaylistsData = {
+      playlists: [],
+      needs_scope: true,
+    }
+
+    vi.spyOn(global, 'fetch')
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockShowData),
+        })
+      )
+      .mockImplementationOnce((url) => {
+        expect(url).toContain('/tools/scope-creep/playlists')
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockPlaylistsData),
+        })
+      })
+
+    render(
+      <MemoryRouter>
+        <ScopeCreepTools />
+      </MemoryRouter>
+    )
+
+    fireEvent.change(screen.getByLabelText('BBC Sounds URL'), {
+      target: { value: 'https://www.bbc.co.uk/sounds/play/m0031tc6' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Fetch Show' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Indie Chill')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByLabelText('Add to existing playlist'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Authorize Spotify Playlists')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Connect Spotify Playlists' })).toBeInTheDocument()
+    })
+  })
+
+  it('filters existing playlists using the search input', async () => {
+    const mockShowData = {
+      play_id: 'm0031tc6',
+      title: 'Indie Chill',
+      tracks: [
+        {
+          segment_id: 'seg_1',
+          artist: 'Lana Del Rey',
+          title: 'Video Games',
+          offset_seconds: 0,
+          duration_seconds: 240,
+          spotify_uri: 'spotify:track:111',
+          image_url: 'https://example.com/art.jpg',
+        },
+      ],
+    }
+
+    const mockPlaylistsData = {
+      playlists: [
+        { id: 'pl-1', name: 'Roadtrip Beats' },
+        { id: 'pl-2', name: 'Ambient Chill' },
+        { id: 'pl-3', name: 'Gym Workout' },
+        { id: 'pl-4', name: 'Study Session' },
+        { id: 'pl-5', name: 'Morning Coffee' },
+        { id: 'pl-6', name: 'Evening Acoustic' },
+      ],
+      needs_scope: false,
+    }
+
+    vi.spyOn(global, 'fetch')
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockShowData),
+        })
+      )
+      .mockImplementationOnce((url) => {
+        expect(url).toContain('/tools/scope-creep/playlists')
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockPlaylistsData),
+        })
+      })
+
+    render(
+      <MemoryRouter>
+        <ScopeCreepTools />
+      </MemoryRouter>
+    )
+
+    fireEvent.change(screen.getByLabelText('BBC Sounds URL'), {
+      target: { value: 'https://www.bbc.co.uk/sounds/play/m0031tc6' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Fetch Show' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Indie Chill')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByLabelText('Add to existing playlist'))
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Search Playlists')).toBeInTheDocument()
+    })
+
+    // Search for "Chill"
+    fireEvent.change(screen.getByLabelText('Search Playlists'), {
+      target: { value: 'Chill' },
+    })
+
+    const select = screen.getByLabelText('Select Playlist')
+    expect(select).toHaveTextContent('Ambient Chill')
+    expect(select).not.toHaveTextContent('Roadtrip Beats')
+  })
 })

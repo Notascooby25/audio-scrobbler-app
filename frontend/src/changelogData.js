@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: '0.9.5',
+    date: '2026-09-27',
+    changes: [
+      'Automated playlist loading: added 1-click Spotify authorization in Scope Creep to automatically pull your playlist library without manual links.',
+      'Added playlist search filter to quickly find and select any existing playlist from your library.',
+      'Expanded playlist fetching to paginate and load up to 200 of your Spotify playlists.',
+    ]
+  },
+  {
     version: '0.9.4',
     date: '2026-09-27',
     changes: [

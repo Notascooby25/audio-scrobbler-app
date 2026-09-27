@@ -78,6 +78,16 @@ export default function HomePage() {
       .catch(() => {})
   }, [])
 
+  useEffect(() => {
+    if (callbackSession?.accessToken) {
+      const returnTo = sessionStorage.getItem('spotify_auth_return_to')
+      if (returnTo) {
+        sessionStorage.removeItem('spotify_auth_return_to')
+        window.location.replace(returnTo)
+      }
+    }
+  }, [callbackSession])
+
   const connectSpotify = async () => {
     setStatus('loading')
     setError('')
