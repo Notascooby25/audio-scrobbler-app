@@ -335,7 +335,7 @@ the NAS listing.** The live setup has drifted from the repos before.
   - `368e83e` fix
   - Genre comes from the Spotify **artist** record, via worker enrichment and a
     cache.
-- **The Playlists feature was removed** on 2026-09-22 (`2acb98b`).
+- **BBC Sounds Scope Creep & Spotify Playlist Destinations (2026-09-26/27):** BBC Sounds tracklist extraction tool under Settings > Scrobble tab with track selection, broadcast offset timestamping for direct scrobbling, and export to Spotify supporting either creating brand new playlists or appending tracks to existing playlists.
 - **Also 2026-09-22/23:** listening heatmap, frontend redesign, nginx
   `client_max_body_size` raised for large imports, listening clock restored,
   friends-average removed from the UI, Library share-image feature,
