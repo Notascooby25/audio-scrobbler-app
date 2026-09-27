@@ -1,5 +1,6 @@
 from __future__ import annotations
 import re
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -8,10 +9,11 @@ from sqlalchemy.orm import Session
 
 from ..api.deps import get_current_user
 from ..db import get_db
-from ..models import User
+from ..models import ArtworkCache, ListeningEvent, User
 from ..schemas.ingestion import ListeningEventCreate
 from ..services.bbc_sounds_service import fetch_bbc_playlist
 from ..services.ingestion_service import ingest_listening_event
+from ..services.processed_import_service import deezer_artwork, deezer_search, itunes_artwork
 from ..services.spotify_playlist_service import create_playlist
 
 router = APIRouter(prefix="/tools", tags=["tools"])
@@ -21,6 +23,31 @@ def _extract_play_id(url: str) -> str:
     if not match:
         raise HTTPException(status_code=400, detail="Invalid BBC Sounds URL. Make sure it contains /play/<id>")
     return match.group(1)
+
+def resolve_artwork(artist: str, title: str, db: Session | None = None, track_id: str | None = None) -> str | None:
+    if db and track_id:
+        cached = db.query(ArtworkCache).filter(ArtworkCache.track_id == track_id).first()
+        if cached and cached.artwork_url:
+            return cached.artwork_url
+
+    art = None
+    try:
+        art = itunes_artwork(artist, title)
+        if not art:
+            dz = deezer_search(artist, title)
+            if dz:
+                art = deezer_artwork(dz)
+    except Exception:
+        art = None
+
+    if art and db and track_id:
+        try:
+            db.merge(ArtworkCache(track_id=track_id, artwork_url=art))
+            db.commit()
+        except Exception:
+            db.rollback()
+
+    return art
 
 class ScopeCreepRequest(BaseModel):
     url: str
@@ -55,6 +82,7 @@ class ScopeCreepScrobbleTrack(BaseModel):
     offset_seconds: int = 0
     duration_seconds: int | None = None
     spotify_uri: str | None = None
+    artwork_url: str | None = None
 
 class ScopeCreepScrobbleRequest(BaseModel):
     play_id: str
@@ -69,6 +97,7 @@ class ScopeCreepScrobbleResponse(BaseModel):
 @router.post("/scope-creep/fetch", response_model=ScopeCreepFetchResponse)
 def scope_creep_fetch(
     req: ScopeCreepRequest,
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     play_id = _extract_play_id(req.url)
@@ -77,10 +106,26 @@ def scope_creep_fetch(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to fetch BBC Sounds data: {str(e)}")
 
+    def _resolve(t: dict) -> ScopeCreepTrackItem:
+        t_id = t.get("spotify_uri") or f"bbc:{t.get('segment_id')}"
+        img = t.get("image_url") or resolve_artwork(t["artist"], t["title"], db, t_id)
+        return ScopeCreepTrackItem(
+            segment_id=t["segment_id"],
+            artist=t["artist"],
+            title=t["title"],
+            offset_seconds=t.get("offset_seconds", 0),
+            duration_seconds=t.get("duration_seconds"),
+            spotify_uri=t.get("spotify_uri"),
+            image_url=img,
+        )
+
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        resolved_tracks = list(executor.map(_resolve, bbc_data["tracks"]))
+
     return ScopeCreepFetchResponse(
         play_id=play_id,
         title=bbc_data["title"],
-        tracks=[ScopeCreepTrackItem(**t) for t in bbc_data["tracks"]]
+        tracks=resolved_tracks
     )
 
 @router.post("/scope-creep/playlist", response_model=ScopeCreepResponse)
@@ -126,11 +171,13 @@ def scope_creep_scrobble(
         canonical_play_id = f"bbc_{req.play_id}_{track.segment_id}"
         track_id = track.spotify_uri or f"bbc:{track.segment_id}"
         duration_ms = (track.duration_seconds * 1000) if track.duration_seconds else None
+        artwork = track.artwork_url or resolve_artwork(track.artist, track.title, db, track_id)
 
         event_create = ListeningEventCreate(
             track_id=track_id,
             track_name=track.title,
             artist_name=track.artist,
+            artwork_url=artwork,
             played_at=played_at,
             duration_ms=duration_ms,
             source="bbc_sounds",
@@ -142,6 +189,18 @@ def scope_creep_scrobble(
             duplicate_count += 1
         else:
             scrobbled_count += 1
+
+        if artwork:
+            try:
+                db.query(ListeningEvent).filter(
+                    ListeningEvent.user_id == current_user.id,
+                    ListeningEvent.source == "bbc_sounds",
+                    ListeningEvent.track_id == track_id,
+                    ListeningEvent.artwork_url.is_(None),
+                ).update({"artwork_url": artwork}, synchronize_session=False)
+                db.commit()
+            except Exception:
+                db.rollback()
 
     return ScopeCreepScrobbleResponse(
         message=f"Scrobbled {scrobbled_count} tracks ({duplicate_count} duplicates skipped).",

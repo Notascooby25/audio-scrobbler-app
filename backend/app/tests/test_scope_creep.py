@@ -90,6 +90,7 @@ def test_scope_creep_fetch(mock_fetch):
     assert data["title"] == "Indie Chill"
     assert len(data["tracks"]) == 1
     assert data["tracks"][0]["artist"] == "Lana Del Rey"
+    assert data["tracks"][0]["image_url"] == "https://example.com/art.jpg"
 
 
 @patch("backend.app.api.tools.create_playlist")
@@ -123,6 +124,7 @@ def test_scope_creep_scrobble():
                 "offset_seconds": 0,
                 "duration_seconds": 240,
                 "spotify_uri": "spotify:track:0fBSs3fRoh1yJcne77fdu9",
+                "artwork_url": "https://example.com/art.jpg",
             },
             {
                 "segment_id": "seg_2",
@@ -146,6 +148,7 @@ def test_scope_creep_scrobble():
     assert events[0].artist_name == "Lana Del Rey"
     assert events[0].source == "bbc_sounds"
     assert events[0].play_id == "bbc_m0031tc6_seg_1"
+    assert events[0].artwork_url == "https://example.com/art.jpg"
     assert events[1].artist_name == "Radiohead"
     assert events[1].play_id == "bbc_m0031tc6_seg_2"
     # Verify timestamp offset
