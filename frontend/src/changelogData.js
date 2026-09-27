@@ -5,6 +5,7 @@ export const CHANGELOG = [
     changes: [
       'Added the official BBC Sounds logo badge for all tracks and scrobbles imported from BBC Sounds.',
       'Added automatic album artwork resolution for BBC Sounds tracks, displaying official album covers in the tracklist preview and scrobble history.',
+      'Added choice when exporting to Spotify: create a brand new playlist or add tracks directly to an existing Spotify playlist from your account or by link.',
       'Fixed Spotify playlist creation error by migrating to Spotify\'s latest API specifications.',
       'Fixed scrobble timestamps to accurately display your local listening time (e.g. BST) instead of UTC.',
       'Organized Settings: moved the Scope Creep BBC Sounds tool directly into the Scrobble settings tab.',

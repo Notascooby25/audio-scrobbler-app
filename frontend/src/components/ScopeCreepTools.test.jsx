@@ -149,4 +149,167 @@ describe('ScopeCreepTools', () => {
       expect(screen.getByRole('link', { name: 'View in Library' })).toBeInTheDocument()
     })
   })
+
+  it('creates a new Spotify playlist with custom title', async () => {
+    const mockShowData = {
+      play_id: 'm0031tc6',
+      title: 'Indie Chill',
+      tracks: [
+        {
+          segment_id: 'seg_1',
+          artist: 'Lana Del Rey',
+          title: 'Video Games',
+          offset_seconds: 0,
+          duration_seconds: 240,
+          spotify_uri: 'spotify:track:111',
+          image_url: 'https://example.com/art.jpg',
+        },
+      ],
+    }
+
+    const mockPlaylistResponse = {
+      message: "Created playlist 'My Custom Title' with 1 tracks.",
+      playlist_url: 'https://open.spotify.com/playlist/new123',
+    }
+
+    vi.spyOn(global, 'fetch')
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockShowData),
+        })
+      )
+      .mockImplementationOnce((url, options) => {
+        expect(url).toContain('/tools/scope-creep/playlist')
+        const body = JSON.parse(options.body)
+        expect(body.mode).toBe('create')
+        expect(body.title).toBe('My Custom Title')
+        expect(body.spotify_uris).toEqual(['spotify:track:111'])
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockPlaylistResponse),
+        })
+      })
+
+    render(
+      <MemoryRouter>
+        <ScopeCreepTools />
+      </MemoryRouter>
+    )
+
+    fireEvent.change(screen.getByLabelText('BBC Sounds URL'), {
+      target: { value: 'https://www.bbc.co.uk/sounds/play/m0031tc6' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Fetch Show' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Indie Chill')).toBeInTheDocument()
+    })
+
+    const titleInput = screen.getByLabelText('Playlist Name')
+    expect(titleInput.value).toBe('Indie Chill')
+    fireEvent.change(titleInput, { target: { value: 'My Custom Title' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create Spotify Playlist (1)' }))
+
+    await waitFor(() => {
+      expect(screen.getByText("Created playlist 'My Custom Title' with 1 tracks.")).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Open on Spotify' })).toHaveAttribute(
+        'href',
+        'https://open.spotify.com/playlist/new123'
+      )
+    })
+  })
+
+  it('adds tracks to an existing playlist selected from user playlists', async () => {
+    const mockShowData = {
+      play_id: 'm0031tc6',
+      title: 'Indie Chill',
+      tracks: [
+        {
+          segment_id: 'seg_1',
+          artist: 'Lana Del Rey',
+          title: 'Video Games',
+          offset_seconds: 0,
+          duration_seconds: 240,
+          spotify_uri: 'spotify:track:111',
+          image_url: 'https://example.com/art.jpg',
+        },
+      ],
+    }
+
+    const mockPlaylistsData = {
+      playlists: [
+        { id: 'playlist-abc', name: 'Weekend Vibes', url: 'https://open.spotify.com/playlist/playlist-abc' },
+      ],
+      needs_scope: false,
+    }
+
+    const mockAddResponse = {
+      message: "Added 1 tracks to playlist 'Weekend Vibes'.",
+      playlist_url: 'https://open.spotify.com/playlist/playlist-abc',
+    }
+
+    vi.spyOn(global, 'fetch')
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockShowData),
+        })
+      )
+      .mockImplementationOnce((url) => {
+        expect(url).toContain('/tools/scope-creep/playlists')
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockPlaylistsData),
+        })
+      })
+      .mockImplementationOnce((url, options) => {
+        expect(url).toContain('/tools/scope-creep/playlist')
+        const body = JSON.parse(options.body)
+        expect(body.mode).toBe('existing')
+        expect(body.playlist_id).toBe('playlist-abc')
+        expect(body.spotify_uris).toEqual(['spotify:track:111'])
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockAddResponse),
+        })
+      })
+
+    render(
+      <MemoryRouter>
+        <ScopeCreepTools />
+      </MemoryRouter>
+    )
+
+    fireEvent.change(screen.getByLabelText('BBC Sounds URL'), {
+      target: { value: 'https://www.bbc.co.uk/sounds/play/m0031tc6' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Fetch Show' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Indie Chill')).toBeInTheDocument()
+    })
+
+    // Switch to existing playlist mode
+    fireEvent.click(screen.getByLabelText('Add to existing playlist'))
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Select Playlist')).toBeInTheDocument()
+    })
+
+    fireEvent.change(screen.getByLabelText('Select Playlist'), {
+      target: { value: 'playlist-abc' },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Existing Playlist (1)' }))
+
+    await waitFor(() => {
+      expect(screen.getByText("Added 1 tracks to playlist 'Weekend Vibes'.")).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Open on Spotify' })).toHaveAttribute(
+        'href',
+        'https://open.spotify.com/playlist/playlist-abc'
+      )
+    })
+  })
 })

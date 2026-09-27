@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { readSession } from '../session'
 
@@ -44,11 +44,54 @@ export default function ScopeCreepTools() {
   const [showData, setShowData] = useState(null)
   const [selectedSegments, setSelectedSegments] = useState(new Set())
   const [listenedAt, setListenedAt] = useState(getLocalDefaultDateTime)
+
+  // Playlist options
+  const [playlistMode, setPlaylistMode] = useState('create') // 'create' | 'existing'
+  const [newPlaylistTitle, setNewPlaylistTitle] = useState('')
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState('')
+  const [customPlaylistInput, setCustomPlaylistInput] = useState('')
+  const [userPlaylists, setUserPlaylists] = useState(null)
+  const [loadingPlaylists, setLoadingPlaylists] = useState(false)
+  const [needsPlaylistsScope, setNeedsPlaylistsScope] = useState(false)
+  const [recentPlaylists, setRecentPlaylists] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('scope-creep-recent-playlists') || '[]')
+    } catch {
+      return []
+    }
+  })
   
   const [actionLoading, setActionLoading] = useState(false)
   const [error, setError] = useState(null)
   const [playlistResult, setPlaylistResult] = useState(null)
   const [scrobbleResult, setScrobbleResult] = useState(null)
+
+  const fetchPlaylists = async () => {
+    setLoadingPlaylists(true)
+    try {
+      const session = readSession()
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+      const response = await fetch(`${API_BASE_URL}/tools/scope-creep/playlists`, {
+        headers: {
+          'Authorization': `Bearer ${session?.accessToken}`,
+        },
+      })
+      const data = await parseResponse(response, 'Failed to fetch your Spotify playlists')
+      setUserPlaylists(data.playlists || [])
+      setNeedsPlaylistsScope(Boolean(data.needs_scope))
+    } catch (err) {
+      console.error('Error fetching playlists:', err)
+      setUserPlaylists([])
+    } finally {
+      setLoadingPlaylists(false)
+    }
+  }
+
+  useEffect(() => {
+    if (playlistMode === 'existing' && userPlaylists === null && !loadingPlaylists) {
+      fetchPlaylists()
+    }
+  }, [playlistMode, userPlaylists, loadingPlaylists])
 
   const handleFetch = async (e) => {
     e.preventDefault()
@@ -74,6 +117,7 @@ export default function ScopeCreepTools() {
       const data = await parseResponse(response, 'Failed to fetch BBC show')
 
       setShowData(data)
+      setNewPlaylistTitle(data.title || '')
       // By default, select all tracks
       setSelectedSegments(new Set(data.tracks.map((t) => t.segment_id)))
     } catch (err) {
@@ -111,6 +155,20 @@ export default function ScopeCreepTools() {
     )
     if (selectedTracks.length === 0) return
 
+    let targetPlaylistId = null
+    if (playlistMode === 'existing') {
+      if (selectedPlaylistId && selectedPlaylistId !== 'custom') {
+        targetPlaylistId = selectedPlaylistId
+      } else if (customPlaylistInput.trim()) {
+        targetPlaylistId = customPlaylistInput.trim()
+      }
+
+      if (!targetPlaylistId) {
+        setError('Please select or enter a Spotify playlist to add tracks to.')
+        return
+      }
+    }
+
     setActionLoading(true)
     setError(null)
     setPlaylistResult(null)
@@ -118,21 +176,49 @@ export default function ScopeCreepTools() {
     try {
       const session = readSession()
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+      const payload = {
+        url: url.trim(),
+        mode: playlistMode,
+        spotify_uris: selectedTracks.map((t) => t.spotify_uri),
+      }
+
+      if (playlistMode === 'existing') {
+        payload.playlist_id = targetPlaylistId
+      } else {
+        payload.title = newPlaylistTitle.trim() || showData.title
+      }
+
       const response = await fetch(`${API_BASE_URL}/tools/scope-creep/playlist`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.accessToken}`,
         },
-        body: JSON.stringify({
-          url: url.trim(),
-          title: showData.title,
-          spotify_uris: selectedTracks.map((t) => t.spotify_uri),
-        }),
+        body: JSON.stringify(payload),
       })
-      const data = await parseResponse(response, 'Failed to create Spotify playlist')
+      const data = await parseResponse(
+        response,
+        playlistMode === 'existing' ? 'Failed to add tracks to Spotify playlist' : 'Failed to create Spotify playlist'
+      )
 
       setPlaylistResult(data)
+
+      if (playlistMode === 'existing' && targetPlaylistId) {
+        try {
+          const currentRecents = JSON.parse(localStorage.getItem('scope-creep-recent-playlists') || '[]')
+          const found = userPlaylists?.find((p) => p.id === targetPlaylistId)
+          const nameMatch = data.message.match(/playlist '([^']+)'/)
+          const nameToSave = found?.name || (nameMatch ? nameMatch[1] : targetPlaylistId)
+          const updated = [
+            { id: targetPlaylistId, name: nameToSave },
+            ...currentRecents.filter((r) => r.id !== targetPlaylistId),
+          ].slice(0, 5)
+          localStorage.setItem('scope-creep-recent-playlists', JSON.stringify(updated))
+          setRecentPlaylists(updated)
+        } catch {
+          // ignore localStorage error
+        }
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -230,6 +316,9 @@ export default function ScopeCreepTools() {
                   setShowData(null)
                   setPlaylistResult(null)
                   setScrobbleResult(null)
+                  setPlaylistMode('create')
+                  setSelectedPlaylistId('')
+                  setCustomPlaylistInput('')
                 }}
                 disabled={actionLoading}
               >
@@ -338,6 +427,133 @@ export default function ScopeCreepTools() {
               </p>
             </div>
 
+            <div style={{ marginTop: '1.25rem', marginBottom: '1.25rem', padding: '1rem', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '6px', border: '1px solid var(--border-color, #333)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                <span style={{ fontSize: '0.95rem', fontWeight: 600 }}>Spotify Playlist Destination</span>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', cursor: 'pointer', fontSize: '0.9rem' }}>
+                  <input
+                    type="radio"
+                    name="playlist-mode"
+                    value="create"
+                    checked={playlistMode === 'create'}
+                    onChange={() => setPlaylistMode('create')}
+                    disabled={actionLoading}
+                  />
+                  Create brand new playlist
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', cursor: 'pointer', fontSize: '0.9rem' }}>
+                  <input
+                    type="radio"
+                    name="playlist-mode"
+                    value="existing"
+                    checked={playlistMode === 'existing'}
+                    onChange={() => setPlaylistMode('existing')}
+                    disabled={actionLoading}
+                  />
+                  Add to existing playlist
+                </label>
+              </div>
+
+              {playlistMode === 'create' ? (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label htmlFor="new-playlist-title" className="form-label" style={{ fontSize: '0.85rem' }}>Playlist Name</label>
+                  <input
+                    id="new-playlist-title"
+                    type="text"
+                    className="form-input"
+                    value={newPlaylistTitle}
+                    onChange={(e) => setNewPlaylistTitle(e.target.value)}
+                    disabled={actionLoading}
+                    placeholder="Enter playlist name..."
+                  />
+                </div>
+              ) : (
+                <div>
+                  {loadingPlaylists ? (
+                    <p style={{ fontSize: '0.85rem', color: 'var(--color-muted, #888)', margin: 0 }}>Loading your Spotify playlists...</p>
+                  ) : (
+                    <>
+                      {userPlaylists && userPlaylists.length > 0 && (
+                        <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+                          <label htmlFor="select-playlist" className="form-label" style={{ fontSize: '0.85rem' }}>Select Playlist</label>
+                          <select
+                            id="select-playlist"
+                            className="form-input"
+                            value={selectedPlaylistId}
+                            onChange={(e) => setSelectedPlaylistId(e.target.value)}
+                            disabled={actionLoading}
+                            style={{ width: '100%' }}
+                          >
+                            <option value="">-- Choose one of your playlists --</option>
+                            {recentPlaylists.length > 0 && (
+                              <optgroup label="Recently Used">
+                                {recentPlaylists.map((p) => (
+                                  <option key={`recent-${p.id}`} value={p.id}>
+                                    {p.name}
+                                  </option>
+                                ))}
+                              </optgroup>
+                            )}
+                            <optgroup label="Your Spotify Playlists">
+                              {userPlaylists.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                            <option value="custom">-- Paste a different playlist link or ID --</option>
+                          </select>
+                        </div>
+                      )}
+
+                      {(!userPlaylists || userPlaylists.length === 0 || selectedPlaylistId === 'custom' || (!selectedPlaylistId && needsPlaylistsScope)) && (
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label htmlFor="custom-playlist-id" className="form-label" style={{ fontSize: '0.85rem' }}>
+                            Spotify Playlist Link or ID
+                          </label>
+                          <input
+                            id="custom-playlist-id"
+                            type="text"
+                            className="form-input"
+                            value={customPlaylistInput}
+                            onChange={(e) => setCustomPlaylistInput(e.target.value)}
+                            disabled={actionLoading}
+                            placeholder="https://open.spotify.com/playlist/... or spotify:playlist:..."
+                          />
+                          {needsPlaylistsScope && (
+                            <p className="help-text" style={{ fontSize: '0.8rem', marginTop: '0.4rem', color: 'var(--color-muted, #aaa)' }}>
+                              Tip: Re-authenticate with Spotify in Settings to browse your private playlists directly. Until then, you can paste any playlist link or ID above.
+                            </p>
+                          )}
+                          {recentPlaylists.length > 0 && (!userPlaylists || userPlaylists.length === 0) && (
+                            <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: '0.8rem', color: 'var(--color-muted, #888)' }}>Recent:</span>
+                              {recentPlaylists.map((rec) => (
+                                <button
+                                  key={rec.id}
+                                  type="button"
+                                  className="button button-secondary"
+                                  style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', height: 'auto' }}
+                                  onClick={() => {
+                                    setCustomPlaylistInput(rec.id)
+                                  }}
+                                >
+                                  {rec.name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
               <button
                 type="button"
@@ -345,7 +561,11 @@ export default function ScopeCreepTools() {
                 onClick={handleCreatePlaylist}
                 disabled={actionLoading || selectedSpotifyCount === 0}
               >
-                {actionLoading ? 'Working...' : `Create Spotify Playlist (${selectedSpotifyCount})`}
+                {actionLoading
+                  ? 'Working...'
+                  : playlistMode === 'existing'
+                    ? `Add to Existing Playlist (${selectedSpotifyCount})`
+                    : `Create Spotify Playlist (${selectedSpotifyCount})`}
               </button>
               <button
                 type="button"
