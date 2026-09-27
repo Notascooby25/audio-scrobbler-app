@@ -8,6 +8,7 @@ import OverviewPage from './pages/OverviewPage'
 import ProfilePage from './pages/ProfilePage'
 import ReportsPage from './pages/ReportsPage'
 import SettingsPage from './pages/SettingsPage'
+import ChangelogPage from './pages/ChangelogPage'
 import { fetchUserSettings } from './api'
 import { readSession } from './session'
 
@@ -39,7 +40,7 @@ export default function App() {
           <Route path="/profile/:userId" element={<ProfilePage />} />
           <Route path="/following" element={<FollowingPage />} />
           <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/changelog" element={<Navigate to="/settings?tab=changelog" replace />} />
+          <Route path="/changelog" element={<ChangelogPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

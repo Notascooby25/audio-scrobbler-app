@@ -109,9 +109,8 @@ describe('SettingsPage', () => {
   it('renders all 6 tabs with Danger Zone visually distinct and switches between them', async () => {
     render(<MemoryRouter><SettingsPage /></MemoryRouter>)
 
-    // All 6 tabs present
+    // All 5 tabs present
     const generalTab = await screen.findByRole('tab', { name: 'General' })
-    const changelogTab = screen.getByRole('tab', { name: 'Changelog' })
     const viewsTab = screen.getByRole('tab', { name: 'Views' })
     const scrobbleTab = screen.getByRole('tab', { name: 'Scrobble' })
     const dataTab = screen.getByRole('tab', { name: 'Data' })
@@ -148,11 +147,6 @@ describe('SettingsPage', () => {
     expect(dangerTab).toHaveClass('active')
     expect(screen.getByText('Deleting scrobbles removes them permanently from your library. This cannot be undone.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Delete Scrobbles' })).toBeInTheDocument()
-
-    // Switch to Changelog tab
-    fireEvent.click(changelogTab)
-    expect(changelogTab).toHaveClass('active')
-    expect(screen.getByText('v0.9.5')).toBeInTheDocument()
   })
 
   it('preserves form state when switching tabs', async () => {
