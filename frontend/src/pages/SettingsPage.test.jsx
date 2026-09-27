@@ -148,6 +148,11 @@ describe('SettingsPage', () => {
     expect(dangerTab).toHaveClass('active')
     expect(screen.getByText('Deleting scrobbles removes them permanently from your library. This cannot be undone.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Delete Scrobbles' })).toBeInTheDocument()
+
+    // Switch to Changelog tab
+    fireEvent.click(changelogTab)
+    expect(changelogTab).toHaveClass('active')
+    expect(screen.getByText('v0.9.4')).toBeInTheDocument()
   })
 
   it('preserves form state when switching tabs', async () => {

@@ -1,11 +1,18 @@
 export const CHANGELOG = [
   {
+    version: '0.9.4',
+    date: '2026-09-27',
+    changes: [
+      'Added Spotify playlist destination choice in Scope Creep: choose between creating a brand new playlist or appending imported tracks directly to an existing Spotify playlist.',
+      'Added Spotify playlist selector to choose from your personal playlists, recently used playlists, or paste any Spotify playlist link or ID.',
+    ]
+  },
+  {
     version: '0.9.3',
     date: '2026-09-27',
     changes: [
       'Added the official BBC Sounds logo badge for all tracks and scrobbles imported from BBC Sounds.',
       'Added automatic album artwork resolution for BBC Sounds tracks, displaying official album covers in the tracklist preview and scrobble history.',
-      'Added choice when exporting to Spotify: create a brand new playlist or add tracks directly to an existing Spotify playlist from your account or by link.',
       'Fixed Spotify playlist creation error by migrating to Spotify\'s latest API specifications.',
       'Fixed scrobble timestamps to accurately display your local listening time (e.g. BST) instead of UTC.',
       'Organized Settings: moved the Scope Creep BBC Sounds tool directly into the Scrobble settings tab.',

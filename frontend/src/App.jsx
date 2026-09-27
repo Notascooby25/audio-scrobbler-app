@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import FollowingPage from './pages/FollowingPage'
 import HomePage from './pages/HomePage'
@@ -39,6 +39,7 @@ export default function App() {
           <Route path="/profile/:userId" element={<ProfilePage />} />
           <Route path="/following" element={<FollowingPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/changelog" element={<Navigate to="/settings?tab=changelog" replace />} />
         </Route>
       </Routes>
     </BrowserRouter>
