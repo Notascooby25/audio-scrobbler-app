@@ -8,11 +8,13 @@ export function resolveSourceType(sourceOrSources) {
 
   const hasSpotify = list.some((s) => s === 'spotify' || s === 'spotify_realtime' || s.startsWith('spotify'))
   const hasYoutube = list.some((s) => s === 'youtube' || s === 'youtube_music' || s === 'youtubemusic')
+  const hasApple = list.some((s) => s === 'apple' || s === 'apple_music' || s === 'itunes')
   const hasBbc = list.some((s) => s === 'bbc_sounds' || s === 'bbc' || s.includes('bbc'))
 
   if (hasSpotify && hasYoutube) return 'split'
   if (hasSpotify) return 'spotify'
   if (hasYoutube) return 'youtube'
+  if (hasApple) return 'apple'
   if (hasBbc) return 'bbc'
   if (list.some((s) => s.length > 0)) return 'import'
   return null
@@ -26,6 +28,8 @@ export function getSourceLabel(type) {
       return 'Scrobbled via Spotify'
     case 'youtube':
       return 'Scrobbled via YouTube Music'
+    case 'apple':
+      return 'Scrobbled via Apple Music'
     case 'bbc':
       return 'Scrobbled via BBC Sounds'
     case 'import':
@@ -93,6 +97,18 @@ function BbcSoundsIcon() {
   )
 }
 
+function AppleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="12" r="12" fill="var(--color-apple)" />
+      <path
+        fill="var(--color-surface)"
+        d="M15.2 9.5c-.1-1.7 1.4-2.7 1.5-2.7-1-1.5-2.6-1.7-3.2-1.7-1.4-.1-2.7.8-3.4.8-.7 0-1.8-.8-3-.8-1.3 0-2.6.8-3.3 2.1-1.4 2.5-.4 6.2.9 8.2.7 1 1.4 2.1 2.5 2.1 1 0 1.5-.7 2.8-.7 1.2 0 1.7.7 2.8.7 1.1 0 1.8-1 2.5-2 .8-1.2 1.1-2.4 1.2-2.4 0-.1-2.2-.9-2.3-3.6zM13.6 6.3c.6-.7 1-1.7.8-2.6-.8.1-1.9.6-2.5 1.3-.5.6-1 1.6-.8 2.5.9 0 1.9-.5 2.5-1.2z"
+      />
+    </svg>
+  )
+}
+
 function ImportIcon() {
   return (
     <svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true" focusable="false">
@@ -132,6 +148,7 @@ export default function SourceBadge({
       <span className="visually-hidden-accessible">{sourceType === 'split' ? 'spotify youtube' : sourceType}</span>
       {sourceType === 'spotify' && <SpotifyIcon />}
       {sourceType === 'youtube' && <YouTubeIcon />}
+      {sourceType === 'apple' && <AppleIcon />}
       {sourceType === 'split' && <SplitIcon />}
       {sourceType === 'bbc' && <BbcSoundsIcon />}
       {sourceType === 'import' && <ImportIcon />}

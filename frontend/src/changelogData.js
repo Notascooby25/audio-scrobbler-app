@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: '0.10.0',
+    date: '2026-10-02',
+    changes: [
+      'Added support for importing Apple Music (iTunes) listening history exports.',
+      'Updated the import functionality to automatically detect processed Apple Music files.',
+      'Added Apple Music badge and visual integration to the frontend.'
+    ]
+  },
+  {
     version: '0.9.9',
     date: '2026-09-27',
     changes: [

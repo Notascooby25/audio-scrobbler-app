@@ -46,7 +46,7 @@ class UnifiedImportRecord(BaseModel):
     artwork_url: str | None = None
     played_at: str
     track_id: str
-    source: Literal["spotify", "youtube"]
+    source: Literal["spotify", "youtube", "apple"]
 
     model_config = ConfigDict(extra="ignore")
 

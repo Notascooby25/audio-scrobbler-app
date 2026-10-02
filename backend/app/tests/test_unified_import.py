@@ -102,16 +102,18 @@ def test_generate_track_id_is_deterministic_uuid():
     assert len(id1) == 36  # UUID standard string format length
 
 
-def test_detect_source_identifies_spotify_and_youtube():
+def test_detect_source_identifies_spotify_and_youtube_and_apple():
     spotify_account_data = [{"trackName": "Song", "artistName": "Artist", "endTime": "2026-01-01 12:00"}]
     spotify_extended = [{"master_metadata_track_name": "Song", "ts": "2026-01-01T12:00:00Z"}]
     youtube_takeout = [{"header": "YouTube Music", "title": "Watched Song", "subtitles": [{"name": "Artist - Topic"}]}]
     youtube_direct = [{"song": "Song", "artist": "Artist", "time": "2026-01-01T12:00:00Z"}]
+    apple_processed = [{"source": "Apple Music", "song": "Song", "artist": "Artist", "time": "2026-01-01T12:00:00Z"}]
 
     assert detect_source(spotify_account_data) == "spotify"
     assert detect_source(spotify_extended) == "spotify"
     assert detect_source(youtube_takeout) == "youtube"
     assert detect_source(youtube_direct) == "youtube"
+    assert detect_source(apple_processed) == "apple"
 
 
 # ─── Unit Tests: Normalization ────────────────────────────────────────────────
@@ -152,6 +154,23 @@ def test_normalize_record_youtube_takeout_cleans_watched_and_topic():
     assert norm["song_name"] == "Starless (Live)"
     assert norm["artist_name"] == "King Crimson"
     assert norm["source"] == "youtube"
+
+
+def test_normalize_record_apple_extracts_correct_fields():
+    apple_entry = {
+        "source": "Apple Music",
+        "artist": "Radiohead",
+        "song": "Paranoid Android",
+        "release": "OK Computer",
+        "time": "2026-03-10T10:00:00Z"
+    }
+    norm = normalize_record(apple_entry, "apple")
+    assert norm is not None
+    assert norm["song_name"] == "Paranoid Android"
+    assert norm["artist_name"] == "Radiohead"
+    assert norm["album_name"] == "OK Computer"
+    assert norm["source"] == "apple"
+    assert norm["play_id"].startswith(f"apple-{norm['track_id']}-")
 
 
 # ─── Integration Tests: Artwork Cache & Endpoints ─────────────────────────────

@@ -176,13 +176,17 @@ export default function HomePage() {
       const entries = Array.isArray(parsed) ? parsed : parsed.history || parsed.entries || []
       if (!entries.length) throw new Error('No history entries found in this JSON file.')
       const firstEntry = entries[0] || {}
-      const looksLikeSpotify = 'trackUri' in firstEntry || 'endTime' in firstEntry || 'trackName' in firstEntry || 'spotify_track_uri' in firstEntry || 'master_metadata_track_name' in firstEntry
-      const looksLikeYoutube = 'song' in firstEntry || 'subtitles' in firstEntry || 'titleUrl' in firstEntry
-      const source = looksLikeSpotify
-        ? 'spotify'
-        : looksLikeYoutube || file.name.toLowerCase().includes('youtube') || file.name.toLowerCase().includes('watch-history')
-          ? 'youtube'
-          : 'spotify'
+      const explicitSource = (firstEntry.source || '').toString().toLowerCase()
+      const looksLikeApple = explicitSource.includes('apple') || explicitSource.includes('itunes') || file.name.toLowerCase().includes('apple')
+      const looksLikeSpotify = 'trackUri' in firstEntry || 'endTime' in firstEntry || 'trackName' in firstEntry || 'spotify_track_uri' in firstEntry || 'master_metadata_track_name' in firstEntry || explicitSource.includes('spotify')
+      const looksLikeYoutube = 'song' in firstEntry || 'subtitles' in firstEntry || 'titleUrl' in firstEntry || explicitSource.includes('youtube')
+
+      let source = 'spotify'
+      if (looksLikeApple) {
+        source = 'apple'
+      } else if (looksLikeYoutube || file.name.toLowerCase().includes('youtube') || file.name.toLowerCase().includes('watch-history')) {
+        source = 'youtube'
+      }
 
       let result = null
       if (submitImportScrobbles && submitImportScrobbles.mock) {

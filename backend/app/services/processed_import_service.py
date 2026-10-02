@@ -146,13 +146,22 @@ def generate_track_id(source: str, artist: str, song: str, original_uri: str | N
 
 
 def detect_source(entries: list[dict[str, Any]], hint_source: str | None = None) -> str:
-    """Auto-detects whether an export dataset is from Spotify or YouTube."""
-    if hint_source and hint_source.lower() in ("spotify", "youtube"):
+    """Auto-detects whether an export dataset is from Spotify, YouTube, or Apple Music."""
+    if hint_source and hint_source.lower() in ("spotify", "youtube", "apple"):
         return hint_source.lower()
 
     for entry in entries[:20]:
         if not isinstance(entry, dict):
             continue
+            
+        explicit_source = str(entry.get("source", "")).lower()
+        if "apple" in explicit_source or "itunes" in explicit_source:
+            return "apple"
+        if "youtube" in explicit_source:
+            return "youtube"
+        if "spotify" in explicit_source:
+            return "spotify"
+            
         if entry.get("header") == "YouTube Music" or entry.get("subtitles") or "titleUrl" in entry:
             return "youtube"
         if "song" in entry and ("artist" in entry or "release" in entry):
@@ -265,6 +274,43 @@ def normalize_record(entry: dict[str, Any], source: str) -> dict[str, Any] | Non
             "played_at_iso": played_at.isoformat() + "Z",
             "track_id": track_id,
             "source": "youtube",
+            "play_id": play_id,
+            "duration_ms": entry.get("duration_ms") if isinstance(entry.get("duration_ms"), int) else None,
+            "raw_entry": entry,
+        }
+
+    elif source == "apple":
+        artist_name = entry.get("artist")
+        song_name = entry.get("song") or entry.get("title")
+        album_name = entry.get("release") or entry.get("album")
+        time_str = entry.get("time")
+        artwork_url = entry.get("artwork") or entry.get("artwork_url")
+
+        if not isinstance(song_name, str) or not isinstance(artist_name, str) or not isinstance(time_str, str):
+            return None
+        if not song_name.strip() or not artist_name.strip() or not time_str.strip():
+            return None
+
+        played_at = parse_iso_timestamp(time_str)
+        if played_at is None:
+            return None
+
+        track_id = generate_track_id("apple", artist_name, song_name)
+        play_id = f"apple-{track_id}-{played_at.timestamp()}"
+
+        cleaned_art = None
+        if isinstance(artwork_url, str) and artwork_url.strip() and artwork_url.lower() not in ("no artwork", "none", "null"):
+            cleaned_art = artwork_url.strip()
+
+        return {
+            "artist_name": artist_name.strip(),
+            "song_name": song_name.strip(),
+            "album_name": album_name.strip() if isinstance(album_name, str) and album_name.strip() else None,
+            "artwork_url": cleaned_art,
+            "played_at": played_at,
+            "played_at_iso": played_at.isoformat() + "Z",
+            "track_id": track_id,
+            "source": "apple",
             "play_id": play_id,
             "duration_ms": entry.get("duration_ms") if isinstance(entry.get("duration_ms"), int) else None,
             "raw_entry": entry,

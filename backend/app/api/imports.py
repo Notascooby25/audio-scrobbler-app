@@ -26,7 +26,7 @@ from ..schemas.imports import (
 from ..services.processed_import_service import process_unified_import, process_unified_import_stream
 
 router = APIRouter(tags=["imports"])
-IMPORT_SOURCES = ("spotify", "youtube")
+IMPORT_SOURCES = ("spotify", "youtube", "apple")
 
 
 def _run_import(db: Session, user_id: int, source: str, entries: list[dict[str, object]]) -> ImportScrobbleResponse:
