@@ -13,6 +13,7 @@ export function formatScrobbleTime(value, now = Date.now(), mode = 'relative') {
   }
 
   return new Intl.DateTimeFormat(undefined, {
+    year: 'numeric',
     day: 'numeric',
     hour: 'numeric',
     hour12: true,

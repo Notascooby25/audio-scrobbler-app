@@ -23,6 +23,7 @@ describe('formatScrobbleTime', () => {
     const result = formatScrobbleTime('2026-09-09T10:30:00', now)
     expect(result).toMatch(/sep/i)
     expect(result).toContain('9')
+    expect(result).toContain('2026')
     expect(result).toMatch(/10:30\s*am/i)
   })
 
@@ -30,6 +31,7 @@ describe('formatScrobbleTime', () => {
     const result = formatScrobbleTime('2026-09-10T11:42:00', now, 'absolute')
     expect(result).toMatch(/sep/i)
     expect(result).toContain('10')
+    expect(result).toContain('2026')
     expect(result).toMatch(/11:42\s*am/i)
   })
 })
