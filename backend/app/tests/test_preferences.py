@@ -35,6 +35,14 @@ class FakeDB:
     def add(self, value):
         if getattr(value, "theme", None) is None:
             value.theme = "system"
+        if getattr(value, "notify_recaps", None) is None:
+            value.notify_recaps = True
+        if getattr(value, "notify_milestones", None) is None:
+            value.notify_milestones = True
+        if getattr(value, "notify_system", None) is None:
+            value.notify_system = False
+        if getattr(value, "recap_frequency", None) is None:
+            value.recap_frequency = "weekly"
         self.preferences = value
 
     def commit(self):

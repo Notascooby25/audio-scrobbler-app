@@ -21,6 +21,10 @@ class UserPreferencesResponse(BaseModel):
     show_artwork: bool
     show_source_badges: bool
     timestamp_mode: str
+    notify_recaps: bool = True
+    notify_milestones: bool = True
+    notify_system: bool = False
+    recap_frequency: str = "weekly"
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -37,3 +41,7 @@ class UserPreferencesUpdate(BaseModel):
     show_artwork: bool | None = None
     show_source_badges: bool | None = None
     timestamp_mode: str | None = None
+    notify_recaps: bool | None = None
+    notify_milestones: bool | None = None
+    notify_system: bool | None = None
+    recap_frequency: str | None = None

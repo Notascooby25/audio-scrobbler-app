@@ -52,6 +52,10 @@ class UserPreferences(Base):
     show_artwork: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     show_source_badges: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     timestamp_mode: Mapped[str] = mapped_column(String(16), nullable=False, default="relative")
+    notify_recaps: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    notify_milestones: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    notify_system: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    recap_frequency: Mapped[str] = mapped_column(String(16), nullable=False, default="weekly")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
@@ -206,4 +210,31 @@ class FollowedShow(Base):
     synopsis: Mapped[str | None] = mapped_column(Text, nullable=True)
     image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    type: Mapped[str] = mapped_column(String(32), nullable=False, default="general")
+    is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class PushSubscription(Base):
+    __tablename__ = "push_subscriptions"
+    __table_args__ = (
+        UniqueConstraint("user_id", "endpoint", name="uq_push_subscription_user_endpoint"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    endpoint: Mapped[str] = mapped_column(Text, nullable=False)
+    p256dh: Mapped[str] = mapped_column(String(255), nullable=False)
+    auth: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
 

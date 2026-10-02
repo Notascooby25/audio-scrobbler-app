@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import AnalyticsPage from '../components/AnalyticsPage'
-import { deleteImportedScrobbles, enableLikedTracksSync, fetchBlocks, fetchScrobbleSettings, fetchUserSettings, removeBlock, updateScrobbleSettings, updateUserSettings, startArtworkBackfill, fetchImportBatches, advancedDeleteImports } from '../api'
+import { deleteImportedScrobbles, enableLikedTracksSync, fetchBlocks, fetchScrobbleSettings, fetchUserSettings, removeBlock, updateScrobbleSettings, updateUserSettings, startArtworkBackfill, fetchImportBatches, advancedDeleteImports, subscribeToPushNotifications } from '../api'
 import { readSession } from '../session'
 import ImportProgressBar from '../components/ImportProgressBar'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
@@ -12,6 +12,7 @@ const SETTINGS_TABS = [
   ['views', 'Views'],
   ['scrobble', 'Scrobble'],
   ['data', 'Data'],
+  ['notifications', 'Notifications'],
   ['danger', 'Danger Zone'],
 ]
 
@@ -58,7 +59,30 @@ export default function SettingsPage() {
   const [advancedDeleteError, setAdvancedDeleteError] = useState('')
   const [backfillState, setBackfillState] = useState('idle')
   const [backfillProgress, setBackfillProgress] = useState(null)
+    const [notifications, setNotifications] = useState([])
+  const [notificationsLoading, setNotificationsLoading] = useState(false)
   const saveTimer = useRef(null)
+
+    useEffect(() => {
+    if (activeTab === 'notifications' && session?.accessToken) {
+      setNotificationsLoading(true)
+      import('../api').then(({ fetchNotifications, markNotificationsRead }) => {
+        fetchNotifications({ token: session.accessToken })
+          .then(data => {
+            setNotifications(data)
+            setNotificationsLoading(false)
+            // Mark them as read if there are unread ones
+            if (data.some(n => !n.is_read)) {
+              markNotificationsRead({ token: session.accessToken })
+            }
+          })
+          .catch(e => {
+            console.error(e)
+            setNotificationsLoading(false)
+          })
+      })
+    }
+  }, [activeTab, session?.accessToken])
 
   useEffect(() => {
     if (!session?.accessToken) return
@@ -502,7 +526,97 @@ export default function SettingsPage() {
           </div>
         </section>
       )}
-      {activeTab === 'danger' && session?.accessToken && (
+            {activeTab === 'notifications' && settings && (
+        <section
+          className="settings-form"
+          role="tabpanel"
+          id="settings-panel-notifications"
+          aria-labelledby="settings-tab-notifications"
+        >
+                    <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Recent Alerts</h3>
+          <div style={{ marginBottom: '2rem', paddingBottom: '1.5rem', borderBottom: '0.5px solid var(--color-border)' }}>
+            {notificationsLoading && <p className="panel-meta">Loading notifications...</p>}
+            {!notificationsLoading && notifications.length === 0 && <p className="panel-meta">No recent notifications.</p>}
+            {!notificationsLoading && notifications.length > 0 && (
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                {notifications.map(n => (
+                  <li key={n.id} style={{ padding: '0.75rem', backgroundColor: n.is_read ? 'transparent' : 'var(--color-surface)', borderRadius: '4px', marginBottom: '0.5rem' }}>
+                    <div style={{ fontWeight: 'bold' }}>{n.title}</div>
+                    <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{n.message}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--color-meta)', marginTop: '0.25rem' }}>{new Date(n.created_at).toLocaleString()}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Notification Preferences</h3>
+          <label className="settings-checkbox">
+            <input type="checkbox" checked={settings.notify_recaps} onChange={(event) => changeSetting('notify_recaps', event.target.checked)} />
+            Recaps & Insights (Weekly/Monthly summaries)
+          </label>
+          
+          {settings.notify_recaps && (
+            <label style={{ marginLeft: '1.5rem', marginBottom: '1rem', display: 'block' }}>
+              Recap Frequency
+              <select value={settings.recap_frequency} onChange={(event) => changeSetting('recap_frequency', event.target.value)}>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </label>
+          )}
+
+          <label className="settings-checkbox">
+            <input type="checkbox" checked={settings.notify_milestones} onChange={(event) => changeSetting('notify_milestones', event.target.checked)} />
+            Personal Milestones & Streaks
+          </label>
+          <label className="settings-checkbox">
+            <input type="checkbox" checked={settings.notify_system} onChange={(event) => changeSetting('notify_system', event.target.checked)} />
+            System & Health Alerts
+          </label>
+
+          <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '0.5px solid var(--color-border)', maxWidth: '100%', boxSizing: 'border-box' }}>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Device Push Notifications</h3>
+            <p className="notice" style={{ marginBottom: '1rem' }}>
+              Receive alerts directly on your device even when the app is closed.
+            </p>
+            <button type="button" className="secondary-button" onClick={async () => {
+              if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                alert('Push notifications are not supported by your browser.');
+                return;
+              }
+              try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                  const vapidRes = await fetch(`${import.meta.env.VITE_API_URL || '/api/v1'}/notifications/push/vapid_public_key`);
+                  const vapidData = await vapidRes.json();
+                  const reg = await navigator.serviceWorker.ready;
+                  const sub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: vapidData.vapid_public_key
+                  });
+                  await subscribeToPushNotifications({ token: session.accessToken, subscription: sub.toJSON() });
+                  alert('Subscribed to push notifications successfully!');
+                } else {
+                  alert('Permission for notifications was denied.');
+                }
+              } catch (err) {
+                alert('Failed to subscribe: ' + err.message);
+              }
+            }}>
+              Enable Device Notifications
+            </button>
+            <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'var(--color-surface)', borderRadius: '8px', fontSize: '0.9rem' }}>
+              <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Setup Instructions:</p>
+              <ul style={{ paddingLeft: '1.2rem', margin: 0 }}>
+                <li style={{ marginBottom: '0.5rem' }}><strong>iOS:</strong> You must first add this app to your Home Screen (Share → Add to Home Screen). Open it from your home screen, then come back to this menu to enable notifications.</li>
+                <li><strong>Android/Desktop:</strong> Click 'Enable' and accept the browser permission prompt. If on mobile, install the app via your browser menu for the best experience.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      )}
+{activeTab === 'danger' && session?.accessToken && (
         <section
           className="settings-form settings-danger-zone"
           role="tabpanel"

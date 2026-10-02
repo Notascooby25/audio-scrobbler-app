@@ -443,3 +443,51 @@ export function copyScrobbles({ token, userId, startDate, endDate }) {
     }
   })
 }
+
+export async function fetchNotifications({ token }) {
+  const res = await fetch(`${API_BASE}/notifications`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to fetch notifications");
+  return res.json();
+}
+
+export async function fetchUnreadNotificationCount({ token }) {
+  const res = await fetch(`${API_BASE}/notifications/unread_count`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to fetch unread count");
+  return res.json();
+}
+
+export async function markNotificationsRead({ token }) {
+  const res = await fetch(`${API_BASE}/notifications/mark_read`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to mark notifications read");
+  return res.json();
+}
+
+export async function subscribeToPushNotifications({ token, subscription }) {
+  const res = await fetch(`${API_BASE}/notifications/push/subscribe`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      endpoint: subscription.endpoint,
+      p256dh: subscription.keys ? subscription.keys.p256dh : "",
+      auth: subscription.keys ? subscription.keys.auth : ""
+    })
+  });
+  if (!res.ok) throw new Error("Failed to subscribe to push notifications");
+  return res.json();
+}
+
+export async function fetchVapidPublicKey() {
+  const res = await fetch(`${API_BASE}/notifications/push/vapid_public_key`);
+  if (!res.ok) throw new Error("Failed to fetch VAPID key");
+  return res.json();
+}

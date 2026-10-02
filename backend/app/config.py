@@ -35,10 +35,17 @@ class Settings:
     # to create an account, only that they have a Spotify login.
     allowed_spotify_user_ids: str = os.getenv("ALLOWED_SPOTIFY_USER_IDS", "")
     enable_deezer_artwork_lookup: bool = os.getenv("ENABLE_DEEZER_LOOKUP", "true").lower() == "true"
+    vapid_public_key: str = os.getenv("VAPID_PUBLIC_KEY", "")
+    vapid_private_key: str = os.getenv("VAPID_PRIVATE_KEY", "")
+    vapid_claims: dict[str, str] = None  # Setup dynamically
     cors_origins: str = os.getenv(
     "CORS_ORIGINS",
     "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000",
 )
+
+    def __post_init__(self):
+        if self.vapid_public_key and self.vapid_private_key:
+            object.__setattr__(self, "vapid_claims", {"sub": "mailto:admin@localhost"})
 
     def allowed_cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
