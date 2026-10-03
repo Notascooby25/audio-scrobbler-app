@@ -445,7 +445,7 @@ export function copyScrobbles({ token, userId, startDate, endDate }) {
 }
 
 export async function fetchNotifications({ token }) {
-  const res = await fetch(`${API_BASE}/notifications`, {
+  const res = await fetch(`${API_BASE_URL}/notifications`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   if (!res.ok) throw new Error("Failed to fetch notifications");
@@ -453,7 +453,7 @@ export async function fetchNotifications({ token }) {
 }
 
 export async function fetchUnreadNotificationCount({ token }) {
-  const res = await fetch(`${API_BASE}/notifications/unread_count`, {
+  const res = await fetch(`${API_BASE_URL}/notifications/unread_count`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   if (!res.ok) throw new Error("Failed to fetch unread count");
@@ -461,7 +461,7 @@ export async function fetchUnreadNotificationCount({ token }) {
 }
 
 export async function markNotificationsRead({ token }) {
-  const res = await fetch(`${API_BASE}/notifications/mark_read`, {
+  const res = await fetch(`${API_BASE_URL}/notifications/mark_read`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` }
   });
@@ -470,7 +470,7 @@ export async function markNotificationsRead({ token }) {
 }
 
 export async function subscribeToPushNotifications({ token, subscription }) {
-  const res = await fetch(`${API_BASE}/notifications/push/subscribe`, {
+  const res = await fetch(`${API_BASE_URL}/notifications/push/subscribe`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -487,7 +487,7 @@ export async function subscribeToPushNotifications({ token, subscription }) {
 }
 
 export async function fetchVapidPublicKey() {
-  const res = await fetch(`${API_BASE}/notifications/push/vapid_public_key`);
+  const res = await fetch(`${API_BASE_URL}/notifications/push/vapid_public_key`);
   if (!res.ok) throw new Error("Failed to fetch VAPID key");
   return res.json();
 }

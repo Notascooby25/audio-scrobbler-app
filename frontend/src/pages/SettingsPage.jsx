@@ -588,7 +588,7 @@ export default function SettingsPage() {
               try {
                 const permission = await Notification.requestPermission();
                 if (permission === 'granted') {
-                  const vapidRes = await fetch(`${import.meta.env.VITE_API_URL || '/api/v1'}/notifications/push/vapid_public_key`);
+                  const vapidRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/notifications/push/vapid_public_key`);
                   const vapidData = await vapidRes.json();
                   const reg = await navigator.serviceWorker.ready;
                   const sub = await reg.pushManager.subscribe({

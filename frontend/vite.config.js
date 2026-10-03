@@ -53,6 +53,7 @@ export default defineConfig({
       '/health': { target: backendUrl, changeOrigin: true },
       '/readyz': { target: backendUrl, changeOrigin: true },
       '/tools': { target: backendUrl, changeOrigin: true },
+      '/notifications': { target: backendUrl, changeOrigin: true },
     },
   },
 })
