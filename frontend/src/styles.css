@@ -3669,3 +3669,19 @@ dd {
 .liked-heart-active svg {
   animation: heart-burst 240ms cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+.desktop-bell {
+  display: block;
+}
+.mobile-bell {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .desktop-bell {
+    display: none;
+  }
+  .mobile-bell {
+    display: block;
+  }
+}

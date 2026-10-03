@@ -32,16 +32,39 @@ export default function HeaderNav() {
       <div className="topbar-brand">
         <img src="/logo.png" alt="Audio Scrobbler App" className="topbar-logo" />
       </div>
-      <button
-        type="button"
-        className="nav-menu-toggle"
-        aria-label="Toggle navigation menu"
-        aria-expanded={isMenuOpen}
-        aria-controls="primary-navigation"
-        onClick={() => setIsMenuOpen((open) => !open)}
-      >
-        Menu
-      </button>
+      
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        {session?.accessToken && (
+          <div className="mobile-bell">
+            <NavLink to="/settings?tab=notifications" className={linkClassName} onClick={() => setIsMenuOpen(false)}>
+              <span style={{ position: 'relative', fontSize: '1.2rem' }}>
+                🔔
+                {unreadCount > 0 && (
+                  <span style={{
+                    position: 'absolute', top: '-5px', right: '-10px',
+                    backgroundColor: 'red', color: 'white', borderRadius: '50%',
+                    padding: '2px 5px', fontSize: '10px', fontWeight: 'bold'
+                  }}>
+                    {unreadCount}
+                  </span>
+                )}
+              </span>
+            </NavLink>
+          </div>
+        )}
+        
+        <button
+          type="button"
+          className="nav-menu-toggle"
+          aria-label="Toggle navigation menu"
+          aria-expanded={isMenuOpen}
+          aria-controls="primary-navigation"
+          onClick={() => setIsMenuOpen((open) => !open)}
+        >
+          Menu
+        </button>
+      </div>
+
       <nav
         id="primary-navigation"
         className={isMenuOpen ? 'topbar-nav topbar-nav-open' : 'topbar-nav'}
@@ -53,20 +76,22 @@ export default function HeaderNav() {
           </NavLink>
         ))}
         {session?.accessToken && (
-          <NavLink to="/settings?tab=notifications" className={linkClassName} onClick={() => setIsMenuOpen(false)}>
-            <span style={{ position: 'relative' }}>
-              🔔
-              {unreadCount > 0 && (
-                <span style={{
-                  position: 'absolute', top: '-5px', right: '-10px',
-                  backgroundColor: 'red', color: 'white', borderRadius: '50%',
-                  padding: '2px 5px', fontSize: '10px', fontWeight: 'bold'
-                }}>
-                  {unreadCount}
-                </span>
-              )}
-            </span>
-          </NavLink>
+          <div className="desktop-bell">
+            <NavLink to="/settings?tab=notifications" className={linkClassName} onClick={() => setIsMenuOpen(false)}>
+              <span style={{ position: 'relative' }}>
+                🔔
+                {unreadCount > 0 && (
+                  <span style={{
+                    position: 'absolute', top: '-5px', right: '-10px',
+                    backgroundColor: 'red', color: 'white', borderRadius: '50%',
+                    padding: '2px 5px', fontSize: '10px', fontWeight: 'bold'
+                  }}>
+                    {unreadCount}
+                  </span>
+                )}
+              </span>
+            </NavLink>
+          </div>
         )}
       </nav>
     </header>
