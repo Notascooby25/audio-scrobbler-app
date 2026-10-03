@@ -40,6 +40,8 @@ services:
       WORKER_INGESTION_TOKEN: ${WORKER_INGESTION_TOKEN:-dev-worker-token}
       REFRESH_TOKEN_KEY: ${REFRESH_TOKEN_KEY:-0123456789abcdef0123456789abcdef}
       JWT_SECRET: ${JWT_SECRET:-change-me}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz')"]
       interval: 10s
