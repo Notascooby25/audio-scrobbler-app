@@ -605,6 +605,13 @@ export default function SettingsPage() {
                   const vapidRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/notifications/push/vapid_public_key`);
                   const vapidData = await vapidRes.json();
                   const reg = await navigator.serviceWorker.ready;
+                  let existingSub = await reg.pushManager.getSubscription();
+                  if (existingSub) {
+                    // If keys changed or there's a stale subscription, Chrome throws a Push Service Error
+                    // unless we unsubscribe from the old one first.
+                    await existingSub.unsubscribe();
+                  }
+                  
                   const sub = await reg.pushManager.subscribe({
                     userVisibleOnly: true,
                     applicationServerKey: urlBase64ToUint8Array(vapidData.vapid_public_key.trim())
