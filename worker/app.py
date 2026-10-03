@@ -417,6 +417,21 @@ def start_scheduler() -> None:
         )
 
     scheduler.start()
+    
+    # Schedule Recaps Generation daily at 8:00 AM UTC
+    try:
+        from recaps import generate_recaps
+        scheduler.add_job(
+            generate_recaps, 
+            "cron", 
+            hour=8, 
+            minute=0, 
+            id="recaps-generation",
+            replace_existing=True
+        )
+    except Exception as e:
+        logger.error(f"Failed to schedule recaps: {e}")
+
     if fixture_enabled:
         scheduler.add_job(run_fixture_ingestion, "interval", minutes=1, id="fixture-ingestion")
     if spotify_enabled:

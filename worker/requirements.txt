@@ -6,3 +6,4 @@ sqlalchemy==2.0.35
 psycopg[binary]>=3.2.10
 python-dotenv==1.0.1
 cryptography==50.0.2
+pywebpush==1.9.3
