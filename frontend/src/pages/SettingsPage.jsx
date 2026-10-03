@@ -574,6 +574,7 @@ export default function SettingsPage() {
             <label style={{ marginLeft: '1.5rem', marginBottom: '1rem', display: 'block' }}>
               Recap Frequency
               <select value={settings.recap_frequency} onChange={(event) => changeSetting('recap_frequency', event.target.value)}>
+                <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
               </select>
