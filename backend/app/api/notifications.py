@@ -82,3 +82,50 @@ def subscribe_push(
 def get_vapid_public_key():
     from app.config import settings
     return {"vapid_public_key": settings.vapid_public_key}
+
+@router.post("/push/test")
+def test_push_notification(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    from pywebpush import webpush, WebPushException
+    from app.config import settings
+    import json
+    
+    if not settings.vapid_private_key:
+        return {"status": "error", "message": "VAPID keys not configured on server"}
+        
+    subs = db.scalars(select(PushSubscription).where(PushSubscription.user_id == current_user.id)).all()
+    if not subs:
+        return {"status": "error", "message": "No active subscriptions found"}
+        
+    success = 0
+    for sub in subs:
+        try:
+            webpush(
+                subscription_info={
+                    'endpoint': sub.endpoint,
+                    'keys': {'p256dh': sub.p256dh, 'auth': sub.auth}
+                },
+                data=json.dumps({
+                    'title': 'Test Notification',
+                    'body': 'This is a test notification from Audio Scrobbler!',
+                    'url': '/settings?tab=notifications'
+                }),
+                vapid_private_key=settings.vapid_private_key,
+                vapid_claims={"sub": "mailto:admin@example.com"}
+            )
+            success += 1
+        except WebPushException as e:
+            print(f"WebPush exception: {e}")
+            
+    # Also add it to the in-app notification bell list
+    db.add(Notification(
+        user_id=current_user.id,
+        title="Test Notification",
+        message="This is a test notification from Audio Scrobbler!",
+        type="general"
+    ))
+    db.commit()
+            
+    return {"status": "ok", "sent_to": success}

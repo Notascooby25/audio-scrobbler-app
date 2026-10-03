@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import AnalyticsPage from '../components/AnalyticsPage'
-import { deleteImportedScrobbles, enableLikedTracksSync, fetchBlocks, fetchScrobbleSettings, fetchUserSettings, removeBlock, updateScrobbleSettings, updateUserSettings, startArtworkBackfill, fetchImportBatches, advancedDeleteImports, subscribeToPushNotifications } from '../api'
+import { deleteImportedScrobbles, enableLikedTracksSync, fetchBlocks, fetchScrobbleSettings, fetchUserSettings, removeBlock, updateScrobbleSettings, updateUserSettings, startArtworkBackfill, fetchImportBatches, advancedDeleteImports, subscribeToPushNotifications, sendTestNotification } from '../api'
 import { readSession } from '../session'
 import ImportProgressBar from '../components/ImportProgressBar'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
@@ -627,6 +627,16 @@ export default function SettingsPage() {
               }
             }}>
               Enable Device Notifications
+            </button>
+            <button type="button" className="settings-button" style={{ marginLeft: '1rem', background: 'var(--color-surface)', color: 'var(--color-ink)' }} onClick={async () => {
+              try {
+                const res = await sendTestNotification({ token: session.accessToken });
+                alert(`Test notification requested! Server sent to ${res.sent_to} registered device(s).`);
+              } catch (err) {
+                alert('Failed to send test notification: ' + err.message);
+              }
+            }}>
+              Send Test Notification
             </button>
             <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'var(--color-surface)', borderRadius: '8px', fontSize: '0.9rem' }}>
               <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Setup Instructions:</p>

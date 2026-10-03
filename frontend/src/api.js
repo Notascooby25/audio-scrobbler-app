@@ -491,3 +491,12 @@ export async function fetchVapidPublicKey() {
   if (!res.ok) throw new Error("Failed to fetch VAPID key");
   return res.json();
 }
+
+export async function sendTestNotification({ token }) {
+  const res = await fetch(`${API_BASE_URL}/notifications/push/test`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to send test notification");
+  return res.json();
+}
