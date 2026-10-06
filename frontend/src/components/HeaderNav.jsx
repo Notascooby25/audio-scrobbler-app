@@ -18,10 +18,26 @@ export default function HeaderNav() {
   const session = readSession()
 
   useEffect(() => {
-    if (session?.accessToken) {
+    if (!session?.accessToken) return
+
+    const fetchCount = () => {
       fetchUnreadNotificationCount({ token: session.accessToken })
         .then(data => setUnreadCount(data.count))
         .catch(err => console.error("Could not fetch unread count:", err))
+    }
+
+    // Fetch immediately on mount
+    fetchCount()
+
+    // Poll every 1 minute
+    const interval = setInterval(fetchCount, 60 * 1000)
+
+    const handleRead = () => setUnreadCount(0)
+    window.addEventListener('notifications_read', handleRead)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('notifications_read', handleRead)
     }
   }, [session?.accessToken])
 

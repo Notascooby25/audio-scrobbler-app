@@ -51,7 +51,7 @@ export default function SettingsPage() {
 
   const [activeTab, setActiveTab] = useState(() => {
     if (tabParam === 'scopecreep') return 'scrobble'
-    if (['general', 'views', 'scrobble', 'data', 'danger'].includes(tabParam)) {
+    if (['general', 'views', 'scrobble', 'data', 'notifications', 'danger'].includes(tabParam)) {
       return tabParam
     }
     return 'general'
@@ -87,7 +87,9 @@ export default function SettingsPage() {
             setNotificationsLoading(false)
             // Mark them as read if there are unread ones
             if (data.some(n => !n.is_read)) {
-              markNotificationsRead({ token: session.accessToken })
+              markNotificationsRead({ token: session.accessToken }).then(() => {
+                window.dispatchEvent(new Event('notifications_read'))
+              })
             }
           })
           .catch(e => {

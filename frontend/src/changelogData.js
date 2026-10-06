@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: '0.11.1',
+    date: '2026-10-06',
+    changes: [
+      'Fixed a bug preventing the notifications page from loading when clicking the bell icon.',
+      'Added real-time notification syncing so the bell instantly clears when notifications are read.',
+      'Added periodic polling (every 1 minute) to update the unread notification badge automatically while the app is open.'
+    ]
+  },
+  {
     version: '0.10.0',
     date: '2026-10-02',
     changes: [
