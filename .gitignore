@@ -36,3 +36,4 @@ scripts/systemd/audio-scrobbler-backup.env
 # Full agent handover: names, account IDs, hostnames, LAN details and known
 # weaknesses. Local only; the redacted, committable version is HANDOVER.md.
 HANDOVER.private.md
+*.db
