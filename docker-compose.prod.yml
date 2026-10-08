@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -15,6 +16,7 @@ services:
 
   backend:
     image: ghcr.io/${GHCR_OWNER}/audio-scrobbler-app-backend:${IMAGE_TAG}
+    restart: unless-stopped
     labels:
       - com.centurylinklabs.watchtower.enable=true
       - com.centurylinklabs.watchtower.scope=audio-scrobbler-app
@@ -52,6 +54,7 @@ services:
 
   worker:
     image: ghcr.io/${GHCR_OWNER}/audio-scrobbler-app-worker:${IMAGE_TAG}
+    restart: unless-stopped
     labels:
       - com.centurylinklabs.watchtower.enable=true
       - com.centurylinklabs.watchtower.scope=audio-scrobbler-app
@@ -95,6 +98,7 @@ services:
   # the frontend on same-origin relative requests through nginx's proxy.
   frontend:
     image: ghcr.io/${GHCR_OWNER}/audio-scrobbler-app-frontend:${IMAGE_TAG}
+    restart: unless-stopped
     labels:
       - com.centurylinklabs.watchtower.enable=true
       - com.centurylinklabs.watchtower.scope=audio-scrobbler-app
@@ -121,6 +125,7 @@ services:
 
   prometheus:
     image: prom/prometheus:v2.54.1
+    restart: unless-stopped
     volumes:
       - prometheus_data:/prometheus
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -147,6 +152,7 @@ services:
 
   alertmanager:
     image: prom/alertmanager:v0.27.0
+    restart: unless-stopped
     environment:
       ALERTMANAGER_CRITICAL_WEBHOOK_URL: ${ALERTMANAGER_CRITICAL_WEBHOOK_URL:-http://127.0.0.1:65535/disabled}
       ALERTMANAGER_WARNING_WEBHOOK_URL: ${ALERTMANAGER_WARNING_WEBHOOK_URL:-http://127.0.0.1:65535/disabled}
@@ -163,6 +169,7 @@ services:
 
   node-exporter:
     image: prom/node-exporter:v1.8.2
+    restart: unless-stopped
     volumes:
       - ./monitoring:/host-monitoring:ro
     command:
@@ -192,6 +199,7 @@ services:
   # running multiple instances.
   watchtower:
     image: containrrr/watchtower:latest
+    restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       # Required rather than defaulted: unset, this resolved to
