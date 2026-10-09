@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: '0.11.2',
+    date: '2026-10-09',
+    changes: [
+      'Increased the default login session duration from 1 hour to 90 days, so you stay logged in without needing to reconnect constantly.'
+    ]
+  },
+  {
     version: '0.11.1',
     date: '2026-10-06',
     changes: [

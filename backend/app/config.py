@@ -19,7 +19,7 @@ class Settings:
     refresh_token_key: str = os.getenv("REFRESH_TOKEN_KEY", "0123456789abcdef0123456789abcdef")
     ingestion_worker_url: str = os.getenv("INGESTION_WORKER_URL", "http://worker:8001")
     worker_ingestion_token: str = os.getenv("WORKER_INGESTION_TOKEN", "dev-worker-token")
-    access_token_ttl_seconds: int = int(os.getenv("ACCESS_TOKEN_TTL_SECONDS", "3600"))
+    access_token_ttl_seconds: int = int(os.getenv("ACCESS_TOKEN_TTL_SECONDS", "7776000"))
     dev_user_id: int = int(os.getenv("DEV_USER_ID", "1"))
     dev_user_spotify_id: str = os.getenv("DEV_USER_SPOTIFY_ID", "development-user")
     dev_user_display_name: str = os.getenv("DEV_USER_DISPLAY_NAME", "Development User")
