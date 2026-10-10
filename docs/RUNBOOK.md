@@ -41,6 +41,50 @@ during an incident without reconstructing context.
 
 ---
 
+## How the app works
+
+### 1. The containers
+
+Production runs eight containers defined in `docker-compose.prod.yml`:
+
+| Container | Role |
+|---|---|
+| `frontend` | Serves the compiled React PWA via nginx and reverse-proxies API paths (`/auth`, `/analytics`, `/stats`, `/library`, `/reports`, `/import`, `/ingestion`, `/spotify`, `/users`, `/tools`, `/notifications`) to `backend:8000`. |
+| `backend` | FastAPI server (`backend/app/main.py`). Runs `alembic upgrade head` on startup before accepting requests, handles authentication, serves analytics/charts, and exposes internal worker endpoints. |
+| `worker` | Python background service (`worker/app.py`) running APScheduler jobs plus a lightweight FastAPI `/health`, `/readyz`, and `/metrics` server on port `8001`. |
+| `db` | PostgreSQL 16 (`postgres_data` named volume). Holds all users, scrobbles (`listening_events`), caches, followed shows, and notifications. |
+| `watchtower` | Polls GHCR every 5 minutes (`WATCHTOWER_POLL_INTERVAL=300`) and recreates `frontend`, `backend`, or `worker` whenever a new `:latest` image is published by GitHub Actions. |
+| `prometheus`, `alertmanager`, `node-exporter` | Internal monitoring stack (no host ports published). Scrapes `/metrics` from `backend` and `worker`, plus host textfile metrics (`monitoring/*.prom`) written by the backup scripts. |
+
+### 2. How music data enters the database
+
+Every play is stored as a row in `listening_events` and deduplicated by `(user_id, source, play_id)` and `(user_id, track_id, played_at)`. Tracks enter through three paths:
+
+1. **Automatic Spotify polling (`worker/app.py` + `worker/spotify_ingestion.py`):**
+   - **Recently Played (`spotify-ingestion`):** The scheduler wakes up every 1 minute (`WORKER_SPOTIFY_INTERVAL_MINUTES=1`) and checks which active users are due based on their personal `poll_interval_minutes` setting (default 5 minutes) and `ingestion_checkpoints.last_polled_at`.
+   - **Real-Time / Now Playing (`currently-playing-sync`):** Runs every 10 seconds for users who enabled real-time sync in Settings. Tracks live playback progress in `realtime_playback_state` and records a scrobble once playback crosses the user's `scrobble_threshold_percent` (default 50%).
+   - **Liked Songs (`liked-tracks-ingestion`):** Runs every 30 minutes (`WORKER_LIKED_TRACKS_INTERVAL_MINUTES=30`) for users who clicked "Sync Liked Songs". Walks their Spotify library one 40-track page per tick during initial backfill, then checks daily for newly liked songs.
+   - **Artist Genre Backfill (`genre_cache_backfill`):** Runs every 5 minutes (`WORKER_GENRE_CACHE_INTERVAL_MINUTES=5`), resolving up to 50 uncached artists per tick (`WORKER_GENRE_CACHE_BATCH_SIZE=50`) into `genre_cache` via Spotify's artist endpoint (with Last.fm fallback) so the **Top Genres** chart never calls Spotify inline during a page load.
+2. **Historical file imports (`backend/app/api/imports.py`):**
+   - Users can upload **Spotify**, **YouTube**, or **Apple Music** JSON exports from the UI (`POST /import/unified?stream=true`), which normalizes entries, resolves missing artwork via iTunes/Deezer into `artwork_cache`, and streams live progress via Server-Sent Events (SSE).
+   - Unattended server-side imports (`file-import` job, every 10 minutes when `WORKER_FILE_IMPORT_ENABLED=true`) process files named `user-<id>-<source>.json` dropped into `/data/imports`.
+3. **BBC Sounds / "Scope Creep" (`backend/app/api/tools.py`):**
+   - Users can paste a BBC Sounds episode URL or search/follow BBC radio programmes (`followed_shows` table).
+   - The backend queries the public BBC RMS API for the episode tracklist, resolves artwork via iTunes/Deezer, and lets the user either **scrobble selected tracks** (spaced by their broadcast `offset_seconds`) or **export them to Spotify** (creating a new playlist or appending to an existing one).
+
+### 3. Scheduled worker jobs at a glance
+
+| Job ID | Schedule | What it does |
+|---|---|---|
+| `spotify-ingestion` | Every 1 min (checks per-user cadence, default 5 min) | Polls Spotify recently played tracks and submits new scrobbles. |
+| `currently-playing-sync` | Every 10 sec | Updates "Now Playing" state and triggers real-time threshold scrobbles. |
+| `liked-tracks-ingestion` | Every 30 min | Syncs Spotify Liked Songs (opt-in per user, 40 tracks/tick backfill, then daily). |
+| `genre_cache_backfill` | Every 5 min | Backfills artist genres into `genre_cache` (up to 50 artists/tick). |
+| `recaps-generation` | Daily at 08:00 UTC | Generates Daily, Weekly (Mondays), or Monthly (1st of month) listening recap notifications and sends Web Push alerts (`worker/recaps.py`). |
+| `file-import` | Every 10 min (if `WORKER_FILE_IMPORT_ENABLED=true`) | Imports `user-<id>-<source>.json` files from `/data/imports`. |
+
+---
+
 ## Restore the database from a backup
 
 **This is the procedure the PDFs get wrong.** Dumps are PostgreSQL *custom
@@ -173,9 +217,10 @@ docker exec audio-scrobbler-app-db-1 psql -U scrobbler -d scrobbler -P pager=off
 `sync_liked_tracks_for_user` returns early if `last_synced_at` is under 24h
 old, so `audio_scrobbler_worker_liked_tracks_sync_events` is 0 on nearly every
 tick. `users: 1, events: 0, failures: 0` is what *success* looks like here,
-not a stall. The worker also never calls `logging.basicConfig()`, so its
-`logger.info` lines never reach the logs — absence of liked-tracks log lines
-means nothing either way.
+not a stall. Note that `worker/app.py` configures `logging.basicConfig()` using
+`WORKER_LOG_LEVEL` (default `INFO`), so active sync ticks log per-user counts to
+`docker logs audio-scrobbler-app-worker-1`, whereas steady-state early returns
+produce no log line.
 
 ---
 
@@ -309,3 +354,49 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d backe
 
 To find the ID of someone who was just rejected, check the backend logs around
 their attempt, or ask them for their Spotify username.
+
+---
+
+## Notifications & Web Push (recaps)
+
+The app supports both **in-app notifications** (the bell icon in the header, backed by the `notifications` table) and **browser/PWA Web Push** (backed by the `push_subscriptions` table and `pywebpush`).
+
+### How recaps are scheduled
+
+- The worker schedules `generate_recaps` (`worker/recaps.py`) daily at **08:00 UTC**.
+- For each user with `user_preferences.notify_recaps = true`, it checks `recap_frequency`:
+  - `daily`: summarizes the last 24 hours.
+  - `weekly`: runs on **Mondays** and summarizes the last 7 days.
+  - `monthly`: runs on the **1st of the month** and summarizes the previous calendar month.
+- If the user had at least 1 scrobble in that window, the worker inserts a row into `notifications` and (if `VAPID_PRIVATE_KEY` is set) sends a Web Push payload to all of the user's registered `push_subscriptions`.
+
+### Checking state & troubleshooting
+
+```bash
+# Check recent notifications and active push subscriptions
+docker exec audio-scrobbler-app-db-1 psql -U scrobbler -d scrobbler -P pager=off \
+  -c 'select id, user_id, title, type, is_read, created_at from notifications order by created_at desc limit 10;'
+
+docker exec audio-scrobbler-app-db-1 psql -U scrobbler -d scrobbler -P pager=off \
+  -c 'select id, user_id, created_at, left(endpoint, 50) as endpoint_prefix from push_subscriptions order by id;'
+```
+
+- **"VAPID keys not configured on server" when clicking Send Test Notification:** Ensure `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` are set in `.env.production` and passed into both `backend` and `worker` in `docker-compose.prod.yml`. Remember to re-save `.env.production` (`base64 -w0`) to your password manager whenever you edit it.
+- **Push notifications stop arriving on a device after rotating VAPID keys:** Browser push subscriptions are cryptographically tied to the `VAPID_PUBLIC_KEY` used when subscribing. In the app, go to **Settings → Notifications**, toggle push notifications off and back on, and click **Send Test Notification**.
+
+---
+
+## BBC Sounds ("Scope Creep") & Followed Shows
+
+Located under **Settings → Scrobble** (and backed by `backend/app/api/tools.py` and `backend/app/services/bbc_sounds_service.py`):
+
+- **Followed Shows:** Users can search BBC radio programmes or paste a BBC Sounds URL to follow a brand (`followed_shows` table, unique per `(user_id, brand_id)`). Expanding a followed show fetches its recent episodes live from the BBC RMS API.
+- **Tracklist extraction & scrobbling:** Pasting an episode URL (`/play/<id>`) or picking an episode fetches its broadcast segments, resolves missing track artwork via iTunes/Deezer into `artwork_cache`, and lets the user scrobble selected tracks or export them to a Spotify playlist.
+- **Spotify playlist permissions:** Creating or appending to a Spotify playlist requires `playlist-modify-public` and `playlist-modify-private` OAuth scopes. If a user logged in before those scopes were added, `GET /tools/scope-creep/playlists` returns `needs_scope: true` and the UI offers a 1-click re-authorization button (`/auth/spotify/authorize`).
+
+```bash
+# Inspect followed BBC shows per user
+docker exec audio-scrobbler-app-db-1 psql -U scrobbler -d scrobbler -P pager=off \
+  -c 'select user_id, brand_id, title, created_at from followed_shows order by user_id, created_at desc;'
+```
+

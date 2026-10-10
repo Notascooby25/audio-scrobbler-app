@@ -15,7 +15,7 @@ completed. Check them now, not during an incident.
 | Thing | Where it should live | Why |
 |---|---|---|
 | `rclone.conf` (both the `[gdrive]` **and** `[gdrive-crypt]` blocks), saved as **one base64 line** (see below) | Password manager | Offsite dumps are encrypted. Without the crypt `password` **and** `password2`, they are noise. It lives in `~/.config/rclone/`, outside `/srv`, so the NAS mirror does **not** carry it. |
-| `.env.production` | Password manager | Holds `REFRESH_TOKEN_KEY`, without which every stored Spotify token is undecryptable (see [Scenario 7](#scenario-7-secret-rotation)). The NAS mirror holds a convenience copy; do not rely on it. |
+| `.env.production` | Password manager | Holds `REFRESH_TOKEN_KEY`, without which every stored Spotify token is undecryptable (see [Scenario 7](#scenario-7-secret-rotation)), plus `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` for browser push notifications. The NAS mirror holds a convenience copy; do not rely on it. |
 | NAS login details (host, user, SSH port, share path) | Password manager | The NAS holds the only *unencrypted* off-host copy, and the fastest restore. They are in `~/.config/nas-sync.env` on the NUC (also in the daily host-config snapshot), but the SSH key that reaches the NAS dies with the NUC — a rebuilt host needs a new key authorised in DSM by an admin. |
 | Spotify app credentials | developer.spotify.com | `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` and the registered redirect URI. |
 
