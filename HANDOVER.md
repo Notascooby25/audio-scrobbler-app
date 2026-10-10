@@ -139,8 +139,7 @@ Rewritten on 2026-09-24 to match the real code. See `agents/agents.md`.
 - **When a rule changes, update both sets. When a page changes, update
   `page_specs.md`.**
 - Planned-but-never-built items (monthly partitioning, IndexedDB offline sync,
-  Background Sync, push notifications) are listed as ideas and are **not**
-  enforced.
+  Background Sync) are listed as ideas and are **not** enforced.
 
 Also see `DESIGN.md`, `PRODUCT.md`, `OVERVIEW.md` and
 `.github/agents/impeccable-*.agent.md` (UI design agents).
@@ -343,6 +342,10 @@ the NAS listing.** The live setup has drifted from the repos before.
   - Genre comes from the Spotify **artist** record, via worker enrichment and a
     cache.
 - **BBC Sounds Scope Creep & Spotify Playlist Destinations (2026-09-26/27):** BBC Sounds tracklist extraction tool under Settings > Scrobble tab with track selection, broadcast offset timestamping for direct scrobbling, and export to Spotify supporting either creating brand new playlists or appending tracks to existing playlists.
+- **Followed Shows, Apple Music Imports & Push Notifications (2026-10):**
+  - BBC Sounds Followed Shows (`followed_shows` table, BBC RMS search & episode browsing, 1-click Spotify playlist scope re-auth).
+  - Apple Music file import support (`source="apple"`).
+  - In-app notification bell (`notifications` table) and PWA Web Push (`push_subscriptions` table, `VAPID` keys, and the 08:00 UTC `recaps-generation` worker job for daily/weekly/monthly recaps).
 - **Also 2026-09-22/23:** listening heatmap, frontend redesign, nginx
   `client_max_body_size` raised for large imports, listening clock restored,
   friends-average removed from the UI, Library share-image feature,

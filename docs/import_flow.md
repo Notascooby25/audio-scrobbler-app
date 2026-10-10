@@ -1,12 +1,12 @@
-# Import Flow Documentation for YouTube & Spotify
+# Import Flow Documentation for Spotify, YouTube & Apple Music
 
 ## Overview
-The Audio Scrobbler App allows users to import historical listening data from **Spotify** and **YouTube**.  The import process consists of three main layers:
-1. **Frontend API** – `frontend/src/api.js` (function `submitImportScrobbles`).
-2. **FastAPI endpoint** – `backend/app/api/imports.py` (`/import/scrobbles`).
-3. **Backend import services** – `backend/app/services/spotify_import_service.py` and `backend/app/services/youtube_import_service.py`.
+The Audio Scrobbler App allows users to import historical listening data from **Spotify**, **YouTube**, and **Apple Music**. The import process consists of three main layers:
+1. **Frontend API** – `frontend/src/api.js` (`submitUnifiedImportStream` / `submitImportScrobbles`).
+2. **FastAPI endpoints** – `backend/app/api/imports.py` (`/import/unified` with optional `?stream=true` Server-Sent Events progress streaming, and `/import/scrobbles`).
+3. **Backend import services** – `backend/app/services/processed_import_service.py` (unified processor with iTunes/Deezer artwork resolution and `artwork_cache` persistence), alongside `spotify_import_service.py` and `youtube_import_service.py`.
 
-The flow is **stateless** on the HTTP layer: the client sends a JSON payload containing the source name (`"spotify"` or `"youtube"`) and an array of raw entries. The backend validates the request, normalises the source, and delegates to the appropriate import service which canonicalises each entry before persisting it as a `ListeningEvent` row.
+The flow is **stateless** on the HTTP layer: the client sends a JSON payload containing the source name (`"spotify"`, `"youtube"`, or `"apple"`, or auto-detected by `/import/unified`) and an array of raw entries. The backend validates the request, normalises the source, and canonicalises each entry before persisting it as a `ListeningEvent` row.
 
 > **Privacy note** – No user‑specific secrets (e.g., OAuth tokens, API keys) are ever written to the documentation.  All token handling occurs server‑side via the `Authorization: Bearer <token>` header and is abstracted away from the import logic.
 
@@ -358,7 +358,7 @@ The diagram visualises the request‑response lifecycle and where duplicate dete
 ## 8. Security & Privacy Checklist
 - **Never log** the raw `Authorization` header or token value.
 - **Do not expose** `raw_metadata` in any public API response; it is stored only for internal debugging.
-- **Validate** that `source` is one of the whitelisted values (`spotify`, `youtube`).
+- **Validate** that `source` is one of the whitelisted values (`spotify`, `youtube`, `apple`).
 - **Sanitise** all string fields before insertion (the canonicaliser already trims whitespace).
 - **Rate‑limit** the `/import/scrobbles` endpoint if abuse is a concern (handled elsewhere in the app).
 

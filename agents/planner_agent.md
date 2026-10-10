@@ -134,7 +134,9 @@ non-PostgreSQL databases.
   - `preferences.py`: `/users/me/settings`
   - `settings.py`: `/users/me/settings/scrobble`
   - `blocks.py`: `/users/me/blocks`, `/library/delete-*`,
-    `/library/clear-artwork`.
+    `/library/clear-artwork`
+  - `tools.py`: `/tools/scope-creep/*`, `/tools/shows/*` (BBC Sounds tracklist extraction, Spotify playlist export, followed radio shows)
+  - `notifications.py`: `/notifications/*` (in-app notifications and Web Push subscriptions/tests).
 - **Queries:** `queries/analytics_queries.py` is the live module and holds
   `CHART_ENTITIES = (artists, tracks, albums, genres)`, `DATE_RANGE_PRESETS`,
   `resolve_date_range` and `not_blocked_clause`.
@@ -144,11 +146,12 @@ non-PostgreSQL databases.
 - **Security:** `security.py` AES-encrypts Spotify refresh tokens with
   `REFRESH_TOKEN_KEY`.
 - **Migrations:** Alembic, with `backend/alembic.ini` and
-  `backend/migrations/versions/` (latest numbered: `0016_add_genre_cache`).
+  `backend/migrations/versions/` (latest: `0018_add_followed_shows`, `669e05e5205e_add_notifications`).
 
 **Tables:** `users`, `user_preferences`, `listening_events`, `blocked_items`,
 `follows`, `ingestion_checkpoints`, `realtime_playback_state`,
-`user_scrobble_settings`, `liked_tracks`, `artwork_cache`, `genre_cache`, and
+`user_scrobble_settings`, `liked_tracks`, `artwork_cache`, `genre_cache`,
+`followed_shows`, `notifications`, `push_subscriptions`, and
 `playlist_cache` (legacy: the Playlists feature was removed).
 - `listening_events` columns: `user_id`, `track_id`, `track_name`,
   `artist_name`, `album_name`, `artwork_url`, `artist_artwork_url`,
@@ -158,7 +161,7 @@ non-PostgreSQL databases.
   `(user_id, source, play_id)`.
 
 **Worker** (`worker/app.py`, `worker/spotify_ingestion.py`,
-`worker/file_import.py`):
+`worker/file_import.py`, `worker/recaps.py`):
 
 | Job | Cadence | Notes |
 |---|---|---|
@@ -166,24 +169,24 @@ non-PostgreSQL databases.
 | `currently-playing-sync` | every 10 s | Feeds now-playing. |
 | `liked-tracks-ingestion` | every 30 min | **Opt-in per user** (`liked_tracks_sync_enabled`). Skips while rate-limited. |
 | `genre_cache_backfill` | every `WORKER_GENRE_CACHE_INTERVAL_MINUTES` (5 in prod) | Batch `WORKER_GENRE_CACHE_BATCH_SIZE` (50). Genre comes from the Spotify **artist** record, not the play. |
+| `recaps-generation` | daily at 08:00 UTC | Generates daily, weekly (Mondays), or monthly (1st) recap notifications and Web Push alerts (`worker/recaps.py`). |
 | `file-import` | every 10 min | Only when file import is enabled. |
 | `fixture-ingestion` | every 1 min | Dev fixtures only. |
 
-- The worker writes through the backend's internal endpoints and exposes
-  `/health` and Prometheus metrics.
+- The worker writes through the backend's internal endpoints (and directly to `notifications` for recaps) and exposes `/health` and Prometheus metrics.
 
 **Frontend** (`frontend/src/`): React with `react-router-dom`.
 - `App.jsx` holds all routes: `/` and `/overview`, `/connect`, `/library`,
-  `/reports`, `/profile`, `/profile/:userId`, `/following`, `/settings`.
+  `/reports`, `/profile`, `/profile/:userId`, `/following`, `/settings`, `/changelog`.
 - `Layout.jsx` and `HeaderNav.jsx` wrap every page.
 - Shared logic: `api.js`, `dateRange.js`, `session.js`, `pagination.js`,
   `timeFormatting.js`.
 - Charts: `components/charts/` (`BarTrendChart`, `ListeningClockChart`,
   `ListeningHeatmap`, `GenreBarList`).
 - PWA: `public/manifest.json` plus `public/service-worker.js`, which caches the
-  **app shell only**.
+  **app shell only** and handles Web Push notification events.
 
-**Imports:** Spotify and YouTube history files, via `/import/scrobbles` and
+**Imports:** Spotify, YouTube, and Apple Music history files, via `/import/scrobbles` and
 `/import/unified`; see `docs/import_flow.md`. nginx `client_max_body_size` was
 raised for large files.
 
@@ -194,7 +197,7 @@ if you don't follow them. Blocked items are excluded from analytics via
 
 **Not built (future ideas; don't enforce or assume them):** monthly
 partitioning of `listening_events`, IndexedDB offline data caching and a sync
-queue, Background Sync API, push notifications. If a request needs one, plan it
+queue, Background Sync API. If a request needs one, plan it
 as a new capability with its own migration and test story.
 
 ## 5. Regression checklist

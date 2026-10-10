@@ -136,8 +136,8 @@ CI validates Prometheus and Alertmanager configuration semantics with the pinned
 
 Authenticated clients can submit listening events to `POST /ingestion/events`.
 The backend validates event fields and deduplicates repeated events per user, track, and playback timestamp.
-The unified import endpoint is `POST /import/scrobbles` and accepts a `source` of `spotify` or `youtube` together with an array of raw history entries. The API normalizes each item through the canonical importer layer and preserves source-aware dedupe by `(user_id, source, play_id)`.
-The frontend supports importing a local JSON export by choosing a Spotify or YouTube history file from the dashboard.
+The unified import endpoints are `POST /import/unified` (with optional `?stream=true` Server-Sent Events progress streaming) and `POST /import/scrobbles`, accepting a `source` of `spotify`, `youtube`, or `apple` together with an array of raw history entries. The API normalizes each item through the canonical importer layer, resolves missing artwork via iTunes/Deezer into `artwork_cache`, and preserves source-aware dedupe by `(user_id, source, play_id)`.
+Users can also extract and scrobble broadcast tracklists from **BBC Sounds** episodes (or export them to Spotify playlists and follow BBC radio shows) via `/tools/scope-creep/*` and `/tools/shows/*` under Settings.
 The worker can also import history files unattended: enable `WORKER_FILE_IMPORT_ENABLED=true`, mount a host directory at `WORKER_IMPORT_DIR` (default `/data/imports`), and drop files named `user-<id>-<source>.json` (for example `user-1-spotify.json`). The worker submits each file's entries through a worker-token-authenticated `POST /import/internal/scrobbles` endpoint on its configured interval (`WORKER_FILE_IMPORT_INTERVAL_MINUTES`, default 10) and moves processed files into a `processed/` subfolder or failed files into a `failed/` subfolder. This is disabled by default.
 The worker's development fixture is disabled by default and can be enabled explicitly with `WORKER_FIXTURE_ENABLED=true`.
 
@@ -146,14 +146,14 @@ The worker's development fixture is disabled by default and can be enabled expli
 Every user gets a public `username` (generated automatically from their Spotify ID or display name, deduplicated on collision).
 `GET /users/search?q=`, `POST /users/{id}/follow`, and `DELETE /users/{id}/follow` let signed-in users find and follow each other.
 `GET /users/{id}/profile` returns username, display name, follower/following counts, and `is_following`/`is_self` for anyone signed in; the target user's last scrobbled track is only included when the viewer is the owner or an approved follower (`can_view_details`).
-`GET /analytics/charts/{id}?entity=artists|tracks|albums&range=7day|1month|12month|overall` returns last.fm-style top charts, gated by the same owner-or-follower rule.
+`GET /analytics/charts/{id}?entity=artists|tracks|albums|genres&range=7day|1month|12month|overall` returns last.fm-style top charts, gated by the same owner-or-follower rule.
 The frontend's `/profile` and `/profile/:userId` routes render follow controls, the gated last-scrobble, and the Spotify connect action; the dashboard (`/`) renders personal charts alongside the monthly summary.
 
-## Progressive Web App
+## Progressive Web App & Push Notifications
 
-The frontend ships a web app manifest (`frontend/public/manifest.json`) and placeholder icons so it is installable ("Add to Home Screen") while running live against the deployed server.
-A minimal service worker (`frontend/public/service-worker.js`) caches the app shell (HTML/CSS/JS/manifest/icons) cache-first and never intercepts API requests (`/analytics`, `/auth`, `/import`, `/users`, `/ingestion`).
-Full offline data sync — IndexedDB-backed offline queues, Background Sync API replay, and push notifications — is documented in `docs/PWA_Offline_Behaviour_Specification...pdf` as future work and is not implemented yet.
+The frontend ships a web app manifest (`frontend/public/manifest.json`) and icons so it is installable ("Add to Home Screen") while running live against the deployed server.
+The service worker (`frontend/public/service-worker.js`) caches the app shell (HTML/CSS/JS/manifest/icons) cache-first, never intercepts API requests (`/analytics`, `/auth`, `/import`, `/users`, `/ingestion`, `/tools`, `/notifications`), and handles incoming Web Push notifications (`VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`) for daily, weekly, and monthly listening recaps.
+Full offline data sync — IndexedDB-backed offline queues and Background Sync API replay — is documented in `docs/PWA_Offline_Behaviour_Specification...pdf` as future work and is not implemented yet.
 
 To stop the stack:
 
