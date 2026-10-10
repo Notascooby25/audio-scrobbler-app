@@ -13,6 +13,7 @@
 - Run terminal/SSH actions directly on the NUC for narrowly-scoped actions (e.g. restarting a service) rather than asking the user to copy/paste, but ALWAYS confirm before destructive actions.
 - Destructive-command caution: Always check the blast radius (`docker volume ls`, `docker ps -a`) before any delete/wipe/teardown on the NUC to avoid accidentally wiping shared volumes (e.g. Postgres data).
 - Resave secrets after editing: Whenever you touch `.env`, `.env.production`, `secrets.toml`, or `rclone.conf`, proactively remind the user to re-save the base64 copy in their password manager and verify with a hash check.
+- Docker Compose: On the NUC, the production compose file is named `docker-compose.prod.yml` and the environment file is `.env.production`. Always use `docker compose --env-file .env.production -f docker-compose.prod.yml` instead of the standard command.
 
 # UI and Manual Steps
 - For manual steps in the browser or UI, provide the exact text in a plain chat code block, NOT buried in an `AskUserQuestion` option, so the user can easily copy it.
