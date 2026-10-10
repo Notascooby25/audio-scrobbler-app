@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.app.db import Base
-from backend.app.models import User
+from backend.app.models import ListeningEvent, User
 from backend.app.services import spotify_library_service
 
 engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
@@ -122,8 +122,6 @@ class FakeJsonResponse:
 
 
 def test_backfill_scrobble_artwork_updates_events_missing_artwork(monkeypatch):
-    from backend.app.models import ListeningEvent
-
     db = TestingSession()
     user = _make_user(db, 104)
     event = ListeningEvent(

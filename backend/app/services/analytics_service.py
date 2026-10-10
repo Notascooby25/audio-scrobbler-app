@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+from collections import Counter
 from datetime import datetime
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from ..models import Follow, LikedTrack, ListeningEvent
+from ..models import Follow, GenreCache, LikedTrack, ListeningEvent
 from ..queries.analytics_queries import (
+    build_report_genre_artist_counts_query,
     build_report_heatmap_query,
     build_library_count_query,
     build_library_entities_query,
@@ -141,10 +143,6 @@ def get_user_charts(
 ) -> ChartResponse:
 
     if entity == "genres":
-        from ..models import GenreCache
-        from ..queries.analytics_queries import build_report_genre_artist_counts_query
-        from collections import Counter
-        
         statement = build_report_genre_artist_counts_query(user_id=user_id, start=start, end=end)
         rows = db.execute(statement).all()
         artist_ids = {row.artist_id for row in rows if row.artist_id}

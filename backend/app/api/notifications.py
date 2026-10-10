@@ -1,12 +1,15 @@
+import json
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
+from pywebpush import WebPushException, webpush
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
+from ..api.deps import get_current_user
+from ..config import settings
 from ..db import get_db
 from ..models import Notification, PushSubscription, User
-from ..api.deps import get_current_user
 from ..schemas.notifications import NotificationResponse, PushSubscriptionCreate, UnreadCountResponse
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
@@ -80,7 +83,6 @@ def subscribe_push(
 
 @router.get("/push/vapid_public_key")
 def get_vapid_public_key():
-    from app.config import settings
     return {"vapid_public_key": settings.vapid_public_key}
 
 @router.post("/push/test")
@@ -88,10 +90,6 @@ def test_push_notification(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    from pywebpush import webpush, WebPushException
-    from app.config import settings
-    import json
-    
     if not settings.vapid_private_key:
         return {"status": "error", "message": "VAPID keys not configured on server"}
         

@@ -6,7 +6,7 @@ describe('Settings Form Label Typography and Input Styling per DESIGN.md', () =>
   const stylesPath = path.resolve(__dirname, 'styles.css')
   const stylesContent = fs.readFileSync(stylesPath, 'utf-8')
 
-  it('styles settings form labels in regular sentence case, 500 weight, 12px, normal tracking, var\(--color-ink\), line-height 1.4, gap 4px', () => {
+  it('styles settings form labels in regular sentence case, 500 weight, 12px, normal tracking, var(--color-ink), line-height 1.4, gap 4px', () => {
     expect(stylesContent).toMatch(
       /\.settings-form label\s*\{[^}]*text-transform:\s*none/
     )

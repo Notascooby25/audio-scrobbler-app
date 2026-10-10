@@ -157,11 +157,17 @@ Also see `DESIGN.md`, `PRODUCT.md`, `OVERVIEW.md` and
     rejects `localhost`; it needs `127.0.0.1` or https.
   - The production HTTPS URL is registered as an **additional** redirect URI.
     Never remove the `127.0.0.1` one.
-- **Tests (what CI runs):**
+- **Tests and linters (what CI runs):**
+  - Python linter (Ruff, configured in `pyproject.toml`):
+    `ruff check backend/app worker scripts`
+  - Shell script linter (ShellCheck via `shellcheck-py`):
+    `shellcheck scripts/*.sh scripts/tests/*.sh`
+  - Backup restore-drill fixture tests:
+    `bash scripts/tests/test_restore_drill.sh`
   - backend and worker:
     `PYTHONPATH=worker python -m pytest backend/app/tests worker/tests -q`
     (Python 3.12)
-  - frontend (Node 20): `npm ci && npm test && npm run build`
+  - frontend (Node 20): `npm ci && npm run lint && npm test && npm run build`
   - migrations: `alembic upgrade head` against a clean DB
   - CI also validates both compose files and the monitoring configs, and runs a
     container smoke test.
@@ -186,11 +192,12 @@ Also see `DESIGN.md`, `PRODUCT.md`, `OVERVIEW.md` and
     suspect this first if rate-limiting returns.
   - **Python scoping trap:** a local `from sqlalchemy import func` anywhere in a
     function makes `func` local to the whole function, turning a `NameError`
-    into an `UnboundLocalError`. Use module-level imports.
+    into an `UnboundLocalError`. Use module-level imports (now enforced by Ruff
+    `PLC0415`).
   - When using mutation checks, confirm the new tests actually catch the bug.
-- **Shellcheck** isn't installed; use `pip install shellcheck-py` in a throwaway
-  venv. Backup-script fixture tests live in `scripts/tests/`. They are hermetic
-  and GNU/Linux only.
+- **ShellCheck & Ruff** are installed in `.venv` (`ruff`, `shellcheck-py`) and
+  run automatically in CI. Backup-script fixture tests live in `scripts/tests/`
+  and are hermetic and GNU/Linux only.
 
 ---
 

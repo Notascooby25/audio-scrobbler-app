@@ -1,29 +1,70 @@
 # How to Work on This Repo
 - Every time you have an issue, bug, or update to make: Follow `agents/planner_agent.md` to plan it and wait for the user's approval, then follow `agents/implementation_agent.md` to implement it.
 - Before any code change, read `HANDOVER.md` (and `HANDOVER.private.md` if it exists; it is gitignored, so never commit or quote it).
-- For page work, check `agents/page_specs.md`. See `agents/agents.md` for the overall workflow.
-- If the user explicitly says to skip planning for a small fix, skip the plan, but still follow the testing, commit and safety rules in those files.
-
-# Version Control Rules
-- At the end of every task or major step that involves modifying files, you MUST use the `run_command` tool to stage all changes, commit them with a descriptive commit message explaining the reason for the changes, and push them to the current branch on GitHub.
-- Example command: `git add -A && git commit -m "feat: <description of changes>" && git push` (If the branch has no upstream, use `--set-upstream origin <branch-name>`).
-
-# NUC and Deployment Instructions
-- NUC host: `192.168.68.126`. It is a shared production box also running `sleepwell` and `UK-Expense-Tracker`. Treat it as multi-tenant, not a sandbox.
-- Run terminal/SSH actions directly on the NUC for narrowly-scoped actions (e.g. restarting a service) rather than asking the user to copy/paste, but ALWAYS confirm before destructive actions.
-- Destructive-command caution: Always check the blast radius (`docker volume ls`, `docker ps -a`) before any delete/wipe/teardown on the NUC to avoid accidentally wiping shared volumes (e.g. Postgres data).
-- Resave secrets after editing: Whenever you touch `.env`, `.env.production`, `secrets.toml`, or `rclone.conf`, proactively remind the user to re-save the base64 copy in their password manager and verify with a hash check.
-- Docker Compose: On the NUC, the production compose file is named `docker-compose.prod.yml` and the environment file is `.env.production`. Always use `docker compose --env-file .env.production -f docker-compose.prod.yml` instead of the standard command.
-
-# UI and Manual Steps
+- For page work, check `agents/page_specs.md` and `DESIGN.md`. See `agents/agents.md` for the overall workflow.
+- If the user explicitly says to skip planning for a small fix, skip the plan, but still follow the testing, security review, commit, and safety rules below.
 - For manual steps in the browser or UI, provide the exact text in a plain chat code block, NOT buried in an `AskUserQuestion` option, so the user can easily copy it.
 
-# Project Context (Audio Scrobbler)
-- Spotify scrobbling: Verified working end-to-end on the NUC (including phone login via Tailscale Funnel) as of 2026-09-15.
-- Spotify rate-limit audit (2026-09-17): Root cause was the (now-removed) liked-tracks sync. `is_active` is never revoked in code.
-- Backup architecture: NUC backs up to Google Drive (crypt) + Synology NAS for all 3 apps. Plaintext Drive copies deleted. `rclone.conf` saved as base64.
-- Open tasks as of 2026-09-23: dated cleanups (~Oct 2026).
+# Coding Standards & Style
+- **Python (`backend/` and `worker/`, Python 3.12):** Follow **PEP 8** and **PEP 484** type hints (`from __future__ import annotations`), using SQLAlchemy 2.0 typed models (`Mapped`, `mapped_column`) and Pydantic v2 schemas. Always place imports at the top of the module (never inside functions, which causes `UnboundLocalError` scoping bugs).
+- **JavaScript / React (`frontend/`, Node 20 + Vite):** Follow **Standard ES Modules (ES2022+)** and **React 18** functional components and Hooks conventions (`PascalCase` for components, `camelCase` for variables/functions). Strictly follow `DESIGN.md` ("Flat-By-Default" and "One Voice Rule": zero gradients, zero `box-shadow`, and only approved color tokens).
+- **Shell Scripts (`scripts/`):** Follow POSIX/Bash strict mode (`set -euo pipefail`).
 
-# Changelog
-- ALWAYS update `frontend/src/changelogData.js` whenever implementing a new feature, improvement, or bug fix so the on-website changelog (`/settings?tab=changelog` or `/changelog`) accurately reflects all changes.
-- Add a new version release object at the top of the array with the current date, bump `version` in `frontend/package.json`, and summarize the user-facing changes in clear, simple terms.
+# Linter, Formatter & Test Commands
+- **Python Linter & Formatter (Ruff):**
+  ```bash
+  ruff check backend/app worker scripts
+  ruff format --check backend/app worker scripts
+  ```
+- **Shell Script Linter (ShellCheck):**
+  ```bash
+  shellcheck scripts/*.sh scripts/tests/*.sh
+  ```
+- **Frontend Linter & Formatter (ESLint + Prettier):**
+  ```bash
+  cd frontend && npm run lint
+  cd frontend && npm run format
+  ```
+- **Backend & Worker Tests:**
+  ```bash
+  PYTHONPATH=worker python -m pytest backend/app/tests worker/tests -q
+  ```
+- **Frontend Unit Tests & Production Build:**
+  ```bash
+  cd frontend && npm run lint && npm test && npm run build
+  ```
+- **Runtime Verification:** After every change, run all applicable linters and tests above. For any runtime or UI behavior not covered by automated tests, run the app (`docker compose up -d`) and describe what you checked.
+- **Frontend End-to-End Tests (when changing navigation or date filtering):**
+  ```bash
+  cd frontend && npm run test:e2e
+  ```
+- **Database Migrations (when changing models or migrations, against a throwaway Postgres DB):**
+  ```bash
+  cd backend && alembic upgrade head
+  ```
+- **Backup Script Tests (when changing `scripts/`):**
+  ```bash
+  bash scripts/tests/test_restore_drill.sh
+  ```
+
+# Secrets & Configuration Handling
+- Secrets and environment settings live in `.env` (local dev), `.env.production` (on the NUC), `scripts/systemd/audio-scrobbler-backup.env` (backup heartbeat URL), and host-level `~/.config/rclone/rclone.conf`, `~/.config/nas-sync.env`, and `~/.config/google-sync.env`. Only safe placeholders belong in `.env.example`.
+- **Never commit, print, or quote secrets** or `HANDOVER.private.md`. Never run `rclone config show` or write healthchecks.io URLs in code or docs.
+- **Resave secrets after editing:** Whenever you touch `.env`, `.env.production`, `secrets.toml`, `rclone.conf`, or rotate `JWT_SECRET`, `REFRESH_TOKEN_KEY`, or database passwords, proactively remind the user to re-save the single-line `base64 -w0` copy in their password manager and verify it with a `sha256sum` hash check.
+
+# Security Risks & How to Avoid Them
+- **Spotify OAuth & Token Theft:** Always encrypt Spotify refresh tokens at rest using `REFRESH_TOKEN_KEY` via `backend/app/security.py` (Fernet/AES). Persist rotated refresh tokens immediately. Keep `ALLOWED_SPOTIFY_USER_IDS` set on any publicly reachable tunnel (e.g. Tailscale Funnel) so unauthorized Spotify accounts cannot register.
+- **Spotify API Rate-Limit Bans:** Never call the Spotify API inline during an HTTP web request. Use background worker jobs (`worker/`) + database cache tables, check `spotify_rate_limit_blocked_until()`, throttle bulk/paginated fetches, and honor HTTP `429` `Retry-After` headers.
+- **Broken Access Control & Privacy Leaks:** Require signed JWT bearer tokens on user routes and `WORKER_INGESTION_TOKEN` on `/internal/` worker routes. Enforce follower permission checks (`403 Forbidden`) when viewing another user's data (`?userId=`), exclude blocked items (`not_blocked_clause`), and filter background syncs by `is_active == True`.
+- **Untrusted Input, Injection & CORS:** Validate and sanitize all user inputs, uploaded history exports (Spotify/YouTube JSON), and external metadata (BBC Sounds/iTunes/Deezer) using Pydantic schemas and parameterized SQLAlchemy queries. Never use raw string-interpolated SQL, and never allow wildcard (`*`) `CORS_ORIGINS` in production.
+
+# Pre-Commit Security Review, Changelog & Version Control
+- **Mandatory Security Review:** Always run the `differential-review` skill on every change before anything is committed or merged, and report findings by severity.
+- **Changelog:** Whenever implementing a new feature, improvement, or bug fix, update `frontend/src/changelogData.js` with a new version entry at the top and bump `version` in `frontend/package.json`.
+- **Commit & Push:** Check `git status` first. At the end of every task or major step that modifies files, stage your changes, commit with a descriptive conventional message (`feat:`, `fix:`, `docs:`), and push to GitHub. Pushing to `main` automatically deploys to production via GHCR and Watchtower; add `[skip ci]` to docs-only commits.
+
+# Files, Folders & Systems That Must Never Be Edited
+- **Dead / Legacy Code:** Never edit `backend/app/db/queries/analytics_queries.py` (it is a dead copy from the initial commit; the live file is `backend/app/queries/analytics_queries.py`).
+- **Local Secrets, Data & Build Artifacts:** Never edit or commit `.env`, `.env.production`, `HANDOVER.private.md`, `backups/`, `*.db`, `monitoring/*.prom`, `frontend/node_modules/`, `frontend/dist/`, `.venv/`, or `backend/venv/`.
+- **Applied Migrations:** Never rewrite existing Alembic migration files in `backend/migrations/versions/` that have already run in production; create a new numbered migration instead.
+- **Shared NUC Host (`192.168.68.126`) & Volumes:** The NUC is a shared production server also running `/srv/sleepwell` and `/srv/UK-Expense-Tracker`—never touch their containers, volumes, Tailscale Funnels, or NAS sync scripts. Always use `docker compose --env-file .env.production -f docker-compose.prod.yml` on the NUC, and **never** run `docker compose down -v` or delete volumes without checking `docker volume ls` and `docker ps -a` and getting explicit user confirmation (local dev and prod compose files share the `postgres_data` volume name).

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
-from sqlalchemy import cast, exists, func, select, or_, Text
+from sqlalchemy import Select, Text, cast, exists, func, or_, select
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import FunctionElement
 
-from ..models import BlockedItem, ListeningEvent
+from ..models import BlockedItem, GenreCache, ListeningEvent
 
 
 class group_concat_distinct(FunctionElement):
@@ -552,8 +552,7 @@ def pg_extract_primary_artist_id(element, compiler, **kw):
     return (f"coalesce({arg}->'track'->'artists'->0->>'id', "
             f"{arg}->'item'->'artists'->0->>'id')")
 
-def build_pending_genre_artist_ids_query(limit: int) -> "Select":
-    from ..models import GenreCache
+def build_pending_genre_artist_ids_query(limit: int) -> Select:
     artist_id_expr = extract_primary_artist_id(ListeningEvent.raw_metadata)
     # Exclude only artists that have a non-empty genre list cached.
     # Artists stored with genres=[] (e.g. due to a previous API failure or

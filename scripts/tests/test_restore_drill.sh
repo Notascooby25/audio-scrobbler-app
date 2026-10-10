@@ -7,7 +7,9 @@
 # Needs: bash, GNU coreutils/find/date (Linux), flock not required.
 # Run:   scripts/tests/test_restore_drill.sh
 set -uo pipefail
-SP=$(cd "$(dirname "$0")" && pwd); . "$SP/lib.sh"
+SP=$(cd "$(dirname "$0")" && pwd)
+# shellcheck source=scripts/tests/lib.sh disable=SC1091
+. "$SP/lib.sh"
 SRC="$(cd "$SP/.." && pwd)/restore_drill.sh"
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 R=$T/repo; D=$T/stub; mkdir -p "$R/scripts" "$R/backups" "$R/monitoring" "$D/nasfiles" "$D/gdfiles" "$T/bin" "$T/home"

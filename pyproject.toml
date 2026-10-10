@@ -1,0 +1,10 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+extend-exclude = [
+    "backend/app/db/queries/analytics_queries.py",
+    "backend/migrations",
+]
+
+[tool.ruff.lint]
+select = ["E9", "F", "PIE794", "PLC0415"]

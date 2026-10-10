@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-from types import SimpleNamespace
 
 import pytest
 
 from spotify_ingestion import (
-    CheckpointRecord,
     ScrobbleSettingsRecord,
     SpotifyClient,
     SpotifyRateLimitedError,

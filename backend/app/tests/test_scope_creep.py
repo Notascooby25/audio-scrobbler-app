@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from unittest.mock import patch
 
-from fastapi import Depends
+import requests
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.app.api.deps import get_current_user
@@ -229,7 +228,6 @@ def test_get_user_playlists_service_403_and_pagination(mock_get, mock_refresh):
         ok = False
 
         def raise_for_status(self):
-            import requests
             raise requests.exceptions.HTTPError(response=self)
 
     mock_get.return_value = Fake403Response()

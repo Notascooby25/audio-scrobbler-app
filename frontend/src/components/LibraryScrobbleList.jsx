@@ -15,7 +15,6 @@ function dayLabel(value) {
 
 export default function LibraryScrobbleList({
   scrobbles = [],
-  token,
   view,
   showSourceBadges = true,
   showArtwork = true,

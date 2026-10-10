@@ -12,14 +12,20 @@ from ..db import get_db
 from ..models import User
 from ..schemas.scrobble_settings import UserScrobbleSettingsResponse
 from ..schemas.spotify_library import (
+    GenreCachePendingItem,
+    GenreCachePendingResponse,
+    GenreCacheUpsertResponse,
     LikedTracksUpsertResponse,
     SpotifySyncResponse,
     WorkerBackfillArtworkRequest,
+    WorkerGenreCacheUpsertRequest,
     WorkerLikedTracksSyncRequest,
 )
 from ..services import scrobble_settings_service
 from ..services.spotify_library_service import (
     backfill_scrobble_artwork,
+    find_pending_genre_artist_ids,
+    upsert_genre_cache,
     upsert_liked_tracks,
 )
 
@@ -76,22 +82,12 @@ def backfill_artwork_internal(
         raise HTTPException(status_code=502, detail="Spotify artwork backfill failed") from exc
 
 
-
-
-from ..schemas.spotify_library import (
-    GenreCachePendingResponse,
-    GenreCachePendingItem,
-    WorkerGenreCacheUpsertRequest,
-    GenreCacheUpsertResponse
-)
-
 @router.get("/internal/genre-cache/pending", response_model=GenreCachePendingResponse)
 def genre_cache_pending(
     limit: int = Query(default=10, ge=1, le=50),
     db: Session = Depends(get_db),
     _: None = Depends(require_worker_token),
 ) -> GenreCachePendingResponse:
-    from ..services.spotify_library_service import find_pending_genre_artist_ids
     artists = find_pending_genre_artist_ids(db, limit=limit)
     return GenreCachePendingResponse(
         items=[GenreCachePendingItem(artist_spotify_id=a["artist_id"], artist_name=a["artist_name"]) for a in artists]
@@ -104,6 +100,5 @@ def genre_cache_upsert(
     db: Session = Depends(get_db),
     _: None = Depends(require_worker_token),
 ) -> GenreCacheUpsertResponse:
-    from ..services.spotify_library_service import upsert_genre_cache
     upserted = upsert_genre_cache(db, [item.model_dump() for item in payload.items])
     return GenreCacheUpsertResponse(upserted=upserted)

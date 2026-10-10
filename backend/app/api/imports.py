@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 import json
 from typing import Iterator
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..api.deps import get_current_user
@@ -15,7 +17,6 @@ from ..schemas.imports import (
     DeleteImportResponse,
     ImportScrobbleRequest,
     ImportScrobbleResponse,
-    UnifiedImportProgressEvent,
     UnifiedImportRequest,
     UnifiedImportResponse,
     WorkerImportScrobbleRequest,
@@ -23,7 +24,11 @@ from ..schemas.imports import (
     ImportBatchesResponse,
     AdvancedDeleteRequest,
 )
-from ..services.processed_import_service import process_unified_import, process_unified_import_stream
+from ..services.processed_import_service import (
+    backfill_artwork_stream,
+    process_unified_import,
+    process_unified_import_stream,
+)
 
 router = APIRouter(tags=["imports"])
 IMPORT_SOURCES = ("spotify", "youtube", "apple")
@@ -128,8 +133,6 @@ def backfill_missing_artwork(
     current_user: User = Depends(get_current_user),
 ):
     """Scans the user's library for missing artwork and attempts to backfill from Deezer using SSE streaming."""
-    from ..services.processed_import_service import backfill_artwork_stream
-    
     def _generate_backfill_stream():
         for event in backfill_artwork_stream(db, current_user.id):
             event_type = "complete" if event.stage == "completion" else "progress"
@@ -201,8 +204,6 @@ def delete_imported_scrobbles(
     db.commit()
     return DeleteImportResponse(source=normalized_source, deleted=int(deleted))
 
-from sqlalchemy import func
-from datetime import datetime
 
 @router.get("/import/batches", response_model=ImportBatchesResponse)
 def list_import_batches(
@@ -257,7 +258,6 @@ def advanced_delete_imports(
     if payload.batch_time:
         batch_start = datetime.fromisoformat(payload.batch_time.replace("Z", "+00:00"))
         # Add 1 hour to get the batch range since we truncate by hour
-        from datetime import timedelta
         batch_end = batch_start + timedelta(hours=1)
         query = query.filter(ListeningEvent.created_at >= batch_start, ListeningEvent.created_at < batch_end)
 

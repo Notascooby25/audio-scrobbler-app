@@ -6,6 +6,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from ..models import Follow, ListeningEvent, User
+from ..queries.analytics_queries import build_report_period_count_query
 from ..schemas.users import LastScrobble, UserProfileResponse
 
 
@@ -153,9 +154,6 @@ def get_user_profile(db: Session, viewer_id: int, target_user: User) -> UserProf
 
 
 def get_community_leaderboard(db: Session, user_id: int, start: datetime | None, end: datetime | None) -> list[dict]:
-    from ..queries.analytics_queries import build_report_period_count_query
-    from datetime import datetime
-
     # Get current user and active followed users
     users = (
         db.query(User)

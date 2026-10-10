@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: '0.11.3',
+    date: '2026-10-10',
+    changes: [
+      'Added automated code linting and formatting across the project (Ruff for Python, ShellCheck for Bash scripts, and ESLint + Prettier for React) and wired them into CI alongside the backup restore drill tests.',
+      'Fixed a React Hook ordering issue on the Settings page when redirecting to the Changelog, and cleaned up unused imports and legacy scratch scripts.'
+    ]
+  },
+  {
     version: '0.11.2',
     date: '2026-10-09',
     changes: [

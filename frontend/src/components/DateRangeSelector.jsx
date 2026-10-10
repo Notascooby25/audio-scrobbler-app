@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { DATE_RANGE_LABELS, DATE_RANGE_PRESETS, formatDateDisplay, parseDateInput } from '../dateRange'
 import CalendarPicker from './CalendarPicker'
 

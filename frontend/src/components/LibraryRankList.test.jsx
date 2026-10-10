@@ -7,7 +7,7 @@ describe('LibraryRankList', () => {
   afterEach(() => cleanup())
 
   it('renders track metadata, rank offset, and count bars', () => {
-    const { container } = render(
+    render(
       <MemoryRouter><LibraryRankList
         entries={[{
           label: 'Slow Show',

@@ -33,7 +33,7 @@ describe('Library List Row Density per DESIGN.md', () => {
     )
   })
 
-  it('styles title as 15px bold (var\(--color-ink\), 600) and subtitle as 12px label (var\(--color-muted\))', () => {
+  it('styles title as 15px bold (var(--color-ink), 600) and subtitle as 12px label (var(--color-muted))', () => {
     expect(stylesContent).toMatch(
       /\.library-row-copy strong\s*\{[^}]*font-size:\s*15px/
     )
@@ -51,7 +51,7 @@ describe('Library List Row Density per DESIGN.md', () => {
     )
   })
 
-  it('styles count and time right-aligned with 12px, 500, var\(--color-muted\)', () => {
+  it('styles count and time right-aligned with 12px, 500, var(--color-muted)', () => {
     expect(stylesContent).toMatch(
       /\.library-count-bar\s*\{[^}]*font-size:\s*12px/
     )

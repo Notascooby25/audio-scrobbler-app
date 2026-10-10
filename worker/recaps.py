@@ -2,7 +2,7 @@ import json
 import logging
 import os
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import create_engine, Column, select, func, Boolean, DateTime, Integer, String, Text
+from sqlalchemy import create_engine, Column, func, Boolean, DateTime, Integer, String, Text
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from pywebpush import webpush, WebPushException
@@ -133,7 +133,7 @@ def generate_recaps():
                         logger.error(f"Failed to send webpush to user {pref.user_id}: {e}")
             
         logger.info("Recaps generation completed successfully.")
-    except Exception as e:
+    except Exception:
         logger.exception("Error generating recaps")
     finally:
         db.close()

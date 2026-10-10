@@ -7,20 +7,6 @@ import ImportProgressBar from '../components/ImportProgressBar'
 import ImportSummaryPanel from '../components/ImportSummaryPanel'
 import ScrobbleList from '../components/ScrobbleList'
 
-const IMPORT_BATCH_SIZE = 250
-
-function mergeImportResult(current, next) {
-  return {
-    source: next.source,
-    status: next.status,
-    summary: {
-      inserted: (current?.summary?.inserted || 0) + (next.summary?.inserted || 0),
-      skipped: (current?.summary?.skipped || 0) + (next.summary?.skipped || 0),
-      duplicate: (current?.summary?.duplicate || 0) + (next.summary?.duplicate || 0),
-    },
-  }
-}
-
 function readSavedSession() {
   try {
     return JSON.parse(localStorage.getItem('audio-scrobbler-session') || 'null')
@@ -178,7 +164,6 @@ export default function HomePage() {
       const firstEntry = entries[0] || {}
       const explicitSource = (firstEntry.source || '').toString().toLowerCase()
       const looksLikeApple = explicitSource.includes('apple') || explicitSource.includes('itunes') || file.name.toLowerCase().includes('apple')
-      const looksLikeSpotify = 'trackUri' in firstEntry || 'endTime' in firstEntry || 'trackName' in firstEntry || 'spotify_track_uri' in firstEntry || 'master_metadata_track_name' in firstEntry || explicitSource.includes('spotify')
       const looksLikeYoutube = 'song' in firstEntry || 'subtitles' in firstEntry || 'titleUrl' in firstEntry || explicitSource.includes('youtube')
 
       let source = 'spotify'

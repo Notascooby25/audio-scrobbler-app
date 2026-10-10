@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import AnalyticsPage from '../components/AnalyticsPage'
-import { deleteImportedScrobbles, enableLikedTracksSync, fetchBlocks, fetchScrobbleSettings, fetchUserSettings, removeBlock, updateScrobbleSettings, updateUserSettings, startArtworkBackfill, fetchImportBatches, advancedDeleteImports, subscribeToPushNotifications, sendTestNotification } from '../api'
+import { enableLikedTracksSync, fetchBlocks, fetchScrobbleSettings, fetchUserSettings, removeBlock, updateScrobbleSettings, updateUserSettings, startArtworkBackfill, fetchImportBatches, advancedDeleteImports, subscribeToPushNotifications, sendTestNotification } from '../api'
 import { readSession } from '../session'
 import ImportProgressBar from '../components/ImportProgressBar'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
@@ -28,7 +28,7 @@ const VIEW_OPTIONS = [
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding)
-    .replace(/\-/g, '+')
+    .replace(/-/g, '+')
     .replace(/_/g, '/');
 
   const rawData = window.atob(base64);
@@ -44,10 +44,6 @@ export default function SettingsPage() {
   const session = readSession()
   const [searchParams, setSearchParams] = useSearchParams()
   const tabParam = searchParams.get('tab')
-
-  if (tabParam === 'changelog') {
-    return <Navigate to="/changelog" replace />
-  }
 
   const [activeTab, setActiveTab] = useState(() => {
     if (tabParam === 'scopecreep') return 'scrobble'
@@ -101,7 +97,7 @@ export default function SettingsPage() {
   }, [activeTab, session?.accessToken])
 
   useEffect(() => {
-    if (!session?.accessToken) return
+    if (!session?.accessToken || tabParam === 'changelog') return
     setStatus('loading')
     fetchUserSettings({ token: session.accessToken })
       .then((data) => {
@@ -188,7 +184,7 @@ export default function SettingsPage() {
   const [deletePendingDesc, setDeletePendingDesc] = useState('')
 
   useEffect(() => {
-    if (!session?.accessToken) return
+    if (!session?.accessToken || tabParam === 'changelog') return
     fetchImportBatches({ token: session.accessToken })
       .then(res => setImportBatches(res.batches || []))
       .catch(err => console.error("Could not fetch batches", err))
@@ -280,6 +276,10 @@ export default function SettingsPage() {
     if (abortBackfillRef.current) {
       abortBackfillRef.current.abort()
     }
+  }
+
+  if (tabParam === 'changelog') {
+    return <Navigate to="/changelog" replace />
   }
 
   return (

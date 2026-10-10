@@ -257,16 +257,18 @@ Include each item that applies:
 
 | Area | Command | Notes |
 |---|---|---|
+| Python linter | `ruff check backend/app worker scripts` | Configured in `pyproject.toml` (enforces `PLC0415` top-level imports). |
+| Shell linter | `shellcheck scripts/*.sh scripts/tests/*.sh` | Installed in `.venv` via `shellcheck-py` and run in CI. |
 | Backend + worker | `PYTHONPATH=worker python -m pytest backend/app/tests worker/tests -q` | Python 3.12. |
-| Frontend | `cd frontend && npm ci && npm test && npm run build` | Vitest + React Testing Library. |
+| Frontend | `cd frontend && npm ci && npm run lint && npm test && npm run build` | ESLint 9 + Vitest + React Testing Library. |
 | E2E | `cd frontend && npm run test:e2e` | Playwright. Local only; **not run in CI**. |
 | Migrations | `cd backend && alembic upgrade head` | Against a throwaway Postgres. |
-| Backup scripts | `scripts/tests/` | Hermetic fixture tests; GNU/Linux. |
+| Backup scripts | `bash scripts/tests/test_restore_drill.sh` | Hermetic fixture tests; GNU/Linux; run in CI. |
 
-- Shellcheck isn't installed: `pip install shellcheck-py` in a throwaway venv.
-- CI (`.github/workflows/ci.yml`) runs on push to `main` and on PRs: backend
-  and worker tests with a Postgres service, a clean migration, frontend tests
-  and build, compose and monitoring validation, and a container smoke test.
+- CI (`.github/workflows/ci.yml`) runs on push to `main` and on PRs: Ruff,
+  ShellCheck, backup restore drill tests, backend and worker tests with a
+  Postgres service, a clean migration, frontend ESLint, frontend tests and
+  build, compose and monitoring validation, and a container smoke test.
 
 ## 7. Deployment and verification
 

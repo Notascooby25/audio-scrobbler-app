@@ -10,9 +10,10 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.app.api import imports as imports_module
-from backend.app.db import Base, get_db
+from backend.app.db import Base
 from backend.app.main import app
 from backend.app.models import ArtworkCache, ListeningEvent, User
+from backend.app.services import processed_import_service
 from backend.app.services.processed_import_service import (
     clean_title,
     detect_source,
@@ -62,7 +63,6 @@ def db_session():
 
 @pytest.fixture(autouse=True)
 def mock_deezer(monkeypatch):
-    from backend.app.services import processed_import_service
     monkeypatch.setattr(processed_import_service, "deezer_search", lambda artist, title, timeout=5.0: None)
 
 

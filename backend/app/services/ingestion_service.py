@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import timedelta
 import json
 
 from sqlalchemy.exc import IntegrityError
@@ -22,7 +23,6 @@ def ingest_listening_event(
     if scrobble_settings_service.get_strip_remaster_tags(db, user_id):
         track_name = clean_title(track_name)
         
-    from datetime import timedelta
     if event.source.startswith("spotify"):
         # Deduplicate historical or real-time Spotify scrobbles if the same track was already recorded within 15 minutes
         dup = (

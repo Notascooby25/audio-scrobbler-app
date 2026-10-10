@@ -143,7 +143,6 @@ def pg_session():
 
 
 def test_decade_query_survives_an_empty_release_date_on_real_postgres(pg_session):
-    from backend.app.queries.analytics_queries import build_report_decade_query
     db = pg_session
     now = datetime.utcnow()
     db.add(_event("good", "spotify", now - timedelta(days=1), _spotify_meta("1994-03-14")))
@@ -156,7 +155,6 @@ def test_decade_query_survives_an_empty_release_date_on_real_postgres(pg_session
 
 
 def test_decade_query_survives_junk_that_isnt_a_date_at_all_on_real_postgres(pg_session):
-    from backend.app.queries.analytics_queries import build_report_decade_query
     db = pg_session
     now = datetime.utcnow()
     db.add(_event("good", "spotify", now - timedelta(days=1), _spotify_meta("1994-03-14")))

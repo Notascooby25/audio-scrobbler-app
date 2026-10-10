@@ -10,7 +10,6 @@ from fastapi.testclient import TestClient
 from backend.app.api import auth as auth_module
 from backend.app.api import deps
 from backend.app.config import settings
-from backend.app.db import get_db
 from backend.app.main import app
 from backend.app.services.auth_service import create_access_token, decode_access_token
 from backend.app.services import spotify_oauth_service as spotify_oauth_service_module

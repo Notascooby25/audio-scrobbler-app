@@ -11,6 +11,7 @@ from backend.app.api import blocks as blocks_module
 from backend.app.db import Base
 from backend.app.main import app
 from backend.app.models import BlockedItem, ListeningEvent, User
+from backend.app.queries.analytics_queries import build_library_count_query, build_recent_scrobbles_query
 
 engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
 TestingSession = sessionmaker(bind=engine)
@@ -68,7 +69,6 @@ def test_block_album_hides_matching_events_case_insensitively():
     assert response.json()["hidden_count"] == 2
 
     db = TestingSession()
-    from backend.app.queries.analytics_queries import build_recent_scrobbles_query
     visible = db.execute(build_recent_scrobbles_query(1, 50, 0)).all()
     assert {row.track_name for row in visible} == {"Slow Show", "Intro"}
     db.close()
@@ -91,7 +91,6 @@ def test_unblock_restores_visibility():
 
     assert response.status_code == 204
     db = TestingSession()
-    from backend.app.queries.analytics_queries import build_library_count_query
     assert db.execute(build_library_count_query(1)).scalar_one() == 5
     db.close()
 

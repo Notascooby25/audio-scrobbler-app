@@ -5,7 +5,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
 from sqlalchemy.orm import Session
 
-from ..db import SessionLocal, get_db
+from ..db import get_db
 from ..models import User
 from ..services.auth_service import decode_access_token
 

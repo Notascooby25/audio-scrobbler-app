@@ -5,12 +5,11 @@ from datetime import datetime
 from typing import Any
 
 import requests
-from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..config import settings
-from ..models import LikedTrack, ListeningEvent, PlaylistCache, User
-from ..queries.analytics_queries import extract_playlist_uri
+from ..models import GenreCache, LikedTrack, ListeningEvent, User
+from ..queries.analytics_queries import build_pending_genre_artist_ids_query
 from ..schemas.spotify_library import WorkerLikedTrackItem
 from ..security import decrypt_refresh_token, encrypt_refresh_token
 
@@ -97,12 +96,6 @@ def backfill_scrobble_artwork(db: Session, user: User) -> dict[str, int]:
     return {"fetched": len(missing), "inserted": 0, "updated": 0, "artwork_updated": updated}
 
 
-
-
-
-
-
-
 def upsert_liked_tracks(db: Session, user_id: int, tracks: list[WorkerLikedTrackItem]) -> dict[str, int]:
     """Persists a batch of liked tracks the worker already fetched from Spotify.
 
@@ -150,14 +143,14 @@ def upsert_liked_tracks(db: Session, user_id: int, tracks: list[WorkerLikedTrack
             updated += 1
     db.commit()
     return {"inserted": inserted, "updated": updated}
+
+
 def find_pending_genre_artist_ids(db: Session, limit: int = 10) -> list[dict[str, str]]:
-    from ..queries.analytics_queries import build_pending_genre_artist_ids_query
     rows = db.execute(build_pending_genre_artist_ids_query(limit)).all()
     return [{"artist_id": row.artist_id, "artist_name": row.artist_name} for row in rows if row.artist_id and row.artist_name]
 
+
 def upsert_genre_cache(db: Session, items: list[dict[str, object]]) -> int:
-    from ..models import GenreCache
-    from datetime import datetime
     if not items:
         return 0
     artist_ids = {item["artist_spotify_id"] for item in items}

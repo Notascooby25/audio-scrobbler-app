@@ -1,4 +1,6 @@
 .venv/
+venv/
+backend/venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -9,6 +11,10 @@ htmlcov/
 .env
 .env.*
 !.env.example
+rclone.conf
+secrets.toml
+*.key
+*.pem
 
 frontend/node_modules/
 frontend/dist/
@@ -37,3 +43,5 @@ scripts/systemd/audio-scrobbler-backup.env
 # weaknesses. Local only; the redacted, committable version is HANDOVER.md.
 HANDOVER.private.md
 *.db
+*.dump
+*.sql

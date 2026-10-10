@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 
 from ..api.deps import get_current_user
 from ..db import get_db
-from ..models import User
+from ..models import RealtimePlaybackState, User
+from ..queries.analytics_queries import DATE_RANGE_PRESETS, resolve_date_range
 from ..schemas.users import (
     FollowActionResponse, FollowingListResponse, UserProfileResponse, 
     UserSearchResponse, NowPlayingResponse, LeaderboardResponse,
@@ -66,7 +67,6 @@ def leaderboard(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> LeaderboardResponse:
-    from ..queries.analytics_queries import DATE_RANGE_PRESETS, resolve_date_range
     if range not in DATE_RANGE_PRESETS:
         raise HTTPException(status_code=400, detail=f"Unsupported range: {range!r}")
     try:
@@ -105,8 +105,6 @@ def now_playing(
     _get_active_user_or_404(db, user_id)
     # Check if they allow viewing details (if private profile, etc, handled by social_service later if needed)
     # For now, just return the state
-    from ..models import RealtimePlaybackState
-    
     state = db.query(RealtimePlaybackState).filter(RealtimePlaybackState.user_id == user_id).first()
     if not state or not state.is_playing:
         return NowPlayingResponse(is_playing=False)

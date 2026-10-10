@@ -44,8 +44,11 @@ details, secrets or known operational weaknesses.
 2. **Test.** Run what CI runs for the areas you touched:
 
    ```bash
+   ruff check backend/app worker scripts
+   shellcheck scripts/*.sh scripts/tests/*.sh
+   bash scripts/tests/test_restore_drill.sh
    PYTHONPATH=worker python -m pytest backend/app/tests worker/tests -q
-   cd frontend && npm test && npm run build
+   cd frontend && npm run lint && npm test && npm run build
    cd backend && alembic upgrade head      # against a throwaway Postgres, when a migration changed
    ```
 

@@ -4,7 +4,6 @@ import { MemoryRouter } from 'react-router-dom'
 import SettingsPage from './SettingsPage'
 import {
   advancedDeleteImports,
-  deleteImportedScrobbles,
   enableLikedTracksSync,
   fetchBlocks,
   fetchImportBatches,

@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import os
-genre_cache_interval_minutes = int(os.environ.get("WORKER_GENRE_CACHE_INTERVAL_MINUTES", "5"))
-genre_cache_batch_size = int(os.environ.get("WORKER_GENRE_CACHE_BATCH_SIZE", "50"))
-
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -16,12 +13,18 @@ from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from file_import import process_import_directory
+from recaps import generate_recaps
 from spotify_ingestion import (
     CheckpointRecord,
+    InvalidToken,
     ScrobbleSettingsRecord,
     SpotifyClient,
     UserRecord,
+    backfill_artist_genres,
+    decrypt_refresh_token,
+    encrypt_refresh_token,
     spotify_rate_limit_blocked_until,
+    sync_currently_playing,
     sync_liked_tracks_for_user,
     sync_user,
 )
@@ -56,6 +59,8 @@ lastfm_api_key = os.getenv("LASTFM_API_KEY", "")
 # against ingestion_checkpoints.last_polled_at on every tick.
 spotify_interval_minutes = int(os.getenv("WORKER_SPOTIFY_INTERVAL_MINUTES", "1"))
 liked_tracks_interval_minutes = int(os.getenv("WORKER_LIKED_TRACKS_INTERVAL_MINUTES", "30"))
+genre_cache_interval_minutes = int(os.environ.get("WORKER_GENRE_CACHE_INTERVAL_MINUTES", "5"))
+genre_cache_batch_size = int(os.environ.get("WORKER_GENRE_CACHE_BATCH_SIZE", "50"))
 # Playlist names are low-priority enrichment, not ingestion, so this defaults to a
 # slow cadence and a small per-tick batch — a large backlog is spread across many
 # ticks rather than bursting Spotify, the same reasoning as the liked-tracks walk.
@@ -171,7 +176,6 @@ def run_currently_playing_sync() -> None:
     session = sessionmaker(bind=engine)()
     client = SpotifyClient(spotify_client_id, spotify_client_secret, refresh_token_key)
     try:
-        from spotify_ingestion import sync_currently_playing
         enabled_settings = session.query(ScrobbleSettingsRecord).filter(ScrobbleSettingsRecord.realtime_sync_enabled.is_(True)).all()
         user_ids = [record.user_id for record in enabled_settings]
         users_by_id = {
@@ -251,9 +255,6 @@ def run_genre_cache_backfill() -> None:
     engine = create_engine(database_url, pool_pre_ping=True)
     session = sessionmaker(bind=engine)()
     try:
-        from spotify_ingestion import backfill_artist_genres, UserRecord, decrypt_refresh_token, encrypt_refresh_token, InvalidToken
-        import requests
-        
         users = session.query(UserRecord).filter(UserRecord.is_active.is_(True)).all()
         access_token = None
         for user in users:
@@ -420,7 +421,6 @@ def start_scheduler() -> None:
     
     # Schedule Recaps Generation daily at 8:00 AM UTC
     try:
-        from recaps import generate_recaps
         scheduler.add_job(
             generate_recaps, 
             "cron", 
