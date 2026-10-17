@@ -45,3 +45,7 @@ HANDOVER.private.md
 *.db
 *.dump
 *.sql
+.superpowers/
+brag-output/
+.agents/
+skills-lock.json
