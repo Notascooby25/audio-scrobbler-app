@@ -360,6 +360,11 @@ export function fetchReportsEntity({ token, entity, dateRange, userId }) {
   return fetchAnalyticsResource(`/reports/${entity}`, { token, params })
 }
 
+export function fetchFriendsComparison({ token, dateRange }) {
+  const params = dateRange ? toQueryParams(dateRange) : {}
+  return fetchAnalyticsResource('/reports/friends-comparison', { token, params })
+}
+
 export function fetchUserSettings({ token }) {
   return fetchAnalyticsResource('/users/me/settings', { token })
 }
