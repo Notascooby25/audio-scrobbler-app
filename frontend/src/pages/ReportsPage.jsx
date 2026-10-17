@@ -7,6 +7,7 @@ import BarTrendChart from '../components/charts/BarTrendChart'
 import ListeningHeatmap from '../components/charts/ListeningHeatmap'
 import ListeningClockChart from '../components/charts/ListeningClockChart'
 import GenreBarList from '../components/charts/GenreBarList'
+import FriendsComparisonSection from '../components/reports/FriendsComparisonSection'
 import { fetchReportsCharts, fetchReportsEntity, fetchReportsSummary, fetchUserProfile } from '../api'
 import { createDefaultDateRange, DATE_RANGE_PRESETS, isValidDateRange } from '../dateRange'
 import { readSession } from '../session'
@@ -29,6 +30,7 @@ export default function ReportsPage() {
   const [targetProfile, setTargetProfile] = useState(null)
   const [dateRange, setDateRange] = useState(() => dateRangeFromParams(searchParams))
   const [report, setReport] = useState(null)
+  const [showFriendsComparison, setShowFriendsComparison] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -62,7 +64,22 @@ export default function ReportsPage() {
     <AnalyticsPage eyebrow="Listening report" title={isOwnReport ? 'Reports' : `@${targetProfile?.username || '...'}'s Reports`}>
       {!session?.accessToken && <p className="notice">Connect Spotify from the <Link to="/connect">connection page</Link> to see your listening report.</p>}
       {error && <p className="notice notice-error" role="alert">{error}</p>}
-      <DateRangeSelector value={dateRange} onChange={setDateRange} />
+      <div className="reports-toolbar">
+        <DateRangeSelector value={dateRange} onChange={setDateRange} />
+        {isOwnReport && (
+          <button
+            type="button"
+            className={`button-secondary compare-friends-btn ${showFriendsComparison ? 'active' : ''}`}
+            onClick={() => setShowFriendsComparison((prev) => !prev)}
+            aria-expanded={showFriendsComparison}
+          >
+            👥 {showFriendsComparison ? 'Hide Friends Comparison' : 'Compare with Friends'}
+          </button>
+        )}
+      </div>
+      {showFriendsComparison && session?.accessToken && (
+        <FriendsComparisonSection token={session.accessToken} dateRange={dateRange} />
+      )}
       <div className="report-banner">
         <div>
           <p className="section-kicker">Your listening story</p>

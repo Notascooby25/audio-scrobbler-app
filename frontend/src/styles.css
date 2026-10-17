@@ -3685,3 +3685,207 @@ dd {
     display: block;
   }
 }
+
+/* ==========================================================================
+   Friends Comparison Section (Reports)
+   ========================================================================== */
+
+.reports-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.compare-friends-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.compare-friends-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.compare-friends-btn.active {
+  background: var(--color-accent-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.friends-comparison-container {
+  margin-bottom: 24px;
+}
+
+.friends-comparison-header {
+  margin-bottom: 12px;
+}
+
+.friends-comparison-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.friends-comparison-subtitle {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.friends-comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .friends-comparison-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.friends-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.friends-card-empty {
+  text-align: center;
+  padding: 32px 16px;
+  align-items: center;
+}
+
+.friends-card-header {
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+}
+
+.friends-card-header h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.friends-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.friends-list-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.friends-list-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.friends-item-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.friends-rank {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  width: 1.2rem;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+
+.friends-item-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.friends-item-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.friends-item-subtitle {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.friends-item-breakdown {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  margin-top: 2px;
+}
+
+.friends-item-total {
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--color-canvas);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.leaderboard-row.leaderboard-current-user .friends-item-title {
+  color: var(--color-primary);
+}
+
+.leaderboard-minutes {
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.leaderboard-current-user .leaderboard-minutes {
+  color: var(--color-primary);
+  background: var(--color-accent-soft);
+  border-color: var(--color-primary);
+}
+
+.badge-you {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+.empty-message {
+  font-size: 0.85rem;
+  font-style: italic;
+  padding: 12px 0;
+  margin: 0;
+}

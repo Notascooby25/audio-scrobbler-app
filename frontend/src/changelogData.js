@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: '0.11.4',
+    date: '2026-10-17',
+    changes: [
+      'Added "Compare with Friends" social listening stats to the Reports page: compare top shared artists, top shared songs, and a minutes-listened leaderboard across your followed friends for any selected date range.',
+      'Added responsive cards with individual friend play breakdowns and empty states prompting to follow friends.'
+    ]
+  },
+  {
     version: '0.11.3',
     date: '2026-10-10',
     changes: [
