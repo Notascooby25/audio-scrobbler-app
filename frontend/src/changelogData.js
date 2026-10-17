@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: '0.11.5',
+    date: '2026-10-17',
+    changes: [
+      'Updated service worker cache name to v5 to ensure existing browsers and installed PWAs immediately load the latest application updates.',
+      'Configured production Watchtower instance to ensure future GitHub releases are automatically deployed to the NUC.'
+    ]
+  },
+  {
     version: '0.11.4',
     date: '2026-10-17',
     changes: [
