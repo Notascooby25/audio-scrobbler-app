@@ -1,11 +1,19 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
+
 from sqlalchemy import Select, Text, cast, exists, func, or_, select
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import FunctionElement
 
-from ..models import BlockedItem, GenreCache, ListeningEvent
+from ..models import BlockedItem, Follow, GenreCache, ListeningEvent, User
+from ..schemas.friends_comparison import (
+    FriendContribution,
+    FriendsComparisonResponse,
+    LeaderboardEntry,
+    SharedEntity,
+)
 
 
 class group_concat_distinct(FunctionElement):
@@ -140,7 +148,7 @@ def build_recent_scrobbles_query(
             or_(
                 ListeningEvent.track_name.ilike(search_term),
                 ListeningEvent.artist_name.ilike(search_term),
-                ListeningEvent.album_name.ilike(search_term)
+                ListeningEvent.album_name.ilike(search_term),
             )
         )
     return statement.order_by(ListeningEvent.played_at.desc()).limit(limit).offset(offset)
@@ -157,15 +165,18 @@ class extract_playlist_uri(FunctionElement):
     name = "extract_playlist_uri"
     inherit_cache = True
 
+
 @compiles(extract_playlist_uri, "sqlite")
 def sqlite_extract_playlist_uri(element, compiler, **kw):
     arg = compiler.process(element.clauses.clauses[0], **kw)
     return f"case when json_extract({arg}, '$.context.type') = 'playlist' then json_extract({arg}, '$.context.uri') else null end"
 
+
 @compiles(extract_playlist_uri, "postgresql")
 def pg_extract_playlist_uri(element, compiler, **kw):
     arg = compiler.process(element.clauses.clauses[0], **kw)
     return f"case when {arg}->'context'->>'type' = 'playlist' then {arg}->'context'->>'uri' else null end"
+
 
 def build_top_entities_query(
     user_id: int,
@@ -200,9 +211,7 @@ def build_top_entities_query(
     ]
     if entity == "tracks":
         selected_columns.append(func.max(ListeningEvent.track_id).label("spotify_track_id"))
-    statement = select(*selected_columns).where(
-        ListeningEvent.user_id == user_id
-    ).where(not_blocked_clause(user_id))
+    statement = select(*selected_columns).where(ListeningEvent.user_id == user_id).where(not_blocked_clause(user_id))
     if entity == "albums":
         statement = statement.where(ListeningEvent.album_name.isnot(None))
     elif entity == "playlists":
@@ -220,11 +229,7 @@ def build_top_entities_query(
         elif range_key != "overall":
             raise ValueError(f"Unsupported chart range: {range_key!r}")
 
-    return (
-        statement.group_by(*group_columns)
-        .order_by(func.count(ListeningEvent.id).desc())
-        .limit(limit)
-    )
+    return statement.group_by(*group_columns).order_by(func.count(ListeningEvent.id).desc()).limit(limit)
 
 
 def resolve_date_range(
@@ -265,17 +270,26 @@ def build_report_monthly_query(user_id: int, start: datetime, end: datetime):
     month_expr = func.date_trunc("month", ListeningEvent.played_at)
     return (
         select(func.to_char(month_expr, "YYYY-MM").label("label"), func.count(ListeningEvent.id).label("count"))
-        .where(ListeningEvent.user_id == user_id, not_blocked_clause(user_id), ListeningEvent.played_at >= start, ListeningEvent.played_at < end)
+        .where(
+            ListeningEvent.user_id == user_id,
+            not_blocked_clause(user_id),
+            ListeningEvent.played_at >= start,
+            ListeningEvent.played_at < end,
+        )
         .group_by(month_expr)
         .order_by(month_expr)
     )
 
 
 def build_stats_summary_query(user_id: int):
-    return select(
-        func.count(ListeningEvent.id).label("total_scrobbles"),
-        func.count(func.distinct(ListeningEvent.artist_name)).label("unique_artists"),
-    ).where(ListeningEvent.user_id == user_id).where(not_blocked_clause(user_id))
+    return (
+        select(
+            func.count(ListeningEvent.id).label("total_scrobbles"),
+            func.count(func.distinct(ListeningEvent.artist_name)).label("unique_artists"),
+        )
+        .where(ListeningEvent.user_id == user_id)
+        .where(not_blocked_clause(user_id))
+    )
 
 
 def build_library_scrobbles_query(
@@ -311,7 +325,11 @@ def build_library_count_query(
     filter_secondary: str | None = None,
     search_query: str | None = None,
 ):
-    statement = select(func.count(ListeningEvent.id)).where(ListeningEvent.user_id == user_id).where(not_blocked_clause(user_id))
+    statement = (
+        select(func.count(ListeningEvent.id))
+        .where(ListeningEvent.user_id == user_id)
+        .where(not_blocked_clause(user_id))
+    )
     if start is not None:
         statement = statement.where(ListeningEvent.played_at >= start)
         if end is not None:
@@ -325,7 +343,7 @@ def build_library_count_query(
             or_(
                 ListeningEvent.track_name.ilike(search_term),
                 ListeningEvent.artist_name.ilike(search_term),
-                ListeningEvent.album_name.ilike(search_term)
+                ListeningEvent.album_name.ilike(search_term),
             )
         )
     return statement
@@ -358,9 +376,7 @@ def build_library_entities_query(
     if entity == "tracks":
         selected_columns.append(func.max(ListeningEvent.track_id).label("spotify_track_id"))
 
-    statement = select(*selected_columns).where(
-        ListeningEvent.user_id == user_id
-    ).where(not_blocked_clause(user_id))
+    statement = select(*selected_columns).where(ListeningEvent.user_id == user_id).where(not_blocked_clause(user_id))
     if entity == "albums":
         statement = statement.where(ListeningEvent.album_name.isnot(None))
 
@@ -375,25 +391,14 @@ def build_library_entities_query(
             statement = statement.where(ListeningEvent.artist_name.ilike(search_term))
         elif entity == "albums":
             statement = statement.where(
-                or_(
-                    ListeningEvent.album_name.ilike(search_term),
-                    ListeningEvent.artist_name.ilike(search_term)
-                )
+                or_(ListeningEvent.album_name.ilike(search_term), ListeningEvent.artist_name.ilike(search_term))
             )
         elif entity == "tracks":
             statement = statement.where(
-                or_(
-                    ListeningEvent.track_name.ilike(search_term),
-                    ListeningEvent.artist_name.ilike(search_term)
-                )
+                or_(ListeningEvent.track_name.ilike(search_term), ListeningEvent.artist_name.ilike(search_term))
             )
 
-    return (
-        statement.group_by(*group_columns)
-        .order_by(func.count(ListeningEvent.id).desc())
-        .limit(limit)
-        .offset(offset)
-    )
+    return statement.group_by(*group_columns).order_by(func.count(ListeningEvent.id).desc()).limit(limit).offset(offset)
 
 
 def build_library_entity_count_query(
@@ -412,7 +417,11 @@ def build_library_entity_count_query(
     else:
         raise ValueError(f"Unsupported library entity: {entity!r}")
 
-    statement = select(func.count(func.distinct(value))).where(ListeningEvent.user_id == user_id).where(not_blocked_clause(user_id))
+    statement = (
+        select(func.count(func.distinct(value)))
+        .where(ListeningEvent.user_id == user_id)
+        .where(not_blocked_clause(user_id))
+    )
     if entity == "albums":
         statement = statement.where(value.isnot(None))
     if start is not None:
@@ -426,17 +435,11 @@ def build_library_entity_count_query(
             statement = statement.where(ListeningEvent.artist_name.ilike(search_term))
         elif entity == "albums":
             statement = statement.where(
-                or_(
-                    ListeningEvent.album_name.ilike(search_term),
-                    ListeningEvent.artist_name.ilike(search_term)
-                )
+                or_(ListeningEvent.album_name.ilike(search_term), ListeningEvent.artist_name.ilike(search_term))
             )
         elif entity == "tracks":
             statement = statement.where(
-                or_(
-                    ListeningEvent.track_name.ilike(search_term),
-                    ListeningEvent.artist_name.ilike(search_term)
-                )
+                or_(ListeningEvent.track_name.ilike(search_term), ListeningEvent.artist_name.ilike(search_term))
             )
 
     return statement
@@ -475,7 +478,12 @@ def build_report_weekly_query(user_id: int, start: datetime, end: datetime):
     day_expr = func.date_trunc("day", ListeningEvent.played_at)
     return (
         select(func.to_char(day_expr, "YYYY-MM-DD").label("label"), func.count(ListeningEvent.id).label("count"))
-        .where(ListeningEvent.user_id == user_id, not_blocked_clause(user_id), ListeningEvent.played_at >= start, ListeningEvent.played_at < end)
+        .where(
+            ListeningEvent.user_id == user_id,
+            not_blocked_clause(user_id),
+            ListeningEvent.played_at >= start,
+            ListeningEvent.played_at < end,
+        )
         .group_by(day_expr)
         .order_by(day_expr)
     )
@@ -485,7 +493,12 @@ def build_report_clock_query(user_id: int, start: datetime, end: datetime):
     hour_expr = func.extract("hour", ListeningEvent.played_at)
     return (
         select(hour_expr.label("label"), func.count(ListeningEvent.id).label("count"))
-        .where(ListeningEvent.user_id == user_id, not_blocked_clause(user_id), ListeningEvent.played_at >= start, ListeningEvent.played_at < end)
+        .where(
+            ListeningEvent.user_id == user_id,
+            not_blocked_clause(user_id),
+            ListeningEvent.played_at >= start,
+            ListeningEvent.played_at < end,
+        )
         .group_by(hour_expr)
         .order_by(hour_expr)
     )
@@ -520,37 +533,36 @@ def pg_extract_decade(element, compiler, **kw):
 def build_report_decade_query(user_id: int, start: datetime, end: datetime):
     decade_expr = extract_release_decade(ListeningEvent.raw_metadata)
     return (
-        select(
-            decade_expr.label("label"),
-            func.count(ListeningEvent.id).label("count")
-        )
+        select(decade_expr.label("label"), func.count(ListeningEvent.id).label("count"))
         .where(
             ListeningEvent.user_id == user_id,
             not_blocked_clause(user_id),
             ListeningEvent.played_at >= start,
             ListeningEvent.played_at < end,
             decade_expr.isnot(None),
-            decade_expr > 0  # Ignore invalid parsed years
+            decade_expr > 0,  # Ignore invalid parsed years
         )
         .group_by(decade_expr)
         .order_by(decade_expr)
     )
 
+
 class extract_primary_artist_id(FunctionElement):
     name = "extract_primary_artist_id"
     inherit_cache = True
 
+
 @compiles(extract_primary_artist_id, "sqlite")
 def sqlite_extract_primary_artist_id(element, compiler, **kw):
     arg = compiler.process(element.clauses.clauses[0], **kw)
-    return (f"coalesce(json_extract({arg}, '$.track.artists[0].id'), "
-            f"json_extract({arg}, '$.item.artists[0].id'))")
+    return f"coalesce(json_extract({arg}, '$.track.artists[0].id'), json_extract({arg}, '$.item.artists[0].id'))"
+
 
 @compiles(extract_primary_artist_id, "postgresql")
 def pg_extract_primary_artist_id(element, compiler, **kw):
     arg = compiler.process(element.clauses.clauses[0], **kw)
-    return (f"coalesce({arg}->'track'->'artists'->0->>'id', "
-            f"{arg}->'item'->'artists'->0->>'id')")
+    return f"coalesce({arg}->'track'->'artists'->0->>'id', {arg}->'item'->'artists'->0->>'id')"
+
 
 def build_pending_genre_artist_ids_query(limit: int) -> Select:
     artist_id_expr = extract_primary_artist_id(ListeningEvent.raw_metadata)
@@ -565,10 +577,7 @@ def build_pending_genre_artist_ids_query(limit: int) -> Select:
         cast(GenreCache.genres, Text) != "[]",
     )
     statement = (
-        select(
-            artist_id_expr.label("artist_id"),
-            func.max(ListeningEvent.artist_name).label("artist_name")
-        )
+        select(artist_id_expr.label("artist_id"), func.max(ListeningEvent.artist_name).label("artist_name"))
         .select_from(ListeningEvent)
         .where(
             ListeningEvent.source.in_(["spotify", "spotify_realtime"]),
@@ -580,41 +589,199 @@ def build_pending_genre_artist_ids_query(limit: int) -> Select:
     )
     return statement
 
+
 def build_report_genre_artist_counts_query(user_id: int, start: datetime | None, end: datetime | None) -> Select:
     artist_id_expr = extract_primary_artist_id(ListeningEvent.raw_metadata)
     statement = (
-        select(
-            artist_id_expr.label("artist_id"),
-            func.count(ListeningEvent.id).label("play_count")
-        )
+        select(artist_id_expr.label("artist_id"), func.count(ListeningEvent.id).label("play_count"))
         .select_from(ListeningEvent)
         .where(
             ListeningEvent.user_id == user_id,
             ListeningEvent.source.in_(["spotify", "spotify_realtime"]),
-            artist_id_expr.isnot(None)
+            artist_id_expr.isnot(None),
         )
     )
     if start is not None:
         statement = statement.where(ListeningEvent.played_at >= start)
     if end is not None:
         statement = statement.where(ListeningEvent.played_at < end)
-    
+
     statement = statement.group_by(artist_id_expr).order_by(func.count(ListeningEvent.id).desc())
     return statement
+
 
 def build_report_heatmap_query(user_id: int, start: datetime | None, end: datetime | None) -> Select:
     # We will use extract('dow', ...) and extract('hour', ...)
     statement = (
         select(
-            func.extract('dow', ListeningEvent.played_at).label('day'),
-            func.extract('hour', ListeningEvent.played_at).label('hour'),
-            func.count(ListeningEvent.id).label('count')
+            func.extract("dow", ListeningEvent.played_at).label("day"),
+            func.extract("hour", ListeningEvent.played_at).label("hour"),
+            func.count(ListeningEvent.id).label("count"),
         )
         .where(ListeningEvent.user_id == user_id)
-        .group_by('day', 'hour')
+        .group_by("day", "hour")
     )
     if start is not None:
         statement = statement.where(ListeningEvent.played_at >= start)
     if end is not None:
         statement = statement.where(ListeningEvent.played_at < end)
     return statement
+
+
+def get_friends_comparison_data(
+    db: Session,
+    user_id: int,
+    start_date: datetime | None,
+    end_date: datetime | None,
+) -> FriendsComparisonResponse:
+    followed_records = (
+        db.query(Follow.followee_id, User.username)
+        .join(User, User.id == Follow.followee_id)
+        .filter(Follow.follower_id == user_id, User.is_active.is_(True))
+        .all()
+    )
+    if not followed_records:
+        return FriendsComparisonResponse(
+            has_friends=False,
+            top_artists=[],
+            top_tracks=[],
+            leaderboard=[],
+        )
+
+    followed_ids = [r[0] for r in followed_records]
+    all_user_ids = [user_id] + followed_ids
+
+    current_user_obj = db.query(User).filter(User.id == user_id).first()
+    user_map: dict[int, str] = {user_id: current_user_obj.username if current_user_obj else "You"}
+    for fid, uname in followed_records:
+        user_map[fid] = uname
+
+    base_filter = [
+        ListeningEvent.user_id.in_(all_user_ids),
+        not_blocked_clause(user_id),
+    ]
+    if start_date is not None:
+        base_filter.append(ListeningEvent.played_at >= start_date)
+    if end_date is not None:
+        base_filter.append(ListeningEvent.played_at <= end_date)
+
+    # 1. Top Artists with Friends
+    artist_rows = (
+        db.query(
+            ListeningEvent.artist_name,
+            ListeningEvent.user_id,
+            func.count(ListeningEvent.id).label("user_count"),
+        )
+        .filter(*base_filter)
+        .group_by(ListeningEvent.artist_name, ListeningEvent.user_id)
+        .all()
+    )
+
+    artist_data: dict[str, dict[int, int]] = {}
+    for aname, uid, cnt in artist_rows:
+        if aname not in artist_data:
+            artist_data[aname] = {}
+        artist_data[aname][uid] = cnt
+
+    shared_artists: list[SharedEntity] = []
+    for aname, user_counts in artist_data.items():
+        if user_id in user_counts and len(user_counts) >= 2:
+            total = sum(user_counts.values())
+            contribs = [
+                FriendContribution(
+                    user_id=uid,
+                    username=user_map.get(uid, f"User {uid}"),
+                    scrobbles=count,
+                )
+                for uid, count in sorted(user_counts.items(), key=lambda x: (x[1], x[0] == user_id), reverse=True)
+            ]
+            shared_artists.append(
+                SharedEntity(
+                    name=aname,
+                    total_scrobbles=total,
+                    contributions=contribs,
+                )
+            )
+    shared_artists.sort(key=lambda x: x.total_scrobbles, reverse=True)
+    top_5_artists = shared_artists[:5]
+
+    # 2. Top Tracks with Friends
+    track_rows = (
+        db.query(
+            ListeningEvent.track_name,
+            ListeningEvent.artist_name,
+            ListeningEvent.user_id,
+            func.count(ListeningEvent.id).label("user_count"),
+        )
+        .filter(*base_filter)
+        .group_by(ListeningEvent.track_name, ListeningEvent.artist_name, ListeningEvent.user_id)
+        .all()
+    )
+
+    track_data: dict[tuple[str, str], dict[int, int]] = {}
+    for tname, aname, uid, cnt in track_rows:
+        key = (tname, aname)
+        if key not in track_data:
+            track_data[key] = {}
+        track_data[key][uid] = cnt
+
+    shared_tracks: list[SharedEntity] = []
+    for (tname, aname), user_counts in track_data.items():
+        if user_id in user_counts and len(user_counts) >= 2:
+            total = sum(user_counts.values())
+            contribs = [
+                FriendContribution(
+                    user_id=uid,
+                    username=user_map.get(uid, f"User {uid}"),
+                    scrobbles=count,
+                )
+                for uid, count in sorted(user_counts.items(), key=lambda x: (x[1], x[0] == user_id), reverse=True)
+            ]
+            shared_tracks.append(
+                SharedEntity(
+                    name=tname,
+                    artist_name=aname,
+                    total_scrobbles=total,
+                    contributions=contribs,
+                )
+            )
+    shared_tracks.sort(key=lambda x: x.total_scrobbles, reverse=True)
+    top_5_tracks = shared_tracks[:5]
+
+    # 3. Minutes Listened Leaderboard
+    leaderboard_rows = (
+        db.query(
+            ListeningEvent.user_id,
+            func.coalesce(func.sum(func.coalesce(ListeningEvent.duration_ms, 180000)), 0).label("total_ms"),
+            func.count(ListeningEvent.id).label("total_scrobbles"),
+        )
+        .filter(*base_filter)
+        .group_by(ListeningEvent.user_id)
+        .all()
+    )
+    user_stats = {uid: (int(total_ms), int(cnt)) for uid, total_ms, cnt in leaderboard_rows}
+
+    leaderboard: list[LeaderboardEntry] = []
+    for uid in all_user_ids:
+        total_ms, scrobbles = user_stats.get(uid, (0, 0))
+        minutes = round(total_ms / 60000)
+        leaderboard.append(
+            LeaderboardEntry(
+                user_id=uid,
+                username=user_map.get(uid, f"User {uid}"),
+                is_current_user=(uid == user_id),
+                minutes_listened=minutes,
+                scrobbles=scrobbles,
+                rank=0,
+            )
+        )
+    leaderboard.sort(key=lambda x: (x.minutes_listened, x.scrobbles), reverse=True)
+    for idx, entry in enumerate(leaderboard, start=1):
+        entry.rank = idx
+
+    return FriendsComparisonResponse(
+        has_friends=True,
+        top_artists=top_5_artists,
+        top_tracks=top_5_tracks,
+        leaderboard=leaderboard,
+    )
