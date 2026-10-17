@@ -67,6 +67,10 @@ def setup_function():
     db.commit()
 
 
+def teardown_function():
+    app.dependency_overrides.clear()
+
+
 def test_friends_comparison_route_auth_required():
     app.dependency_overrides.clear()
     response = client.get("/reports/friends-comparison")
