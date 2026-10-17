@@ -6,7 +6,14 @@ from sqlalchemy.orm import Session
 from ..api.deps import get_current_user
 from ..db import get_db
 from ..models import User
-from ..queries.analytics_queries import CHART_ENTITIES, CHART_RANGES, DATE_RANGE_PRESETS, resolve_date_range
+from ..queries.analytics_queries import (
+    CHART_ENTITIES,
+    CHART_RANGES,
+    DATE_RANGE_PRESETS,
+    get_friends_comparison_data,
+    resolve_date_range,
+)
+from ..schemas.friends_comparison import FriendsComparisonResponse
 from ..schemas.analytics import (
     ChartResponse,
     LegacyChartResponse,
@@ -100,13 +107,17 @@ def _resolve_viewable_user_id(db: Session, current_user: User, user_id: int | No
     return user_id
 
 
-def _resolve_optional_range(range_key: str | None, start_date: str | None, end_date: str | None) -> tuple[object | None, object | None]:
+def _resolve_optional_range(
+    range_key: str | None, start_date: str | None, end_date: str | None
+) -> tuple[object | None, object | None]:
     if range_key is None or range_key == "all.time":
         return None, None
     if range_key not in DATE_RANGE_PRESETS:
         raise HTTPException(status_code=400, detail=f"Unsupported range: {range_key!r}")
     try:
-        period_start, period_end, _previous_start, _previous_end, _granularity = resolve_date_range(range_key, start_date, end_date)
+        period_start, period_end, _previous_start, _previous_end, _granularity = resolve_date_range(
+            range_key, start_date, end_date
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return period_start, period_end
@@ -186,7 +197,17 @@ def library_scrobbles(
     kwargs = {"start": period_start, "end": period_end} if period_start is not None else {}
     if filter_entity is None:
         return get_library_scrobbles(db, target_user_id, limit, offset, search_query=search, **kwargs)
-    return get_library_scrobbles(db, target_user_id, limit, offset, filter_entity=filter_entity, filter_name=filter_name, filter_secondary=filter_secondary, search_query=search, **kwargs)
+    return get_library_scrobbles(
+        db,
+        target_user_id,
+        limit,
+        offset,
+        filter_entity=filter_entity,
+        filter_name=filter_name,
+        filter_secondary=filter_secondary,
+        search_query=search,
+        **kwargs,
+    )
 
 
 @library_router.get("/{entity}", response_model=LibraryResponse | TimelineResponse)
@@ -249,6 +270,23 @@ def reports_charts(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@reports_router.get("/friends-comparison", response_model=FriendsComparisonResponse)
+def reports_friends_comparison(
+    range: str = Query(default="last.week", description="One of: last.week, last.month, last.year, all.time, custom"),
+    start_date: str | None = Query(default=None),
+    end_date: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> FriendsComparisonResponse:
+    if range not in DATE_RANGE_PRESETS:
+        raise HTTPException(status_code=400, detail=f"Unsupported range: {range!r}")
+    try:
+        period_start, period_end, _, _, _ = resolve_date_range(range, start_date, end_date)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return get_friends_comparison_data(db, current_user.id, period_start, period_end)
+
+
 @reports_router.get("/{entity}", response_model=ChartResponse)
 def reports_entities(
     entity: str,
@@ -265,7 +303,9 @@ def reports_entities(
         raise HTTPException(status_code=400, detail=f"Unsupported range: {range!r}")
     target_user_id = _resolve_viewable_user_id(db, current_user, user_id)
     try:
-        period_start, period_end, _previous_start, _previous_end, _granularity = resolve_date_range(range, start_date, end_date)
+        period_start, period_end, _previous_start, _previous_end, _granularity = resolve_date_range(
+            range, start_date, end_date
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return get_user_charts(db, target_user_id, entity, "overall", 10, start=period_start, end=period_end)
