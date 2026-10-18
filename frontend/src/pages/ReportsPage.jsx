@@ -65,41 +65,69 @@ export default function ReportsPage() {
       {!session?.accessToken && <p className="notice">Connect Spotify from the <Link to="/connect">connection page</Link> to see your listening report.</p>}
       {error && <p className="notice notice-error" role="alert">{error}</p>}
       <div className="reports-toolbar">
-        <DateRangeSelector value={dateRange} onChange={setDateRange} />
-        {isOwnReport && (
-          <button
-            type="button"
-            className={`button-secondary compare-friends-btn ${showFriendsComparison ? 'active' : ''}`}
-            onClick={() => setShowFriendsComparison((prev) => !prev)}
-            aria-expanded={showFriendsComparison}
-          >
-            👥 {showFriendsComparison ? 'Hide Friends Comparison' : 'Compare with Friends'}
-          </button>
-        )}
+        <DateRangeSelector value={dateRange} onChange={setDateRange} showCompare={false} />
+        <div className="reports-toolbar-actions">
+          <label className={`compare-toggle-btn ${dateRange.compare_to_previous ? 'active' : ''}`}>
+            <input
+              type="checkbox"
+              className="visually-hidden-accessible"
+              aria-label="Compare to previous period"
+              checked={Boolean(dateRange.compare_to_previous)}
+              onChange={(e) => setDateRange((prev) => ({ ...prev, compare_to_previous: e.target.checked }))}
+            />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="17 1 21 5 17 9" />
+              <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+              <polyline points="7 23 3 19 7 15" />
+              <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+            </svg>
+            <span>{dateRange.compare_to_previous ? 'Comparing previous period' : 'Compare previous period'}</span>
+          </label>
+          {isOwnReport && (
+            <button
+              type="button"
+              className={`compare-toggle-btn compare-friends-btn ${showFriendsComparison ? 'active' : ''}`}
+              onClick={() => setShowFriendsComparison((prev) => !prev)}
+              aria-expanded={showFriendsComparison}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              <span>{showFriendsComparison ? 'Hide Friends Comparison' : 'Compare with Friends'}</span>
+            </button>
+          )}
+          <Link to={isOwnReport ? '/library' : `/library?userId=${targetUserId}`} className="reports-library-link">
+            Browse library history →
+          </Link>
+        </div>
       </div>
       {showFriendsComparison && session?.accessToken && (
         <FriendsComparisonSection token={session.accessToken} dateRange={dateRange} />
       )}
-      <div className="report-banner">
-        <div>
-          <p className="section-kicker">Your listening story</p>
-          <h2>Patterns worth returning to.</h2>
-          {report && (
-            <p>
-              {report.summary.period_scrobbles.toLocaleString()} scrobbles this period
-              {dateRange.compare_to_previous && `, ${report.summary.comparison_percent}% versus the previous period`}.
-            </p>
-          )}
+      {report && (
+        <div className="report-facts">
+          <div className="report-fact-card">
+            <strong>{Number(report.summary.period_scrobbles || 0).toLocaleString()}</strong>
+            <span>Scrobbles this period</span>
+            {dateRange.compare_to_previous && (
+              <span className="stat-comparison">
+                {report.summary.comparison_percent > 0 ? `+${report.summary.comparison_percent}%` : `${report.summary.comparison_percent}%`} vs previous ({Number(report.summary.previous_period_scrobbles || 0).toLocaleString()})
+              </span>
+            )}
+          </div>
+          <div className="report-fact-card">
+            <strong>{Number(report.summary.listening_minutes || 0).toLocaleString()}</strong>
+            <span>Listening minutes</span>
+          </div>
+          <div className="report-fact-card">
+            <strong>{Number(report.summary.average_per_day || 0)}</strong>
+            <span>Average per day</span>
+          </div>
         </div>
-        <Link to={isOwnReport ? '/library' : `/library?userId=${targetUserId}`}>Browse the source history</Link>
-      </div>
-      {report && <div className="report-facts">
-        <div><strong>{Number(report.summary.listening_minutes || 0).toLocaleString()}</strong><span>Listening minutes</span></div>
-        <div><strong>{Number(report.summary.average_per_day || 0)}</strong><span>Average per day</span></div>
-        {dateRange.compare_to_previous && (
-          <div><strong>{Number(report.summary.previous_period_scrobbles || 0).toLocaleString()}</strong><span>Previous period</span></div>
-        )}
-      </div>}
+      )}
             {report && <div className="report-data-grid">
         <BarTrendChart title="Scrobbles over time" points={report.charts.weekly_scrobbles} />
       </div>}

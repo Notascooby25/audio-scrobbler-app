@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import AnalyticsPage from '../components/AnalyticsPage'
 import { fetchFollowing, searchUsers, fetchLeaderboard } from '../api'
 import { readSession } from '../session'
 import DateRangeSelector from '../components/DateRangeSelector'
@@ -62,34 +63,27 @@ export default function FollowingPage() {
   )
 
   return (
-    <section className="dashboard" aria-labelledby="following-heading">
-      <div className="section-heading" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '1rem' }}>
-        <div>
-          <p className="section-kicker">Community</p>
-          <h2 id="following-heading">Following & Leaderboards</h2>
-        </div>
-        
-        <div className="library-segmented-group">
-          <div className="segmented-tabs" role="tablist" aria-label="Following tabs">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'following'}
-              className={`segmented-tab ${activeTab === 'following' ? 'active' : ''}`}
-              onClick={() => setActiveTab('following')}
-            >
-              Following
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'leaderboard'}
-              className={`segmented-tab ${activeTab === 'leaderboard' ? 'active' : ''}`}
-              onClick={() => setActiveTab('leaderboard')}
-            >
-              Leaderboard
-            </button>
-          </div>
+    <AnalyticsPage eyebrow="Community" title="Following & Leaderboards">
+      <div className="library-segmented-group" style={{ marginBottom: '16px' }}>
+        <div className="segmented-tabs" role="tablist" aria-label="Following tabs">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'following'}
+            className={`segmented-tab ${activeTab === 'following' ? 'active' : ''}`}
+            onClick={() => setActiveTab('following')}
+          >
+            Following
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'leaderboard'}
+            className={`segmented-tab ${activeTab === 'leaderboard' ? 'active' : ''}`}
+            onClick={() => setActiveTab('leaderboard')}
+          >
+            Leaderboard
+          </button>
         </div>
       </div>
 
@@ -154,6 +148,6 @@ export default function FollowingPage() {
           )}
         </>
       )}
-    </section>
+    </AnalyticsPage>
   )
 }

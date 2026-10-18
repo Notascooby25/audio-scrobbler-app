@@ -72,11 +72,17 @@ describe('date filtering', () => {
 
     render(<MemoryRouter><ReportsPage /></MemoryRouter>)
 
-    await waitFor(() => expect(screen.getByText(/7 scrobbles this period/)).toBeInTheDocument())
+    await waitFor(() => {
+      expect(screen.getByText('7')).toBeInTheDocument()
+      expect(screen.getByText(/Scrobbles this period/i)).toBeInTheDocument()
+    })
 
     fireEvent.change(screen.getByLabelText('Range'), { target: { value: 'last.month' } })
 
-    await waitFor(() => expect(screen.getByText(/42 scrobbles this period/)).toBeInTheDocument())
+    await waitFor(() => {
+      expect(screen.getByText('42')).toBeInTheDocument()
+      expect(screen.getByText(/Scrobbles this period/i)).toBeInTheDocument()
+    })
     expect(fetchReportsSummary).toHaveBeenLastCalledWith({ token: 'demo-token', dateRange: expect.objectContaining({ range: 'last.month' }) })
   })
 

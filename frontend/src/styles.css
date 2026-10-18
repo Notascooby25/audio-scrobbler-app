@@ -1643,7 +1643,7 @@ button.btn-secondary:hover:not(:disabled) {
 .stats-bar {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
 }
 
 .stat-block {
@@ -2772,6 +2772,14 @@ button.btn-secondary:hover:not(:disabled) {
   letter-spacing: 0.04em;
 }
 
+.report-facts .stat-comparison {
+  color: var(--color-primary);
+  font: 500 0.8rem inherit, sans-serif;
+  text-transform: none;
+  letter-spacing: normal;
+  margin-top: 2px;
+}
+
 .report-category-grid {
   display: grid;
   gap: 1rem;
@@ -3699,30 +3707,56 @@ dd {
   margin-bottom: 16px;
 }
 
-.compare-friends-btn {
+.reports-toolbar-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.compare-toggle-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
+  height: 36px;
+  padding: 0 12px;
   font-size: 13px;
   font-weight: 500;
   border-radius: var(--radius-sm);
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: 0.5px solid var(--color-border);
   color: var(--color-ink);
   cursor: pointer;
+  user-select: none;
   transition: all 0.15s ease;
+  box-sizing: border-box;
 }
 
-.compare-friends-btn:hover:not(:disabled) {
+.compare-toggle-btn:hover:not(:disabled) {
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
 
-.compare-friends-btn.active {
+.compare-toggle-btn.active {
   background: var(--color-accent-soft);
   border-color: var(--color-primary);
   color: var(--color-primary);
+  font-weight: 600;
+}
+
+.reports-library-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-primary);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 0 4px;
+}
+
+.reports-library-link:hover {
+  text-decoration: underline;
 }
 
 .friends-comparison-container {
