@@ -166,7 +166,7 @@ Sections in page order:
 
 ## 8. Connect: `/connect`
 
-Organized into a 3-card Data Sources Hub:
+Organized into a 3-card Data Sources Hub with an accessible `<h1>` heading ("Connect & Data Sources"):
 1. **Spotify Streaming Card:** Active connection status, connect button, and rate-limit notice.
 2. **History File Import Card:** File picker for Spotify and YouTube JSON exports with upload progress bar and summary breakdown.
 3. **Radio & Liked Songs Tools Card:** Direct shortcut to `/settings?tab=scrobble`.

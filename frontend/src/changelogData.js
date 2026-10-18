@@ -1,5 +1,17 @@
 export const CHANGELOG = [
   {
+    version: '0.11.10',
+    date: '2026-10-18',
+    changes: [
+      'Corrected top-level heading hierarchy on the Connect page (WCAG 1.3.1).',
+      'Added standard Escape key dismissal to the Copy Scrobbles modal.',
+      'Improved Changelog version badge text contrast to satisfy WCAG AA (>= 4.5:1).',
+      'Normalized BBC Scope Creep tools styling to use standard design tokens and 0.5px hairline borders.',
+      'Refined loading spinner for reduced-motion preferences, using a gentle opacity pulse instead of an abrupt freeze.',
+      'Elevated mobile touch targets across menus, compare toggles, calendar chips, and segmented tabs to the >= 44pt accessibility standard.'
+    ]
+  },
+  {
     version: '0.11.9',
     date: '2026-10-18',
     changes: [

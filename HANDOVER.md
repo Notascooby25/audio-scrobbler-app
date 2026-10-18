@@ -346,6 +346,10 @@ the NAS listing.** The live setup has drifted from the repos before.
   - BBC Sounds Followed Shows (`followed_shows` table, BBC RMS search & episode browsing, 1-click Spotify playlist scope re-auth).
   - Apple Music file import support (`source="apple"`).
   - In-app notification bell (`notifications` table) and PWA Web Push (`push_subscriptions` table, `VAPID` keys, and the 08:00 UTC `recaps-generation` worker job for daily/weekly/monthly recaps).
+- **Impeccable Technical Audit Improvements (2026-10-18, v0.11.10):**
+  - Hardened heading semantics on `/connect` (`<h1>`) and added `Escape` key dismissal to `CopyScrobblesModal`.
+  - Fixed Changelog badge contrast on primary blue (`#ffffff` on `#0066ff`), normalized tokens in `ScopeCreepTools.jsx`, and refined loading spinner for reduced-motion preferences (gentle opacity pulse).
+  - Elevated mobile touch targets across `.entry-menu-toggle`, `.compare-toggle-btn`, `.calendar-preset-chip`, `.calendar-day-btn`, and segmented tabs to $\ge 44\text{pt}$ ($44\text{px}$).
 - **Impeccable Polish, Mobile Touch Parity & Data Sources Hub (2026-10-18, v0.11.9):**
   - Redesigned `/connect` into a clean 3-card Data Sources Hub (Spotify Streaming, File Imports, and Radio/Tools) with dev bypass forms strictly isolated behind `import.meta.env.DEV`.
   - Replaced raw emoji 🔔 in `HeaderNav` with an accessible outline SVG `<BellIcon>` component and dynamic unread aria announcements.
