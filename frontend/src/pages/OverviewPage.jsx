@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import AnalyticsPage from '../components/AnalyticsPage'
 import DateRangeSelector from '../components/DateRangeSelector'
 import RankedList from '../components/RankedList'
+import RediscoverCard from '../components/RediscoverCard'
 import SummaryStatsBar from '../components/SummaryStatsBar'
 import { fetchStatsChart, fetchStatsSummary } from '../api'
 import { createDefaultDateRange, isValidDateRange } from '../dateRange'
@@ -49,6 +50,7 @@ export default function OverviewPage() {
       {summary && (
         <>
           <SummaryStatsBar stats={summary} />
+          <RediscoverCard token={session?.accessToken} />
           <DateRangeSelector value={dateRange} onChange={setDateRange} showCompare={false} />
           {charts && (
             <div className="overview-grid">

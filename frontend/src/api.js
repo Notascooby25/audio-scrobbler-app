@@ -529,3 +529,28 @@ export async function sendTestNotification({ token }) {
   if (!res.ok) throw new Error("Failed to send test notification");
   return res.json();
 }
+
+export async function fetchRediscoverTracks({ token, mode = 'forgotten', limit = 15 }) {
+  const params = new URLSearchParams()
+  if (mode) params.set('mode', mode)
+  if (limit) params.set('limit', String(limit))
+  const response = await fetch(`${API_BASE_URL}/analytics/rediscover?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return parseResponse(response)
+}
+
+export async function createRediscoverPlaylist({ token, mode = 'forgotten', title, trackIds }) {
+  const body = { mode }
+  if (title) body.title = title
+  if (trackIds && trackIds.length > 0) body.track_ids = trackIds
+  const response = await fetch(`${API_BASE_URL}/analytics/rediscover/playlist`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  })
+  return parseResponse(response)
+}

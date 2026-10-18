@@ -18,6 +18,8 @@ vi.mock('../api', () => ({
   createBlock: vi.fn(),
   deleteLibraryEntries: vi.fn(),
   deleteLibraryScrobbles: vi.fn(),
+  fetchRediscoverTracks: vi.fn().mockResolvedValue({ tracks: [] }),
+  createRediscoverPlaylist: vi.fn(),
 }))
 
 import {
