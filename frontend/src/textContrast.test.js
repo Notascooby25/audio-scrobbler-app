@@ -108,5 +108,13 @@ describe('Primary Text Color & WCAG AA Contrast Verification', () => {
       expect(stylesContent).not.toMatch(/color:\s*#555/i)
       expect(stylesContent).not.toMatch(/color:\s*#666/i)
     })
+
+    it('defines design token aliases in :root for theme hardening', () => {
+      expect(stylesContent).toMatch(/--color-text-muted:\s*var\(--color-muted\);/)
+      expect(stylesContent).toMatch(/--color-surface-hover:\s*#f5f5f5;/)
+      expect(stylesContent).toMatch(/--color-bg:\s*var\(--color-canvas\);/)
+      expect(stylesContent).toMatch(/--text:\s*var\(--color-ink\);/)
+      expect(stylesContent).toMatch(/--text-muted:\s*var\(--color-muted\);/)
+    })
   })
 })

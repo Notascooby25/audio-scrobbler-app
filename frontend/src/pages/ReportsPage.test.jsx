@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import ReportsPage from './ReportsPage'
@@ -103,6 +103,34 @@ describe('ReportsPage with Friends Comparison', () => {
     expect(positiveEl).toHaveClass('stat-comparison-positive')
     expect(negativeEl).toHaveClass('stat-comparison-negative')
     expect(neutralEl).toHaveClass('stat-comparison-neutral')
+  })
+
+  it('displays loading feedback while reports are being fetched', async () => {
+    const { fetchReportsSummary } = await import('../api')
+    let resolveSummary
+    const pendingPromise = new Promise((resolve) => {
+      resolveSummary = resolve
+    })
+    fetchReportsSummary.mockReturnValueOnce(pendingPromise)
+
+    render(
+      <MemoryRouter>
+        <ReportsPage />
+      </MemoryRouter>
+    )
+
+    expect(screen.getByRole('status')).toHaveTextContent(/Updating listening report/i)
+
+    resolveSummary({
+      period_scrobbles: 10,
+      comparison_percent: 0,
+      listening_minutes: 50,
+      average_per_day: 5,
+    })
+
+    await waitFor(() => {
+      expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    })
   })
 })
 

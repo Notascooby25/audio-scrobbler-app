@@ -37,6 +37,7 @@ export default function ReportsPage() {
   const [targetProfile, setTargetProfile] = useState(null)
   const [dateRange, setDateRange] = useState(() => dateRangeFromParams(searchParams))
   const [report, setReport] = useState(null)
+  const [loading, setLoading] = useState(false)
   const [showFriendsComparison, setShowFriendsComparison] = useState(false)
   const [error, setError] = useState('')
 
@@ -55,6 +56,7 @@ export default function ReportsPage() {
     if (!session?.accessToken) return
     if (!isValidDateRange(dateRange)) return
     setError('')
+    setLoading(true)
     Promise.all([
       fetchReportsSummary({ token: session.accessToken, dateRange, userId: targetUserId }),
       fetchReportsCharts({ token: session.accessToken, dateRange, userId: targetUserId }),
@@ -62,8 +64,13 @@ export default function ReportsPage() {
       fetchReportsEntity({ token: session.accessToken, entity: 'albums', dateRange, userId: targetUserId }),
       fetchReportsEntity({ token: session.accessToken, entity: 'tracks', dateRange, userId: targetUserId }),
       fetchReportsEntity({ token: session.accessToken, entity: 'genres', dateRange, userId: targetUserId }),
-    ]).then(([summary, charts, artists, albums, tracks, genres]) => setReport({ summary, charts, artists, albums, tracks, genres }))
-      .catch((requestError) => setError(requestError.status === 403 ? "Follow this user to see their reports." : requestError.message))
+    ]).then(([summary, charts, artists, albums, tracks, genres]) => {
+      setReport({ summary, charts, artists, albums, tracks, genres })
+      setLoading(false)
+    }).catch((requestError) => {
+      setError(requestError.status === 403 ? "Follow this user to see their reports." : requestError.message)
+      setLoading(false)
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange, routeUserId])
 
@@ -111,6 +118,12 @@ export default function ReportsPage() {
           </Link>
         </div>
       </div>
+      {loading && (
+        <div className="reports-loading-indicator" role="status" aria-live="polite">
+          <span className="spinner" aria-hidden="true" />
+          <span>Updating listening report for selected period...</span>
+        </div>
+      )}
       {showFriendsComparison && session?.accessToken && (
         <FriendsComparisonSection token={session.accessToken} dateRange={dateRange} />
       )}
