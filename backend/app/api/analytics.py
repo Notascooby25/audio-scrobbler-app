@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -10,21 +12,26 @@ from ..queries.analytics_queries import (
     CHART_ENTITIES,
     CHART_RANGES,
     DATE_RANGE_PRESETS,
+    get_forgotten_favorites,
     get_friends_comparison_data,
+    get_on_this_day_tracks,
     resolve_date_range,
 )
 from ..schemas.friends_comparison import FriendsComparisonResponse
 from ..schemas.analytics import (
     ChartResponse,
+    CreateRediscoverPlaylistRequest,
+    CreateRediscoverPlaylistResponse,
     LegacyChartResponse,
     LibraryResponse,
     LibraryScrobbleResponse,
     MonthlySummaryResponse,
+    RediscoverResponse,
+    ReportChartsResponse,
+    ReportSummaryResponse,
     ScrobbleListResponse,
     StatsResponse,
     TimelineResponse,
-    ReportChartsResponse,
-    ReportSummaryResponse,
 )
 from ..services import social_service
 from ..services.analytics_service import (
@@ -38,6 +45,7 @@ from ..services.analytics_service import (
     get_stats_summary,
     get_user_charts,
 )
+from ..services.spotify_playlist_service import create_playlist, normalize_spotify_uri
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 stats_router = APIRouter(prefix="/stats", tags=["stats"])
@@ -56,6 +64,90 @@ def monthly_summary(
         return get_monthly_summary(db, current_user.id, from_month, to_month)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/rediscover", response_model=RediscoverResponse)
+def get_rediscover(
+    mode: str = Query(
+        default="forgotten",
+        pattern="^(forgotten|anniversary)$",
+        description="Mode: 'forgotten' (unplayed favorites) or 'anniversary' (on this day in past years)",
+    ),
+    limit: int = Query(default=15, ge=1, le=50),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> RediscoverResponse:
+    if mode == "anniversary":
+        tracks = get_on_this_day_tracks(db, current_user.id, limit=limit)
+    else:
+        tracks = get_forgotten_favorites(db, current_user.id, limit=limit)
+    return RediscoverResponse(user_id=current_user.id, mode=mode, tracks=tracks)
+
+
+@router.post("/rediscover/playlist", response_model=CreateRediscoverPlaylistResponse)
+def export_rediscover_playlist(
+    body: CreateRediscoverPlaylistRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> CreateRediscoverPlaylistResponse:
+    if body.mode not in ("forgotten", "anniversary"):
+        raise HTTPException(status_code=400, detail="Invalid mode. Must be 'forgotten' or 'anniversary'.")
+
+    raw_track_ids: list[str] = []
+    if body.track_ids:
+        raw_track_ids = body.track_ids
+    else:
+        if body.mode == "anniversary":
+            tracks = get_on_this_day_tracks(db, current_user.id, limit=50)
+        else:
+            tracks = get_forgotten_favorites(db, current_user.id, limit=50)
+        raw_track_ids = [t["track_id"] for t in tracks if t.get("track_id")]
+
+    valid_uris: list[str] = []
+    for tid in raw_track_ids:
+        norm = normalize_spotify_uri(tid)
+        if norm and norm not in valid_uris:
+            valid_uris.append(norm)
+
+    if not valid_uris:
+        raise HTTPException(
+            status_code=400,
+            detail="No Spotify tracks found to create a playlist.",
+        )
+
+    now = datetime.utcnow()
+    if body.title:
+        title = body.title
+    elif body.mode == "anniversary":
+        title = f"On This Day — {now.strftime('%b %d')}"
+    else:
+        title = f"Forgotten Favorites — {now.strftime('%b %Y')}"
+
+    desc = (
+        "Tracks from past years around this time, saved from Audio Scrobbler App."
+        if body.mode == "anniversary"
+        else "Forgotten favorites rediscovery playlist, saved from Audio Scrobbler App."
+    )
+
+    try:
+        playlist_name, playlist_url, count = create_playlist(
+            db=db,
+            user=current_user,
+            title=title,
+            description=desc,
+            track_uris=valid_uris,
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to create Spotify playlist: {str(exc)}",
+        ) from exc
+
+    return CreateRediscoverPlaylistResponse(
+        playlist_name=playlist_name,
+        playlist_url=playlist_url,
+        track_count=count,
+    )
 
 
 @router.get("/recent-scrobbles")

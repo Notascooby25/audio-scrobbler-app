@@ -8,14 +8,22 @@ from .spotify_library_service import _refresh_access_token, _request
 
 SPOTIFY_API_BASE = "https://api.spotify.com/v1"
 
-def _normalize_spotify_uri(uri: str) -> str | None:
+def normalize_spotify_uri(uri: str) -> str | None:
+    if not uri:
+        return None
     if uri.startswith("spotify:track:"):
         return uri
     # Match open.spotify.com/track/<id>
     match = re.search(r"track/([a-zA-Z0-9]+)", uri)
     if match:
         return f"spotify:track:{match.group(1)}"
+    # Match bare Spotify track ID (e.g. 22 base-62 chars or alphanumeric 15-30 chars)
+    if re.fullmatch(r"[a-zA-Z0-9]{15,30}", uri):
+        return f"spotify:track:{uri}"
     return None
+
+
+_normalize_spotify_uri = normalize_spotify_uri
 
 def _extract_playlist_id(url_or_id: str) -> str:
     cleaned = url_or_id.strip()

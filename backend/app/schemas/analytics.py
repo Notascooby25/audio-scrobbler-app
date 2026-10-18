@@ -154,11 +154,11 @@ class ReportPoint(BaseModel):
     count: int
 
 
-
 class HeatmapPoint(BaseModel):
     day: int
     hour: int
     count: int
+
 
 class ReportChartsResponse(BaseModel):
     user_id: int
@@ -167,3 +167,42 @@ class ReportChartsResponse(BaseModel):
     listening_clock: list[ReportPoint]
     music_by_decade: list[ReportPoint]
     listening_heatmap: list[HeatmapPoint]
+
+
+class RediscoverTrackEntry(BaseModel):
+    track_name: str
+    artist_name: str
+    album_name: str | None = None
+    artwork_url: str | None = None
+    track_id: str
+    play_count: int
+    last_played_at: datetime
+    context_badge: str | None = None
+
+    @field_serializer("last_played_at")
+    def serialize_last_played_at(self, dt: datetime) -> str:
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.isoformat()
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RediscoverResponse(BaseModel):
+    user_id: int
+    mode: str
+    tracks: list[RediscoverTrackEntry]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CreateRediscoverPlaylistRequest(BaseModel):
+    mode: str = "forgotten"
+    title: str | None = None
+    track_ids: list[str] | None = None
+
+
+class CreateRediscoverPlaylistResponse(BaseModel):
+    playlist_name: str
+    playlist_url: str
+    track_count: int

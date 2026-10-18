@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta
 
-from sqlalchemy import Select, Text, cast, exists, func, or_, select
+from sqlalchemy import Select, Text, case, cast, exists, func, or_, select
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import FunctionElement
@@ -785,3 +785,142 @@ def get_friends_comparison_data(
         top_tracks=top_5_tracks,
         leaderboard=leaderboard,
     )
+
+
+def get_forgotten_favorites(
+    db: Session,
+    user_id: int,
+    limit: int = 15,
+    days_unplayed: int = 90,
+    min_plays: int = 3,
+    now: datetime | None = None,
+) -> list[dict]:
+    if now is None:
+        now = datetime.utcnow()
+    cutoff_date = now - timedelta(days=days_unplayed)
+
+    spotify_track_id_expr = func.coalesce(
+        func.max(case((ListeningEvent.source == "spotify", ListeningEvent.track_id), else_=None)),
+        func.max(ListeningEvent.track_id),
+    )
+
+    query = (
+        db.query(
+            ListeningEvent.track_name,
+            ListeningEvent.artist_name,
+            func.max(ListeningEvent.album_name).label("album_name"),
+            func.max(ListeningEvent.artwork_url).label("artwork_url"),
+            spotify_track_id_expr.label("track_id"),
+            func.count(ListeningEvent.id).label("play_count"),
+            func.max(ListeningEvent.played_at).label("last_played_at"),
+        )
+        .filter(
+            ListeningEvent.user_id == user_id,
+            not_blocked_clause(user_id),
+        )
+        .group_by(ListeningEvent.track_name, ListeningEvent.artist_name)
+        .having(
+            func.count(ListeningEvent.id) >= min_plays,
+            func.max(ListeningEvent.played_at) < cutoff_date,
+        )
+        .order_by(
+            func.count(ListeningEvent.id).desc(),
+            func.max(ListeningEvent.played_at).desc(),
+        )
+        .limit(limit)
+    )
+
+    rows = query.all()
+    results = []
+    for row in rows:
+        last_played = row.last_played_at
+        month_year = last_played.strftime("%b %Y") if last_played else ""
+        badge = f"{row.play_count} plays · Last played {month_year}" if month_year else f"{row.play_count} plays"
+        results.append(
+            {
+                "track_name": row.track_name,
+                "artist_name": row.artist_name,
+                "album_name": row.album_name,
+                "artwork_url": row.artwork_url,
+                "track_id": row.track_id or "",
+                "play_count": int(row.play_count),
+                "last_played_at": row.last_played_at,
+                "context_badge": badge,
+            }
+        )
+    return results
+
+
+def get_on_this_day_tracks(
+    db: Session,
+    user_id: int,
+    limit: int = 15,
+    window_days: int = 7,
+    years_back_range: range = range(1, 11),
+    now: datetime | None = None,
+) -> list[dict]:
+    if now is None:
+        now = datetime.utcnow()
+
+    windows = []
+    for years_back in years_back_range:
+        try:
+            target = now.replace(year=now.year - years_back)
+        except ValueError:
+            target = now.replace(year=now.year - years_back, day=28)
+        start_dt = (target - timedelta(days=window_days)).replace(hour=0, minute=0, second=0, microsecond=0)
+        end_dt = (target + timedelta(days=window_days)).replace(hour=23, minute=59, second=59, microsecond=999999)
+        windows.append((start_dt, end_dt))
+
+    if not windows:
+        return []
+
+    spotify_track_id_expr = func.coalesce(
+        func.max(case((ListeningEvent.source == "spotify", ListeningEvent.track_id), else_=None)),
+        func.max(ListeningEvent.track_id),
+    )
+
+    query = (
+        db.query(
+            ListeningEvent.track_name,
+            ListeningEvent.artist_name,
+            func.max(ListeningEvent.album_name).label("album_name"),
+            func.max(ListeningEvent.artwork_url).label("artwork_url"),
+            spotify_track_id_expr.label("track_id"),
+            func.count(ListeningEvent.id).label("play_count"),
+            func.max(ListeningEvent.played_at).label("last_played_at"),
+        )
+        .filter(
+            ListeningEvent.user_id == user_id,
+            not_blocked_clause(user_id),
+            or_(*[ListeningEvent.played_at.between(start, end) for start, end in windows]),
+        )
+        .group_by(ListeningEvent.track_name, ListeningEvent.artist_name)
+        .order_by(
+            func.max(ListeningEvent.played_at).desc(),
+            func.count(ListeningEvent.id).desc(),
+        )
+        .limit(limit)
+    )
+
+    rows = query.all()
+    results = []
+    for row in rows:
+        last_played = row.last_played_at
+        years_ago = max(1, now.year - last_played.year) if last_played else 1
+        year_str = "1 year ago" if years_ago == 1 else f"{years_ago} years ago"
+        month_year = last_played.strftime("%b %Y") if last_played else ""
+        badge = f"Played {year_str} ({month_year})" if month_year else f"Played {year_str}"
+        results.append(
+            {
+                "track_name": row.track_name,
+                "artist_name": row.artist_name,
+                "album_name": row.album_name,
+                "artwork_url": row.artwork_url,
+                "track_id": row.track_id or "",
+                "play_count": int(row.play_count),
+                "last_played_at": row.last_played_at,
+                "context_badge": badge,
+            }
+        )
+    return results
