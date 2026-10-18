@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: '0.11.7',
+    date: '2026-10-18',
+    changes: [
+      'Added previous period percentage comparisons to Listening minutes and Average per day on the Reports page, giving a complete comparison breakdown across all 3 summary metrics.',
+      'Normalized toolbar button text casing so "Compare with Friends" matches the clean title/sentence case of the period comparison toggle.'
+    ]
+  },
+  {
     version: '0.11.6',
     date: '2026-10-18',
     changes: [
