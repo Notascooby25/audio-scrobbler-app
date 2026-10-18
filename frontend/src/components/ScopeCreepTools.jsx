@@ -542,7 +542,7 @@ export default function ScopeCreepTools() {
                       </div>
                       <div style={{ flexShrink: 0 }}>
                         {res.is_followed ? (
-                          <span style={{ fontSize: '0.8rem', color: 'var(--color-primary, #1db954)', fontWeight: 500 }}>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--color-primary, #0066ff)', fontWeight: 500 }}>
                             Followed
                           </span>
                         ) : (
@@ -616,10 +616,10 @@ export default function ScopeCreepTools() {
                       padding: '0.35rem 0.5rem',
                       borderRadius: '6px',
                       border: isActive
-                        ? '1px solid var(--color-primary, #1db954)'
-                        : '1px solid var(--color-border, rgba(255,255,255,0.1))',
+                        ? '0.5px solid var(--color-primary, #0066ff)'
+                        : '0.5px solid var(--color-border)',
                       backgroundColor: isActive
-                        ? 'rgba(29, 185, 84, 0.08)'
+                        ? 'var(--color-accent-soft)'
                         : 'transparent',
                       transition: 'background-color 0.15s, border-color 0.15s',
                     }}
@@ -764,7 +764,7 @@ export default function ScopeCreepTools() {
             </form>
           ) : (
             <div style={{ marginTop: '1rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-color, #333)', paddingBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem', borderBottom: '0.5px solid var(--color-border)', paddingBottom: '0.75rem' }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1.15rem' }}>{showData.title}</h3>
                   <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.85rem', color: 'var(--color-muted, #888)' }}>
@@ -774,7 +774,7 @@ export default function ScopeCreepTools() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                   {showData.brand_info && (
                     showData.brand_info.is_followed ? (
-                      <span style={{ fontSize: '0.8rem', color: 'var(--color-primary, #1db954)', fontWeight: 500 }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--color-primary, #0066ff)', fontWeight: 500 }}>
                         ✓ Following Show
                       </span>
                     ) : (
@@ -817,7 +817,7 @@ export default function ScopeCreepTools() {
                 </button>
               </div>
 
-              <div style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid var(--border-color, #333)', borderRadius: '4px', padding: '0.5rem', marginBottom: '1.25rem' }}>
+              <div style={{ maxHeight: '350px', overflowY: 'auto', border: '0.5px solid var(--color-border)', borderRadius: '4px', padding: '0.5rem', marginBottom: '1.25rem' }}>
                 {showData.tracks.map((track) => {
                   const isSelected = selectedSegments.has(track.segment_id)
                   return (
@@ -877,7 +877,7 @@ export default function ScopeCreepTools() {
                       </div>
                       <div>
                         {track.spotify_uri ? (
-                          <span className="badge badge-success" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', backgroundColor: '#1db954', color: '#000', borderRadius: '3px', fontWeight: 'bold' }}>
+                          <span className="badge badge-success" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', backgroundColor: 'var(--color-spotify)', color: '#000', borderRadius: '3px', fontWeight: 'bold' }}>
                             Spotify Match
                           </span>
                         ) : (
@@ -908,7 +908,7 @@ export default function ScopeCreepTools() {
               </div>
 
               {/* Spotify Playlist Destination Selection */}
-              <div style={{ marginBottom: '1.5rem', padding: '1rem', border: '1px solid var(--border-color, #333)', borderRadius: '4px', backgroundColor: 'var(--color-surface, rgba(255,255,255,0.02))' }}>
+              <div style={{ marginBottom: '1.5rem', padding: '1rem', border: '0.5px solid var(--color-border)', borderRadius: '4px', backgroundColor: 'var(--color-surface, rgba(255,255,255,0.02))' }}>
                 <label className="form-label" style={{ fontWeight: 'bold', marginBottom: '0.5rem', display: 'block' }}>
                   Spotify Playlist Destination
                 </label>
@@ -1101,13 +1101,13 @@ export default function ScopeCreepTools() {
           )}
 
           {error && (
-            <div className="error-message" style={{ marginTop: '1rem', color: 'var(--color-error, #f44336)' }}>
+            <div className="error-message" style={{ marginTop: '1rem', color: 'var(--color-danger)' }}>
               <strong>Error:</strong> {error}
             </div>
           )}
 
           {playlistResult && (
-            <div className="success-message" style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'rgba(29, 185, 84, 0.15)', borderRadius: '4px', border: '1px solid #1db954' }}>
+            <div className="success-message" style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'var(--color-spotify-bg)', borderRadius: '4px', border: '0.5px solid var(--color-spotify)' }}>
               <p><strong>Success!</strong> {playlistResult.message}</p>
               <a
                 href={playlistResult.playlist_url}
@@ -1122,7 +1122,7 @@ export default function ScopeCreepTools() {
           )}
 
           {scrobbleResult && (
-            <div className="success-message" style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'rgba(29, 185, 84, 0.15)', borderRadius: '4px', border: '1px solid #1db954' }}>
+            <div className="success-message" style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'var(--color-spotify-bg)', borderRadius: '4px', border: '0.5px solid var(--color-spotify)' }}>
               <p><strong>Success!</strong> {scrobbleResult.message}</p>
               <Link
                 to="/library"

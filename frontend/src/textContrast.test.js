@@ -117,4 +117,14 @@ describe('Primary Text Color & WCAG AA Contrast Verification', () => {
       expect(stylesContent).toMatch(/--text-muted:\s*var\(--color-muted\);/)
     })
   })
+
+  describe('Component Styles and Badges Contrast Audit', () => {
+    it('verifies ChangelogPage version badge does not use dark text #000 on primary accent', () => {
+      const changelogPath = path.resolve(__dirname, 'pages/ChangelogPage.jsx')
+      const changelogContent = fs.readFileSync(changelogPath, 'utf-8')
+      expect(changelogContent).not.toMatch(/color:\s*['"]#000['"]/)
+      expect(changelogContent).toMatch(/color:\s*['"]var\(--color-surface,\s*#ffffff\)['"]/)
+      expect(changelogContent).toMatch(/backgroundColor:\s*['"]var\(--color-primary,\s*#0066ff\)['"]/i)
+    })
+  })
 })

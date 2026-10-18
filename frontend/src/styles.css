@@ -3516,6 +3516,9 @@ dd {
   *::after {
     animation-iteration-count: 1 !important;
   }
+  .spinner {
+    animation: spinner-pulse 1.5s ease-in-out infinite !important;
+  }
   .modal-dialog,
   .profile-live-dot,
   .liked-heart-active svg {
@@ -3861,6 +3864,15 @@ dd {
 @keyframes spinner-rotate {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes spinner-pulse {
+  0%, 100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
   }
 }
 

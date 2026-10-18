@@ -21,8 +21,8 @@ export default function ChangelogPage() {
                   <span
                     className="badge"
                     style={{
-                      backgroundColor: 'var(--color-primary, #1db954)',
-                      color: '#000',
+                      backgroundColor: 'var(--color-primary, #0066ff)',
+                      color: 'var(--color-surface, #ffffff)',
                       fontWeight: 600,
                       padding: '0.2rem 0.6rem',
                       borderRadius: '4px',
