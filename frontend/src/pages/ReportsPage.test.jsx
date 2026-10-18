@@ -72,4 +72,37 @@ describe('ReportsPage with Friends Comparison', () => {
     expect(screen.getByText(/-28.2% vs previous \(1,250\)/)).toBeInTheDocument()
     expect(screen.getByText(/-36.5% vs previous \(55\)/)).toBeInTheDocument()
   })
+
+  it('applies negative, positive, and neutral color classes to comparison delta labels', async () => {
+    const { fetchReportsSummary } = await import('../api')
+    fetchReportsSummary.mockResolvedValue({
+      period_scrobbles: 500,
+      comparison_percent: 25.5,
+      previous_period_scrobbles: 400,
+      listening_minutes: 800,
+      previous_listening_minutes: 1000,
+      listening_minutes_comparison_percent: -20.0,
+      average_per_day: 50.0,
+      previous_average_per_day: 50.0,
+      average_per_day_comparison_percent: 0,
+    })
+
+    render(
+      <MemoryRouter>
+        <ReportsPage />
+      </MemoryRouter>
+    )
+
+    const compareToggle = screen.getByLabelText(/Compare to previous period/i)
+    fireEvent.click(compareToggle)
+
+    const positiveEl = await screen.findByText(/\+25.5% vs previous \(400\)/)
+    const negativeEl = screen.getByText(/-20% vs previous \(1,000\)/)
+    const neutralEl = screen.getByText(/0% vs previous \(50\)/)
+
+    expect(positiveEl).toHaveClass('stat-comparison-positive')
+    expect(negativeEl).toHaveClass('stat-comparison-negative')
+    expect(neutralEl).toHaveClass('stat-comparison-neutral')
+  })
 })
+

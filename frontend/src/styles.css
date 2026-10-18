@@ -14,6 +14,8 @@
   --color-focus: #0066ff;
   --color-danger: #d32f2f;
   --color-danger-soft: #fde8e8;
+  --color-success: #15803d;
+  --color-success-soft: #dcfce7;
   --color-warning: #d97706;
   --color-warning-soft: #fef3c7;
   --color-spotify: #1db954;
@@ -42,7 +44,10 @@
   --color-surface-raised: #2a2a2a;
   --color-border: #333333;
   --color-border-subtle: #222222;
+  --color-danger: #f87171;
   --color-danger-soft: rgba(211, 47, 47, 0.15);
+  --color-success: #22c55e;
+  --color-success-soft: rgba(34, 197, 94, 0.15);
   --color-warning-soft: rgba(217, 119, 6, 0.15);
   --color-accent-soft: rgba(0, 102, 255, 0.15);
 }
@@ -56,7 +61,10 @@
     --color-surface-raised: #2a2a2a;
     --color-border: #333333;
     --color-border-subtle: #222222;
+    --color-danger: #f87171;
     --color-danger-soft: rgba(211, 47, 47, 0.15);
+    --color-success: #22c55e;
+    --color-success-soft: rgba(34, 197, 94, 0.15);
     --color-warning-soft: rgba(217, 119, 6, 0.15);
     --color-accent-soft: rgba(0, 102, 255, 0.15);
   }
@@ -2773,11 +2781,23 @@ button.btn-secondary:hover:not(:disabled) {
 }
 
 .report-facts .stat-comparison {
-  color: var(--color-primary);
+  color: var(--color-muted);
   font: 500 0.8rem inherit, sans-serif;
   text-transform: none;
   letter-spacing: normal;
   margin-top: 2px;
+}
+
+.report-facts .stat-comparison.stat-comparison-positive {
+  color: var(--color-success);
+}
+
+.report-facts .stat-comparison.stat-comparison-negative {
+  color: var(--color-danger);
+}
+
+.report-facts .stat-comparison.stat-comparison-neutral {
+  color: var(--color-muted);
 }
 
 .report-category-grid {

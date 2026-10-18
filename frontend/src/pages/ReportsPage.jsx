@@ -21,6 +21,13 @@ function dateRangeFromParams(searchParams) {
   return createDefaultDateRange()
 }
 
+function getComparisonClass(percent) {
+  const val = Number(percent) || 0
+  if (val > 0) return 'stat-comparison stat-comparison-positive'
+  if (val < 0) return 'stat-comparison stat-comparison-negative'
+  return 'stat-comparison stat-comparison-neutral'
+}
+
 export default function ReportsPage() {
   const session = readSession()
   const [searchParams] = useSearchParams()
@@ -113,7 +120,7 @@ export default function ReportsPage() {
             <strong>{Number(report.summary.period_scrobbles || 0).toLocaleString()}</strong>
             <span>Scrobbles this period</span>
             {dateRange.compare_to_previous && (
-              <span className="stat-comparison">
+              <span className={getComparisonClass(report.summary.comparison_percent)}>
                 {report.summary.comparison_percent > 0 ? `+${report.summary.comparison_percent}%` : `${report.summary.comparison_percent}%`} vs previous ({Number(report.summary.previous_period_scrobbles || 0).toLocaleString()})
               </span>
             )}
@@ -122,7 +129,7 @@ export default function ReportsPage() {
             <strong>{Number(report.summary.listening_minutes || 0).toLocaleString()}</strong>
             <span>Listening minutes</span>
             {dateRange.compare_to_previous && (
-              <span className="stat-comparison">
+              <span className={getComparisonClass(report.summary.listening_minutes_comparison_percent)}>
                 {(report.summary.listening_minutes_comparison_percent || 0) > 0 ? `+${report.summary.listening_minutes_comparison_percent}%` : `${report.summary.listening_minutes_comparison_percent || 0}%`} vs previous ({Number(report.summary.previous_listening_minutes || 0).toLocaleString()})
               </span>
             )}
@@ -131,7 +138,7 @@ export default function ReportsPage() {
             <strong>{Number(report.summary.average_per_day || 0)}</strong>
             <span>Average per day</span>
             {dateRange.compare_to_previous && (
-              <span className="stat-comparison">
+              <span className={getComparisonClass(report.summary.average_per_day_comparison_percent)}>
                 {(report.summary.average_per_day_comparison_percent || 0) > 0 ? `+${report.summary.average_per_day_comparison_percent}%` : `${report.summary.average_per_day_comparison_percent || 0}%`} vs previous ({Number(report.summary.previous_average_per_day || 0)})
               </span>
             )}
