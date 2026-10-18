@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchMonthlySummary, fetchRecentScrobbles, fetchSpotifyStatus, redirectToAuthorization, requestDevelopmentToken, requestSpotifyAuthorization, submitImportScrobbles, submitUnifiedImport } from '../api'
 import ChartsPanel from '../components/ChartsPanel'
@@ -49,6 +49,7 @@ export default function HomePage() {
   const [fromMonth, setFromMonth] = useState('')
   const [toMonth, setToMonth] = useState('')
   const [summary, setSummary] = useState(null)
+  const [selectedYear, setSelectedYear] = useState('All')
   const [scrobbles, setScrobbles] = useState([])
   const [error, setError] = useState(callbackError ? callbackErrorMessage : '')
   const [status, setStatus] = useState(callbackError ? 'error' : savedSession?.accessToken ? 'loading' : 'idle')
@@ -58,6 +59,31 @@ export default function HomePage() {
   const [liveProgress, setLiveProgress] = useState(null)
   const [spotifyRetryAfter, setSpotifyRetryAfter] = useState(null)
   const importInputRef = useRef(null)
+
+  const archiveTotals = useMemo(() => {
+    if (!summary?.summary?.length) return { plays: 0, minutes: 0, hours: 0 }
+    const plays = summary.summary.reduce((acc, m) => acc + (m.total_plays || 0), 0)
+    const minutes = summary.summary.reduce((acc, m) => acc + (m.total_listening_minutes || 0), 0)
+    const hours = Math.round((minutes / 60) * 10) / 10
+    return { plays, minutes, hours }
+  }, [summary])
+
+  const years = useMemo(() => {
+    if (!summary?.summary?.length) return []
+    const yrSet = new Set(summary.summary.map((m) => m.month.slice(0, 4)))
+    return ['All', ...Array.from(yrSet).sort().reverse()]
+  }, [summary])
+
+  const filteredMonths = useMemo(() => {
+    if (!summary?.summary?.length) return []
+    if (selectedYear === 'All') return summary.summary
+    return summary.summary.filter((m) => m.month.startsWith(selectedYear))
+  }, [summary, selectedYear])
+
+  const maxMonthlyPlays = useMemo(() => {
+    if (!summary?.summary?.length) return 1
+    return Math.max(...summary.summary.map((m) => m.total_plays || 0), 1)
+  }, [summary])
 
   useEffect(() => {
     fetchSpotifyStatus()
@@ -328,36 +354,77 @@ export default function HomePage() {
         <div className="monthly-summary-section" style={{ marginTop: '2.5rem', borderTop: '0.5px solid var(--color-border)', paddingTop: '1.5rem' }}>
           <div className="section-heading" style={{ marginBottom: '1rem' }}>
             <div>
-              <h3>Monthly listening summary</h3>
+              <h3>Monthly archive ledger</h3>
+              <p style={{ color: 'var(--color-muted)', fontSize: '0.875rem', margin: '4px 0 0 0' }}>
+                Historical listening breakdown across all ingested data sources.
+              </p>
             </div>
             {summary && <p className="month-count">{summary.total_months} months found</p>}
           </div>
 
-          <form className="filters" onSubmit={loadSummary}>
-            <label>
-              From
-              <CustomDateField
-                id="connect-from-month"
-                type="month"
-                value={fromMonth}
-                onChange={(e) => setFromMonth(e.target.value)}
-                placeholder="Any date"
-              />
-            </label>
-            <label>
-              To
-              <CustomDateField
-                id="connect-to-month"
-                type="month"
-                value={toMonth}
-                onChange={(e) => setToMonth(e.target.value)}
-                placeholder="Any date"
-              />
-            </label>
-            <button type="submit" className="btn-secondary" disabled={status === 'loading'}>
-              {status === 'loading' ? 'Loading...' : 'Refresh summary'}
-            </button>
-          </form>
+          {status === 'ready' && summary?.summary?.length > 0 && (
+            <>
+              <div className="monthly-ledger-stats">
+                <div className="monthly-stat-card">
+                  <span className="monthly-stat-value">{summary.total_months}</span>
+                  <span className="monthly-stat-label">Active Months</span>
+                </div>
+                <div className="monthly-stat-card">
+                  <span className="monthly-stat-value">{`${archiveTotals.plays.toLocaleString()} scrobbles`}</span>
+                  <span className="monthly-stat-label">Total Scrobbles</span>
+                </div>
+                <div className="monthly-stat-card">
+                  <span className="monthly-stat-value">{archiveTotals.hours.toLocaleString()} hrs</span>
+                  <span className="monthly-stat-label">Listening Time</span>
+                </div>
+              </div>
+
+              {years.length > 2 && (
+                <div className="monthly-year-chips" role="tablist" aria-label="Filter archive by year">
+                  {years.map((yr) => (
+                    <button
+                      key={yr}
+                      type="button"
+                      role="tab"
+                      aria-selected={selectedYear === yr}
+                      className={`monthly-year-chip ${selectedYear === yr ? 'active' : ''}`}
+                      onClick={() => setSelectedYear(yr)}
+                    >
+                      {yr}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="monthly-ledger-container" role="region" aria-label="Monthly listening breakdown">
+                <div className="monthly-ledger-header">
+                  <span>Month</span>
+                  <span>Scrobbles</span>
+                  <span>Unique Tracks</span>
+                  <span>Time</span>
+                  <span className="monthly-ledger-volume-header">Relative Volume</span>
+                </div>
+                <div className="monthly-ledger-list">
+                  {filteredMonths.map((month) => {
+                    const volumePercent = Math.min(100, Math.round(((month.total_plays || 0) / maxMonthlyPlays) * 100))
+                    return (
+                      <div className="monthly-ledger-row" key={month.month}>
+                        <span className="monthly-ledger-month">{month.month}</span>
+                        <strong className="monthly-ledger-plays">{month.total_plays.toLocaleString()}</strong>
+                        <span className="monthly-ledger-tracks">{month.unique_tracks.toLocaleString()} tracks</span>
+                        <span className="monthly-ledger-time">{month.total_listening_minutes.toLocaleString()} min</span>
+                        <div className="monthly-ledger-volume-cell">
+                          <div className="monthly-volume-bar-track">
+                            <div className="monthly-volume-bar-fill" style={{ width: `${Math.max(4, volumePercent)}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -382,21 +449,6 @@ export default function HomePage() {
           title="It's quiet in here"
           description="We couldn't find any scrobbles for this date range."
         />
-      )}
-      {status === 'ready' && summary?.summary.length > 0 && (
-        <div className="summary-grid">
-          {summary.summary.map((month) => (
-            <article className="month-card" key={month.month}>
-              <p className="month-label">{month.month}</p>
-              <strong>{month.total_plays.toLocaleString()}</strong>
-              <span>plays</span>
-              <dl>
-                <div><dt>Tracks</dt><dd>{month.unique_tracks.toLocaleString()}</dd></div>
-                <div><dt>Listening</dt><dd>{month.total_listening_minutes.toLocaleString()} min</dd></div>
-              </dl>
-            </article>
-          ))}
-        </div>
       )}
       {status === 'ready' && <ChartsPanel token={token} userId={savedSession?.userId} />}
       {status === 'ready' && <ScrobbleList scrobbles={scrobbles} />}

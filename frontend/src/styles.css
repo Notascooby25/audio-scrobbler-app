@@ -3029,6 +3029,165 @@ dd {
   color: var(--color-ink);
 }
 
+/* ─── Monthly Archive Ledger ─────────────────────────────────────────────── */
+.monthly-ledger-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.monthly-stat-card {
+  background: var(--color-surface);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.monthly-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-ink);
+  line-height: 1.2;
+}
+
+.monthly-stat-unit {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-muted);
+  margin-left: 0.25rem;
+}
+
+.monthly-stat-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+}
+
+.monthly-year-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.monthly-year-chip {
+  background: transparent;
+  color: var(--color-muted);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.monthly-year-chip:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-ink);
+}
+
+.monthly-year-chip.active {
+  background: var(--color-accent);
+  color: var(--color-surface);
+  border-color: var(--color-accent);
+  font-weight: 600;
+}
+
+.monthly-ledger-container {
+  background: var(--color-surface);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.monthly-ledger-header {
+  display: grid;
+  grid-template-columns: 120px 100px 120px 110px 1fr;
+  align-items: center;
+  padding: 0.65rem 1rem;
+  background: var(--color-border-subtle);
+  border-bottom: 0.5px solid var(--color-border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+.monthly-ledger-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.monthly-ledger-row {
+  display: grid;
+  grid-template-columns: 120px 100px 120px 110px 1fr;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 0.5px solid var(--color-border-subtle);
+  font-size: 0.875rem;
+  transition: background-color 100ms ease;
+}
+
+.monthly-ledger-row:last-child {
+  border-bottom: none;
+}
+
+.monthly-ledger-row:hover {
+  background: var(--color-surface-hover);
+}
+
+.monthly-ledger-month {
+  font-weight: 600;
+  color: var(--color-ink);
+  font-family: inherit;
+}
+
+.monthly-ledger-plays {
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.monthly-ledger-tracks,
+.monthly-ledger-time {
+  color: var(--color-muted);
+  font-size: 0.825rem;
+}
+
+.monthly-ledger-volume-cell {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.monthly-volume-bar-track {
+  width: 100%;
+  max-width: 160px;
+  height: 6px;
+  background: var(--color-border);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.monthly-volume-bar-fill {
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: 9999px;
+  transition: width 200ms ease;
+}
+
 /* ─── Modal Dialogs ────────────────────────────────────────────────────────── */
 .modal-backdrop {
   position: fixed;
@@ -3496,6 +3655,29 @@ dd {
   .scrobble-row .source-badge {
     order: 3;
   }
+  .monthly-year-chip {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .monthly-ledger-header {
+    display: none;
+  }
+  .monthly-ledger-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "month plays"
+      "tracks time"
+      "volume volume";
+    row-gap: 0.35rem;
+    padding: 0.85rem 1rem;
+  }
+  .monthly-ledger-month { grid-area: month; font-size: 0.95rem; }
+  .monthly-ledger-plays { grid-area: plays; text-align: right; }
+  .monthly-ledger-tracks { grid-area: tracks; font-size: 0.8rem; }
+  .monthly-ledger-time { grid-area: time; text-align: right; font-size: 0.8rem; }
+  .monthly-ledger-volume-cell { grid-area: volume; margin-top: 0.25rem; }
+  .monthly-volume-bar-track { max-width: 100%; }
 }
 
 @media (max-width: 480px) {
