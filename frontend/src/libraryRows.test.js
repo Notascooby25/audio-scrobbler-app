@@ -77,5 +77,13 @@ describe('Library List Row Density per DESIGN.md', () => {
       /\.library-scrobble-row time\s*\{[^}]*text-align:\s*right/
     )
   })
+
+  it('does not hide library-select-toggle or bulk-select-control on mobile and provides sticky bulk action bar', () => {
+    const mobileMediaBlock = stylesContent.match(/@media\s*\(max-width:\s*760px\)\s*\{([\s\S]*?)(?=\n@media\s*\(max-width:\s*480px|$)/)?.[1] || ''
+    expect(mobileMediaBlock).not.toMatch(/\.library-select-toggle\s*\{[^}]*display:\s*none/)
+    expect(mobileMediaBlock).not.toMatch(/\.bulk-select-control\s*\{[^}]*display:\s*none/)
+    expect(mobileMediaBlock).toMatch(/\.bulk-action-bar\s*\{[^}]*position:\s*sticky/)
+    expect(mobileMediaBlock).toMatch(/\.bulk-action-bar\s*button\s*\{[^}]*min-height:\s*44px/)
+  })
 })
 

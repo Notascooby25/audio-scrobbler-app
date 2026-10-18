@@ -2049,12 +2049,14 @@ button.btn-secondary:hover:not(:disabled) {
 
 .bulk-action-bar .bulk-action-secondary {
   background: transparent;
-  border: 0.5px solid rgba(255, 255, 255, 0.4);
-  color: var(--color-surface);
+  border: 0.5px solid currentColor;
+  color: inherit;
+  opacity: 0.9;
 }
 
 .bulk-action-bar span {
-  color: rgba(255, 255, 255, 0.7);
+  color: inherit;
+  opacity: 0.8;
   font: 0.8rem inherit, sans-serif;
 }
 
@@ -3403,12 +3405,20 @@ dd {
     overflow: visible;
     text-overflow: clip;
   }
-  .library-select-toggle {
-    display: none;
+  .library-view-toggle button {
+    min-height: 44px;
+    min-width: 44px;
   }
-  .library-rank-panel:not(.library-rank-panel-grid) .bulk-select-control,
-  .library-scrobble-row .bulk-select-control {
-    display: none;
+  .bulk-action-bar {
+    position: sticky;
+    bottom: 1rem;
+    z-index: 50;
+    padding: 0.75rem 1rem;
+    border: 0.5px solid var(--color-border);
+  }
+  .bulk-action-bar button {
+    min-height: 44px;
+    min-width: 44px;
   }
   .library-count-suffix {
     display: none;
