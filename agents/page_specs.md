@@ -113,9 +113,9 @@ Sections in page order:
 
 | Section | Component | Data |
 |---|---|---|
-| Date range | `DateRangeSelector` | |
-| Banner: period scrobbles, plus "% versus previous period" when comparison is on | report banner | `GET /reports/summary` (`period_scrobbles`, `comparison_percent`) |
-| Facts: listening minutes, average per day, previous period (when comparing) | report facts | `GET /reports/summary` |
+| Date range & comparison controls (period compare & friends compare) | `DateRangeSelector`, compare toggle buttons | |
+| Summary stats: period scrobbles (with comparison delta if comparing), listening minutes, average per day | report facts (3-card grid) | `GET /reports/summary` |
+| Friends comparison section (when toggled open) | `FriendsComparisonSection` | `GET /reports/friends-comparison` |
 | Scrobbles over time | `BarTrendChart` | `GET /reports/charts` → `weekly_scrobbles` |
 | Listening routines (hour × weekday heatmap) | `ListeningHeatmap` | `listening_heatmap` |
 | Listening clock | `ListeningClockChart` | `listening_clock` |

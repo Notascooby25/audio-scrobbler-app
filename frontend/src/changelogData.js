@@ -1,5 +1,15 @@
 export const CHANGELOG = [
   {
+    version: '0.11.6',
+    date: '2026-10-18',
+    changes: [
+      'Streamlined the Reports page layout: removed the clutter banner and unified the summary statistics into a balanced 3-card grid (Scrobbles this period, Listening minutes, and Average per day).',
+      'Unified comparison controls: "Compare previous period" and "Compare with friends" now share matching, polished toggle buttons in the toolbar.',
+      'Fixed the Overview summary bar grid alignment to evenly balance the active metrics.',
+      'Standardized the Following page heading structure to match the rest of the application.'
+    ]
+  },
+  {
     version: '0.11.5',
     date: '2026-10-17',
     changes: [
