@@ -85,5 +85,15 @@ describe('Library List Row Density per DESIGN.md', () => {
     expect(mobileMediaBlock).toMatch(/\.bulk-action-bar\s*\{[^}]*position:\s*sticky/)
     expect(mobileMediaBlock).toMatch(/\.bulk-action-bar\s*button\s*\{[^}]*min-height:\s*44px/)
   })
+
+  it('enforces touch target sizes of at least 44px on mobile controls', () => {
+    const mobileMediaBlock = stylesContent.match(/@media\s*\(max-width:\s*760px\)\s*\{([\s\S]*?)(?=\n@media\s*\(max-width:\s*480px|$)/)?.[1] || ''
+    expect(mobileMediaBlock).toMatch(/\.entry-menu-toggle\s*\{[^}]*min-width:\s*44px/)
+    expect(mobileMediaBlock).toMatch(/\.entry-menu-toggle\s*\{[^}]*min-height:\s*44px/)
+    expect(mobileMediaBlock).toMatch(/\.compare-toggle-btn\s*\{[^}]*min-height:\s*44px/)
+    expect(mobileMediaBlock).toMatch(/\.segmented-tabs\s+button\s*\{[^}]*min-height:\s*44px/)
+    expect(mobileMediaBlock).toMatch(/\.calendar-preset-chip\s*\{[^}]*min-height:\s*44px/)
+    expect(mobileMediaBlock).toMatch(/\.calendar-day-btn\s*\{[^}]*min-height:\s*44px/)
+  })
 })
 

@@ -3444,9 +3444,20 @@ dd {
     font-size: 11px;
   }
   .entry-menu-toggle {
-    min-width: 36px;
-    min-height: 36px;
+    min-width: 44px;
+    min-height: 44px;
     padding: 0.25rem;
+  }
+  .compare-toggle-btn {
+    min-height: 44px;
+  }
+  .calendar-preset-chip {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .calendar-day-btn {
+    min-height: 44px;
   }
   .library-row-artwork {
     flex-basis: 40px;
@@ -3473,6 +3484,7 @@ dd {
     flex: 0 0 auto;
     width: auto;
     white-space: nowrap;
+    min-height: 44px;
   }
   .scrobble-row {
     align-items: flex-start;
@@ -3716,13 +3728,13 @@ dd {
     min-height: 44px !important;
   }
   .calendar-preset-chip {
-    min-height: 38px !important;
+    min-height: 44px !important;
     padding: 6px 12px !important;
     display: inline-flex;
     align-items: center;
   }
   .calendar-day-btn {
-    min-height: 38px !important;
+    min-height: 44px !important;
   }
   .grid-card-like,
   .grid-select-scrim {
