@@ -1,12 +1,12 @@
 import Artwork from './Artwork'
 import SourceBadge from './SourceBadge'
 
-export default function ScrobbleList({ scrobbles }) {
+export default function ScrobbleList({ scrobbles, title = 'Recent scrobbles' }) {
   if (!scrobbles || scrobbles.length === 0) return null
 
   return (
     <section className="scrobble-list" aria-labelledby="scrobble-list-heading">
-      <h3 id="scrobble-list-heading">Recent scrobbles</h3>
+      <h3 id="scrobble-list-heading">{title}</h3>
       <ul>
         {scrobbles.map((scrobble) => (
           <li className="scrobble-row" key={scrobble.id}>

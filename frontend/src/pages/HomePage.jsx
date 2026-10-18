@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchMonthlySummary, fetchRecentScrobbles, fetchSpotifyStatus, redirectToAuthorization, requestDevelopmentToken, requestSpotifyAuthorization, submitImportScrobbles, submitUnifiedImport } from '../api'
-import ChartsPanel from '../components/ChartsPanel'
 import EmptyState, { HeadphonesIcon, AlertIcon, GhostIcon } from "../components/EmptyState"
 import CustomDateField from '../components/CustomDateField'
 import ImportProgressBar from '../components/ImportProgressBar'
@@ -250,11 +249,6 @@ export default function HomePage() {
             Manage streaming connections and import listening history files.
           </p>
         </div>
-        {token && (
-          <button type="button" className="btn-secondary" onClick={clearSession}>
-            Sign out
-          </button>
-        )}
       </div>
 
       <div className="connect-sources-grid">
@@ -450,8 +444,33 @@ export default function HomePage() {
           description="We couldn't find any scrobbles for this date range."
         />
       )}
-      {status === 'ready' && <ChartsPanel token={token} userId={savedSession?.userId} />}
-      {status === 'ready' && <ScrobbleList scrobbles={scrobbles} />}
+      {status === 'ready' && (
+        <div className="connect-handoff-card">
+          <div className="connect-handoff-content">
+            <h4>Explore Analytics & Reports</h4>
+            <p>
+              Looking for deeper insights? Explore listening charts in Overview or view breakdown reports in Reports.
+            </p>
+          </div>
+          <div className="connect-handoff-actions">
+            <Link to="/overview" className="btn-secondary">Overview →</Link>
+            <Link to="/reports" className="btn-secondary">Reports →</Link>
+          </div>
+        </div>
+      )}
+      {status === 'ready' && (
+        <div className="connect-feed-container">
+          <ScrobbleList scrobbles={scrobbles} title="Recent Ingestion Activity" />
+          {scrobbles && scrobbles.length > 0 && (
+            <div className="connect-feed-footer">
+              <span>View and search your complete listening history in </span>
+              <Link to="/library" className="connect-feed-link">
+                Library →
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
 
       {import.meta.env.DEV && (
         <details className="dev-tools-details" open style={{ marginTop: '3rem', padding: '1rem', border: '0.5px dashed var(--color-border)', borderRadius: 'var(--radius-sm)' }}>
