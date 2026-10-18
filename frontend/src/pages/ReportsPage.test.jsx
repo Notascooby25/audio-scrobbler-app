@@ -43,4 +43,33 @@ describe('ReportsPage with Friends Comparison', () => {
     // Button label updates to indicate active / close
     expect(screen.getByRole('button', { name: /Hide Friends Comparison/i })).toBeInTheDocument()
   })
+
+  it('renders comparison percentages for all three metrics when compare_to_previous is true', async () => {
+    const { fetchReportsSummary } = await import('../api')
+    fetchReportsSummary.mockResolvedValue({
+      period_scrobbles: 244,
+      comparison_percent: -36.6,
+      previous_period_scrobbles: 385,
+      listening_minutes: 897,
+      previous_listening_minutes: 1250,
+      listening_minutes_comparison_percent: -28.2,
+      average_per_day: 34.9,
+      previous_average_per_day: 55.0,
+      average_per_day_comparison_percent: -36.5,
+    })
+
+    render(
+      <MemoryRouter>
+        <ReportsPage />
+      </MemoryRouter>
+    )
+
+    // Toggle compare to previous period
+    const compareToggle = screen.getByLabelText(/Compare to previous period/i)
+    fireEvent.click(compareToggle)
+
+    expect(await screen.findByText(/-36.6% vs previous \(385\)/)).toBeInTheDocument()
+    expect(screen.getByText(/-28.2% vs previous \(1,250\)/)).toBeInTheDocument()
+    expect(screen.getByText(/-36.5% vs previous \(55\)/)).toBeInTheDocument()
+  })
 })

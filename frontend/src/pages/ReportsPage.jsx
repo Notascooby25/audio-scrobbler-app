@@ -121,10 +121,20 @@ export default function ReportsPage() {
           <div className="report-fact-card">
             <strong>{Number(report.summary.listening_minutes || 0).toLocaleString()}</strong>
             <span>Listening minutes</span>
+            {dateRange.compare_to_previous && (
+              <span className="stat-comparison">
+                {(report.summary.listening_minutes_comparison_percent || 0) > 0 ? `+${report.summary.listening_minutes_comparison_percent}%` : `${report.summary.listening_minutes_comparison_percent || 0}%`} vs previous ({Number(report.summary.previous_listening_minutes || 0).toLocaleString()})
+              </span>
+            )}
           </div>
           <div className="report-fact-card">
             <strong>{Number(report.summary.average_per_day || 0)}</strong>
             <span>Average per day</span>
+            {dateRange.compare_to_previous && (
+              <span className="stat-comparison">
+                {(report.summary.average_per_day_comparison_percent || 0) > 0 ? `+${report.summary.average_per_day_comparison_percent}%` : `${report.summary.average_per_day_comparison_percent || 0}%`} vs previous ({Number(report.summary.previous_average_per_day || 0)})
+              </span>
+            )}
           </div>
         </div>
       )}
