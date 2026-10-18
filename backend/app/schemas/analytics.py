@@ -138,7 +138,11 @@ class ReportSummaryResponse(BaseModel):
     previous_period_scrobbles: int
     comparison_percent: float
     listening_minutes: int
+    previous_listening_minutes: int = 0
+    listening_minutes_comparison_percent: float = 0.0
     average_per_day: float
+    previous_average_per_day: float = 0.0
+    average_per_day_comparison_percent: float = 0.0
     following_average_scrobbles: float | None = None
     unique_artists: int = 0
     unique_albums: int = 0

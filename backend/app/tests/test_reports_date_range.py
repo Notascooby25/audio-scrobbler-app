@@ -147,6 +147,20 @@ def test_reports_summary_compare_to_previous_false_skips_comparison():
     payload = response.json()
     assert payload["previous_period_scrobbles"] == 0
     assert payload["comparison_percent"] == 0.0
+    assert payload["previous_listening_minutes"] == 0
+    assert payload["listening_minutes_comparison_percent"] == 0.0
+    assert payload["previous_average_per_day"] == 0.0
+    assert payload["average_per_day_comparison_percent"] == 0.0
+
+
+def test_reports_summary_compare_to_previous_computes_all_deltas():
+    response = client.get("/reports/summary?compare_to_previous=true")
+    assert response.status_code == 200
+    payload = response.json()
+    assert "previous_listening_minutes" in payload
+    assert "listening_minutes_comparison_percent" in payload
+    assert "previous_average_per_day" in payload
+    assert "average_per_day_comparison_percent" in payload
 
 
 def test_reports_summary_all_time_does_not_crash_and_covers_full_history():

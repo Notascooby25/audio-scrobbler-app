@@ -275,20 +275,36 @@ def get_report_summary(
     total = db.execute(build_library_count_query(user_id)).scalar_one()
     current = db.execute(build_report_period_count_query(user_id, period_start, period_end)).one()
     current_count = int(current.scrobble_count)
+    current_minutes = int(current.duration_ms // 60000)
 
     if range_key == "all.time":
         previous_count = 0
         comparison = 0.0
+        previous_minutes = 0
+        minutes_comparison = 0.0
+        previous_avg = 0.0
+        avg_comparison = 0.0
         earliest = db.query(func.min(ListeningEvent.played_at)).filter(ListeningEvent.user_id == user_id).scalar()
         days = max((period_end - earliest).days, 1) if earliest else 1
     else:
         previous_count = 0
         comparison = 0.0
+        previous_minutes = 0
+        minutes_comparison = 0.0
+        previous_avg = 0.0
+        avg_comparison = 0.0
+        days = max((period_end - period_start).days, 1)
         if compare_to_previous:
             previous = db.execute(build_report_period_count_query(user_id, previous_start, previous_end)).one()
             previous_count = int(previous.scrobble_count)
+            previous_minutes = int(previous.duration_ms // 60000)
+            prev_days = max((previous_end - previous_start).days, 1)
+            previous_avg = round(previous_count / prev_days, 1)
+            current_avg = round(current_count / days, 1)
+
             comparison = ((current_count - previous_count) / previous_count * 100) if previous_count else 0.0
-        days = max((period_end - period_start).days, 1)
+            minutes_comparison = ((current_minutes - previous_minutes) / previous_minutes * 100) if previous_minutes else 0.0
+            avg_comparison = ((current_avg - previous_avg) / previous_avg * 100) if previous_avg else 0.0
     following_avg = None
     if range_key != "all.time":
         # Get list of followed user IDs
@@ -311,8 +327,12 @@ def get_report_summary(
         period_scrobbles=current_count,
         previous_period_scrobbles=previous_count,
         comparison_percent=round(comparison, 1),
-        listening_minutes=int(current.duration_ms // 60000),
+        listening_minutes=current_minutes,
+        previous_listening_minutes=previous_minutes,
+        listening_minutes_comparison_percent=round(minutes_comparison, 1),
         average_per_day=round(current_count / days, 1),
+        previous_average_per_day=previous_avg,
+        average_per_day_comparison_percent=round(avg_comparison, 1),
         following_average_scrobbles=round(following_avg, 1) if following_avg is not None else None,
         unique_artists=int(current.unique_artists),
         unique_albums=int(current.unique_albums),
