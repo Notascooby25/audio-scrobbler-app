@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+import csv
+from datetime import datetime, timedelta, timezone
+import io
 import json
 from typing import Iterator
 
@@ -264,3 +266,100 @@ def advanced_delete_imports(
     deleted = query.delete(synchronize_session=False)
     db.commit()
     return {"deleted": deleted}
+
+
+@router.get("/import/export")
+def export_scrobbles(
+    format: str = Query("csv", pattern="^(csv|json)$"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    if format == "csv":
+        def generate_csv() -> Iterator[str]:
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(["played_at", "track_name", "artist_name", "album_name", "duration_ms", "source"])
+            yield output.getvalue()
+            output.seek(0)
+            output.truncate(0)
+
+            offset = 0
+            batch_size = 1000
+            while True:
+                events = (
+                    db.query(ListeningEvent)
+                    .filter(ListeningEvent.user_id == current_user.id)
+                    .order_by(ListeningEvent.played_at.desc())
+                    .offset(offset)
+                    .limit(batch_size)
+                    .all()
+                )
+                if not events:
+                    break
+                for ev in events:
+                    writer.writerow([
+                        ev.played_at.isoformat() if ev.played_at else "",
+                        ev.track_name,
+                        ev.artist_name,
+                        ev.album_name or "",
+                        ev.duration_ms if ev.duration_ms is not None else "",
+                        ev.source,
+                    ])
+                yield output.getvalue()
+                output.seek(0)
+                output.truncate(0)
+                offset += len(events)
+                if len(events) < batch_size:
+                    break
+
+        return StreamingResponse(
+            generate_csv(),
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": f'attachment; filename="audio-scrobbler-history-{date_str}.csv"',
+            },
+        )
+
+    else:
+        def generate_json() -> Iterator[str]:
+            yield "[\n"
+            first = True
+            offset = 0
+            batch_size = 1000
+            while True:
+                events = (
+                    db.query(ListeningEvent)
+                    .filter(ListeningEvent.user_id == current_user.id)
+                    .order_by(ListeningEvent.played_at.desc())
+                    .offset(offset)
+                    .limit(batch_size)
+                    .all()
+                )
+                if not events:
+                    break
+                for ev in events:
+                    entry = {
+                        "played_at": ev.played_at.isoformat() if ev.played_at else None,
+                        "track_name": ev.track_name,
+                        "artist_name": ev.artist_name,
+                        "album_name": ev.album_name,
+                        "duration_ms": ev.duration_ms,
+                        "source": ev.source,
+                    }
+                    chunk = ("" if first else ",\n") + "  " + json.dumps(entry)
+                    first = False
+                    yield chunk
+                offset += len(events)
+                if len(events) < batch_size:
+                    break
+            yield "\n]\n"
+
+        return StreamingResponse(
+            generate_json(),
+            media_type="application/json",
+            headers={
+                "Content-Disposition": f'attachment; filename="audio-scrobbler-history-{date_str}.json"',
+            },
+        )
