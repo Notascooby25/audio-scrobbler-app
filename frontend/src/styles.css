@@ -2965,6 +2965,14 @@ button.btn-secondary:hover:not(:disabled) {
   font-size: 11px;
 }
 
+.month-card {
+  background: var(--color-surface);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: none;
+  padding: 16px;
+}
+
 dl {
   border-top: 0.5px solid var(--color-border);
   display: grid;

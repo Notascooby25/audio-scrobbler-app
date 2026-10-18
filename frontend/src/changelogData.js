@@ -1,5 +1,15 @@
 export const CHANGELOG = [
   {
+    version: '0.11.11',
+    date: '2026-10-18',
+    changes: [
+      'Distilled the Monthly Listening Summary into a high-density Archive Ledger with stat cards, instant Year filter chips, and relative volume bars.',
+      'Streamlined the Connect page by pruning redundant chart panels in favor of direct handoff cards to Overview and Reports.',
+      'Transformed recent scrobbles on Connect into a focused Recent Ingestion Activity feed with source badges and a direct link to the full Library.',
+      'Removed dead monthly card styles and refined Overview page loading feedback to prevent layout shift during date range switches.'
+    ]
+  },
+  {
     version: '0.11.10',
     date: '2026-10-18',
     changes: [

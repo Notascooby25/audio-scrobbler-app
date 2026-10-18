@@ -346,6 +346,11 @@ the NAS listing.** The live setup has drifted from the repos before.
   - BBC Sounds Followed Shows (`followed_shows` table, BBC RMS search & episode browsing, 1-click Spotify playlist scope re-auth).
   - Apple Music file import support (`source="apple"`).
   - In-app notification bell (`notifications` table) and PWA Web Push (`push_subscriptions` table, `VAPID` keys, and the 08:00 UTC `recaps-generation` worker job for daily/weekly/monthly recaps).
+- **Impeccable UI Distillation & Connect Hub Refinement (2026-10-18, v0.11.11):**
+  - Distilled the Monthly Listening Summary into a high-density, scannable Monthly Archive Ledger with high-level stats, instant Year chips filtering, and relative volume bars.
+  - Streamlined `/connect` by pruning duplicate `<ChartsPanel>` in favor of direct handoff shortcuts to `/overview` and `/reports`.
+  - Refactored recent scrobbles on Connect into a focused Recent Ingestion Activity feed with source badges and a direct link to `/library`.
+  - Pruned dead month card styles and refined Overview page loading feedback to prevent layout shift during date range switches.
 - **Impeccable Technical Audit Improvements (2026-10-18, v0.11.10):**
   - Hardened heading semantics on `/connect` (`<h1>`) and added `Escape` key dismissal to `CopyScrobblesModal`.
   - Fixed Changelog badge contrast on primary blue (`#ffffff` on `#0066ff`), normalized tokens in `ScopeCreepTools.jsx`, and refined loading spinner for reduced-motion preferences (gentle opacity pulse).
