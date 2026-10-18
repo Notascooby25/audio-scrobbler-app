@@ -52,4 +52,26 @@ describe('CopyScrobblesModal', () => {
     expect(await screen.findByText(/Successfully copied/)).toBeInTheDocument()
     expect(screen.getByText('5')).toBeInTheDocument()
   })
+
+  it('calls onClose when Escape key is pressed', () => {
+    const onClose = vi.fn()
+    renderModal({ onClose })
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not call onClose on Escape key when status is loading', async () => {
+    let resolvePromise
+    api.copyScrobbles.mockReturnValue(new Promise((resolve) => { resolvePromise = resolve }))
+    const onClose = vi.fn()
+    renderModal({ onClose })
+
+    fireEvent.change(screen.getByLabelText('Start Time'), { target: { value: '2026-01-01T12:00' } })
+    fireEvent.change(screen.getByLabelText('End Time'), { target: { value: '2026-01-01T14:00' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Copy Scrobbles' }))
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(onClose).not.toHaveBeenCalled()
+    resolvePromise({ status: 'ok', copied_count: 0 })
+  })
 })

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { copyScrobbles } from '../../api'
 import { readSession } from '../../session'
 
@@ -10,6 +10,18 @@ export default function CopyScrobblesModal({ userId, username, onClose }) {
   const [status, setStatus] = useState('idle') // idle, loading, success, error
   const [errorMsg, setErrorMsg] = useState('')
   const [copiedCount, setCopiedCount] = useState(0)
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && status !== 'loading') {
+        event.preventDefault()
+        onClose?.()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [status, onClose])
 
   const handleCopy = async (e) => {
     e.preventDefault()

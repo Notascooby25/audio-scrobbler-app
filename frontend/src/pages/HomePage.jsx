@@ -219,7 +219,7 @@ export default function HomePage() {
     <section className="dashboard" aria-labelledby="summary-heading">
       <div className="section-heading">
         <div>
-          <h2 id="summary-heading">Connect & Data Sources</h2>
+          <h1 id="summary-heading">Connect & Data Sources</h1>
           <p style={{ color: 'var(--color-muted)', fontSize: '0.875rem', margin: '4px 0 0 0' }}>
             Manage streaming connections and import listening history files.
           </p>
