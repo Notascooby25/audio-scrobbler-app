@@ -100,14 +100,17 @@ The full listening history, with breakdowns by artist, album and track.
 | Scrobbles over time | `TimelineChart` | `GET /library/timeline` |
 | Per-entry menu: Block, Clear Artwork, Delete | `EntryMenu`, `ConfirmDeleteModal` | `POST /users/me/blocks`, `POST /library/clear-artwork`, `POST /library/delete-entries`, `POST /library/delete-scrobbles` |
 | Share top artists/albums/tracks as an image (grid or list; Download PNG or Share) | `ShareDialog`, `ShareCard` (uses `html-to-image`) | |
+| Bulk selection (Copy / Deselect) | `LibraryViewToggle`, `bulk-action-bar` | Sticky mobile action bar with touch targets ≥ 44pt |
 | Pagination and page size | `Pagination`, `PageSizeSelect` | |
 
-`/library/{entity}` also accepts `genres`.
+`/library/{entity}` also accepts `genres`. Bulk selection controls are fully responsive on mobile touch viewports.
 
 ## 4. Reports: `/reports`
 
 Deeper analytics for the selected range. Accepts `?range=` and `?userId=`. The
-"View All Time" link on a profile opens `range=all.time`.
+"View All Time" link on a profile opens `range=all.time`. Displays accessible
+loading indicator (`role="status"`, `aria-live="polite"`) during re-fetch on
+date range switches.
 
 Sections in page order:
 
@@ -163,6 +166,11 @@ Sections in page order:
 
 ## 8. Connect: `/connect`
 
+Organized into a 3-card Data Sources Hub:
+1. **Spotify Streaming Card:** Active connection status, connect button, and rate-limit notice.
+2. **History File Import Card:** File picker for Spotify and YouTube JSON exports with upload progress bar and summary breakdown.
+3. **Radio & Liked Songs Tools Card:** Direct shortcut to `/settings?tab=scrobble`.
+
 | Section | Endpoint |
 |---|---|
 | Spotify connection status and connect button | `GET /auth/spotify/status`, `GET /auth/spotify/authorize` |
@@ -170,6 +178,7 @@ Sections in page order:
 | Monthly summary | `GET /analytics/monthly-summary` |
 | Charts panel | `GET /analytics/charts/{user_id}` |
 | Recent scrobbles | `GET /analytics/recent-scrobbles` |
+| Developer bypass tools | Development only (`import.meta.env.DEV`), stripped from production builds |
 
 ---
 

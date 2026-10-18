@@ -1,5 +1,17 @@
 export const CHANGELOG = [
   {
+    version: '0.11.9',
+    date: '2026-10-18',
+    changes: [
+      'Redesigned the Connect page into a unified Data Sources Hub with clear cards for Spotify Streaming, History File Imports, and Radio/Tools.',
+      'Replaced raw emoji notification bell with an accessible, crisp SVG outline icon and dynamic screen-reader count announcements.',
+      'Isolated developer token bypass tools to local development only (stripped from production builds).',
+      'Restored mobile touch parity for Library bulk selection, removing suppression rules and adding a sticky, touch-friendly action bar (>= 44pt touch targets).',
+      'Added smooth loading feedback when switching date ranges or user views on the Reports page.',
+      'Hardened design token fallbacks and resolved dark mode contrast in the bulk action bar.'
+    ]
+  },
+  {
     version: '0.11.8',
     date: '2026-10-18',
     changes: [

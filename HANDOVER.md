@@ -346,6 +346,11 @@ the NAS listing.** The live setup has drifted from the repos before.
   - BBC Sounds Followed Shows (`followed_shows` table, BBC RMS search & episode browsing, 1-click Spotify playlist scope re-auth).
   - Apple Music file import support (`source="apple"`).
   - In-app notification bell (`notifications` table) and PWA Web Push (`push_subscriptions` table, `VAPID` keys, and the 08:00 UTC `recaps-generation` worker job for daily/weekly/monthly recaps).
+- **Impeccable Polish, Mobile Touch Parity & Data Sources Hub (2026-10-18, v0.11.9):**
+  - Redesigned `/connect` into a clean 3-card Data Sources Hub (Spotify Streaming, File Imports, and Radio/Tools) with dev bypass forms strictly isolated behind `import.meta.env.DEV`.
+  - Replaced raw emoji 🔔 in `HeaderNav` with an accessible outline SVG `<BellIcon>` component and dynamic unread aria announcements.
+  - Restored mobile touch parity for Library bulk selection (un-suppressed mobile selection toggles and styled sticky touch-friendly action bar ≥ 44pt).
+  - Added loading indicator feedback for Reports date range switches, hardened design tokens, and resolved dark-mode contrast in the bulk action bar.
 - **Also 2026-09-22/23:** listening heatmap, frontend redesign, nginx
   `client_max_body_size` raised for large imports, listening clock restored,
   friends-average removed from the UI, Library share-image feature,
