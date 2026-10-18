@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
@@ -139,7 +139,7 @@ describe('App', () => {
     file.text = async () => JSON.stringify([{ trackName: 'Slow Show' }])
     fireEvent.change(screen.getByLabelText('Import history JSON'), { target: { files: [file] } })
 
-    await waitFor(() => expect(screen.getByText('spotify', { exact: false })).toBeInTheDocument())
+    await waitFor(() => expect(within(screen.getByRole('status', { name: 'Import Summary' })).getByText('spotify', { exact: false })).toBeInTheDocument())
     expect(screen.getByText('2')).toBeInTheDocument()
   })
 

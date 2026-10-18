@@ -1,11 +1,16 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import HeaderNav from './HeaderNav'
+
+vi.mock('../api', () => ({
+  fetchUnreadNotificationCount: vi.fn().mockResolvedValue({ count: 3 }),
+}))
 
 describe('HeaderNav', () => {
   afterEach(() => {
     cleanup()
+    localStorage.clear()
   })
 
   it('renders links to all primary sections', () => {
@@ -49,5 +54,19 @@ describe('HeaderNav', () => {
 
     fireEvent.click(screen.getByRole('link', { name: 'Reports' }))
     expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('renders an accessible SVG outline notification bell and badge without emoji when authenticated', async () => {
+    localStorage.setItem('audio-scrobbler-session', JSON.stringify({ userId: 1, accessToken: 'demo-token' }))
+    render(<MemoryRouter><HeaderNav /></MemoryRouter>)
+
+    await waitFor(() => {
+      const bellLinks = screen.getAllByRole('link', { name: /unread notification/i })
+      expect(bellLinks.length).toBeGreaterThan(0)
+    })
+
+    expect(screen.queryByText('🔔')).not.toBeInTheDocument()
+    const badgeElements = screen.getAllByText('3')
+    expect(badgeElements.length).toBeGreaterThan(0)
   })
 })

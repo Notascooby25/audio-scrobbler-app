@@ -12,6 +12,26 @@ const NAV_LINKS = [
   { to: '/connect', label: 'Connect' },
 ]
 
+function BellIcon({ className }) {
+  return (
+    <svg
+      className={className}
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  )
+}
+
 export default function HeaderNav() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
@@ -43,6 +63,10 @@ export default function HeaderNav() {
 
   const linkClassName = ({ isActive }) => (isActive ? 'nav-link nav-link-active' : 'nav-link')
 
+  const bellAriaLabel = unreadCount > 0
+    ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`
+    : 'Notifications'
+
   return (
     <header className="topbar">
       <div className="topbar-brand">
@@ -52,14 +76,19 @@ export default function HeaderNav() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         {session?.accessToken && (
           <div className="mobile-bell">
-            <NavLink to="/settings?tab=notifications" className={linkClassName} onClick={() => setIsMenuOpen(false)}>
-              <span style={{ position: 'relative', fontSize: '1.2rem' }}>
-                🔔
+            <NavLink
+              to="/settings?tab=notifications"
+              className={linkClassName}
+              aria-label={bellAriaLabel}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                <BellIcon />
                 {unreadCount > 0 && (
                   <span style={{
-                    position: 'absolute', top: '-5px', right: '-10px',
-                    backgroundColor: 'red', color: 'white', borderRadius: '50%',
-                    padding: '2px 5px', fontSize: '10px', fontWeight: 'bold'
+                    position: 'absolute', top: '-6px', right: '-8px',
+                    backgroundColor: 'var(--color-danger, #ef4444)', color: '#ffffff', borderRadius: '9999px',
+                    padding: '1px 5px', fontSize: '10px', fontWeight: 'bold', lineHeight: 1.2
                   }}>
                     {unreadCount}
                   </span>
@@ -93,14 +122,19 @@ export default function HeaderNav() {
         ))}
         {session?.accessToken && (
           <div className="desktop-bell">
-            <NavLink to="/settings?tab=notifications" className={linkClassName} onClick={() => setIsMenuOpen(false)}>
-              <span style={{ position: 'relative' }}>
-                🔔
+            <NavLink
+              to="/settings?tab=notifications"
+              className={linkClassName}
+              aria-label={bellAriaLabel}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                <BellIcon />
                 {unreadCount > 0 && (
                   <span style={{
-                    position: 'absolute', top: '-5px', right: '-10px',
-                    backgroundColor: 'red', color: 'white', borderRadius: '50%',
-                    padding: '2px 5px', fontSize: '10px', fontWeight: 'bold'
+                    position: 'absolute', top: '-6px', right: '-8px',
+                    backgroundColor: 'var(--color-danger, #ef4444)', color: '#ffffff', borderRadius: '9999px',
+                    padding: '1px 5px', fontSize: '10px', fontWeight: 'bold', lineHeight: 1.2
                   }}>
                     {unreadCount}
                   </span>
