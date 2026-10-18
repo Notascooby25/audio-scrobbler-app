@@ -2965,42 +2965,6 @@ button.btn-secondary:hover:not(:disabled) {
   font-size: 11px;
 }
 
-.summary-grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-}
-
-.month-card {
-  background: var(--color-surface);
-  border: 0.5px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: none;
-  padding: 16px;
-}
-
-.month-label {
-  color: var(--color-muted);
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin: 0 0 1.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.month-card strong {
-  display: block;
-  font-size: 2.8rem;
-  font-weight: 600;
-  line-height: 1;
-  color: var(--color-ink);
-}
-
-.month-card > span {
-  color: var(--color-muted);
-  font: 0.8rem inherit, sans-serif;
-}
-
 dl {
   border-top: 0.5px solid var(--color-border);
   display: grid;
