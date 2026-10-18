@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: '0.11.8',
+    date: '2026-10-18',
+    changes: [
+      'Added green (positive) and red (negative) color indicators for percentage differences on the Reports summary cards when comparing previous periods.',
+      'Introduced WCAG AA accessible theme tokens (--color-success and dark-mode --color-danger) for clear high-contrast stat comparisons across both light and dark themes.'
+    ]
+  },
+  {
     version: '0.11.7',
     date: '2026-10-18',
     changes: [
