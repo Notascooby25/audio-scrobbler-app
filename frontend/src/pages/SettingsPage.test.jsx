@@ -12,6 +12,7 @@ import {
   removeBlock,
   updateScrobbleSettings,
   updateUserSettings,
+  downloadScrobblesExport,
 } from '../api'
 
 vi.mock('../api', () => ({
@@ -26,6 +27,7 @@ vi.mock('../api', () => ({
   fetchImportBatches: vi.fn(),
   advancedDeleteImports: vi.fn(),
   startArtworkBackfill: vi.fn(),
+  downloadScrobblesExport: vi.fn(),
 }))
 
 const settings = {
@@ -255,5 +257,25 @@ describe('SettingsPage', () => {
     await waitFor(() => expect(enableLikedTracksSync).toHaveBeenCalledWith({ token: 'token' }))
     await waitFor(() => expect(screen.getByText(/Liked songs sync is active/)).toBeInTheDocument())
     expect(screen.queryByRole('button', { name: 'Sync Liked Songs' })).not.toBeInTheDocument()
+  })
+
+  it('triggers scrobble export download from the Data tab', async () => {
+    downloadScrobblesExport.mockResolvedValue()
+    render(<MemoryRouter><SettingsPage /></MemoryRouter>)
+
+    const dataTab = await screen.findByRole('tab', { name: 'Data' })
+    fireEvent.click(dataTab)
+
+    expect(screen.getByText('Export Listening History')).toBeInTheDocument()
+    const csvButton = screen.getByRole('button', { name: 'Download CSV' })
+    const jsonButton = screen.getByRole('button', { name: 'Download JSON' })
+    expect(csvButton).toBeInTheDocument()
+    expect(jsonButton).toBeInTheDocument()
+
+    fireEvent.click(csvButton)
+    await waitFor(() => expect(downloadScrobblesExport).toHaveBeenCalledWith({ token: 'token', format: 'csv' }))
+
+    fireEvent.click(jsonButton)
+    await waitFor(() => expect(downloadScrobblesExport).toHaveBeenCalledWith({ token: 'token', format: 'json' }))
   })
 })

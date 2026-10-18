@@ -438,6 +438,30 @@ export function advancedDeleteImports({ token, source, startDate, endDate, batch
   })
 }
 
+export async function downloadScrobblesExport({ token, format = 'csv' }) {
+  const response = await fetch(`${API_BASE_URL}/import/export?format=${encodeURIComponent(format)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!response.ok) {
+    throw new Error(`Export failed with HTTP ${response.status}`)
+  }
+  const blob = await response.blob()
+  const contentDisposition = response.headers.get('content-disposition') || ''
+  let filename = `audio-scrobbler-history.${format}`
+  const match = contentDisposition.match(/filename="?([^";]+)"?/)
+  if (match && match[1]) {
+    filename = match[1]
+  }
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  window.URL.revokeObjectURL(url)
+}
+
 export function copyScrobbles({ token, userId, startDate, endDate }) {
   return fetchAnalyticsResource(`/users/${userId}/copy-scrobbles`, {
     token,

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import AnalyticsPage from '../components/AnalyticsPage'
-import { enableLikedTracksSync, fetchBlocks, fetchScrobbleSettings, fetchUserSettings, removeBlock, updateScrobbleSettings, updateUserSettings, startArtworkBackfill, fetchImportBatches, advancedDeleteImports, subscribeToPushNotifications, sendTestNotification } from '../api'
+import { enableLikedTracksSync, fetchBlocks, fetchScrobbleSettings, fetchUserSettings, removeBlock, updateScrobbleSettings, updateUserSettings, startArtworkBackfill, fetchImportBatches, advancedDeleteImports, subscribeToPushNotifications, sendTestNotification, downloadScrobblesExport } from '../api'
 import { readSession } from '../session'
 import ImportProgressBar from '../components/ImportProgressBar'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
@@ -69,9 +69,24 @@ export default function SettingsPage() {
   const [advancedDeleteError, setAdvancedDeleteError] = useState('')
   const [backfillState, setBackfillState] = useState('idle')
   const [backfillProgress, setBackfillProgress] = useState(null)
-    const [notifications, setNotifications] = useState([])
+  const [exportingFormat, setExportingFormat] = useState(null)
+  const [exportError, setExportError] = useState('')
+  const [notifications, setNotifications] = useState([])
   const [notificationsLoading, setNotificationsLoading] = useState(false)
   const saveTimer = useRef(null)
+
+  const handleExport = async (format) => {
+    if (!session?.accessToken) return
+    setExportingFormat(format)
+    setExportError('')
+    try {
+      await downloadScrobblesExport({ token: session.accessToken, format })
+    } catch (err) {
+      setExportError(err.message || 'Failed to download export')
+    } finally {
+      setExportingFormat(null)
+    }
+  }
 
     useEffect(() => {
     if (activeTab === 'notifications' && session?.accessToken) {
@@ -538,6 +553,34 @@ export default function SettingsPage() {
                   Cancel
                 </button>
               )}
+            </div>
+
+            <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '0.5px solid var(--color-border)' }}>
+              <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Export Listening History</h3>
+              <p className="notice" style={{ marginBottom: '1rem' }}>
+                Download your complete listening timeline as a CSV (spreadsheet-ready) or JSON file. Your data remains fully under your ownership.
+              </p>
+              {exportError && (
+                <p className="notice notice-error" role="alert" style={{ marginBottom: '1rem' }}>{exportError}</p>
+              )}
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={exportingFormat !== null}
+                  onClick={() => handleExport('csv')}
+                >
+                  {exportingFormat === 'csv' ? 'Preparing CSV...' : 'Download CSV'}
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={exportingFormat !== null}
+                  onClick={() => handleExport('json')}
+                >
+                  {exportingFormat === 'json' ? 'Preparing JSON...' : 'Download JSON'}
+                </button>
+              </div>
             </div>
           </div>
         </section>
