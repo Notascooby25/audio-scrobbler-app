@@ -346,6 +346,10 @@ the NAS listing.** The live setup has drifted from the repos before.
   - BBC Sounds Followed Shows (`followed_shows` table, BBC RMS search & episode browsing, 1-click Spotify playlist scope re-auth).
   - Apple Music file import support (`source="apple"`).
   - In-app notification bell (`notifications` table) and PWA Web Push (`push_subscriptions` table, `VAPID` keys, and the 08:00 UTC `recaps-generation` worker job for daily/weekly/monthly recaps).
+- **Listening History Export & Time Capsule Rediscover (2026-10-18, v0.12.0):**
+  - Added 1-click chunked streaming export for full listening history as CSV and JSON in Settings > Data tab (`GET /import/export?format={csv|json}`).
+  - Introduced `<RediscoverCard>` on Overview featuring Forgotten Favorites (unplayed tracks with 3+ past plays) and On This Day calendar week anniversary memories (`GET /analytics/rediscover`).
+  - Implemented 1-click private Spotify playlist export directly into the user's Spotify account (`POST /analytics/rediscover/playlist`), with regex support for raw 22-character track IDs.
 - **Impeccable UI Distillation & Connect Hub Refinement (2026-10-18, v0.11.11):**
   - Distilled the Monthly Listening Summary into a high-density, scannable Monthly Archive Ledger with high-level stats, instant Year chips filtering, and relative volume bars.
   - Streamlined `/connect` by pruning duplicate `<ChartsPanel>` in favor of direct handoff shortcuts to `/overview` and `/reports`.

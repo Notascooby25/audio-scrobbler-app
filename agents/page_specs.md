@@ -79,8 +79,9 @@ A quick snapshot of listening for the selected range.
 
 | Section | Component | Endpoint |
 |---|---|---|
-| Date range | `DateRangeSelector` | |
 | Summary stats (total scrobbles, unique artists) | `SummaryStatsBar` | `GET /stats/summary` |
+| Time Capsule & Rediscover (Forgotten Favorites, On This Day, Spotify Playlist export) | `RediscoverCard` | `GET /analytics/rediscover`, `POST /analytics/rediscover/playlist` |
+| Date range | `DateRangeSelector` | |
 | Top artists (10) | `RankedList` | `GET /stats/top-artists` |
 | Top albums (10) | `RankedList` | `GET /stats/top-albums` |
 | Top tracks (10) | `RankedList` | `GET /stats/top-tracks` |
@@ -160,7 +161,7 @@ Sections in page order:
 |---|---|
 | Preferences, e.g. theme, page sizes | `GET` and `PATCH /users/me/settings` |
 | Scrobble settings: `poll_interval_minutes`, realtime sync, and BBC Sounds Scope Creep import tool (create playlist or add to existing, scrobble tracks) | `GET` and `PATCH /users/me/settings/scrobble`, `GET /tools/scope-creep/playlists`, `POST /tools/scope-creep/*` |
-| Data settings: Liked songs sync, Backfill Missing Artwork (Deezer/iTunes, **not** Spotify) | `POST /artwork/backfill`, `PATCH /users/me/settings/scrobble` |
+| Data settings: Liked songs sync, Backfill Missing Artwork (Deezer/iTunes, **not** Spotify), Export Listening History (CSV & JSON) | `POST /artwork/backfill`, `PATCH /users/me/settings/scrobble`, `GET /import/export?format={csv\|json}` |
 | Blocked items | `GET` and `DELETE /users/me/blocks` |
 | Delete Scrobbles (permanent; confirmation modal) | `/import/*` delete endpoints |
 

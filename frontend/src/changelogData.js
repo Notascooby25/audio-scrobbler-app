@@ -1,5 +1,15 @@
 export const CHANGELOG = [
   {
+    version: '0.12.0',
+    date: '2026-10-18',
+    changes: [
+      'Added full listening history data export (CSV and JSON) in Settings > Data with high-performance chunked streaming downloads.',
+      'Introduced Time Capsule & Rediscover on the Overview page featuring Forgotten Favorites (unplayed tracks with 3+ past plays) and On This Day anniversary tracks.',
+      'Added 1-click Spotify playlist creation from rediscovered tracks directly into the connected Spotify account.',
+      'Expanded Spotify track URI normalizer to seamlessly support raw 22-character track IDs for playlist creation.'
+    ]
+  },
+  {
     version: '0.11.11',
     date: '2026-10-18',
     changes: [
