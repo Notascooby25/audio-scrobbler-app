@@ -1,35 +1,51 @@
-import { useEffect, useRef, useState } from 'react'
-import { Link, Navigate, useSearchParams } from 'react-router-dom'
-import AnalyticsPage from '../components/AnalyticsPage'
-import { enableLikedTracksSync, fetchBlocks, fetchScrobbleSettings, fetchUserSettings, removeBlock, updateScrobbleSettings, updateUserSettings, startArtworkBackfill, fetchImportBatches, advancedDeleteImports, subscribeToPushNotifications, sendTestNotification, downloadScrobblesExport } from '../api'
-import { readSession } from '../session'
-import ImportProgressBar from '../components/ImportProgressBar'
-import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
-import ScopeCreepTools from '../components/ScopeCreepTools'
+import { useEffect, useRef, useState } from "react";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
+import AnalyticsPage from "../components/AnalyticsPage";
+import {
+  enableLikedTracksSync,
+  fetchBlocks,
+  fetchScrobbleSettings,
+  fetchUserSettings,
+  removeBlock,
+  updateScrobbleSettings,
+  updateUserSettings,
+  startArtworkBackfill,
+  fetchImportBatches,
+  advancedDeleteImports,
+  subscribeToPushNotifications,
+  sendTestNotification,
+  downloadScrobblesExport,
+} from "../api";
+import { readSession } from "../session";
+import ImportProgressBar from "../components/ImportProgressBar";
+import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
+import ScopeCreepTools from "../components/ScopeCreepTools";
+import UserGuideSection from "../components/settings/UserGuideSection";
+import FaqSection from "../components/settings/FaqSection";
 
 const SETTINGS_TABS = [
-  ['general', 'General'],
-  ['views', 'Views'],
-  ['scrobble', 'Scrobble'],
-  ['data', 'Data'],
-  ['notifications', 'Notifications'],
-  ['danger', 'Danger Zone'],
-]
+  ["general", "General"],
+  ["views", "Views"],
+  ["scrobble", "Scrobble"],
+  ["data", "Data"],
+  ["notifications", "Notifications"],
+  ["guide", "User Guide"],
+  ["faq", "FAQ"],
+  ["danger", "Danger Zone"],
+];
 
-const POLL_INTERVAL_OPTIONS = [5, 10, 15, 30, 60]
+const POLL_INTERVAL_OPTIONS = [5, 10, 15, 30, 60];
 
 const VIEW_OPTIONS = [
-  ['default_library_view', 'Default library view'],
-  ['scrobbles_view', 'Scrobbles view'],
-  ['artists_view', 'Artists view'],
-  ['albums_view', 'Albums view'],
-  ['tracks_view', 'Tracks view'],
-]
+  ["default_library_view", "Default library view"],
+  ["scrobbles_view", "Scrobbles view"],
+  ["artists_view", "Artists view"],
+  ["albums_view", "Albums view"],
+  ["tracks_view", "Tracks view"],
+];
 function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
 
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
@@ -41,267 +57,280 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 export default function SettingsPage() {
-  const session = readSession()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const tabParam = searchParams.get('tab')
+  const session = readSession();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
 
   const [activeTab, setActiveTab] = useState(() => {
-    if (tabParam === 'scopecreep') return 'scrobble'
-    if (['general', 'views', 'scrobble', 'data', 'notifications', 'danger'].includes(tabParam)) {
-      return tabParam
+    if (tabParam === "scopecreep") return "scrobble";
+    if (
+      ["general", "views", "scrobble", "data", "notifications", "guide", "faq", "danger"].includes(
+        tabParam
+      )
+    ) {
+      return tabParam;
     }
-    return 'general'
-  })
-  const [settings, setSettings] = useState(null)
-  const [status, setStatus] = useState('idle')
-  const [scrobbleSettings, setScrobbleSettings] = useState(null)
-  const [scrobbleStatus, setScrobbleStatus] = useState('idle')
-  const [likedSyncStatus, setLikedSyncStatus] = useState('idle')
-  const [blocks, setBlocks] = useState([])
-  const [blocksError, setBlocksError] = useState('')
-  const [deleteMode, setDeleteMode] = useState('source')
-  const [deleteSource, setDeleteSource] = useState('youtube')
-  const [deleteStartDate, setDeleteStartDate] = useState('')
-  const [deleteEndDate, setDeleteEndDate] = useState('')
-  const [deleteBatch, setDeleteBatch] = useState('')
-  const [importBatches, setImportBatches] = useState([])
-  const [advancedDeleteState, setAdvancedDeleteState] = useState('idle')
-  const [advancedDeleteError, setAdvancedDeleteError] = useState('')
-  const [backfillState, setBackfillState] = useState('idle')
-  const [backfillProgress, setBackfillProgress] = useState(null)
-  const [exportingFormat, setExportingFormat] = useState(null)
-  const [exportError, setExportError] = useState('')
-  const [notifications, setNotifications] = useState([])
-  const [notificationsLoading, setNotificationsLoading] = useState(false)
-  const saveTimer = useRef(null)
+    return "general";
+  });
+  const [settings, setSettings] = useState(null);
+  const [status, setStatus] = useState("idle");
+  const [scrobbleSettings, setScrobbleSettings] = useState(null);
+  const [scrobbleStatus, setScrobbleStatus] = useState("idle");
+  const [likedSyncStatus, setLikedSyncStatus] = useState("idle");
+  const [blocks, setBlocks] = useState([]);
+  const [blocksError, setBlocksError] = useState("");
+  const [deleteMode, setDeleteMode] = useState("source");
+  const [deleteSource, setDeleteSource] = useState("youtube");
+  const [deleteStartDate, setDeleteStartDate] = useState("");
+  const [deleteEndDate, setDeleteEndDate] = useState("");
+  const [deleteBatch, setDeleteBatch] = useState("");
+  const [importBatches, setImportBatches] = useState([]);
+  const [advancedDeleteState, setAdvancedDeleteState] = useState("idle");
+  const [advancedDeleteError, setAdvancedDeleteError] = useState("");
+  const [backfillState, setBackfillState] = useState("idle");
+  const [backfillProgress, setBackfillProgress] = useState(null);
+  const [exportingFormat, setExportingFormat] = useState(null);
+  const [exportError, setExportError] = useState("");
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const saveTimer = useRef(null);
 
   const handleExport = async (format) => {
-    if (!session?.accessToken) return
-    setExportingFormat(format)
-    setExportError('')
+    if (!session?.accessToken) return;
+    setExportingFormat(format);
+    setExportError("");
     try {
-      await downloadScrobblesExport({ token: session.accessToken, format })
+      await downloadScrobblesExport({ token: session.accessToken, format });
     } catch (err) {
-      setExportError(err.message || 'Failed to download export')
+      setExportError(err.message || "Failed to download export");
     } finally {
-      setExportingFormat(null)
+      setExportingFormat(null);
     }
-  }
-
-    useEffect(() => {
-    if (activeTab === 'notifications' && session?.accessToken) {
-      setNotificationsLoading(true)
-      import('../api').then(({ fetchNotifications, markNotificationsRead }) => {
-        fetchNotifications({ token: session.accessToken })
-          .then(data => {
-            setNotifications(data)
-            setNotificationsLoading(false)
-            // Mark them as read if there are unread ones
-            if (data.some(n => !n.is_read)) {
-              markNotificationsRead({ token: session.accessToken }).then(() => {
-                window.dispatchEvent(new Event('notifications_read'))
-              })
-            }
-          })
-          .catch(e => {
-            console.error(e)
-            setNotificationsLoading(false)
-          })
-      })
-    }
-  }, [activeTab, session?.accessToken])
+  };
 
   useEffect(() => {
-    if (!session?.accessToken || tabParam === 'changelog') return
-    setStatus('loading')
+    if (activeTab === "notifications" && session?.accessToken) {
+      setNotificationsLoading(true);
+      import("../api").then(({ fetchNotifications, markNotificationsRead }) => {
+        fetchNotifications({ token: session.accessToken })
+          .then((data) => {
+            setNotifications(data);
+            setNotificationsLoading(false);
+            // Mark them as read if there are unread ones
+            if (data.some((n) => !n.is_read)) {
+              markNotificationsRead({ token: session.accessToken }).then(() => {
+                window.dispatchEvent(new Event("notifications_read"));
+              });
+            }
+          })
+          .catch((e) => {
+            console.error(e);
+            setNotificationsLoading(false);
+          });
+      });
+    }
+  }, [activeTab, session?.accessToken]);
+
+  useEffect(() => {
+    if (!session?.accessToken || tabParam === "changelog") return;
+    setStatus("loading");
     fetchUserSettings({ token: session.accessToken })
       .then((data) => {
-        setSettings(data)
-        setStatus('ready')
+        setSettings(data);
+        setStatus("ready");
       })
-      .catch(() => setStatus('error'))
+      .catch(() => setStatus("error"));
     fetchBlocks({ token: session.accessToken })
       .then((data) => setBlocks(data.blocks))
-      .catch(() => setBlocksError('Blocked items could not be loaded.'))
+      .catch(() => setBlocksError("Blocked items could not be loaded."));
     fetchScrobbleSettings({ token: session.accessToken })
       .then(setScrobbleSettings)
-      .catch(() => {})
-  }, [])
+      .catch(() => {});
+  }, []);
 
-  useEffect(() => () => clearTimeout(saveTimer.current), [])
+  useEffect(() => () => clearTimeout(saveTimer.current), []);
 
   const changeSetting = (key, value) => {
-    const next = { ...settings, [key]: value }
-    setSettings(next)
-    setStatus('saving')
+    const next = { ...settings, [key]: value };
+    setSettings(next);
+    setStatus("saving");
 
-    if (key === 'theme') {
-      localStorage.setItem('audio-scrobbler-theme', value)
-      document.documentElement.setAttribute('data-theme', value)
+    if (key === "theme") {
+      localStorage.setItem("audio-scrobbler-theme", value);
+      document.documentElement.setAttribute("data-theme", value);
     }
 
-    clearTimeout(saveTimer.current)
+    clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       updateUserSettings({ token: session.accessToken, changes: { [key]: value } })
         .then((saved) => {
-          setSettings(saved)
-          setStatus('saved')
+          setSettings(saved);
+          setStatus("saved");
         })
-        .catch(() => setStatus('error'))
-    }, 350)
-  }
+        .catch(() => setStatus("error"));
+    }, 350);
+  };
 
-  const scrobbleSaveTimer = useRef(null)
-  const pendingScrobbleChanges = useRef({})
-  useEffect(() => () => clearTimeout(scrobbleSaveTimer.current), [])
+  const scrobbleSaveTimer = useRef(null);
+  const pendingScrobbleChanges = useRef({});
+  useEffect(() => () => clearTimeout(scrobbleSaveTimer.current), []);
 
   const changeScrobbleSetting = (key, value) => {
-    const next = { ...scrobbleSettings, [key]: value }
-    setScrobbleSettings(next)
-    setScrobbleStatus('saving')
-    pendingScrobbleChanges.current = { ...pendingScrobbleChanges.current, [key]: value }
-    clearTimeout(scrobbleSaveTimer.current)
+    const next = { ...scrobbleSettings, [key]: value };
+    setScrobbleSettings(next);
+    setScrobbleStatus("saving");
+    pendingScrobbleChanges.current = { ...pendingScrobbleChanges.current, [key]: value };
+    clearTimeout(scrobbleSaveTimer.current);
     scrobbleSaveTimer.current = setTimeout(() => {
-      const changes = pendingScrobbleChanges.current
-      pendingScrobbleChanges.current = {}
+      const changes = pendingScrobbleChanges.current;
+      pendingScrobbleChanges.current = {};
       updateScrobbleSettings({ token: session.accessToken, changes })
         .then((saved) => {
-          setScrobbleSettings(saved)
-          setScrobbleStatus('saved')
+          setScrobbleSettings(saved);
+          setScrobbleStatus("saved");
         })
-        .catch(() => setScrobbleStatus('error'))
-    }, 350)
-  }
+        .catch(() => setScrobbleStatus("error"));
+    }, 350);
+  };
 
   const triggerLikedTracksSync = async () => {
-    setLikedSyncStatus('saving')
+    setLikedSyncStatus("saving");
     try {
-      const saved = await enableLikedTracksSync({ token: session.accessToken })
-      setScrobbleSettings(saved)
-      setLikedSyncStatus('saved')
+      const saved = await enableLikedTracksSync({ token: session.accessToken });
+      setScrobbleSettings(saved);
+      setLikedSyncStatus("saved");
     } catch {
-      setLikedSyncStatus('error')
+      setLikedSyncStatus("error");
     }
-  }
+  };
 
   const unblock = async (blockId) => {
-    setBlocksError('')
+    setBlocksError("");
     try {
-      await removeBlock({ token: session.accessToken, blockId })
-      setBlocks((current) => current.filter((block) => block.id !== blockId))
+      await removeBlock({ token: session.accessToken, blockId });
+      setBlocks((current) => current.filter((block) => block.id !== blockId));
     } catch {
-      setBlocksError('Unblock failed. Try again.')
+      setBlocksError("Unblock failed. Try again.");
     }
-  }
+  };
 
-  const [confirmModalOpen, setConfirmModalOpen] = useState(false)
-  const [deletePendingParams, setDeletePendingParams] = useState(null)
-  const [deletePendingDesc, setDeletePendingDesc] = useState('')
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [deletePendingParams, setDeletePendingParams] = useState(null);
+  const [deletePendingDesc, setDeletePendingDesc] = useState("");
 
   useEffect(() => {
-    if (!session?.accessToken || tabParam === 'changelog') return
+    if (!session?.accessToken || tabParam === "changelog") return;
     fetchImportBatches({ token: session.accessToken })
-      .then(res => setImportBatches(res.batches || []))
-      .catch(err => console.error("Could not fetch batches", err))
-  }, [session?.accessToken])
+      .then((res) => setImportBatches(res.batches || []))
+      .catch((err) => console.error("Could not fetch batches", err));
+  }, [session?.accessToken]);
 
   const promptAdvancedDelete = () => {
-    setAdvancedDeleteError('')
-    
-    let source = null, startDate = null, endDate = null, batchTime = null
-    let desc = ''
-    
-    if (deleteMode === 'source') {
-      source = deleteSource
-      desc = `You are about to permanently delete all ${deleteSource.toUpperCase()} scrobbles from your library.`
-    } else if (deleteMode === 'date') {
-      startDate = deleteStartDate ? new Date(deleteStartDate).toISOString() : null
-      endDate = deleteEndDate ? new Date(deleteEndDate).toISOString() : null
+    setAdvancedDeleteError("");
+
+    let source = null,
+      startDate = null,
+      endDate = null,
+      batchTime = null;
+    let desc = "";
+
+    if (deleteMode === "source") {
+      source = deleteSource;
+      desc = `You are about to permanently delete all ${deleteSource.toUpperCase()} scrobbles from your library.`;
+    } else if (deleteMode === "date") {
+      startDate = deleteStartDate ? new Date(deleteStartDate).toISOString() : null;
+      endDate = deleteEndDate ? new Date(deleteEndDate).toISOString() : null;
       if (!startDate && !endDate) {
-        setAdvancedDeleteError('Please specify at least one date.')
-        return
+        setAdvancedDeleteError("Please specify at least one date.");
+        return;
       }
-      desc = `You are about to permanently delete all scrobbles between ${deleteStartDate || 'the beginning'} and ${deleteEndDate || 'today'}.`
-    } else if (deleteMode === 'batch') {
-      batchTime = deleteBatch
+      desc = `You are about to permanently delete all scrobbles between ${deleteStartDate || "the beginning"} and ${deleteEndDate || "today"}.`;
+    } else if (deleteMode === "batch") {
+      batchTime = deleteBatch;
       if (!batchTime) {
-        setAdvancedDeleteError('Please select a batch.')
-        return
+        setAdvancedDeleteError("Please select a batch.");
+        return;
       }
-      const matchedBatch = importBatches.find(b => b.batch_time === batchTime)
-      desc = `You are about to permanently delete scrobbles from the import batch on ${new Date(batchTime).toLocaleString()}${matchedBatch ? ` (${matchedBatch.count} scrobbles)` : ''}.`
+      const matchedBatch = importBatches.find((b) => b.batch_time === batchTime);
+      desc = `You are about to permanently delete scrobbles from the import batch on ${new Date(batchTime).toLocaleString()}${matchedBatch ? ` (${matchedBatch.count} scrobbles)` : ""}.`;
     }
 
-    setDeletePendingParams({ source, startDate, endDate, batchTime })
-    setDeletePendingDesc(desc)
-    setConfirmModalOpen(true)
-  }
+    setDeletePendingParams({ source, startDate, endDate, batchTime });
+    setDeletePendingDesc(desc);
+    setConfirmModalOpen(true);
+  };
 
   const executeConfirmedDelete = async () => {
-    if (!deletePendingParams) return
-    setAdvancedDeleteState('deleting')
-    setAdvancedDeleteError('')
+    if (!deletePendingParams) return;
+    setAdvancedDeleteState("deleting");
+    setAdvancedDeleteError("");
 
     try {
       const result = await advancedDeleteImports({
         token: session.accessToken,
-        ...deletePendingParams
-      })
-      setAdvancedDeleteState(`deleted:${result.deleted}`)
-      setConfirmModalOpen(false)
-      setDeletePendingParams(null)
-      
+        ...deletePendingParams,
+      });
+      setAdvancedDeleteState(`deleted:${result.deleted}`);
+      setConfirmModalOpen(false);
+      setDeletePendingParams(null);
+
       // Refresh batches
       fetchImportBatches({ token: session.accessToken })
-        .then(res => setImportBatches(res.batches || []))
-        .catch(err => console.error(err))
+        .then((res) => setImportBatches(res.batches || []))
+        .catch((err) => console.error(err));
     } catch (err) {
-      setAdvancedDeleteError(err.message || 'Failed to delete scrobbles.')
-      setAdvancedDeleteState('error')
-      setConfirmModalOpen(false)
+      setAdvancedDeleteError(err.message || "Failed to delete scrobbles.");
+      setAdvancedDeleteState("error");
+      setConfirmModalOpen(false);
     }
-  }
+  };
 
-  const abortBackfillRef = useRef(null)
+  const abortBackfillRef = useRef(null);
 
   const triggerArtworkBackfill = async () => {
-    setBackfillState('running')
-    setBackfillProgress(null)
-    abortBackfillRef.current = new AbortController()
-    
+    setBackfillState("running");
+    setBackfillProgress(null);
+    abortBackfillRef.current = new AbortController();
+
     try {
       const result = await startArtworkBackfill({
         token: session.accessToken,
         onProgress: (progress) => setBackfillProgress(progress),
-        signal: abortBackfillRef.current.signal
-      })
-      setBackfillState('complete')
-      setBackfillProgress(result)
+        signal: abortBackfillRef.current.signal,
+      });
+      setBackfillState("complete");
+      setBackfillProgress(result);
     } catch (err) {
-      if (err.name === 'AbortError') {
-        setBackfillState('idle')
-        setBackfillProgress(null)
+      if (err.name === "AbortError") {
+        setBackfillState("idle");
+        setBackfillProgress(null);
       } else {
-        setBackfillState('error')
+        setBackfillState("error");
       }
     }
-  }
+  };
 
   const cancelBackfill = () => {
     if (abortBackfillRef.current) {
-      abortBackfillRef.current.abort()
+      abortBackfillRef.current.abort();
     }
-  }
+  };
 
-  if (tabParam === 'changelog') {
-    return <Navigate to="/changelog" replace />
+  if (tabParam === "changelog") {
+    return <Navigate to="/changelog" replace />;
   }
 
   return (
     <AnalyticsPage eyebrow="Personal preferences" title="Settings">
-      {!session?.accessToken && <p className="notice">Connect Spotify to manage your personal settings.</p>}
-      {status === 'loading' && <p className="notice">Loading settings...</p>}
-      {status === 'error' && <p className="notice notice-error" role="alert">Settings could not be loaded or saved.</p>}
+      {!session?.accessToken && (
+        <p className="notice">Connect Spotify to manage your personal settings.</p>
+      )}
+      {status === "loading" && <p className="notice">Loading settings...</p>}
+      {status === "error" && (
+        <p className="notice notice-error" role="alert">
+          Settings could not be loaded or saved.
+        </p>
+      )}
       {session?.accessToken && (
         <div className="library-tabs settings-tabs" role="tablist" aria-label="Settings sections">
           {SETTINGS_TABS.map(([value, label]) => (
@@ -312,14 +341,14 @@ export default function SettingsPage() {
               id={`settings-tab-${value}`}
               aria-controls={`settings-panel-${value}`}
               aria-selected={activeTab === value}
-              className={`settings-tab${activeTab === value ? ' active' : ''}${value === 'danger' ? ' destructive' : ''}`}
+              className={`settings-tab${activeTab === value ? " active" : ""}${value === "danger" ? " destructive" : ""}`}
               onClick={() => {
-                setActiveTab(value)
+                setActiveTab(value);
                 setSearchParams((prev) => {
-                  const next = new URLSearchParams(prev)
-                  next.set('tab', value)
-                  return next
-                })
+                  const next = new URLSearchParams(prev);
+                  next.set("tab", value);
+                  return next;
+                });
               }}
             >
               {label}
@@ -327,7 +356,7 @@ export default function SettingsPage() {
           ))}
         </div>
       )}
-      {activeTab === 'general' && settings && (
+      {activeTab === "general" && settings && (
         <>
           <div
             className="settings-form"
@@ -337,7 +366,10 @@ export default function SettingsPage() {
           >
             <label>
               Theme
-              <select value={settings.theme || 'system'} onChange={(event) => changeSetting('theme', event.target.value)}>
+              <select
+                value={settings.theme || "system"}
+                onChange={(event) => changeSetting("theme", event.target.value)}
+              >
                 <option value="light">Light</option>
                 <option value="dark">Dark</option>
                 <option value="system">System Default</option>
@@ -345,7 +377,10 @@ export default function SettingsPage() {
             </label>
             <label>
               Default date range
-              <select value={settings.default_date_range} onChange={(event) => changeSetting('default_date_range', event.target.value)}>
+              <select
+                value={settings.default_date_range}
+                onChange={(event) => changeSetting("default_date_range", event.target.value)}
+              >
                 <option value="last.week">Last 7 days</option>
                 <option value="last.month">Last month</option>
                 <option value="last.year">Last year</option>
@@ -354,33 +389,63 @@ export default function SettingsPage() {
             </label>
             <label>
               Default page size
-              <select value={settings.default_page_size} onChange={(event) => changeSetting('default_page_size', Number(event.target.value))}>
-                {[10, 25, 50, 100, 150, 200, 250].map((size) => <option key={size} value={size}>{size}</option>)}
+              <select
+                value={settings.default_page_size}
+                onChange={(event) => changeSetting("default_page_size", Number(event.target.value))}
+              >
+                {[10, 25, 50, 100, 150, 200, 250].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
               </select>
             </label>
             <label className="settings-checkbox">
-              <input type="checkbox" checked={settings.show_artwork} onChange={(event) => changeSetting('show_artwork', event.target.checked)} />
+              <input
+                type="checkbox"
+                checked={settings.show_artwork}
+                onChange={(event) => changeSetting("show_artwork", event.target.checked)}
+              />
               Show artwork
             </label>
             <label className="settings-checkbox">
-              <input type="checkbox" checked={settings.show_source_badges} onChange={(event) => changeSetting('show_source_badges', event.target.checked)} />
+              <input
+                type="checkbox"
+                checked={settings.show_source_badges}
+                onChange={(event) => changeSetting("show_source_badges", event.target.checked)}
+              />
               Show source badges
             </label>
             <label>
               Scrobble timestamp style
-              <select value={settings.timestamp_mode} onChange={(event) => changeSetting('timestamp_mode', event.target.value)}>
+              <select
+                value={settings.timestamp_mode}
+                onChange={(event) => changeSetting("timestamp_mode", event.target.value)}
+              >
                 <option value="relative">Relative until 24 hours</option>
                 <option value="absolute">Always show date and time</option>
               </select>
             </label>
-            {status === 'saving' && <p role="status">Saving...</p>}
-            {status === 'saved' && <p role="status">Saved</p>}
+            {status === "saving" && <p role="status">Saving...</p>}
+            {status === "saved" && <p role="status">Saved</p>}
           </div>
 
-          <section className="settings-form settings-blocks" aria-labelledby="blocked-items-heading">
+          <section
+            className="settings-form settings-blocks"
+            aria-labelledby="blocked-items-heading"
+          >
             <h2 id="blocked-items-heading">Blocked items</h2>
-            {blocksError && <p className="notice notice-error" role="alert">{blocksError}</p>}
-            {blocks.length === 0 ? <p className="panel-meta">Nothing is blocked. Use the menu on Library entries to block artists, albums, or tracks.</p> : (
+            {blocksError && (
+              <p className="notice notice-error" role="alert">
+                {blocksError}
+              </p>
+            )}
+            {blocks.length === 0 ? (
+              <p className="panel-meta">
+                Nothing is blocked. Use the menu on Library entries to block artists, albums, or
+                tracks.
+              </p>
+            ) : (
               <ul className="blocked-list">
                 {blocks.map((block) => (
                   <li key={block.id}>
@@ -388,7 +453,13 @@ export default function SettingsPage() {
                       <strong>{block.name}</strong>
                       <small>{block.entity_type}</small>
                     </span>
-                    <button type="button" className="blocked-unblock" onClick={() => unblock(block.id)}>Unblock</button>
+                    <button
+                      type="button"
+                      className="blocked-unblock"
+                      onClick={() => unblock(block.id)}
+                    >
+                      Unblock
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -396,7 +467,7 @@ export default function SettingsPage() {
           </section>
         </>
       )}
-      {activeTab === 'views' && settings && (
+      {activeTab === "views" && settings && (
         <div
           className="settings-form"
           role="tabpanel"
@@ -406,17 +477,20 @@ export default function SettingsPage() {
           {VIEW_OPTIONS.map(([key, label]) => (
             <label key={key}>
               {label}
-              <select value={settings[key] || settings.default_library_view} onChange={(event) => changeSetting(key, event.target.value)}>
+              <select
+                value={settings[key] || settings.default_library_view}
+                onChange={(event) => changeSetting(key, event.target.value)}
+              >
                 <option value="list">List</option>
                 <option value="grid">Grid</option>
               </select>
             </label>
           ))}
-          {status === 'saving' && <p role="status">Saving...</p>}
-          {status === 'saved' && <p role="status">Saved</p>}
+          {status === "saving" && <p role="status">Saving...</p>}
+          {status === "saved" && <p role="status">Saved</p>}
         </div>
       )}
-      {activeTab === 'scrobble' && (
+      {activeTab === "scrobble" && (
         <div
           className="settings-form"
           role="tabpanel"
@@ -429,7 +503,9 @@ export default function SettingsPage() {
                 <input
                   type="checkbox"
                   checked={scrobbleSettings.strip_remaster_tags}
-                  onChange={(event) => changeScrobbleSetting('strip_remaster_tags', event.target.checked)}
+                  onChange={(event) =>
+                    changeScrobbleSetting("strip_remaster_tags", event.target.checked)
+                  }
                 />
                 Strip remaster tags (e.g. "(Remastered)", "[Live]") from track titles
               </label>
@@ -437,10 +513,14 @@ export default function SettingsPage() {
                 Poll frequency
                 <select
                   value={scrobbleSettings.poll_interval_minutes}
-                  onChange={(event) => changeScrobbleSetting('poll_interval_minutes', Number(event.target.value))}
+                  onChange={(event) =>
+                    changeScrobbleSetting("poll_interval_minutes", Number(event.target.value))
+                  }
                 >
                   {POLL_INTERVAL_OPTIONS.map((minutes) => (
-                    <option key={minutes} value={minutes}>Every {minutes} minutes</option>
+                    <option key={minutes} value={minutes}>
+                      Every {minutes} minutes
+                    </option>
                   ))}
                 </select>
               </label>
@@ -448,79 +528,116 @@ export default function SettingsPage() {
                 <input
                   type="checkbox"
                   checked={scrobbleSettings.realtime_sync_enabled}
-                  onChange={(event) => changeScrobbleSetting('realtime_sync_enabled', event.target.checked)}
+                  onChange={(event) =>
+                    changeScrobbleSetting("realtime_sync_enabled", event.target.checked)
+                  }
                 />
                 Enable Real-time Scrobbling (requires Spotify Premium, polls every 10s)
               </label>
               {scrobbleSettings.realtime_sync_enabled && (
-                <label style={{ marginLeft: '1.5rem' }}>
+                <label style={{ marginLeft: "1.5rem" }}>
                   Scrobble completion threshold
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     <input
                       type="range"
                       min="1"
                       max="100"
                       value={scrobbleSettings.scrobble_threshold_percent}
-                      onChange={(event) => changeScrobbleSetting('scrobble_threshold_percent', Number(event.target.value))}
+                      onChange={(event) =>
+                        changeScrobbleSetting(
+                          "scrobble_threshold_percent",
+                          Number(event.target.value)
+                        )
+                      }
                     />
                     <span>{scrobbleSettings.scrobble_threshold_percent}%</span>
                   </div>
-                  <small className="panel-meta">Track will scrobble immediately when this percentage of its duration is played.</small>
+                  <small className="panel-meta">
+                    Track will scrobble immediately when this percentage of its duration is played.
+                  </small>
                 </label>
               )}
-              {scrobbleStatus === 'saving' && <p role="status">Saving...</p>}
-              {scrobbleStatus === 'saved' && <p role="status">Saved</p>}
+              {scrobbleStatus === "saving" && <p role="status">Saving...</p>}
+              {scrobbleStatus === "saved" && <p role="status">Saved</p>}
             </>
           ) : (
             <p className="panel-meta">Loading scrobble settings...</p>
           )}
 
           {session?.accessToken && (
-            <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '0.5px solid var(--color-border)', maxWidth: '100%', boxSizing: 'border-box' }}>
+            <div
+              style={{
+                marginTop: "2rem",
+                paddingTop: "1.5rem",
+                borderTop: "0.5px solid var(--color-border)",
+                maxWidth: "100%",
+                boxSizing: "border-box",
+              }}
+            >
               <ScopeCreepTools />
             </div>
           )}
         </div>
       )}
-      {activeTab === 'data' && session?.accessToken && (
+      {activeTab === "data" && session?.accessToken && (
         <section
           className="settings-form"
           role="tabpanel"
           id="settings-panel-data"
           aria-labelledby="settings-tab-data"
         >
-          <div style={{ marginBottom: '1rem' }}>
-            <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Liked Songs</h3>
+          <div style={{ marginBottom: "1rem" }}>
+            <h3 style={{ fontSize: "1rem", marginBottom: "0.5rem" }}>Liked Songs</h3>
             {scrobbleSettings?.liked_tracks_sync_enabled ? (
               <p className="notice">
                 Liked songs sync is active
-                {scrobbleSettings.liked_tracks_backfill_in_progress ? ' (catching up on your existing library)' : ''}.
+                {scrobbleSettings.liked_tracks_backfill_in_progress
+                  ? " (catching up on your existing library)"
+                  : ""}
+                .
               </p>
             ) : (
               <>
-                <p className="notice" style={{ marginBottom: '0.5rem' }}>
-                  This only needs to be pressed once — your liked songs will keep syncing automatically after that, roughly daily.
+                <p className="notice" style={{ marginBottom: "0.5rem" }}>
+                  This only needs to be pressed once — your liked songs will keep syncing
+                  automatically after that, roughly daily.
                 </p>
-                <button type="button" className="secondary-button" disabled={likedSyncStatus === 'saving'} onClick={triggerLikedTracksSync}>
-                  {likedSyncStatus === 'saving' ? 'Starting...' : 'Sync Liked Songs'}
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={likedSyncStatus === "saving"}
+                  onClick={triggerLikedTracksSync}
+                >
+                  {likedSyncStatus === "saving" ? "Starting..." : "Sync Liked Songs"}
                 </button>
-                {likedSyncStatus === 'error' && <p className="notice notice-error" role="alert">Could not start liked-songs sync.</p>}
+                {likedSyncStatus === "error" && (
+                  <p className="notice notice-error" role="alert">
+                    Could not start liked-songs sync.
+                  </p>
+                )}
               </>
             )}
           </div>
-          <div style={{ marginBottom: '1rem' }}>
-            <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Backfill Missing Artwork</h3>
-            <p className="notice" style={{ marginBottom: '1rem' }}>Scan your library for missing artwork and attempt to fill it in from Deezer and iTunes.</p>
-            {backfillState === 'running' && backfillProgress && (
+          <div style={{ marginBottom: "1rem" }}>
+            <h3 style={{ fontSize: "1rem", marginBottom: "0.5rem" }}>Backfill Missing Artwork</h3>
+            <p className="notice" style={{ marginBottom: "1rem" }}>
+              Scan your library for missing artwork and attempt to fill it in from Deezer and
+              iTunes.
+            </p>
+            {backfillState === "running" && backfillProgress && (
               <ImportProgressBar progress={backfillProgress} />
             )}
-            {backfillState === 'complete' && backfillProgress?.summary && (
-              <div style={{ marginBottom: '1rem' }}>
-                <p role="status" style={{ color: 'var(--color-primary)', marginBottom: '0.5rem', fontWeight: 500 }}>
-                  Backfill complete! Updated {backfillProgress.summary.inserted} tracks. (Skipped {backfillProgress.summary.skipped} not found)
+            {backfillState === "complete" && backfillProgress?.summary && (
+              <div style={{ marginBottom: "1rem" }}>
+                <p
+                  role="status"
+                  style={{ color: "var(--color-primary)", marginBottom: "0.5rem", fontWeight: 500 }}
+                >
+                  Backfill complete! Updated {backfillProgress.summary.inserted} tracks. (Skipped{" "}
+                  {backfillProgress.summary.skipped} not found)
                 </p>
                 {backfillProgress.updated_tracks && backfillProgress.updated_tracks.length > 0 && (
-                  <details className="import-errors-details" style={{ marginBottom: '0.5rem' }}>
+                  <details className="import-errors-details" style={{ marginBottom: "0.5rem" }}>
                     <summary>View {backfillProgress.updated_tracks.length} updated tracks</summary>
                     <ul className="import-errors-list">
                       {backfillProgress.updated_tracks.map((track, i) => (
@@ -541,84 +658,131 @@ export default function SettingsPage() {
                 )}
               </div>
             )}
-            {backfillState === 'error' && (
-              <p className="notice notice-error" role="alert" style={{ marginBottom: '1rem' }}>An error occurred during backfill.</p>
+            {backfillState === "error" && (
+              <p className="notice notice-error" role="alert" style={{ marginBottom: "1rem" }}>
+                An error occurred during backfill.
+              </p>
             )}
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button type="button" className="secondary-button" disabled={backfillState === 'running'} onClick={triggerArtworkBackfill}>
-                {backfillState === 'running' ? 'Backfilling...' : 'Backfill Missing Artwork'}
+            <div style={{ display: "flex", gap: "1rem" }}>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={backfillState === "running"}
+                onClick={triggerArtworkBackfill}
+              >
+                {backfillState === "running" ? "Backfilling..." : "Backfill Missing Artwork"}
               </button>
-              {backfillState === 'running' && (
+              {backfillState === "running" && (
                 <button type="button" className="danger-button" onClick={cancelBackfill}>
                   Cancel
                 </button>
               )}
             </div>
 
-            <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '0.5px solid var(--color-border)' }}>
-              <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Export Listening History</h3>
-              <p className="notice" style={{ marginBottom: '1rem' }}>
-                Download your complete listening timeline as a CSV (spreadsheet-ready) or JSON file. Your data remains fully under your ownership.
+            <div
+              style={{
+                marginTop: "2rem",
+                paddingTop: "1.5rem",
+                borderTop: "0.5px solid var(--color-border)",
+              }}
+            >
+              <h3 style={{ fontSize: "1rem", marginBottom: "0.5rem" }}>Export Listening History</h3>
+              <p className="notice" style={{ marginBottom: "1rem" }}>
+                Download your complete listening timeline as a CSV (spreadsheet-ready) or JSON file.
+                Your data remains fully under your ownership.
               </p>
               {exportError && (
-                <p className="notice notice-error" role="alert" style={{ marginBottom: '1rem' }}>{exportError}</p>
+                <p className="notice notice-error" role="alert" style={{ marginBottom: "1rem" }}>
+                  {exportError}
+                </p>
               )}
-              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
                 <button
                   type="button"
                   className="secondary-button"
                   disabled={exportingFormat !== null}
-                  onClick={() => handleExport('csv')}
+                  onClick={() => handleExport("csv")}
                 >
-                  {exportingFormat === 'csv' ? 'Preparing CSV...' : 'Download CSV'}
+                  {exportingFormat === "csv" ? "Preparing CSV..." : "Download CSV"}
                 </button>
                 <button
                   type="button"
                   className="secondary-button"
                   disabled={exportingFormat !== null}
-                  onClick={() => handleExport('json')}
+                  onClick={() => handleExport("json")}
                 >
-                  {exportingFormat === 'json' ? 'Preparing JSON...' : 'Download JSON'}
+                  {exportingFormat === "json" ? "Preparing JSON..." : "Download JSON"}
                 </button>
               </div>
             </div>
           </div>
         </section>
       )}
-            {activeTab === 'notifications' && settings && (
+      {activeTab === "notifications" && settings && (
         <section
           className="settings-form"
           role="tabpanel"
           id="settings-panel-notifications"
           aria-labelledby="settings-tab-notifications"
         >
-                    <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Recent Alerts</h3>
-          <div style={{ marginBottom: '2rem', paddingBottom: '1.5rem', borderBottom: '0.5px solid var(--color-border)' }}>
+          <h3 style={{ fontSize: "1rem", marginBottom: "0.5rem" }}>Recent Alerts</h3>
+          <div
+            style={{
+              marginBottom: "2rem",
+              paddingBottom: "1.5rem",
+              borderBottom: "0.5px solid var(--color-border)",
+            }}
+          >
             {notificationsLoading && <p className="panel-meta">Loading notifications...</p>}
-            {!notificationsLoading && notifications.length === 0 && <p className="panel-meta">No recent notifications.</p>}
+            {!notificationsLoading && notifications.length === 0 && (
+              <p className="panel-meta">No recent notifications.</p>
+            )}
             {!notificationsLoading && notifications.length > 0 && (
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                {notifications.map(n => (
-                  <li key={n.id} style={{ padding: '0.75rem', backgroundColor: n.is_read ? 'transparent' : 'var(--color-surface)', borderRadius: '4px', marginBottom: '0.5rem' }}>
-                    <div style={{ fontWeight: 'bold' }}>{n.title}</div>
-                    <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{n.message}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--color-meta)', marginTop: '0.25rem' }}>{new Date(n.created_at).toLocaleString()}</div>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                {notifications.map((n) => (
+                  <li
+                    key={n.id}
+                    style={{
+                      padding: "0.75rem",
+                      backgroundColor: n.is_read ? "transparent" : "var(--color-surface)",
+                      borderRadius: "4px",
+                      marginBottom: "0.5rem",
+                    }}
+                  >
+                    <div style={{ fontWeight: "bold" }}>{n.title}</div>
+                    <div style={{ fontSize: "0.9rem", marginTop: "0.25rem" }}>{n.message}</div>
+                    <div
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "var(--color-meta)",
+                        marginTop: "0.25rem",
+                      }}
+                    >
+                      {new Date(n.created_at).toLocaleString()}
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
           </div>
 
-          <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Notification Preferences</h3>
+          <h3 style={{ fontSize: "1rem", marginBottom: "0.5rem" }}>Notification Preferences</h3>
           <label className="settings-checkbox">
-            <input type="checkbox" checked={settings.notify_recaps} onChange={(event) => changeSetting('notify_recaps', event.target.checked)} />
+            <input
+              type="checkbox"
+              checked={settings.notify_recaps}
+              onChange={(event) => changeSetting("notify_recaps", event.target.checked)}
+            />
             Recaps & Insights (Weekly/Monthly summaries)
           </label>
-          
+
           {settings.notify_recaps && (
-            <label style={{ marginLeft: '1.5rem', marginBottom: '1rem', display: 'block' }}>
+            <label style={{ marginLeft: "1.5rem", marginBottom: "1rem", display: "block" }}>
               Recap Frequency
-              <select value={settings.recap_frequency} onChange={(event) => changeSetting('recap_frequency', event.target.value)}>
+              <select
+                value={settings.recap_frequency}
+                onChange={(event) => changeSetting("recap_frequency", event.target.value)}
+              >
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
@@ -627,128 +791,230 @@ export default function SettingsPage() {
           )}
 
           <label className="settings-checkbox">
-            <input type="checkbox" checked={settings.notify_milestones} onChange={(event) => changeSetting('notify_milestones', event.target.checked)} />
+            <input
+              type="checkbox"
+              checked={settings.notify_milestones}
+              onChange={(event) => changeSetting("notify_milestones", event.target.checked)}
+            />
             Personal Milestones & Streaks
           </label>
           <label className="settings-checkbox">
-            <input type="checkbox" checked={settings.notify_system} onChange={(event) => changeSetting('notify_system', event.target.checked)} />
+            <input
+              type="checkbox"
+              checked={settings.notify_system}
+              onChange={(event) => changeSetting("notify_system", event.target.checked)}
+            />
             System & Health Alerts
           </label>
 
-          <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '0.5px solid var(--color-border)', maxWidth: '100%', boxSizing: 'border-box' }}>
-            <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Device Push Notifications</h3>
-            <p className="notice" style={{ marginBottom: '1rem' }}>
+          <div
+            style={{
+              marginTop: "2rem",
+              paddingTop: "1.5rem",
+              borderTop: "0.5px solid var(--color-border)",
+              maxWidth: "100%",
+              boxSizing: "border-box",
+            }}
+          >
+            <h3 style={{ fontSize: "1rem", marginBottom: "0.5rem" }}>Device Push Notifications</h3>
+            <p className="notice" style={{ marginBottom: "1rem" }}>
               Receive alerts directly on your device even when the app is closed.
             </p>
-            <button type="button" className="secondary-button" onClick={async () => {
-              if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                alert('Push notifications are not supported by your browser.');
-                return;
-              }
-              try {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                  const vapidRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/notifications/push/vapid_public_key`);
-                  const vapidData = await vapidRes.json();
-                  const reg = await navigator.serviceWorker.ready;
-                  let existingSub = await reg.pushManager.getSubscription();
-                  if (existingSub) {
-                    // If keys changed or there's a stale subscription, Chrome throws a Push Service Error
-                    // unless we unsubscribe from the old one first.
-                    await existingSub.unsubscribe();
-                  }
-                  
-                  const sub = await reg.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: urlBase64ToUint8Array(vapidData.vapid_public_key.trim())
-                  });
-                  await subscribeToPushNotifications({ token: session.accessToken, subscription: sub.toJSON() });
-                  alert('Subscribed to push notifications successfully!');
-                } else {
-                  alert('Permission for notifications was denied.');
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={async () => {
+                if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+                  alert("Push notifications are not supported by your browser.");
+                  return;
                 }
-              } catch (err) {
-                alert('Failed to subscribe: ' + err.message);
-              }
-            }}>
+                try {
+                  const permission = await Notification.requestPermission();
+                  if (permission === "granted") {
+                    const vapidRes = await fetch(
+                      `${import.meta.env.VITE_API_BASE_URL || ""}/notifications/push/vapid_public_key`
+                    );
+                    const vapidData = await vapidRes.json();
+                    const reg = await navigator.serviceWorker.ready;
+                    let existingSub = await reg.pushManager.getSubscription();
+                    if (existingSub) {
+                      // If keys changed or there's a stale subscription, Chrome throws a Push Service Error
+                      // unless we unsubscribe from the old one first.
+                      await existingSub.unsubscribe();
+                    }
+
+                    const sub = await reg.pushManager.subscribe({
+                      userVisibleOnly: true,
+                      applicationServerKey: urlBase64ToUint8Array(
+                        vapidData.vapid_public_key.trim()
+                      ),
+                    });
+                    await subscribeToPushNotifications({
+                      token: session.accessToken,
+                      subscription: sub.toJSON(),
+                    });
+                    alert("Subscribed to push notifications successfully!");
+                  } else {
+                    alert("Permission for notifications was denied.");
+                  }
+                } catch (err) {
+                  alert("Failed to subscribe: " + err.message);
+                }
+              }}
+            >
               Enable Device Notifications
             </button>
-            <button type="button" className="settings-button" style={{ marginLeft: '1rem', background: 'var(--color-surface)', color: 'var(--color-ink)' }} onClick={async () => {
-              try {
-                const res = await sendTestNotification({ token: session.accessToken });
-                alert(`Test notification requested! Server sent to ${res.sent_to} registered device(s).`);
-              } catch (err) {
-                alert('Failed to send test notification: ' + err.message);
-              }
-            }}>
+            <button
+              type="button"
+              className="settings-button"
+              style={{
+                marginLeft: "1rem",
+                background: "var(--color-surface)",
+                color: "var(--color-ink)",
+              }}
+              onClick={async () => {
+                try {
+                  const res = await sendTestNotification({ token: session.accessToken });
+                  alert(
+                    `Test notification requested! Server sent to ${res.sent_to} registered device(s).`
+                  );
+                } catch (err) {
+                  alert("Failed to send test notification: " + err.message);
+                }
+              }}
+            >
               Send Test Notification
             </button>
-            <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'var(--color-surface)', borderRadius: '8px', fontSize: '0.9rem' }}>
-              <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Setup Instructions:</p>
-              <ul style={{ paddingLeft: '1.2rem', margin: 0 }}>
-                <li style={{ marginBottom: '0.5rem' }}><strong>iOS:</strong> You must first add this app to your Home Screen (Share → Add to Home Screen). Open it from your home screen, then come back to this menu to enable notifications.</li>
-                <li><strong>Android/Desktop:</strong> Click 'Enable' and accept the browser permission prompt. If on mobile, install the app via your browser menu for the best experience.</li>
+            <div
+              style={{
+                marginTop: "1rem",
+                padding: "1rem",
+                backgroundColor: "var(--color-surface)",
+                borderRadius: "8px",
+                fontSize: "0.9rem",
+              }}
+            >
+              <p style={{ fontWeight: "bold", marginBottom: "0.5rem" }}>Setup Instructions:</p>
+              <ul style={{ paddingLeft: "1.2rem", margin: 0 }}>
+                <li style={{ marginBottom: "0.5rem" }}>
+                  <strong>iOS:</strong> You must first add this app to your Home Screen (Share → Add
+                  to Home Screen). Open it from your home screen, then come back to this menu to
+                  enable notifications.
+                </li>
+                <li>
+                  <strong>Android/Desktop:</strong> Click 'Enable' and accept the browser permission
+                  prompt. If on mobile, install the app via your browser menu for the best
+                  experience.
+                </li>
               </ul>
             </div>
           </div>
         </section>
       )}
-{activeTab === 'danger' && session?.accessToken && (
+      {activeTab === "guide" && (
+        <div role="tabpanel" id="settings-panel-guide" aria-labelledby="settings-tab-guide">
+          <UserGuideSection />
+        </div>
+      )}
+      {activeTab === "faq" && (
+        <div role="tabpanel" id="settings-panel-faq" aria-labelledby="settings-tab-faq">
+          <FaqSection />
+        </div>
+      )}
+      {activeTab === "danger" && session?.accessToken && (
         <section
           className="settings-form settings-danger-zone"
           role="tabpanel"
           id="settings-panel-danger"
           aria-labelledby="settings-tab-danger"
         >
-          <p className="notice notice-warning" style={{ marginBottom: '1rem' }}>Deleting scrobbles removes them permanently from your library. This cannot be undone.</p>
+          <p className="notice notice-warning" style={{ marginBottom: "1rem" }}>
+            Deleting scrobbles removes them permanently from your library. This cannot be undone.
+          </p>
 
-          <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Delete Scrobbles</h3>
-          
-          <div style={{ marginBottom: '1rem' }}>
+          <h3 style={{ fontSize: "1rem", marginBottom: "0.5rem" }}>Delete Scrobbles</h3>
+
+          <div style={{ marginBottom: "1rem" }}>
             <label>
-              <input type="radio" name="deleteMode" value="source" checked={deleteMode === 'source'} onChange={() => setDeleteMode('source')} />
+              <input
+                type="radio"
+                name="deleteMode"
+                value="source"
+                checked={deleteMode === "source"}
+                onChange={() => setDeleteMode("source")}
+              />
               By Source
             </label>
-            <label style={{ marginLeft: '1rem' }}>
-              <input type="radio" name="deleteMode" value="date" checked={deleteMode === 'date'} onChange={() => setDeleteMode('date')} />
+            <label style={{ marginLeft: "1rem" }}>
+              <input
+                type="radio"
+                name="deleteMode"
+                value="date"
+                checked={deleteMode === "date"}
+                onChange={() => setDeleteMode("date")}
+              />
               By Date Range
             </label>
-            <label style={{ marginLeft: '1rem' }}>
-              <input type="radio" name="deleteMode" value="batch" checked={deleteMode === 'batch'} onChange={() => setDeleteMode('batch')} />
+            <label style={{ marginLeft: "1rem" }}>
+              <input
+                type="radio"
+                name="deleteMode"
+                value="batch"
+                checked={deleteMode === "batch"}
+                onChange={() => setDeleteMode("batch")}
+              />
               By Import Batch
             </label>
           </div>
 
-          <div style={{ marginBottom: '1rem' }}>
-            {deleteMode === 'source' && (
+          <div style={{ marginBottom: "1rem" }}>
+            {deleteMode === "source" && (
               <label>
                 Select Source:
-                <select value={deleteSource} onChange={e => setDeleteSource(e.target.value)} style={{ marginLeft: '0.5rem' }}>
+                <select
+                  value={deleteSource}
+                  onChange={(e) => setDeleteSource(e.target.value)}
+                  style={{ marginLeft: "0.5rem" }}
+                >
                   <option value="youtube">YouTube</option>
                   <option value="spotify">Spotify</option>
                 </select>
               </label>
             )}
 
-            {deleteMode === 'date' && (
-              <div style={{ display: 'flex', gap: '1rem' }}>
+            {deleteMode === "date" && (
+              <div style={{ display: "flex", gap: "1rem" }}>
                 <label>
                   Start Date:
-                  <input type="date" value={deleteStartDate} onChange={e => setDeleteStartDate(e.target.value)} style={{ marginLeft: '0.5rem' }} />
+                  <input
+                    type="date"
+                    value={deleteStartDate}
+                    onChange={(e) => setDeleteStartDate(e.target.value)}
+                    style={{ marginLeft: "0.5rem" }}
+                  />
                 </label>
                 <label>
                   End Date:
-                  <input type="date" value={deleteEndDate} onChange={e => setDeleteEndDate(e.target.value)} style={{ marginLeft: '0.5rem' }} />
+                  <input
+                    type="date"
+                    value={deleteEndDate}
+                    onChange={(e) => setDeleteEndDate(e.target.value)}
+                    style={{ marginLeft: "0.5rem" }}
+                  />
                 </label>
               </div>
             )}
 
-            {deleteMode === 'batch' && (
+            {deleteMode === "batch" && (
               <label>
                 Select Batch:
-                <select value={deleteBatch} onChange={e => setDeleteBatch(e.target.value)} style={{ marginLeft: '0.5rem', width: '100%' }}>
+                <select
+                  value={deleteBatch}
+                  onChange={(e) => setDeleteBatch(e.target.value)}
+                  style={{ marginLeft: "0.5rem", width: "100%" }}
+                >
                   <option value="">-- Select a batch --</option>
-                  {importBatches.map(b => (
+                  {importBatches.map((b) => (
                     <option key={b.batch_time + b.source} value={b.batch_time}>
                       {b.source} - {b.count} scrobbles ({new Date(b.batch_time).toLocaleString()})
                     </option>
@@ -758,11 +1024,24 @@ export default function SettingsPage() {
             )}
           </div>
 
-          {advancedDeleteError && <p className="notice notice-error" role="alert" style={{ marginBottom: '1rem' }}>{advancedDeleteError}</p>}
-          {advancedDeleteState.startsWith('deleted:') && <p role="status" style={{ marginBottom: '1rem', color: 'var(--color-primary)' }}>Deleted {advancedDeleteState.split(':')[1]} scrobbles successfully.</p>}
+          {advancedDeleteError && (
+            <p className="notice notice-error" role="alert" style={{ marginBottom: "1rem" }}>
+              {advancedDeleteError}
+            </p>
+          )}
+          {advancedDeleteState.startsWith("deleted:") && (
+            <p role="status" style={{ marginBottom: "1rem", color: "var(--color-primary)" }}>
+              Deleted {advancedDeleteState.split(":")[1]} scrobbles successfully.
+            </p>
+          )}
 
-          <button type="button" className="danger-button" disabled={advancedDeleteState === 'deleting'} onClick={promptAdvancedDelete}>
-            {advancedDeleteState === 'deleting' ? 'Deleting...' : 'Delete Scrobbles'}
+          <button
+            type="button"
+            className="danger-button"
+            disabled={advancedDeleteState === "deleting"}
+            onClick={promptAdvancedDelete}
+          >
+            {advancedDeleteState === "deleting" ? "Deleting..." : "Delete Scrobbles"}
           </button>
         </section>
       )}
@@ -773,14 +1052,16 @@ export default function SettingsPage() {
         warningText="This action is permanent and cannot be undone. All matching scrobbles will be permanently removed from your library."
         confirmWord="DELETE"
         confirmButtonText="Delete Scrobbles"
-        isBusy={advancedDeleteState === 'deleting'}
+        isBusy={advancedDeleteState === "deleting"}
         onConfirm={executeConfirmedDelete}
         onCancel={() => {
-          setConfirmModalOpen(false)
-          setDeletePendingParams(null)
+          setConfirmModalOpen(false);
+          setDeletePendingParams(null);
         }}
       />
-      <p className="page-link"><Link to="/profile">Back to profile</Link></p>
+      <p className="page-link">
+        <Link to="/profile">Back to profile</Link>
+      </p>
     </AnalyticsPage>
-  )
+  );
 }
