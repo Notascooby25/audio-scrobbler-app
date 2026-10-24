@@ -162,6 +162,8 @@ Sections in page order:
 | Preferences, e.g. theme, page sizes | `GET` and `PATCH /users/me/settings` |
 | Scrobble settings: `poll_interval_minutes`, realtime sync, and BBC Sounds Scope Creep import tool (create playlist or add to existing, scrobble tracks) | `GET` and `PATCH /users/me/settings/scrobble`, `GET /tools/scope-creep/playlists`, `POST /tools/scope-creep/*` |
 | Data settings: Liked songs sync, Backfill Missing Artwork (Deezer/iTunes, **not** Spotify), Export Listening History (CSV & JSON) | `POST /artwork/backfill`, `PATCH /users/me/settings/scrobble`, `GET /import/export?format={csv\|json}` |
+| User Guide (`?tab=guide`): Plain-English walkthrough of background sync, car trip/party friend scrobble copying, BBC Sounds radio extraction, and library management | Frontend component `UserGuideSection` |
+| FAQ (`?tab=faq`): Searchable, accessible accordion Q&A covering sync delays, duplicate prevention, blocking vs deleting, and mobile push setup | Frontend component `FaqSection` |
 | Blocked items | `GET` and `DELETE /users/me/blocks` |
 | Delete Scrobbles (permanent; confirmation modal) | `/import/*` delete endpoints |
 

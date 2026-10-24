@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: '0.13.0',
+    date: '2026-10-24',
+    changes: [
+      'Added a full, friendly User Guide directly in Settings with step-by-step walkthroughs for everyday listening, road trip/party scrobble copying with friends, BBC Sounds radio extraction, and library management.',
+      'Added an interactive FAQ section in Settings with instant keyword search and accordion answers covering sync delay timing, duplicate prevention, artwork backfills, and device notifications.',
+      'Added direct deep-linking support for Settings tabs via ?tab=guide and ?tab=faq.'
+    ]
+  },
+  {
     version: '0.12.0',
     date: '2026-10-18',
     changes: [
