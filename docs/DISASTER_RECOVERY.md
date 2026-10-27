@@ -506,14 +506,39 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d backe
 
 ## Scenario 8: App unreachable from outside
 
-The app is reached from outside the LAN via **Tailscale Funnel**. The NUC serves
-two apps through it, on different ports — this app must not disturb the other:
+The app is reached from outside the LAN via **Cloudflare Tunnel** (primary custom domain) and **Tailscale Funnel** (secondary / break-glass):
 
-| Public URL | Proxies to | App |
-|---|---|---|
-| `https://nuc-server.<tailnet>.ts.net` (port 443) | `http://127.0.0.1:8510` | sleepwell — **leave alone** |
-| `https://nuc-server.<tailnet>.ts.net:8443` | `http://127.0.0.1:5173` | this app (the frontend nginx, which proxies `/auth`, `/api` to the backend) |
+| Ingress Method | Public URL | Proxies to | App |
+|---|---|---|---|
+| **Cloudflare Tunnel (`nuc-tunnel`)** | `https://audio-scrobbler.uk` | `http://127.0.0.1:5173` | this app (frontend nginx, which proxies `/auth`, `/api` to backend `8010`) |
+| Cloudflare Tunnel (`nuc-tunnel`) | `https://sleep-wellness-tracker.uk` | `http://127.0.0.1:8510` | sleepwell — **leave alone** |
+| **Tailscale Funnel** | `https://nuc-server.<tailnet>.ts.net:8443` | `http://127.0.0.1:5173` | this app (break-glass / direct access) |
+| Tailscale Funnel | `https://nuc-server.<tailnet>.ts.net` (port 443) | `http://127.0.0.1:8510` | sleepwell — **leave alone** |
 
+### Diagnosing Cloudflare Tunnel (`nuc-tunnel`)
+Check container status on the NUC host:
+
+```bash
+docker ps | grep cloudflared
+docker logs --tail 30 cloudflared
+```
+
+Look for `Registered tunnel connection` lines. If the container stopped or failed:
+
+```bash
+# Restart container
+docker restart cloudflared
+
+# Or recreate with latest image while preserving tunnel token and parameters
+docker pull cloudflare/cloudflared:latest
+CMD=$(docker inspect cloudflared --format '{{range .Config.Cmd}}{{.}} {{end}}')
+docker stop cloudflared && docker rm cloudflared
+docker run -d --name cloudflared --restart unless-stopped --network host cloudflare/cloudflared:latest $CMD
+```
+
+Also check tunnel health under the Cloudflare Zero Trust Dashboard (**Networks > Tunnels > nuc-tunnel**).
+
+### Re-creating Tailscale Funnel (Break-Glass)
 Re-create this app's mapping (port 443 is already taken by sleepwell, hence 8443):
 
 ```bash

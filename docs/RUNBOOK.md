@@ -344,7 +344,7 @@ future merges will silently stop deploying.
 
 Account creation is gated by `ALLOWED_SPOTIFY_USER_IDS` in `.env.production` —
 completing Spotify OAuth is not enough, because the frontend is reachable from
-the public internet via Tailscale Funnel.
+the public internet via Cloudflare Tunnel (`audio-scrobbler.uk`) and Tailscale Funnel.
 
 ```bash
 cd /srv/audio-scrobbler-app
