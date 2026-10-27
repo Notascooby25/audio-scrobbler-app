@@ -248,7 +248,22 @@ Host address, SSH user and public hostname: see `HANDOVER.private.md`.
     postgres-data.
 - **Always** run `docker ps -a` and check ports and volume names before creating
   or removing anything.
-- **Tailscale Funnel:**
+- **Cloudflare Tunnel (`nuc-tunnel`):**
+  - Managed via Cloudflare Zero Trust dashboard. Runs on the NUC host as container `cloudflared` (image `cloudflare/cloudflared:latest`) with `--network host` and `--restart unless-stopped`.
+  - Ingress mappings:
+    - `audio-scrobbler.uk` → `http://127.0.0.1:5173` (Audio Scrobbler frontend nginx, proxying `/auth`, `/api` to backend `8010`).
+    - `sleep-wellness-tracker.uk` → `http://127.0.0.1:8510` (Sleepwell frontend web).
+    - Catch-all fallback → `http_status:404`.
+  - Check status: `docker ps | grep cloudflared` and `docker logs cloudflared | grep "Registered tunnel connection"`.
+  - Safe upgrade procedure on the NUC:
+    ```bash
+    docker pull cloudflare/cloudflared:latest
+    docker stop cloudflared && docker rename cloudflared cloudflared-old
+    CMD=$(docker inspect cloudflared-old --format '{{range .Config.Cmd}}{{.}} {{end}}')
+    docker run -d --name cloudflared --restart unless-stopped --network host cloudflare/cloudflared:latest $CMD
+    # verify healthy with docker logs cloudflared, then: docker rm cloudflared-old
+    ```
+- **Tailscale Funnel (Break-Glass / Direct Ingress):**
   - Scrobbler: `https://<funnel-host>:8443` → `127.0.0.1:5173`, set up with
     `sudo tailscale funnel --bg --https=8443 5173`. The frontend proxies `/auth`,
     `/api` and so on to the backend.
