@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from ..api.deps import get_current_user
 from ..db import get_db
-from ..models import ArtworkCache, FollowedShow, ListeningEvent, User
+from ..models import ArtworkCache, FollowedShow, FollowedYouTubeChannel, ListeningEvent, User
 from ..schemas.ingestion import ListeningEventCreate
 from ..services.bbc_sounds_service import (
     fetch_bbc_playlist,
@@ -20,6 +20,12 @@ from ..services.bbc_sounds_service import (
 from ..services.ingestion_service import ingest_listening_event
 from ..services.processed_import_service import deezer_artwork, deezer_search, itunes_artwork
 from ..services.spotify_playlist_service import add_tracks_to_playlist, create_playlist, get_user_playlists
+from ..services.youtube_service import (
+    fetch_youtube_video_details,
+    get_channel_recent_videos,
+    resolve_channel_info,
+    search_youtube_videos,
+)
 
 router = APIRouter(prefix="/tools", tags=["tools"])
 
@@ -542,3 +548,377 @@ def scope_creep(
         message=f"Created playlist '{playlist_name}' with {count} tracks.",
         playlist_url=playlist_url
     )
+
+
+# ---------------------------------------------------------------------------
+# YouTube Tools Endpoints
+# ---------------------------------------------------------------------------
+
+class FollowedYouTubeChannelItem(BaseModel):
+    id: int
+    channel_id: str
+    channel_handle: str | None = None
+    title: str
+    image_url: str | None = None
+    created_at: datetime
+
+
+class FollowYouTubeChannelRequest(BaseModel):
+    url_or_handle: str
+
+
+class FollowedYouTubeChannelsResponse(BaseModel):
+    channels: list[FollowedYouTubeChannelItem]
+
+
+class YouTubeRecentVideoItem(BaseModel):
+    video_id: str
+    title: str
+    published_at: str | None = None
+    thumbnail_url: str | None = None
+    url: str
+
+
+class YouTubeRecentVideosResponse(BaseModel):
+    channel_id: str
+    videos: list[YouTubeRecentVideoItem]
+
+
+class YouTubeSearchResultItem(BaseModel):
+    video_id: str
+    title: str
+    channel_title: str | None = None
+    duration: str | None = None
+    thumbnail_url: str | None = None
+    url: str
+
+
+class YouTubeSearchResponse(BaseModel):
+    results: list[YouTubeSearchResultItem]
+
+
+class YouTubeTrackItem(BaseModel):
+    segment_id: str
+    artist: str
+    title: str
+    offset_seconds: int = 0
+    duration_seconds: int | None = None
+    spotify_uri: str | None = None
+    image_url: str | None = None
+
+
+class YouTubeFetchRequest(BaseModel):
+    url: str
+
+
+class YouTubeFetchResponse(BaseModel):
+    video_id: str
+    title: str
+    author: str
+    artist: str
+    duration_seconds: int | None = None
+    thumbnail_url: str | None = None
+    url: str
+    tracks: list[YouTubeTrackItem]
+
+
+class YouTubeScrobbleTrack(BaseModel):
+    segment_id: str
+    artist: str
+    title: str
+    offset_seconds: int = 0
+    duration_seconds: int | None = None
+    spotify_uri: str | None = None
+    artwork_url: str | None = None
+
+
+class YouTubeScrobbleRequest(BaseModel):
+    video_id: str
+    listened_at: datetime | None = None
+    tracks: list[YouTubeScrobbleTrack]
+
+
+class YouTubeScrobbleResponse(BaseModel):
+    message: str
+    scrobbled_count: int
+    duplicate_count: int
+
+
+@router.get("/youtube/followed-channels", response_model=FollowedYouTubeChannelsResponse)
+def get_followed_youtube_channels(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    channels = (
+        db.query(FollowedYouTubeChannel)
+        .filter(FollowedYouTubeChannel.user_id == current_user.id)
+        .order_by(FollowedYouTubeChannel.title.asc())
+        .all()
+    )
+    return FollowedYouTubeChannelsResponse(
+        channels=[
+            FollowedYouTubeChannelItem(
+                id=c.id,
+                channel_id=c.channel_id,
+                channel_handle=c.channel_handle,
+                title=c.title,
+                image_url=c.image_url,
+                created_at=c.created_at,
+            )
+            for c in channels
+        ]
+    )
+
+
+@router.post("/youtube/followed-channels", response_model=FollowedYouTubeChannelItem)
+def follow_youtube_channel(
+    req: FollowYouTubeChannelRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        info = resolve_channel_info(req.url_or_handle)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to resolve channel info: {str(e)}")
+
+    existing = (
+        db.query(FollowedYouTubeChannel)
+        .filter(
+            FollowedYouTubeChannel.user_id == current_user.id,
+            FollowedYouTubeChannel.channel_id == info["channel_id"],
+        )
+        .first()
+    )
+
+    if existing:
+        return FollowedYouTubeChannelItem(
+            id=existing.id,
+            channel_id=existing.channel_id,
+            channel_handle=existing.channel_handle,
+            title=existing.title,
+            image_url=existing.image_url,
+            created_at=existing.created_at,
+        )
+
+    channel = FollowedYouTubeChannel(
+        user_id=current_user.id,
+        channel_id=info["channel_id"],
+        channel_handle=info.get("channel_handle"),
+        title=info.get("title") or info["channel_id"],
+        image_url=info.get("image_url"),
+    )
+    db.add(channel)
+    try:
+        db.commit()
+        db.refresh(channel)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Failed to follow channel: {str(e)}")
+
+    return FollowedYouTubeChannelItem(
+        id=channel.id,
+        channel_id=channel.channel_id,
+        channel_handle=channel.channel_handle,
+        title=channel.title,
+        image_url=channel.image_url,
+        created_at=channel.created_at,
+    )
+
+
+@router.delete("/youtube/followed-channels/{channel_id}")
+def unfollow_youtube_channel(
+    channel_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    show = (
+        db.query(FollowedYouTubeChannel)
+        .filter(
+            FollowedYouTubeChannel.user_id == current_user.id,
+            FollowedYouTubeChannel.channel_id == channel_id,
+        )
+        .first()
+    )
+    if show:
+        db.delete(show)
+        db.commit()
+    return {"success": True}
+
+
+@router.get("/youtube/followed-channels/{channel_id}/videos", response_model=YouTubeRecentVideosResponse)
+def get_channel_videos(
+    channel_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        videos = get_channel_recent_videos(channel_id)
+        return YouTubeRecentVideosResponse(
+            channel_id=channel_id,
+            videos=[
+                YouTubeRecentVideoItem(
+                    video_id=v["video_id"],
+                    title=v["title"],
+                    published_at=v.get("published_at"),
+                    thumbnail_url=v.get("thumbnail_url"),
+                    url=v["url"],
+                )
+                for v in videos
+            ],
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to fetch channel videos: {str(e)}")
+
+
+@router.get("/youtube/search", response_model=YouTubeSearchResponse)
+def search_youtube(
+    q: str = "",
+    channel: str | None = None,
+    current_user: User = Depends(get_current_user),
+):
+    if not q.strip() and not (channel and channel.strip()):
+        return YouTubeSearchResponse(results=[])
+
+    try:
+        results = search_youtube_videos(query=q, channel_title=channel)
+        return YouTubeSearchResponse(
+            results=[
+                YouTubeSearchResultItem(
+                    video_id=r["video_id"],
+                    title=r["title"],
+                    channel_title=r.get("channel_title"),
+                    duration=r.get("duration"),
+                    thumbnail_url=r.get("thumbnail_url"),
+                    url=r["url"],
+                )
+                for r in results
+            ]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to search YouTube: {str(e)}")
+
+
+@router.post("/youtube/fetch", response_model=YouTubeFetchResponse)
+def fetch_youtube_video(
+    req: YouTubeFetchRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        details = fetch_youtube_video_details(req.url)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to load YouTube video: {str(e)}")
+
+    track_ids = [f"yt:{details['video_id']}:{t['segment_id']}" for t in details["tracks"]]
+    cached_records = db.query(ArtworkCache).filter(ArtworkCache.track_id.in_(track_ids)).all()
+    cache_map = {c.track_id: c.artwork_url for c in cached_records if c.artwork_url}
+
+    def _lookup(t: dict) -> tuple[str, str | None]:
+        t_id = f"yt:{details['video_id']}:{t['segment_id']}"
+        if t_id in cache_map:
+            return t_id, cache_map[t_id]
+        if t.get("image_url"):
+            return t_id, t["image_url"]
+        art = fetch_external_artwork(t["artist"], t["title"])
+        return t_id, (art or details.get("thumbnail_url"))
+
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        results = list(executor.map(_lookup, details["tracks"]))
+
+    resolved_map = dict(results)
+
+    new_entries = [
+        ArtworkCache(track_id=t_id, artwork_url=art)
+        for t_id, art in resolved_map.items()
+        if art and t_id not in cache_map
+    ]
+    if new_entries:
+        try:
+            for entry in new_entries:
+                db.merge(entry)
+            db.commit()
+        except Exception:
+            db.rollback()
+
+    resolved_tracks = [
+        YouTubeTrackItem(
+            segment_id=t["segment_id"],
+            artist=t["artist"],
+            title=t["title"],
+            offset_seconds=t.get("offset_seconds", 0),
+            duration_seconds=t.get("duration_seconds"),
+            spotify_uri=t.get("spotify_uri"),
+            image_url=resolved_map.get(f"yt:{details['video_id']}:{t['segment_id']}"),
+        )
+        for t in details["tracks"]
+    ]
+
+    return YouTubeFetchResponse(
+        video_id=details["video_id"],
+        title=details["title"],
+        author=details["author"],
+        artist=details["artist"],
+        duration_seconds=details["duration_seconds"],
+        thumbnail_url=details["thumbnail_url"],
+        url=details["url"],
+        tracks=resolved_tracks,
+    )
+
+
+@router.post("/youtube/scrobble", response_model=YouTubeScrobbleResponse)
+def scrobble_youtube_tracks(
+    req: YouTubeScrobbleRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not req.tracks:
+        raise HTTPException(status_code=400, detail="No tracks provided to scrobble.")
+
+    base_time = req.listened_at or datetime.now(timezone.utc)
+    scrobbled_count = 0
+    duplicate_count = 0
+
+    for track in req.tracks:
+        played_at = base_time + timedelta(seconds=track.offset_seconds)
+        # Embed session timestamp in play_id so repeat listens over time are fully supported
+        canonical_play_id = f"yt_{req.video_id}_{track.segment_id}_{int(played_at.timestamp())}"
+        clean_artist = track.artist.strip().lower()
+        clean_title = track.title.strip().lower()
+        track_id = track.spotify_uri or f"youtube:{clean_artist}:{clean_title}"
+        duration_ms = (track.duration_seconds * 1000) if track.duration_seconds else None
+        artwork = track.artwork_url or resolve_artwork(track.artist, track.title, db, track_id)
+
+        event_create = ListeningEventCreate(
+            track_id=track_id,
+            track_name=track.title,
+            artist_name=track.artist,
+            artwork_url=artwork,
+            played_at=played_at,
+            duration_ms=duration_ms,
+            source="youtube",
+            play_id=canonical_play_id,
+        )
+
+        res = ingest_listening_event(db, current_user.id, event_create)
+        if res.duplicate:
+            duplicate_count += 1
+        else:
+            scrobbled_count += 1
+
+        if artwork:
+            try:
+                db.query(ListeningEvent).filter(
+                    ListeningEvent.user_id == current_user.id,
+                    ListeningEvent.source == "youtube",
+                    ListeningEvent.track_id == track_id,
+                    ListeningEvent.artwork_url.is_(None),
+                ).update({"artwork_url": artwork}, synchronize_session=False)
+                db.commit()
+            except Exception:
+                db.rollback()
+
+    return YouTubeScrobbleResponse(
+        message=f"Scrobbled {scrobbled_count} tracks ({duplicate_count} duplicates skipped).",
+        scrobbled_count=scrobbled_count,
+        duplicate_count=duplicate_count,
+    )
+
