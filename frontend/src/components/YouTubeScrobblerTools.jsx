@@ -397,10 +397,10 @@ export default function YouTubeScrobblerTools() {
           role="alert"
           style={{
             padding: "0.75rem 1rem",
-            background: "var(--color-danger-bg, #fee2e2)",
-            border: "0.5px solid var(--color-danger, #ef4444)",
-            borderRadius: "8px",
-            color: "var(--color-danger-text, #991b1b)",
+            background: "var(--color-danger-soft)",
+            border: "0.5px solid var(--color-danger)",
+            borderRadius: "var(--radius-sm, 8px)",
+            color: "var(--color-danger)",
             fontSize: "0.85rem",
             marginBottom: "1rem",
           }}
@@ -414,10 +414,10 @@ export default function YouTubeScrobblerTools() {
           role="status"
           style={{
             padding: "0.75rem 1rem",
-            background: "var(--color-success-bg, #ecfdf5)",
-            border: "0.5px solid var(--color-success, #10b981)",
-            borderRadius: "8px",
-            color: "var(--color-success-text, #065f46)",
+            background: "var(--color-success-soft)",
+            border: "0.5px solid var(--color-success)",
+            borderRadius: "var(--radius-sm, 8px)",
+            color: "var(--color-success)",
             fontSize: "0.85rem",
             marginBottom: "1rem",
           }}
@@ -431,10 +431,10 @@ export default function YouTubeScrobblerTools() {
           role="status"
           style={{
             padding: "0.75rem 1rem",
-            background: "var(--color-success-bg, #ecfdf5)",
-            border: "0.5px solid var(--color-success, #10b981)",
-            borderRadius: "8px",
-            color: "var(--color-success-text, #065f46)",
+            background: "var(--color-success-soft)",
+            border: "0.5px solid var(--color-success)",
+            borderRadius: "var(--radius-sm, 8px)",
+            color: "var(--color-success)",
             fontSize: "0.85rem",
             marginBottom: "1rem",
           }}
@@ -446,7 +446,7 @@ export default function YouTubeScrobblerTools() {
               target="_blank"
               rel="noreferrer"
               style={{
-                color: "var(--color-primary, #0066FF)",
+                color: "var(--color-primary)",
                 textDecoration: "underline",
                 marginLeft: "0.5rem",
               }}
@@ -458,30 +458,15 @@ export default function YouTubeScrobblerTools() {
       )}
 
       {/* ─── SECTION 1: Followed Channels ─── */}
-      <section
-        style={{
-          background: "var(--color-surface, #ffffff)",
-          border: "0.5px solid var(--color-border, #E5E5E5)",
-          borderRadius: "12px",
-          padding: "1rem",
-          marginBottom: "1.5rem",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "0.75rem",
-          }}
-        >
+      <section className="youtube-card">
+        <div className="youtube-card-header">
           <div>
             <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>Followed Channels</h3>
             <p
               style={{
                 margin: "0.15rem 0 0 0",
                 fontSize: "0.8rem",
-                color: "var(--color-text-muted, #888888)",
+                color: "var(--color-text-muted)",
               }}
             >
               Select a channel to browse its recent concert uploads.
@@ -490,7 +475,7 @@ export default function YouTubeScrobblerTools() {
           <button
             type="button"
             className="button"
-            style={{ fontSize: "0.8rem", padding: "0.35rem 0.75rem", borderRadius: "8px" }}
+            style={{ fontSize: "0.8rem", padding: "0.45rem 0.85rem", borderRadius: "8px" }}
             onClick={() => setShowAddChannel((prev) => !prev)}
           >
             {showAddChannel ? "Cancel" : "+ Add Channel"}
@@ -506,26 +491,31 @@ export default function YouTubeScrobblerTools() {
             }}
             style={{
               padding: "0.75rem",
-              background: "var(--color-bg, #F7F7F7)",
+              background: "var(--color-canvas)",
               borderRadius: "8px",
-              border: "0.5px solid var(--color-border, #E5E5E5)",
+              border: "0.5px solid var(--color-border)",
               marginBottom: "0.75rem",
             }}
           >
-            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <div className="youtube-input-group">
               <input
                 type="text"
                 placeholder="Channel handle (e.g. @nprmusic) or YouTube channel URL"
                 className="form-input"
                 value={channelInput}
                 onChange={(e) => setChannelInput(e.target.value)}
-                style={{ flex: 1, fontSize: "0.85rem" }}
+                style={{ flex: 1, minWidth: 0, fontSize: "0.85rem" }}
                 disabled={actionLoading}
               />
               <button
                 type="submit"
                 className="button button-primary"
-                style={{ fontSize: "0.85rem", padding: "0.45rem 1rem", borderRadius: "8px" }}
+                style={{
+                  fontSize: "0.85rem",
+                  padding: "0.45rem 1rem",
+                  borderRadius: "8px",
+                  flexShrink: 0,
+                }}
                 disabled={!channelInput.trim() || actionLoading}
               >
                 {actionLoading ? "Adding..." : "Follow"}
@@ -540,7 +530,7 @@ export default function YouTubeScrobblerTools() {
             <span
               style={{
                 fontSize: "0.8rem",
-                color: "var(--color-text-muted, #888888)",
+                color: "var(--color-text-muted)",
                 marginRight: "0.5rem",
               }}
             >
@@ -559,7 +549,7 @@ export default function YouTubeScrobblerTools() {
                   key={rec.handle}
                   type="button"
                   className="button"
-                  style={{ fontSize: "0.75rem", padding: "0.2rem 0.5rem", borderRadius: "6px" }}
+                  style={{ fontSize: "0.75rem", padding: "0.25rem 0.55rem", borderRadius: "6px" }}
                   onClick={() => handleFollowChannel(rec.handle)}
                   disabled={actionLoading}
                 >
@@ -580,12 +570,10 @@ export default function YouTubeScrobblerTools() {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  background: isActive
-                    ? "var(--color-primary-bg, #eff6ff)"
-                    : "var(--color-bg, #F7F7F7)",
+                  background: isActive ? "var(--color-accent-soft)" : "var(--color-surface)",
                   border: isActive
-                    ? "1px solid var(--color-primary, #0066FF)"
-                    : "0.5px solid var(--color-border, #E5E5E5)",
+                    ? "1px solid var(--color-primary)"
+                    : "0.5px solid var(--color-border)",
                   borderRadius: "8px",
                   padding: "0.35rem 0.6rem",
                   gap: "0.5rem",
@@ -610,6 +598,8 @@ export default function YouTubeScrobblerTools() {
                     <img
                       src={c.image_url}
                       alt={c.title}
+                      loading="lazy"
+                      decoding="async"
                       style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover" }}
                     />
                   )}
@@ -619,17 +609,11 @@ export default function YouTubeScrobblerTools() {
                 </button>
                 <button
                   type="button"
+                  className="youtube-unfollow-btn"
                   title={`Unfollow ${c.title}`}
+                  aria-label={`Unfollow ${c.title}`}
                   onClick={() => handleUnfollowChannel(c.channel_id)}
                   disabled={actionLoading}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "var(--color-danger, #ef4444)",
-                    cursor: "pointer",
-                    fontSize: "0.8rem",
-                    padding: "0 0.15rem",
-                  }}
                 >
                   ✕
                 </button>
@@ -644,7 +628,7 @@ export default function YouTubeScrobblerTools() {
             style={{
               marginTop: "1rem",
               paddingTop: "0.75rem",
-              borderTop: "0.5px solid var(--color-border, #E5E5E5)",
+              borderTop: "0.5px solid var(--color-border)",
             }}
           >
             <div style={{ marginBottom: "0.75rem" }}>
@@ -659,13 +643,13 @@ export default function YouTubeScrobblerTools() {
               >
                 Recent Concert Uploads
               </label>
-              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+              <div className="youtube-input-group">
                 <select
                   id="channel-video-select"
                   className="form-input"
                   value={selectedVideoId}
                   onChange={(e) => setSelectedVideoId(e.target.value)}
-                  style={{ flex: 1, fontSize: "0.85rem" }}
+                  style={{ flex: 1, minWidth: 0, fontSize: "0.85rem" }}
                   disabled={loadingVideos}
                 >
                   {loadingVideos ? (
@@ -683,7 +667,12 @@ export default function YouTubeScrobblerTools() {
                 <button
                   type="button"
                   className="button button-primary"
-                  style={{ fontSize: "0.85rem", padding: "0.45rem 1rem", borderRadius: "8px" }}
+                  style={{
+                    fontSize: "0.85rem",
+                    padding: "0.45rem 1rem",
+                    borderRadius: "8px",
+                    flexShrink: 0,
+                  }}
                   onClick={() => {
                     if (selectedVideoId) {
                       handleFetch(null, `https://www.youtube.com/watch?v=${selectedVideoId}`);
@@ -697,22 +686,24 @@ export default function YouTubeScrobblerTools() {
             </div>
 
             {/* Search within Channel */}
-            <form
-              onSubmit={handleSearch}
-              style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}
-            >
+            <form onSubmit={handleSearch} className="youtube-input-group">
               <input
                 type="text"
                 placeholder="Search artist or concert in this channel..."
                 className="form-input"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ flex: 1, fontSize: "0.85rem" }}
+                style={{ flex: 1, minWidth: 0, fontSize: "0.85rem" }}
               />
               <button
                 type="submit"
                 className="button"
-                style={{ fontSize: "0.85rem", padding: "0.45rem 1rem", borderRadius: "8px" }}
+                style={{
+                  fontSize: "0.85rem",
+                  padding: "0.45rem 1rem",
+                  borderRadius: "8px",
+                  flexShrink: 0,
+                }}
                 disabled={!searchQuery.trim() || searching}
               >
                 {searching ? "Searching..." : "Search Channel"}
@@ -725,7 +716,7 @@ export default function YouTubeScrobblerTools() {
                   marginTop: "0.75rem",
                   maxHeight: "220px",
                   overflowY: "auto",
-                  border: "0.5px solid var(--color-border, #E5E5E5)",
+                  border: "0.5px solid var(--color-border)",
                   borderRadius: "8px",
                 }}
               >
@@ -739,13 +730,15 @@ export default function YouTubeScrobblerTools() {
                       gap: "0.75rem",
                       padding: "0.5rem 0.75rem",
                       cursor: "pointer",
-                      borderBottom: "0.5px solid var(--color-border, #E5E5E5)",
+                      borderBottom: "0.5px solid var(--color-border)",
                     }}
                   >
                     {sr.thumbnail_url && (
                       <img
                         src={sr.thumbnail_url}
                         alt={sr.title}
+                        loading="lazy"
+                        decoding="async"
                         style={{ width: 48, height: 27, objectFit: "cover", borderRadius: "4px" }}
                       />
                     )}
@@ -761,9 +754,7 @@ export default function YouTubeScrobblerTools() {
                       >
                         {sr.title}
                       </div>
-                      <div
-                        style={{ fontSize: "0.75rem", color: "var(--color-text-muted, #888888)" }}
-                      >
+                      <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
                         {sr.channel_title} {sr.duration ? `• ${sr.duration}` : ""}
                       </div>
                     </div>
@@ -783,15 +774,7 @@ export default function YouTubeScrobblerTools() {
       </section>
 
       {/* ─── SECTION 2: Direct Video URL Input ─── */}
-      <section
-        style={{
-          background: "var(--color-surface, #ffffff)",
-          border: "0.5px solid var(--color-border, #E5E5E5)",
-          borderRadius: "12px",
-          padding: "1rem",
-          marginBottom: "1.5rem",
-        }}
-      >
+      <section className="youtube-card">
         <h3 style={{ margin: "0 0 0.25rem 0", fontSize: "1rem", fontWeight: 600 }}>
           Video & Concert Extraction
         </h3>
@@ -799,14 +782,14 @@ export default function YouTubeScrobblerTools() {
           style={{
             margin: "0 0 0.75rem 0",
             fontSize: "0.85rem",
-            color: "var(--color-text-muted, #888888)",
+            color: "var(--color-text-muted)",
           }}
         >
           Paste any YouTube concert or live video URL directly to extract its setlist.
         </p>
 
         <form onSubmit={handleFetch}>
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <div className="youtube-input-group">
             <label htmlFor="youtube-video-url" className="sr-only">
               YouTube Video URL
             </label>
@@ -817,13 +800,18 @@ export default function YouTubeScrobblerTools() {
               className="form-input"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              style={{ flex: 1, fontSize: "0.85rem" }}
+              style={{ flex: 1, minWidth: 0, fontSize: "0.85rem" }}
               disabled={fetching}
             />
             <button
               type="submit"
               className="button button-primary"
-              style={{ fontSize: "0.85rem", padding: "0.45rem 1.1rem", borderRadius: "8px" }}
+              style={{
+                fontSize: "0.85rem",
+                padding: "0.45rem 1.1rem",
+                borderRadius: "8px",
+                flexShrink: 0,
+              }}
               disabled={!url.trim() || fetching}
             >
               {fetching ? "Extracting..." : "Load Video & Setlist"}
@@ -834,38 +822,23 @@ export default function YouTubeScrobblerTools() {
 
       {/* ─── SECTION 3: Extracted Video & Setlist ─── */}
       {videoData && (
-        <section
-          style={{
-            background: "var(--color-surface, #ffffff)",
-            border: "0.5px solid var(--color-border, #E5E5E5)",
-            borderRadius: "12px",
-            padding: "1rem",
-            marginBottom: "1.5rem",
-          }}
-        >
+        <section className="youtube-card">
           {/* Video Header Card */}
-          <div
-            style={{
-              display: "flex",
-              gap: "1rem",
-              alignItems: "center",
-              paddingBottom: "1rem",
-              borderBottom: "0.5px solid var(--color-border, #E5E5E5)",
-              marginBottom: "1rem",
-            }}
-          >
+          <div className="youtube-video-header">
             {videoData.thumbnail_url && (
               <img
                 src={videoData.thumbnail_url}
                 alt={videoData.title}
-                style={{ width: 120, height: 68, objectFit: "cover", borderRadius: "8px" }}
+                loading="lazy"
+                decoding="async"
+                className="youtube-video-thumb"
               />
             )}
             <div style={{ flex: 1, minWidth: 0 }}>
               <h4 style={{ margin: "0 0 0.25rem 0", fontSize: "1.05rem", fontWeight: 600 }}>
                 {videoData.title}
               </h4>
-              <div style={{ fontSize: "0.85rem", color: "var(--color-text-muted, #888888)" }}>
+              <div style={{ fontSize: "0.85rem", color: "var(--color-text-muted)" }}>
                 <span>{videoData.author}</span>
                 {videoData.duration_seconds && (
                   <span> • {formatSeconds(videoData.duration_seconds)}</span>
@@ -876,7 +849,7 @@ export default function YouTubeScrobblerTools() {
                   rel="noreferrer"
                   style={{
                     marginLeft: "0.5rem",
-                    color: "var(--color-primary, #0066FF)",
+                    color: "var(--color-primary)",
                     textDecoration: "none",
                   }}
                 >
@@ -919,7 +892,7 @@ export default function YouTubeScrobblerTools() {
           </div>
 
           {tracks.length === 0 ? (
-            <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted, #888888)" }}>
+            <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)" }}>
               No tracks could be automatically extracted from this video.
             </p>
           ) : (
@@ -936,31 +909,22 @@ export default function YouTubeScrobblerTools() {
                 return (
                   <div
                     key={track.segment_id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.75rem",
-                      padding: "0.5rem",
-                      background: isSelected
-                        ? "var(--color-surface, #ffffff)"
-                        : "var(--color-bg, #F7F7F7)",
-                      border: "0.5px solid var(--color-border, #E5E5E5)",
-                      borderRadius: "8px",
-                      opacity: isSelected ? 1 : 0.6,
-                    }}
+                    className={`youtube-track-row ${isSelected ? "" : "is-unselected"}`}
                   >
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggleSelectTrack(track.segment_id)}
-                      aria-label={`Select track ${track.title}`}
-                      style={{ cursor: "pointer" }}
-                    />
+                    <label className="youtube-checkbox-wrapper">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelectTrack(track.segment_id)}
+                        aria-label={`Select track ${track.title}`}
+                      />
+                    </label>
                     <span
                       style={{
                         fontSize: "0.8rem",
-                        color: "var(--color-text-muted, #888888)",
+                        color: "var(--color-text-muted)",
                         width: "1.2rem",
+                        flexShrink: 0,
                       }}
                     >
                       {idx + 1}.
@@ -971,69 +935,64 @@ export default function YouTubeScrobblerTools() {
                       <img
                         src={track.image_url}
                         alt=""
-                        style={{ width: 32, height: 32, borderRadius: "4px", objectFit: "cover" }}
-                      />
-                    ) : (
-                      <div
+                        aria-hidden="true"
+                        loading="lazy"
+                        decoding="async"
                         style={{
                           width: 32,
                           height: 32,
                           borderRadius: "4px",
-                          background: "var(--color-border, #E5E5E5)",
+                          objectFit: "cover",
+                          flexShrink: 0,
+                        }}
+                      />
+                    ) : (
+                      <div
+                        aria-hidden="true"
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: "4px",
+                          background: "var(--color-border)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           fontSize: "0.7rem",
+                          flexShrink: 0,
                         }}
                       >
                         🎵
                       </div>
                     )}
 
+                    {/* Duration / Offset badge */}
+                    <div className="youtube-track-duration">
+                      {formatSeconds(track.offset_seconds)}
+                      {track.duration_seconds ? ` (${formatSeconds(track.duration_seconds)})` : ""}
+                    </div>
+
                     {/* Editable Title & Artist */}
-                    <div style={{ display: "flex", gap: "0.5rem", flex: 1, flexWrap: "wrap" }}>
+                    <div className="youtube-track-inputs">
                       <input
                         type="text"
-                        className="form-input"
+                        className="form-input youtube-track-title-input"
                         value={track.title}
                         onChange={(e) =>
                           handleTrackChange(track.segment_id, "title", e.target.value)
                         }
                         placeholder="Track title"
-                        style={{
-                          flex: 2,
-                          minWidth: "140px",
-                          fontSize: "0.85rem",
-                          padding: "0.3rem 0.5rem",
-                        }}
+                        aria-label={`Track ${idx + 1} title`}
                       />
                       <input
                         type="text"
-                        className="form-input"
+                        className="form-input youtube-track-artist-input"
                         value={track.artist}
                         onChange={(e) =>
                           handleTrackChange(track.segment_id, "artist", e.target.value)
                         }
                         placeholder="Artist"
-                        style={{
-                          flex: 1,
-                          minWidth: "110px",
-                          fontSize: "0.85rem",
-                          padding: "0.3rem 0.5rem",
-                        }}
+                        aria-label={`Track ${idx + 1} artist`}
                       />
-                    </div>
-
-                    {/* Duration / Offset badge */}
-                    <div
-                      style={{
-                        fontSize: "0.75rem",
-                        color: "var(--color-text-muted, #888888)",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {formatSeconds(track.offset_seconds)}
-                      {track.duration_seconds ? ` (${formatSeconds(track.duration_seconds)})` : ""}
                     </div>
                   </div>
                 );
@@ -1042,18 +1001,8 @@ export default function YouTubeScrobblerTools() {
           )}
 
           {/* Action Bar */}
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "1rem",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingTop: "1rem",
-              borderTop: "0.5px solid var(--color-border, #E5E5E5)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <div className="youtube-action-bar">
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
               <label htmlFor="yt-listened-at" style={{ fontSize: "0.85rem", fontWeight: 500 }}>
                 Listened At:
               </label>
@@ -1067,7 +1016,7 @@ export default function YouTubeScrobblerTools() {
               />
             </div>
 
-            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <div className="youtube-action-buttons">
               <button
                 type="button"
                 className="button button-primary"
@@ -1096,16 +1045,25 @@ export default function YouTubeScrobblerTools() {
               style={{
                 marginTop: "1rem",
                 padding: "1rem",
-                background: "var(--color-bg, #F7F7F7)",
-                border: "0.5px solid var(--color-border, #E5E5E5)",
+                background: "var(--color-canvas)",
+                border: "0.5px solid var(--color-border)",
                 borderRadius: "8px",
               }}
             >
               <h5 style={{ margin: "0 0 0.5rem 0", fontSize: "0.9rem", fontWeight: 600 }}>
                 Export Setlist to Spotify
               </h5>
-              <div style={{ display: "flex", gap: "1rem", marginBottom: "0.75rem" }}>
-                <label style={{ fontSize: "0.85rem", cursor: "pointer" }}>
+              <div
+                style={{ display: "flex", gap: "1rem", marginBottom: "0.75rem", flexWrap: "wrap" }}
+              >
+                <label
+                  style={{
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}
+                >
                   <input
                     type="radio"
                     name="ytPlaylistMode"
@@ -1116,7 +1074,14 @@ export default function YouTubeScrobblerTools() {
                   />
                   Create New Playlist
                 </label>
-                <label style={{ fontSize: "0.85rem", cursor: "pointer" }}>
+                <label
+                  style={{
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}
+                >
                   <input
                     type="radio"
                     name="ytPlaylistMode"
@@ -1130,41 +1095,51 @@ export default function YouTubeScrobblerTools() {
               </div>
 
               {playlistMode === "create" ? (
-                <div style={{ display: "flex", gap: "0.5rem" }}>
+                <div className="youtube-input-group">
                   <input
                     type="text"
                     className="form-input"
                     placeholder="Playlist Title"
                     value={newPlaylistTitle}
                     onChange={(e) => setNewPlaylistTitle(e.target.value)}
-                    style={{ flex: 1, fontSize: "0.85rem" }}
+                    style={{ flex: 1, minWidth: 0, fontSize: "0.85rem" }}
                   />
                   <button
                     type="button"
                     className="button button-primary"
                     onClick={handleExportPlaylist}
                     disabled={exportingPlaylist}
-                    style={{ fontSize: "0.85rem", padding: "0.45rem 1rem", borderRadius: "8px" }}
+                    style={{
+                      fontSize: "0.85rem",
+                      padding: "0.45rem 1rem",
+                      borderRadius: "8px",
+                      flexShrink: 0,
+                    }}
                   >
                     {exportingPlaylist ? "Exporting..." : "Create Playlist"}
                   </button>
                 </div>
               ) : (
-                <div style={{ display: "flex", gap: "0.5rem" }}>
+                <div className="youtube-input-group">
                   <input
                     type="text"
                     className="form-input"
                     placeholder="Enter Spotify Playlist ID or URL"
                     value={existingPlaylistId}
                     onChange={(e) => setExistingPlaylistId(e.target.value)}
-                    style={{ flex: 1, fontSize: "0.85rem" }}
+                    style={{ flex: 1, minWidth: 0, fontSize: "0.85rem" }}
                   />
                   <button
                     type="button"
                     className="button button-primary"
                     onClick={handleExportPlaylist}
                     disabled={exportingPlaylist || !existingPlaylistId.trim()}
-                    style={{ fontSize: "0.85rem", padding: "0.45rem 1rem", borderRadius: "8px" }}
+                    style={{
+                      fontSize: "0.85rem",
+                      padding: "0.45rem 1rem",
+                      borderRadius: "8px",
+                      flexShrink: 0,
+                    }}
                   >
                     {exportingPlaylist ? "Adding..." : "Add to Playlist"}
                   </button>

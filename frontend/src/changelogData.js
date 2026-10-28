@@ -1,5 +1,16 @@
 export const CHANGELOG = [
   {
+    version: "0.14.1",
+    date: "2026-10-28",
+    changes: [
+      "Optimized YouTube Music & Concert Scrobbler for mobile viewports, completely eliminating horizontal scrolling with fluid track row stacking and responsive input layouts.",
+      "Expanded touch targets on channel unfollow buttons and track selection checkboxes to meet the >= 44pt mobile accessibility standard.",
+      "Added accessible names (aria-labels) to inline editable track title and artist inputs.",
+      "Refined dark mode contrast in feedback alerts and channel selector chips using system theme tokens.",
+      "Added native lazy-loading and asynchronous decoding across all concert and channel thumbnail assets.",
+    ],
+  },
+  {
     version: "0.14.0",
     date: "2026-10-28",
     changes: [

@@ -111,6 +111,12 @@ describe("YouTubeScrobblerTools", () => {
       expect(screen.getByDisplayValue("These Walls")).toBeInTheDocument();
     });
 
+    // Verify accessible labels on track inputs
+    expect(screen.getByLabelText("Track 1 title")).toBeInTheDocument();
+    expect(screen.getByLabelText("Track 1 artist")).toBeInTheDocument();
+    expect(screen.getByLabelText("Track 2 title")).toBeInTheDocument();
+    expect(screen.getByLabelText("Track 2 artist")).toBeInTheDocument();
+
     // Inline edit track title
     const firstTitleInput = screen.getByDisplayValue("Training Season");
     fireEvent.change(firstTitleInput, { target: { value: "Training Season (Live)" } });
@@ -123,5 +129,38 @@ describe("YouTubeScrobblerTools", () => {
     await waitFor(() => {
       expect(screen.getByText(/Scrobbled 2 tracks/i)).toBeInTheDocument();
     });
+  });
+
+  it("renders accessible unfollow button for followed channels", async () => {
+    vi.spyOn(global, "fetch").mockImplementationOnce(() =>
+      Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            channels: [
+              {
+                channel_id: "UC_channel1",
+                title: "NPR Music",
+                handle: "@nprmusic",
+                image_url: "https://example.com/npr.jpg",
+              },
+            ],
+          }),
+      })
+    );
+
+    render(
+      <MemoryRouter>
+        <YouTubeScrobblerTools />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("NPR Music")).toBeInTheDocument();
+    });
+
+    const unfollowBtn = screen.getByRole("button", { name: /Unfollow NPR Music/i });
+    expect(unfollowBtn).toBeInTheDocument();
+    expect(unfollowBtn).toHaveClass("youtube-unfollow-btn");
   });
 });
