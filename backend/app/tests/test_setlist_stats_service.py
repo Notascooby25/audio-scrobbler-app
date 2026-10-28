@@ -144,7 +144,21 @@ def test_export_attended_gigs_json_and_csv(db_session: Session):
         tour_name="Space Tour",
         raw_data={"songs": ["Gagarin", "Go!"]},
     )
+    c2 = AttendedConcert(
+        user_id=1,
+        setlist_id="sec_show_999",
+        artist_name="=HYPERLINK()",
+        artist_mbid="sec_mbid",
+        venue_name="+DangerousVenue",
+        city="London",
+        country="United Kingdom",
+        event_date=datetime(2026, 9, 27),
+        song_count=1,
+        tour_name="@FormulaTour",
+        raw_data={"songs": ["Payload"]},
+    )
     db_session.add(c1)
+    db_session.add(c2)
     db_session.commit()
 
     service = SetlistStatsService(db=db_session)
@@ -153,14 +167,16 @@ def test_export_attended_gigs_json_and_csv(db_session: Session):
     content_json, media_type_json = service.export_attended_gigs(user_id=1, format="json")
     assert media_type_json == "application/json"
     parsed_json = json.loads(content_json)
-    assert len(parsed_json) == 1
-    assert parsed_json[0]["artist_name"] == "Public Service Broadcasting"
+    assert len(parsed_json) == 2
 
     # Test CSV export
     content_csv, media_type_csv = service.export_attended_gigs(user_id=1, format="csv")
     assert media_type_csv == "text/csv"
     reader = csv.DictReader(io.StringIO(content_csv))
     rows = list(reader)
-    assert len(rows) == 1
-    assert rows[0]["artist_name"] == "Public Service Broadcasting"
-    assert rows[0]["venue_name"] == "Alexandra Palace"
+    assert len(rows) == 2
+    # Verify formula injection sanitization (prefixed with ')
+    sec_row = next(r for r in rows if "@" in r["tour_name"] or "'" in r["tour_name"])
+    assert sec_row["artist_name"] == "'=HYPERLINK()"
+    assert sec_row["venue_name"] == "'+DangerousVenue"
+    assert sec_row["tour_name"] == "'@FormulaTour"

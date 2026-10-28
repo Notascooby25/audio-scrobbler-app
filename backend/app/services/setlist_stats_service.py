@@ -11,6 +11,12 @@ from sqlalchemy.orm import Session
 from backend.app.models import AttendedConcert, ListeningEvent
 
 
+def _sanitize_csv_cell(val: object) -> object:
+    if isinstance(val, str) and val and val[0] in ("=", "+", "-", "@", "\t", "\r"):
+        return f"'{val}"
+    return val
+
+
 class SetlistStatsService:
     def __init__(self, db: Session) -> None:
         self.db = db
@@ -175,15 +181,15 @@ class SetlistStatsService:
             for g in gigs:
                 writer.writerow(
                     {
-                        "artist_name": g.artist_name,
-                        "venue_name": g.venue_name,
-                        "city": g.city,
-                        "country": g.country,
+                        "artist_name": _sanitize_csv_cell(g.artist_name),
+                        "venue_name": _sanitize_csv_cell(g.venue_name),
+                        "city": _sanitize_csv_cell(g.city),
+                        "country": _sanitize_csv_cell(g.country),
                         "event_date": g.event_date.strftime("%Y-%m-%d") if g.event_date else "",
-                        "tour_name": g.tour_name or "",
+                        "tour_name": _sanitize_csv_cell(g.tour_name or ""),
                         "is_support_act": g.is_support_act,
                         "song_count": g.song_count,
-                        "setlist_url": g.setlist_url or "",
+                        "setlist_url": _sanitize_csv_cell(g.setlist_url or ""),
                     }
                 )
             return output.getvalue(), "text/csv"
