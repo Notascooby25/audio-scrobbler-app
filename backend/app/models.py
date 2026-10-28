@@ -238,3 +238,19 @@ class PushSubscription(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
+class FollowedYouTubeChannel(Base):
+    __tablename__ = "followed_youtube_channels"
+    __table_args__ = (
+        UniqueConstraint("user_id", "channel_id", name="uq_followed_youtube_channel_user"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    channel_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    channel_handle: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+
