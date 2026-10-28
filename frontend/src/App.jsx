@@ -1,31 +1,32 @@
-import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Layout from './components/Layout'
-import FollowingPage from './pages/FollowingPage'
-import HomePage from './pages/HomePage'
-import LibraryPage from './pages/LibraryPage'
-import OverviewPage from './pages/OverviewPage'
-import ProfilePage from './pages/ProfilePage'
-import ReportsPage from './pages/ReportsPage'
-import SettingsPage from './pages/SettingsPage'
-import ChangelogPage from './pages/ChangelogPage'
-import { fetchUserSettings } from './api'
-import { readSession } from './session'
+import { useEffect } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Layout from "./components/Layout";
+import FollowingPage from "./pages/FollowingPage";
+import HomePage from "./pages/HomePage";
+import LibraryPage from "./pages/LibraryPage";
+import OverviewPage from "./pages/OverviewPage";
+import ProfilePage from "./pages/ProfilePage";
+import ReportsPage from "./pages/ReportsPage";
+import SettingsPage from "./pages/SettingsPage";
+import ChangelogPage from "./pages/ChangelogPage";
+import SetlistsPage from "./components/setlists/SetlistsPage";
+import { fetchUserSettings } from "./api";
+import { readSession } from "./session";
 
 export default function App() {
   useEffect(() => {
-    const session = readSession()
+    const session = readSession();
     if (session?.accessToken) {
       fetchUserSettings({ token: session.accessToken })
-        .then(settings => {
+        .then((settings) => {
           if (settings.theme) {
-            localStorage.setItem('audio-scrobbler-theme', settings.theme)
-            document.documentElement.setAttribute('data-theme', settings.theme)
+            localStorage.setItem("audio-scrobbler-theme", settings.theme);
+            document.documentElement.setAttribute("data-theme", settings.theme);
           }
         })
-        .catch(() => {})
+        .catch(() => {});
     }
-  }, [])
+  }, []);
 
   return (
     <BrowserRouter>
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/connect" element={<HomePage />} />
           <Route path="/overview" element={<OverviewPage />} />
           <Route path="/library" element={<LibraryPage />} />
+          <Route path="/setlists" element={<SetlistsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/:userId" element={<ProfilePage />} />
@@ -44,6 +46,5 @@ export default function App() {
         </Route>
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
-
