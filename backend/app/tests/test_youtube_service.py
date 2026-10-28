@@ -89,7 +89,9 @@ def test_parse_tracklist_kexp_songs_header():
 def test_parse_single_track_fallback():
     desc = "More incredible live music moments. Recorded for BBC Radio 1."
     video_title = "Bruno Mars - All I Ask (Adele cover) in the Radio 1 Live Lounge"
-    tracks = parse_tracklist_from_description(desc, default_artist="BBC Radio 1", total_duration_seconds=240, video_title=video_title)
+    tracks = parse_tracklist_from_description(
+        desc, default_artist="BBC Radio 1", total_duration_seconds=240, video_title=video_title
+    )
     assert len(tracks) == 1
     assert tracks[0]["artist"] == "Bruno Mars"
     assert "All I Ask" in tracks[0]["title"]

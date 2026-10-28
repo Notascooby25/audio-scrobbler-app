@@ -47,6 +47,20 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "youtube-scrobbler",
+    category: "Sync & Scrobbles",
+    question: "Can I scrobble music concerts and live sessions from YouTube?",
+    answer: (
+      <p>
+        <strong>Yes!</strong> Head to <strong>Settings → Scrobble</strong> and switch to the{" "}
+        <strong>YouTube Concerts</strong> tab. You can follow channels like NPR Music (Tiny Desk),
+        KEXP, or BBC Music, browse recent concert uploads or search within the channel, or paste any
+        YouTube video URL directly. The app extracts the setlist, allows you to edit track names
+        inline, and scrobbles them directly into your history.
+      </p>
+    ),
+  },
+  {
     id: "car-friends",
     category: "Friends & Social",
     question: "How do I scrobble music a friend played in the car or at a party?",

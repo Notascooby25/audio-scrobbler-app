@@ -135,20 +135,41 @@ export default function UserGuideSection() {
 
       {/* Chapter 4 */}
       <article id="guide-radio" className="guide-chapter">
-        <h3>4. BBC Sounds & Radio Tracklists</h3>
+        <h3>4. BBC Sounds & Radio Tracklists (plus YouTube Concerts)</h3>
         <p>
-          Listening to BBC Radio 1, 6 Music, or 1Xtra shows? Radio stations play incredible music,
-          but typically don't scrobble to Spotify. Our built-in radio extraction tool (known as{" "}
-          <strong>Scope Creep</strong>) lets you capture radio tracklists with ease.
+          Listening to BBC Radio shows, or watching full live performances on YouTube like{" "}
+          <strong>NPR Music Tiny Desk Concerts</strong>, <strong>KEXP in-studio sessions</strong>,
+          or <strong>BBC Music Live Lounge</strong>? Our built-in extraction tools let you capture
+          tracklists and scrobble them with ease.
         </p>
 
-        <h4>Where to find it:</h4>
+        <h4>Where to find them:</h4>
         <p>
-          Go to <strong>Settings → Scrobble tab</strong> and scroll down to the{" "}
-          <strong>BBC Sounds Tools</strong> panel.
+          Go to <strong>Settings → Scrobble tab</strong> and scroll down to the bottom tools
+          section. Use the segmented toggle to switch between <strong>Radio / BBC Sounds</strong>{" "}
+          and <strong>YouTube Concerts</strong>.
         </p>
 
-        <h4>Two ways to pull a tracklist:</h4>
+        <h4>Using the YouTube Scrobbler:</h4>
+        <ol className="guide-steps">
+          <li>
+            <strong>Followed Channels:</strong> Follow go-to music channels like NPR Music (
+            <code>@nprmusic</code>), KEXP (<code>@kexp</code>), or BBC Music (<code>@BBCMusic</code>
+            ). Clicking a channel immediately loads its recent concert uploads and lets you search
+            within that channel.
+          </li>
+          <li>
+            <strong>Direct Video Link:</strong> Paste any YouTube video link directly into the URL
+            input and click "Load Video & Setlist".
+          </li>
+          <li>
+            <strong>Automatic Setlist Extraction:</strong> The app parses timestamps and setlist
+            sections from the video description. You can check/uncheck tracks, edit any song or
+            artist names inline, and adjust the listened-at time before scrobbling!
+          </li>
+        </ol>
+
+        <h4>Using BBC Sounds (Scope Creep):</h4>
         <ol className="guide-steps">
           <li>
             <strong>Paste a Web Link:</strong> Copy the URL of any BBC Sounds episode from your

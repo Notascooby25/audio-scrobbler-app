@@ -71,6 +71,9 @@ Every play is stored as a row in `listening_events` and deduplicated by `(user_i
 3. **BBC Sounds / "Scope Creep" (`backend/app/api/tools.py`):**
    - Users can paste a BBC Sounds episode URL or search/follow BBC radio programmes (`followed_shows` table).
    - The backend queries the public BBC RMS API for the episode tracklist, resolves artwork via iTunes/Deezer, and lets the user either **scrobble selected tracks** (spaced by their broadcast `offset_seconds`) or **export them to Spotify** (creating a new playlist or appending to an existing one).
+4. **YouTube Concert Scrobbler (`backend/app/api/tools.py` + `backend/app/services/youtube_service.py`):**
+   - Users can follow YouTube music channels (`followed_youtube_channels` table) such as NPR Music (Tiny Desk), KEXP, or BBC Music, browse recent uploads via public RSS feeds, search within a channel, or paste any video link directly.
+   - The backend extracts setlists from video descriptions, timestamps, or titles, allows inline editing and track selection, and scrobbles tracks directly into `listening_events` (with repeat listen support via timestamped `play_id`s and optional Spotify playlist export).
 
 ### 3. Scheduled worker jobs at a glance
 

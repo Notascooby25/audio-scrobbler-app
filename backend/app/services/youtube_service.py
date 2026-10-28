@@ -124,15 +124,17 @@ def parse_tracklist_from_description(
             elif total_duration_seconds and total_duration_seconds > offset:
                 duration = total_duration_seconds - offset
 
-            tracks.append({
-                "segment_id": f"seg_{idx}",
-                "artist": artist or "Unknown Artist",
-                "title": _clean_track_title(track_name),
-                "offset_seconds": offset,
-                "duration_seconds": duration,
-                "spotify_uri": None,
-                "image_url": None,
-            })
+            tracks.append(
+                {
+                    "segment_id": f"seg_{idx}",
+                    "artist": artist or "Unknown Artist",
+                    "title": _clean_track_title(track_name),
+                    "offset_seconds": offset,
+                    "duration_seconds": duration,
+                    "spotify_uri": None,
+                    "image_url": None,
+                }
+            )
         return tracks
 
     # 2. Check for Setlist headers (SET LIST, Songs:, Tracks:, Tracklist:)
@@ -145,8 +147,18 @@ def parse_tracklist_from_description(
     ]
 
     stop_headers = [
-        "musicians", "credits", "tiny desk team", "host:", "recorded", "producer",
-        "audio engineer", "cameras", "editor", "special thanks", "band:", "personnel",
+        "musicians",
+        "credits",
+        "tiny desk team",
+        "host:",
+        "recorded",
+        "producer",
+        "audio engineer",
+        "cameras",
+        "editor",
+        "special thanks",
+        "band:",
+        "personnel",
     ]
 
     in_setlist_section = False
@@ -159,7 +171,11 @@ def parse_tracklist_from_description(
             continue
 
         if in_setlist_section:
-            if any(sh in lower_line for sh in stop_headers) or lower_line.startswith("http") or lower_line.startswith("#"):
+            if (
+                any(sh in lower_line for sh in stop_headers)
+                or lower_line.startswith("http")
+                or lower_line.startswith("#")
+            ):
                 break
             clean_l = _clean_track_title(line)
             if clean_l and len(clean_l) < 100:
@@ -175,15 +191,17 @@ def parse_tracklist_from_description(
                 artist = parts[0].strip()
                 track_name = parts[1].strip()
 
-            tracks.append({
-                "segment_id": f"seg_{idx}",
-                "artist": artist or "Unknown Artist",
-                "title": _clean_track_title(track_name),
-                "offset_seconds": idx * avg_dur,
-                "duration_seconds": avg_dur,
-                "spotify_uri": None,
-                "image_url": None,
-            })
+            tracks.append(
+                {
+                    "segment_id": f"seg_{idx}",
+                    "artist": artist or "Unknown Artist",
+                    "title": _clean_track_title(track_name),
+                    "offset_seconds": idx * avg_dur,
+                    "duration_seconds": avg_dur,
+                    "spotify_uri": None,
+                    "image_url": None,
+                }
+            )
         return tracks
 
     # 3. Fallback: Single track parsed from video title
@@ -212,15 +230,17 @@ def parse_tracklist_from_description(
             artist = parts[0].strip()
             song = parts[1].strip()
 
-        tracks.append({
-            "segment_id": "seg_0",
-            "artist": artist or "Unknown Artist",
-            "title": _clean_track_title(song),
-            "offset_seconds": 0,
-            "duration_seconds": total_duration_seconds or 210,
-            "spotify_uri": None,
-            "image_url": None,
-        })
+        tracks.append(
+            {
+                "segment_id": "seg_0",
+                "artist": artist or "Unknown Artist",
+                "title": _clean_track_title(song),
+                "offset_seconds": 0,
+                "duration_seconds": total_duration_seconds or 210,
+                "spotify_uri": None,
+                "image_url": None,
+            }
+        )
 
     return tracks
 
@@ -245,7 +265,7 @@ def resolve_channel_info(url_or_handle: str) -> dict[str, str | None]:
     if m_cid:
         channel_id = m_cid.group(1)
     else:
-        m_feed = re.search(r'channel_id=([a-zA-Z0-9_-]+)', resp.text)
+        m_feed = re.search(r"channel_id=([a-zA-Z0-9_-]+)", resp.text)
         if m_feed:
             channel_id = m_feed.group(1)
 
@@ -307,13 +327,15 @@ def get_channel_recent_videos(channel_id: str) -> list[dict[str, Any]]:
             v_id = vid_elem.text.strip()
             v_title = title_elem.text.strip() if title_elem is not None and title_elem.text else f"Video {v_id}"
             v_pub = pub_elem.text.strip() if pub_elem is not None and pub_elem.text else ""
-            videos.append({
-                "video_id": v_id,
-                "title": v_title,
-                "published_at": v_pub,
-                "thumbnail_url": f"https://i.ytimg.com/vi/{v_id}/hqdefault.jpg",
-                "url": f"https://www.youtube.com/watch?v={v_id}",
-            })
+            videos.append(
+                {
+                    "video_id": v_id,
+                    "title": v_title,
+                    "published_at": v_pub,
+                    "thumbnail_url": f"https://i.ytimg.com/vi/{v_id}/hqdefault.jpg",
+                    "url": f"https://www.youtube.com/watch?v={v_id}",
+                }
+            )
 
     return videos
 
@@ -360,14 +382,16 @@ def search_youtube_videos(query: str, channel_title: str | None = None) -> list[
 
             length = vr.get("lengthText", {}).get("simpleText", "")
 
-            results.append({
-                "video_id": vid,
-                "title": title,
-                "channel_title": owner,
-                "duration": length,
-                "thumbnail_url": f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg",
-                "url": f"https://www.youtube.com/watch?v={vid}",
-            })
+            results.append(
+                {
+                    "video_id": vid,
+                    "title": title,
+                    "channel_title": owner,
+                    "duration": length,
+                    "thumbnail_url": f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg",
+                    "url": f"https://www.youtube.com/watch?v={vid}",
+                }
+            )
             if len(results) >= 20:
                 break
         if len(results) >= 20:

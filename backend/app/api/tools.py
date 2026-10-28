@@ -29,11 +29,13 @@ from ..services.youtube_service import (
 
 router = APIRouter(prefix="/tools", tags=["tools"])
 
+
 def _extract_play_id(url: str) -> str:
-    match = re.search(r'/play/([a-zA-Z0-9]+)', url)
+    match = re.search(r"/play/([a-zA-Z0-9]+)", url)
     if not match:
         raise HTTPException(status_code=400, detail="Invalid BBC Sounds URL. Make sure it contains /play/<id>")
     return match.group(1)
+
 
 def fetch_external_artwork(artist: str, title: str) -> str | None:
     try:
@@ -45,6 +47,7 @@ def fetch_external_artwork(artist: str, title: str) -> str | None:
         return art
     except Exception:
         return None
+
 
 def resolve_artwork(artist: str, title: str, db: Session | None = None, track_id: str | None = None) -> str | None:
     if db and track_id:
@@ -63,12 +66,15 @@ def resolve_artwork(artist: str, title: str, db: Session | None = None, track_id
 
     return art
 
+
 class ScopeCreepRequest(BaseModel):
     url: str
+
 
 class ScopeCreepResponse(BaseModel):
     message: str
     playlist_url: str
+
 
 class ScopeCreepTrackItem(BaseModel):
     segment_id: str
@@ -79,6 +85,7 @@ class ScopeCreepTrackItem(BaseModel):
     spotify_uri: str | None = None
     image_url: str | None = None
 
+
 class ScopeCreepBrandInfo(BaseModel):
     brand_id: str
     title: str
@@ -86,11 +93,13 @@ class ScopeCreepBrandInfo(BaseModel):
     image_url: str | None = None
     is_followed: bool = False
 
+
 class ScopeCreepFetchResponse(BaseModel):
     play_id: str
     title: str
     tracks: list[ScopeCreepTrackItem]
     brand_info: ScopeCreepBrandInfo | None = None
+
 
 class FollowedShowItem(BaseModel):
     id: int
@@ -100,11 +109,14 @@ class FollowedShowItem(BaseModel):
     image_url: str | None = None
     created_at: datetime
 
+
 class FollowShowRequest(BaseModel):
     url_or_id: str
 
+
 class FollowedShowsListResponse(BaseModel):
     shows: list[FollowedShowItem]
+
 
 class ShowEpisodeItem(BaseModel):
     play_id: str
@@ -116,9 +128,11 @@ class ShowEpisodeItem(BaseModel):
     image_url: str | None = None
     url: str
 
+
 class ShowEpisodesResponse(BaseModel):
     brand_id: str
     episodes: list[ShowEpisodeItem]
+
 
 class ShowSearchResultItem(BaseModel):
     brand_id: str
@@ -127,17 +141,21 @@ class ShowSearchResultItem(BaseModel):
     image_url: str | None = None
     is_followed: bool = False
 
+
 class ShowSearchResponse(BaseModel):
     results: list[ShowSearchResultItem]
+
 
 class ScopeCreepPlaylistItem(BaseModel):
     id: str
     name: str
     url: str
 
+
 class ScopeCreepPlaylistsResponse(BaseModel):
     playlists: list[ScopeCreepPlaylistItem]
     needs_scope: bool = False
+
 
 class ScopeCreepPlaylistCreateRequest(BaseModel):
     url: str = ""
@@ -145,6 +163,7 @@ class ScopeCreepPlaylistCreateRequest(BaseModel):
     mode: str = "create"  # "create" or "existing"
     playlist_id: str | None = None
     spotify_uris: list[str]
+
 
 class ScopeCreepScrobbleTrack(BaseModel):
     segment_id: str
@@ -155,15 +174,18 @@ class ScopeCreepScrobbleTrack(BaseModel):
     spotify_uri: str | None = None
     artwork_url: str | None = None
 
+
 class ScopeCreepScrobbleRequest(BaseModel):
     play_id: str
     listened_at: datetime | None = None
     tracks: list[ScopeCreepScrobbleTrack]
 
+
 class ScopeCreepScrobbleResponse(BaseModel):
     message: str
     scrobbled_count: int
     duplicate_count: int
+
 
 @router.post("/scope-creep/fetch", response_model=ScopeCreepFetchResponse)
 def scope_creep_fetch(
@@ -223,10 +245,12 @@ def scope_creep_fetch(
     brand_info = None
     if bbc_data.get("brand_info"):
         b_info = bbc_data["brand_info"]
-        is_followed = db.query(FollowedShow).filter(
-            FollowedShow.user_id == current_user.id,
-            FollowedShow.brand_id == b_info["brand_id"]
-        ).first() is not None
+        is_followed = (
+            db.query(FollowedShow)
+            .filter(FollowedShow.user_id == current_user.id, FollowedShow.brand_id == b_info["brand_id"])
+            .first()
+            is not None
+        )
         brand_info = ScopeCreepBrandInfo(
             brand_id=b_info["brand_id"],
             title=b_info["title"],
@@ -242,16 +266,14 @@ def scope_creep_fetch(
         brand_info=brand_info,
     )
 
+
 @router.get("/scope-creep/followed-shows", response_model=FollowedShowsListResponse)
 def get_followed_shows(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     shows = (
-        db.query(FollowedShow)
-        .filter(FollowedShow.user_id == current_user.id)
-        .order_by(FollowedShow.title.asc())
-        .all()
+        db.query(FollowedShow).filter(FollowedShow.user_id == current_user.id).order_by(FollowedShow.title.asc()).all()
     )
     return FollowedShowsListResponse(
         shows=[
@@ -266,6 +288,7 @@ def get_followed_shows(
             for s in shows
         ]
     )
+
 
 @router.post("/scope-creep/followed-shows", response_model=FollowedShowItem)
 def follow_show(
@@ -316,6 +339,7 @@ def follow_show(
         created_at=show.created_at,
     )
 
+
 @router.delete("/scope-creep/followed-shows/{brand_id}")
 def unfollow_show(
     brand_id: str,
@@ -336,6 +360,7 @@ def unfollow_show(
     db.delete(show)
     db.commit()
     return {"message": "Show unfollowed successfully", "brand_id": brand_id}
+
 
 @router.get("/scope-creep/followed-shows/{brand_id}/episodes", response_model=ShowEpisodesResponse)
 def get_show_episodes(
@@ -366,6 +391,7 @@ def get_show_episodes(
         ],
     )
 
+
 @router.get("/scope-creep/search-shows", response_model=ShowSearchResponse)
 def search_shows(
     q: str,
@@ -382,8 +408,7 @@ def search_shows(
         raise HTTPException(status_code=400, detail=f"Failed to search BBC Sounds: {str(e)}")
 
     followed_brands = {
-        s.brand_id
-        for s in db.query(FollowedShow.brand_id).filter(FollowedShow.user_id == current_user.id).all()
+        s.brand_id for s in db.query(FollowedShow.brand_id).filter(FollowedShow.user_id == current_user.id).all()
     }
 
     return ShowSearchResponse(
@@ -399,6 +424,7 @@ def search_shows(
         ]
     )
 
+
 @router.get("/scope-creep/playlists", response_model=ScopeCreepPlaylistsResponse)
 def scope_creep_playlists(
     db: Session = Depends(get_db),
@@ -408,13 +434,13 @@ def scope_creep_playlists(
         data = get_user_playlists(db, current_user)
         return ScopeCreepPlaylistsResponse(
             playlists=[
-                ScopeCreepPlaylistItem(id=p["id"], name=p["name"], url=p["url"])
-                for p in data.get("playlists", [])
+                ScopeCreepPlaylistItem(id=p["id"], name=p["name"], url=p["url"]) for p in data.get("playlists", [])
             ],
             needs_scope=data.get("needs_scope", False),
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to fetch user playlists: {str(e)}")
+
 
 @router.post("/scope-creep/playlist", response_model=ScopeCreepResponse)
 def scope_creep_playlist(
@@ -461,6 +487,7 @@ def scope_creep_playlist(
         message=message,
         playlist_url=playlist_url,
     )
+
 
 @router.post("/scope-creep/scrobble", response_model=ScopeCreepScrobbleResponse)
 def scope_creep_scrobble(
@@ -514,8 +541,9 @@ def scope_creep_scrobble(
     return ScopeCreepScrobbleResponse(
         message=f"Scrobbled {scrobbled_count} tracks ({duplicate_count} duplicates skipped).",
         scrobbled_count=scrobbled_count,
-        duplicate_count=duplicate_count
+        duplicate_count=duplicate_count,
     )
+
 
 @router.post("/scope-creep", response_model=ScopeCreepResponse)
 def scope_creep(
@@ -524,35 +552,35 @@ def scope_creep(
     current_user: User = Depends(get_current_user),
 ):
     play_id = _extract_play_id(req.url)
-    
+
     try:
         bbc_data = fetch_bbc_playlist(play_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to fetch BBC Sounds data: {str(e)}")
-        
+
     if not bbc_data["spotify_uris"]:
         raise HTTPException(status_code=400, detail="No Spotify tracks found for this BBC Sounds episode.")
-        
+
     try:
         playlist_name, playlist_url, count = create_playlist(
-            db, 
-            current_user, 
-            bbc_data["title"], 
+            db,
+            current_user,
+            bbc_data["title"],
             f"Generated from {req.url} via Audio Scrobbler App Scope Creep",
-            bbc_data["spotify_uris"]
+            bbc_data["spotify_uris"],
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to create Spotify playlist: {str(e)}")
-        
+
     return ScopeCreepResponse(
-        message=f"Created playlist '{playlist_name}' with {count} tracks.",
-        playlist_url=playlist_url
+        message=f"Created playlist '{playlist_name}' with {count} tracks.", playlist_url=playlist_url
     )
 
 
 # ---------------------------------------------------------------------------
 # YouTube Tools Endpoints
 # ---------------------------------------------------------------------------
+
 
 class FollowedYouTubeChannelItem(BaseModel):
     id: int
@@ -921,4 +949,3 @@ def scrobble_youtube_tracks(
         scrobbled_count=scrobbled_count,
         duplicate_count=duplicate_count,
     )
-

@@ -57,7 +57,9 @@ class UserPreferences(Base):
     notify_system: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     recap_frequency: Mapped[str] = mapped_column(String(16), nullable=False, default="weekly")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
 
 class ListeningEvent(Base):
@@ -129,14 +131,14 @@ class RealtimePlaybackState(Base):
     scrobbled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     raw_metadata: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
     is_playing: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
 
 class UserScrobbleSettings(Base):
     __tablename__ = "user_scrobble_settings"
-    __table_args__ = (
-        UniqueConstraint("user_id", name="uq_user_scrobble_settings_user_id"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", name="uq_user_scrobble_settings_user_id"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
@@ -150,14 +152,14 @@ class UserScrobbleSettings(Base):
     realtime_sync_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     scrobble_threshold_percent: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
 
 class LikedTrack(Base):
     __tablename__ = "liked_tracks"
-    __table_args__ = (
-        UniqueConstraint("user_id", "spotify_track_id", name="uq_liked_track_user_spotify_id"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "spotify_track_id", name="uq_liked_track_user_spotify_id"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
@@ -169,7 +171,9 @@ class LikedTrack(Base):
     artist_artwork_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     added_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     raw_metadata: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
 
 class ArtworkCache(Base):
@@ -189,7 +193,6 @@ class PlaylistCache(Base):
     cached_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
-
 class GenreCache(Base):
     __tablename__ = "genre_cache"
     artist_spotify_id: Mapped[str] = mapped_column(String(255), primary_key=True, index=True)
@@ -199,9 +202,7 @@ class GenreCache(Base):
 
 class FollowedShow(Base):
     __tablename__ = "followed_shows"
-    __table_args__ = (
-        UniqueConstraint("user_id", "brand_id", name="uq_followed_show_user_brand"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "brand_id", name="uq_followed_show_user_brand"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
@@ -226,9 +227,7 @@ class Notification(Base):
 
 class PushSubscription(Base):
     __tablename__ = "push_subscriptions"
-    __table_args__ = (
-        UniqueConstraint("user_id", "endpoint", name="uq_push_subscription_user_endpoint"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "endpoint", name="uq_push_subscription_user_endpoint"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
@@ -240,9 +239,7 @@ class PushSubscription(Base):
 
 class FollowedYouTubeChannel(Base):
     __tablename__ = "followed_youtube_channels"
-    __table_args__ = (
-        UniqueConstraint("user_id", "channel_id", name="uq_followed_youtube_channel_user"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "channel_id", name="uq_followed_youtube_channel_user"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
@@ -251,6 +248,3 @@ class FollowedYouTubeChannel(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-
-
-
