@@ -1,0 +1,68 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class LogAttendanceRequest(BaseModel):
+    setlist_id: str = Field(..., min_length=1, max_length=64)
+    support_setlist_ids: list[str] = Field(default_factory=list)
+
+
+class AttendedConcertResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    setlist_id: str
+    artist_name: str
+    artist_mbid: str | None = None
+    venue_name: str
+    city: str
+    country: str
+    event_date: datetime | None = None
+    tour_name: str | None = None
+    setlist_url: str | None = None
+    is_support_act: bool = False
+    parent_setlist_id: str | None = None
+    song_count: int = 0
+    raw_data: dict[str, Any] | None = None
+
+
+class DeleteConcertResponse(BaseModel):
+    deleted_count: int
+
+
+class ArtistGigItem(BaseModel):
+    id: int
+    setlist_id: str
+    date: str
+    venue: str
+    city: str
+    country: str
+    is_support: bool
+    song_count: int
+
+
+class ArtistLeaderboardItem(BaseModel):
+    artist_name: str
+    count: int
+    gigs: list[ArtistGigItem] = Field(default_factory=list)
+
+
+class SongLeaderboardItem(BaseModel):
+    track_name: str
+    artist_name: str
+    count: int
+
+
+class VenueLeaderboardItem(BaseModel):
+    venue_name: str
+    city: str
+    country: str
+    count: int
+
+
+class SetlistImportRequest(BaseModel):
+    username: str = Field(..., min_length=1, max_length=128)

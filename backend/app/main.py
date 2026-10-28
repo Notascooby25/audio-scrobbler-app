@@ -19,6 +19,7 @@ from .api.settings import router as scrobble_settings_router
 from .api.blocks import router as blocks_router
 from .api.tools import router as tools_router
 from .api.notifications import router as notifications_router
+from .api.setlists import router as setlists_router
 from .config import settings
 from .db import SessionLocal
 from .db import engine
@@ -46,6 +47,7 @@ app.include_router(scrobble_settings_router)
 app.include_router(blocks_router)
 app.include_router(tools_router)
 app.include_router(notifications_router)
+app.include_router(setlists_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -61,13 +63,24 @@ async def request_correlation_middleware(request, call_next):
     request_id = request.headers.get("X-Request-ID") or str(uuid4())
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
-    logger.info("request_completed request_id=%s method=%s path=%s status=%s", request_id, request.method, request.url.path, response.status_code)
+    logger.info(
+        "request_completed request_id=%s method=%s path=%s status=%s",
+        request_id,
+        request.method,
+        request.url.path,
+        response.status_code,
+    )
     return response
 
 
 @app.get("/health")
 def health_check() -> dict[str, str]:
-    return {"status": "ok", "app": settings.app_name, "version": settings.app_version, **{key: str(value) for key, value in snapshot().items()}}
+    return {
+        "status": "ok",
+        "app": settings.app_name,
+        "version": settings.app_version,
+        **{key: str(value) for key, value in snapshot().items()},
+    }
 
 
 @app.get("/metrics", response_class=PlainTextResponse)
