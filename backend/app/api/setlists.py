@@ -13,12 +13,14 @@ from ..schemas.setlists import (
     AttendedConcertResponse,
     DeleteConcertResponse,
     LogAttendanceRequest,
+    SetlistImportRequest,
     SongLeaderboardItem,
     VenueLeaderboardItem,
 )
 from ..services.setlist_attendance_service import SetlistAttendanceService
 from ..services.setlist_service import SetlistRateLimitError, SetlistService
 from ..services.setlist_stats_service import SetlistStatsService
+from worker.setlist_import import sync_user_setlist_history
 
 router = APIRouter(prefix="/api/setlists", tags=["setlists"])
 
@@ -196,3 +198,16 @@ def get_setlist_details(
         return data
     except SetlistRateLimitError as exc:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
+
+
+@router.post("/import")
+def import_setlists_from_profile(
+    payload: SetlistImportRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    return sync_user_setlist_history(
+        user_id=current_user.id,
+        setlist_username=payload.username.strip(),
+        db=db,
+    )
