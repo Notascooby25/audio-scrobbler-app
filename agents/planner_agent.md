@@ -106,7 +106,7 @@ These are mirrored in `~/.claude/agents/planner.md`.
   (`base64 -w0 <file>; echo`) and verify it with a hash check.
 - **Docs:** update affected docs (`docs/`, `HANDOVER.md`, these agent files) in
   the same piece of work.
-- **Changelog:** Whenever you plan a new feature or a significant change, always include a step to update `frontend/src/changelogData.js` with a new version entry summarizing the change in simple terms.
+- **Changelog & User Guide:** Whenever you plan a new feature or a significant change, always include a step to update `frontend/src/changelogData.js` with a new version entry summarizing the change in simple terms. If adding or changing user-facing capabilities, also include updating `frontend/src/components/settings/UserGuideSection.jsx` and `frontend/src/components/settings/FaqSection.jsx`.
 
 ## 4. Architecture: what actually exists
 
@@ -261,9 +261,9 @@ Include each item that applies:
 | Area | Command | Notes |
 |---|---|---|
 | Python linter | `ruff check backend/app worker scripts` | Configured in `pyproject.toml` (enforces `PLC0415` top-level imports). |
-| Shell linter | `shellcheck scripts/*.sh scripts/tests/*.sh` | Installed in `.venv` via `shellcheck-py` and run in CI. |
+| Shell linter | `.venv/bin/shellcheck scripts/*.sh scripts/tests/*.sh` | Installed in `.venv` via `shellcheck-py` and run in CI. |
 | Backend + worker | `PYTHONPATH=worker python -m pytest backend/app/tests worker/tests -q` | Python 3.12. |
-| Frontend | `cd frontend && npm ci && npm run lint && npm test && npm run build` | ESLint 9 + Vitest + React Testing Library. |
+| Frontend | `cd frontend && npm ci && npm run lint && npm test && npm run build` | ESLint 9 + Vitest + React Testing Library (run Prettier on changed files only). |
 | E2E | `cd frontend && npm run test:e2e` | Playwright. Local only; **not run in CI**. |
 | Migrations | `cd backend && alembic upgrade head` | Against a throwaway Postgres. |
 | Backup scripts | `bash scripts/tests/test_restore_drill.sh` | Hermetic fixture tests; GNU/Linux; run in CI. |

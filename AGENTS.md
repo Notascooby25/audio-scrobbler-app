@@ -18,12 +18,13 @@
   ```
 - **Shell Script Linter (ShellCheck):**
   ```bash
-  shellcheck scripts/*.sh scripts/tests/*.sh
+  .venv/bin/shellcheck scripts/*.sh scripts/tests/*.sh
   ```
 - **Frontend Linter & Formatter (ESLint + Prettier):**
   ```bash
   cd frontend && npm run lint
-  cd frontend && npm run format
+  # Format only your modified files with Prettier (avoid 'npm run format' on the full src/ tree to prevent reformatting untouched code):
+  npx prettier --write <path/to/modified/file>
   ```
 - **Backend & Worker Tests:**
   ```bash
@@ -60,7 +61,7 @@
 
 # Pre-Commit Security Review, Changelog & Version Control
 - **Mandatory Security Review:** Always run the `differential-review` skill on every change before anything is committed or merged, and report findings by severity.
-- **Changelog:** Whenever implementing a new feature, improvement, or bug fix, update `frontend/src/changelogData.js` with a new version entry at the top and bump `version` in `frontend/package.json`.
+- **Changelog & User Guide:** Whenever implementing a new feature, improvement, or bug fix, update `frontend/src/changelogData.js` with a new version entry at the top and bump `version` in `frontend/package.json`. If adding or changing user-facing capabilities, also update `frontend/src/components/settings/UserGuideSection.jsx` and `frontend/src/components/settings/FaqSection.jsx`.
 - **Commit & Push:** Check `git status` first. At the end of every task or major step that modifies files, stage your changes, commit with a descriptive conventional message (`feat:`, `fix:`, `docs:`), and push to GitHub. Pushing to `main` automatically deploys to production via GHCR and Watchtower; add `[skip ci]` to docs-only commits.
 
 # Files, Folders & Systems That Must Never Be Edited
