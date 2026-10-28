@@ -210,6 +210,39 @@ const FAQ_DATA = [
       </>
     ),
   },
+  {
+    id: "setlists-scrobbling",
+    category: "Set Lists & Gigs",
+    question: "How does concert scrobbling from Setlist.fm work?",
+    answer: (
+      <>
+        <p>
+          When you log attendance for a concert under the <strong>Set Lists</strong> tab, the app
+          retrieves the artist's full setlist and checks for any support bands who played at that
+          venue that evening.
+        </p>
+        <p>
+          The songs are sequenced chronologically backwards through the evening (support acts first,
+          headliner later) and stored in your primary listening history with source{" "}
+          <code>setlistfm</code>. If you ever un-log or delete a gig, a confirmation modal asks if
+          you'd like to purge those concert scrobbles from your library.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "setlists-import-export",
+    category: "Set Lists & Gigs",
+    question: "Can I import my past attended gigs from my Setlist.fm profile?",
+    answer: (
+      <p>
+        <strong>Yes!</strong> Click the <strong>Import / Export</strong> button in the Set Lists
+        tab, enter your Setlist.fm username (e.g. <code>crispylettuce</code>), and click Import. The
+        app will page through all your past attended concerts, caching the gigs and backfilling the
+        live songs into your scrobble library while safely honoring Setlist.fm's daily rate limits.
+      </p>
+    ),
+  },
 ];
 
 export default function FaqSection() {

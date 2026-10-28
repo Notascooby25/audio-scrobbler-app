@@ -1,5 +1,18 @@
 export const CHANGELOG = [
   {
+    version: "0.15.0",
+    date: "2026-10-28",
+    changes: [
+      "Introduced Set Lists navigation hub for concert and gig attendance tracking powered by Setlist.fm.",
+      "Added Setlist.fm gig search with Country, Venue, and Year filters.",
+      "Added 'I WAS THERE' 1-click attendance logging with automatic support acts detection on the bill.",
+      "Automatic concert scrobbling into listening history with non-overlapping chronological sequencing for support acts and headliners.",
+      "Added live music leaderboards: Artists Seen with expandable gig date/venue accordions, Songs Heard Live, and Venues Visited.",
+      "Added 1-click Setlist.fm historical profile import with automatic daily rate-limit throttling and JSON/CSV gig export.",
+      "Added double-confirmation gig deletion modal with support act cascade and automatic concert scrobble removal.",
+    ],
+  },
+  {
     version: "0.14.1",
     date: "2026-10-28",
     changes: [

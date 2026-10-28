@@ -30,6 +30,9 @@ export default function UserGuideSection() {
         <a href="#guide-privacy" className="guide-pill">
           Privacy & Ownership
         </a>
+        <a href="#guide-setlists" className="guide-pill">
+          Set Lists & Concerts
+        </a>
       </nav>
 
       {/* Chapter 1 */}
@@ -252,6 +255,43 @@ export default function UserGuideSection() {
             <strong>Export Your Complete History:</strong> You own your data. Go to{" "}
             <em>Settings → Data</em> to download your complete listening history anytime as a clean
             spreadsheet CSV or structured JSON file.
+          </li>
+        </ul>
+      </article>
+
+      {/* Chapter 7 */}
+      <article id="guide-setlists" className="guide-chapter">
+        <h3>7. Set Lists & Live Concert Tracking</h3>
+        <p>
+          Audio Scrobbler lets you track in-person concerts and gigs you attend, powered by
+          Setlist.fm:
+        </p>
+        <ul>
+          <li>
+            <strong>Find & Log a Gig:</strong> Head to the <em>Set Lists</em> tab and tap{" "}
+            <em>+ Log a Gig</em>. Search by artist name with optional filters for country, venue, or
+            year. Click <strong>I WAS THERE</strong> to log attendance.
+          </li>
+          <li>
+            <strong>Support Acts on the Bill:</strong> When logging a show, the app automatically
+            checks for other artists who performed at the same venue that night and prompts you to
+            select any support bands you watched.
+          </li>
+          <li>
+            <strong>Automatic Concert Scrobbles:</strong> All songs performed at the gig are
+            sequenced chronologically and added into your listening history with source{" "}
+            <code>setlistfm</code>, so they appear in your reports and charts.
+          </li>
+          <li>
+            <strong>Live Music Leaderboards:</strong> Switch between <em>Artists Seen</em> (ranked
+            by total gigs with expandable accordions showing every show you attended),{" "}
+            <em>Songs Heard</em> (live play counts), and <em>Venues Visited</em>.
+          </li>
+          <li>
+            <strong>Setlist.fm Account Import & Export:</strong> Have an existing Setlist.fm
+            profile? Click <em>Import / Export</em>
+            to enter your username and import your entire concert history, or download your gig
+            collection as JSON or CSV.
           </li>
         </ul>
       </article>

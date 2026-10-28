@@ -5,13 +5,22 @@ import {
   fetchVenueSupportActs,
   logConcertAttendance,
   fetchAttendances,
+  deleteAttendance,
+  refreshConcertSetlist,
   fetchArtistsSeenLeaderboard,
   fetchSongsHeardLeaderboard,
   fetchVenuesVisitedLeaderboard,
+  importSetlistHistory,
 } from "../../api/setlists";
 import GigSearchBar from "./GigSearchBar";
 import GigCard from "./GigCard";
 import SupportActsPromptModal from "./SupportActsPromptModal";
+import MyGigsTimeline from "./MyGigsTimeline";
+import ArtistsSeenLeaderboard from "./ArtistsSeenLeaderboard";
+import SongsHeardLeaderboard from "./SongsHeardLeaderboard";
+import VenuesLeaderboard from "./VenuesLeaderboard";
+import DeleteGigConfirmModal from "./DeleteGigConfirmModal";
+import ImportExportModal from "./ImportExportModal";
 
 export default function SetlistsPage() {
   const session = readSession();
@@ -25,9 +34,20 @@ export default function SetlistsPage() {
   // Support act prompt state
   const [selectedMainSetlist, setSelectedMainSetlist] = useState(null);
   const [supportActs, setSupportActs] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [isLogging, setIsLogging] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+
+  // Delete modal state
+  const [gigToDelete, setGigToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Refresh setlist state
+  const [isRefreshingId, setIsRefreshingId] = useState(null);
+
+  // Import/Export modal state
+  const [isImportExportOpen, setIsImportExportOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   // Data collections
   const [myGigs, setMyGigs] = useState([]);
@@ -35,6 +55,11 @@ export default function SetlistsPage() {
   const [songsLeaderboard, setSongsLeaderboard] = useState([]);
   const [venuesLeaderboard, setVenuesLeaderboard] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(""), 4000);
+  };
 
   const loadData = async () => {
     if (!token) return;
@@ -82,7 +107,6 @@ export default function SetlistsPage() {
     setSelectedMainSetlist(setlist);
     setIsLogging(true);
     try {
-      // Look up support acts at the same venue and date
       const venueId = setlist?.venue?.id;
       const eventDate = setlist?.eventDate;
       if (venueId && eventDate) {
@@ -96,11 +120,11 @@ export default function SetlistsPage() {
       } else {
         setSupportActs([]);
       }
-      setIsModalOpen(true);
+      setIsSupportModalOpen(true);
     } catch (err) {
       console.error("Error fetching support acts:", err);
       setSupportActs([]);
-      setIsModalOpen(true);
+      setIsSupportModalOpen(true);
     } finally {
       setIsLogging(false);
     }
@@ -115,16 +139,66 @@ export default function SetlistsPage() {
         setlistId: selectedMainSetlist.id,
         supportSetlistIds: chosenSupportIds,
       });
-      setIsModalOpen(false);
+      setIsSupportModalOpen(false);
       setSelectedMainSetlist(null);
-      setToastMessage("Concert logged! Songs added to your scrobble library.");
-      setTimeout(() => setToastMessage(""), 4000);
-      // Switch back to My Gigs to see the logged show
+      showToast("Concert logged! Songs added to your scrobble library.");
       setActiveTab("gigs");
     } catch (err) {
       alert(`Error logging concert: ${err.message}`);
     } finally {
       setIsLogging(false);
+    }
+  };
+
+  const handleRefreshSetlist = async (gig) => {
+    if (!token || !gig) return;
+    setIsRefreshingId(gig.id);
+    try {
+      await refreshConcertSetlist({ token, concertId: gig.id });
+      showToast(`Setlist for ${gig.artist_name} refreshed!`);
+      loadData();
+    } catch (err) {
+      alert(`Error refreshing setlist: ${err.message}`);
+    } finally {
+      setIsRefreshingId(null);
+    }
+  };
+
+  const handleDeleteConfirm = async (concertId, includeSupportActs) => {
+    if (!token) return;
+    setIsDeleting(true);
+    try {
+      const res = await deleteAttendance({ token, concertId, includeSupportActs });
+      setGigToDelete(null);
+      showToast(`Gig removed (${res?.deleted_count || 1} acts purged from scrobbles).`);
+      loadData();
+    } catch (err) {
+      alert(`Error deleting gig: ${err.message}`);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleImportSubmit = async (username) => {
+    if (!token) return;
+    setIsImporting(true);
+    try {
+      const res = await importSetlistHistory({ token, username });
+      setIsImportExportOpen(false);
+      if (res?.status === "completed") {
+        showToast(`Imported ${res?.imported_count || 0} concerts from Setlist.fm!`);
+      } else if (res?.status === "paused_rate_limit") {
+        showToast(
+          `Import paused at ${res?.imported_count || 0} concerts (daily quota reached). Progress saved!`
+        );
+      } else {
+        showToast(`Import finished with status: ${res?.status}`);
+      }
+      loadData();
+    } catch (err) {
+      alert(`Import error: ${err.message}`);
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -149,56 +223,68 @@ export default function SetlistsPage() {
           </p>
         </div>
 
-        {/* Segmented Tabs */}
-        <div
-          className="inline-flex rounded-lg p-1 bg-surface-hover"
-          style={{ border: "0.5px solid var(--color-border)" }}
-          role="tablist"
-        >
+        <div className="flex items-center gap-2">
+          {/* Segmented Tabs */}
+          <div
+            className="inline-flex rounded-lg p-1 bg-surface-hover"
+            style={{ border: "0.5px solid var(--color-border)" }}
+            role="tablist"
+          >
+            <button
+              type="button"
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                activeTab === "gigs" ? "bg-primary text-white" : "text-muted hover:text-ink"
+              }`}
+              onClick={() => setActiveTab("gigs")}
+            >
+              My Gigs
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                activeTab === "artists" ? "bg-primary text-white" : "text-muted hover:text-ink"
+              }`}
+              onClick={() => setActiveTab("artists")}
+            >
+              Artists Seen
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                activeTab === "songs" ? "bg-primary text-white" : "text-muted hover:text-ink"
+              }`}
+              onClick={() => setActiveTab("songs")}
+            >
+              Songs Heard
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                activeTab === "venues" ? "bg-primary text-white" : "text-muted hover:text-ink"
+              }`}
+              onClick={() => setActiveTab("venues")}
+            >
+              Venues
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                activeTab === "log" ? "bg-primary text-white" : "text-muted hover:text-ink"
+              }`}
+              onClick={() => setActiveTab("log")}
+            >
+              + Log a Gig
+            </button>
+          </div>
+
+          {/* Import / Export Trigger */}
           <button
             type="button"
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-              activeTab === "gigs" ? "bg-primary text-white" : "text-muted hover:text-ink"
-            }`}
-            onClick={() => setActiveTab("gigs")}
+            className="btn btn-secondary text-xs px-2.5 py-1.5"
+            onClick={() => setIsImportExportOpen(true)}
+            title="Import from Setlist.fm or Export your gigs"
           >
-            My Gigs
-          </button>
-          <button
-            type="button"
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-              activeTab === "artists" ? "bg-primary text-white" : "text-muted hover:text-ink"
-            }`}
-            onClick={() => setActiveTab("artists")}
-          >
-            Artists Seen
-          </button>
-          <button
-            type="button"
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-              activeTab === "songs" ? "bg-primary text-white" : "text-muted hover:text-ink"
-            }`}
-            onClick={() => setActiveTab("songs")}
-          >
-            Songs Heard
-          </button>
-          <button
-            type="button"
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-              activeTab === "venues" ? "bg-primary text-white" : "text-muted hover:text-ink"
-            }`}
-            onClick={() => setActiveTab("venues")}
-          >
-            Venues
-          </button>
-          <button
-            type="button"
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-              activeTab === "log" ? "bg-primary text-white" : "text-muted hover:text-ink"
-            }`}
-            onClick={() => setActiveTab("log")}
-          >
-            + Log a Gig
+            Import / Export
           </button>
         </div>
       </div>
@@ -244,119 +330,73 @@ export default function SetlistsPage() {
         <div>
           {isLoadingData ? (
             <div className="text-center py-10 text-muted">Loading your gigs...</div>
-          ) : myGigs.length === 0 ? (
-            <div className="card p-8 text-center text-muted">
-              You haven't logged any gigs yet. Tap <strong>+ Log a Gig</strong> to get started!
-            </div>
           ) : (
-            <div className="space-y-3">
-              {myGigs.map((gig) => (
-                <div key={gig.id} className="card p-4 flex justify-between items-center">
-                  <div>
-                    <h3 className="font-semibold text-base">
-                      {gig.artist_name} at {gig.venue_name}
-                    </h3>
-                    <div className="text-xs text-muted">
-                      {gig.city}, {gig.country} &bull;{" "}
-                      {gig.event_date ? new Date(gig.event_date).toLocaleDateString() : ""} &bull;{" "}
-                      {gig.song_count} songs
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <MyGigsTimeline
+              gigs={myGigs}
+              onRefreshSetlist={handleRefreshSetlist}
+              onDeleteGig={(gig) => setGigToDelete(gig)}
+              isRefreshingId={isRefreshingId}
+            />
           )}
         </div>
       )}
 
       {activeTab === "artists" && (
-        <div className="space-y-2">
+        <div>
           {isLoadingData ? (
-            <div className="text-center py-10 text-muted">Loading artist leaderboard...</div>
-          ) : artistsLeaderboard.length === 0 ? (
-            <div className="card p-8 text-center text-muted">No artists seen logged yet.</div>
+            <div className="text-center py-10 text-muted">Loading artists seen...</div>
           ) : (
-            artistsLeaderboard.map((a, idx) => (
-              <div key={a.artist_name} className="card p-3 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted font-bold w-6">{idx + 1}</span>
-                  <span className="font-semibold text-sm">{a.artist_name}</span>
-                </div>
-                <span className="badge font-bold px-2.5 py-0.5 rounded-full text-xs bg-surface-hover">
-                  {a.count} {a.count === 1 ? "gig" : "gigs"}
-                </span>
-              </div>
-            ))
+            <ArtistsSeenLeaderboard artists={artistsLeaderboard} />
           )}
         </div>
       )}
 
       {activeTab === "songs" && (
-        <div className="space-y-2">
+        <div>
           {isLoadingData ? (
-            <div className="text-center py-10 text-muted">Loading songs leaderboard...</div>
-          ) : songsLeaderboard.length === 0 ? (
-            <div className="card p-8 text-center text-muted">No live songs recorded yet.</div>
+            <div className="text-center py-10 text-muted">Loading songs heard live...</div>
           ) : (
-            songsLeaderboard.map((s, idx) => (
-              <div
-                key={`${s.track_name}-${s.artist_name}`}
-                className="card p-3 flex justify-between items-center"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted font-bold w-6">{idx + 1}</span>
-                  <div>
-                    <div className="font-semibold text-sm">{s.track_name}</div>
-                    <div className="text-xs text-muted">{s.artist_name}</div>
-                  </div>
-                </div>
-                <span className="badge font-bold px-2.5 py-0.5 rounded-full text-xs bg-surface-hover">
-                  {s.count} {s.count === 1 ? "time" : "times"}
-                </span>
-              </div>
-            ))
+            <SongsHeardLeaderboard songs={songsLeaderboard} />
           )}
         </div>
       )}
 
       {activeTab === "venues" && (
-        <div className="space-y-2">
+        <div>
           {isLoadingData ? (
             <div className="text-center py-10 text-muted">Loading venues leaderboard...</div>
-          ) : venuesLeaderboard.length === 0 ? (
-            <div className="card p-8 text-center text-muted">No venues visited yet.</div>
           ) : (
-            venuesLeaderboard.map((v, idx) => (
-              <div
-                key={`${v.venue_name}-${v.city}`}
-                className="card p-3 flex justify-between items-center"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted font-bold w-6">{idx + 1}</span>
-                  <div>
-                    <div className="font-semibold text-sm">{v.venue_name}</div>
-                    <div className="text-xs text-muted">
-                      {v.city}, {v.country}
-                    </div>
-                  </div>
-                </div>
-                <span className="badge font-bold px-2.5 py-0.5 rounded-full text-xs bg-surface-hover">
-                  {v.count} {v.count === 1 ? "visit" : "visits"}
-                </span>
-              </div>
-            ))
+            <VenuesLeaderboard venues={venuesLeaderboard} />
           )}
         </div>
       )}
 
       {/* Support Acts Prompt Modal */}
       <SupportActsPromptModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isSupportModalOpen}
+        onClose={() => setIsSupportModalOpen(false)}
         mainSetlist={selectedMainSetlist}
         supportActs={supportActs}
         onConfirm={handleConfirmAttendance}
         isSubmitting={isLogging}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteGigConfirmModal
+        isOpen={!!gigToDelete}
+        onClose={() => setGigToDelete(null)}
+        gig={gigToDelete}
+        onConfirm={handleDeleteConfirm}
+        isDeleting={isDeleting}
+      />
+
+      {/* Import / Export Modal */}
+      <ImportExportModal
+        isOpen={isImportExportOpen}
+        onClose={() => setIsImportExportOpen(false)}
+        onImport={handleImportSubmit}
+        isImporting={isImporting}
+        token={token}
       />
     </div>
   );
