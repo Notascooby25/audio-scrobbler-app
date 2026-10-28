@@ -248,3 +248,43 @@ class FollowedYouTubeChannel(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class AttendedConcert(Base):
+    __tablename__ = "attended_concerts"
+    __table_args__ = (UniqueConstraint("user_id", "setlist_id", name="uq_user_attended_setlist"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    setlist_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    artist_name: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
+    artist_mbid: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    venue_name: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
+    city: Mapped[str] = mapped_column(String(128), nullable=False)
+    country: Mapped[str] = mapped_column(String(128), nullable=False)
+    event_date: Mapped[datetime] = mapped_column(DateTime, index=True, nullable=False)
+    tour_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    setlist_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_support_act: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    parent_setlist_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    raw_data: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    song_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class SetlistCache(Base):
+    __tablename__ = "setlist_cache"
+
+    cache_key: Mapped[str] = mapped_column(String(255), primary_key=True)
+    response_json: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, index=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class SetlistApiUsage(Base):
+    __tablename__ = "setlist_api_usage"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    last_call_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    daily_date: Mapped[str] = mapped_column(String(10), nullable=False)  # 'YYYY-MM-DD'
+    daily_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
