@@ -20,6 +20,7 @@ import { readSession } from "../session";
 import ImportProgressBar from "../components/ImportProgressBar";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 import ScopeCreepTools from "../components/ScopeCreepTools";
+import YouTubeScrobblerTools from "../components/YouTubeScrobblerTools";
 import UserGuideSection from "../components/settings/UserGuideSection";
 import FaqSection from "../components/settings/FaqSection";
 
@@ -71,6 +72,10 @@ export default function SettingsPage() {
       return tabParam;
     }
     return "general";
+  });
+  const [scrobbleToolMode, setScrobbleToolMode] = useState(() => {
+    if (tabParam === "youtube") return "youtube";
+    return "bbc";
   });
   const [settings, setSettings] = useState(null);
   const [status, setStatus] = useState("idle");
@@ -574,7 +579,32 @@ export default function SettingsPage() {
                 boxSizing: "border-box",
               }}
             >
-              <ScopeCreepTools />
+              <div
+                className="segmented-tabs"
+                role="tablist"
+                style={{ marginBottom: "1.25rem", maxWidth: "400px" }}
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={scrobbleToolMode === "bbc"}
+                  className={scrobbleToolMode === "bbc" ? "active" : ""}
+                  onClick={() => setScrobbleToolMode("bbc")}
+                >
+                  Radio / BBC Sounds
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={scrobbleToolMode === "youtube"}
+                  className={scrobbleToolMode === "youtube" ? "active" : ""}
+                  onClick={() => setScrobbleToolMode("youtube")}
+                >
+                  YouTube Concerts
+                </button>
+              </div>
+
+              {scrobbleToolMode === "bbc" ? <ScopeCreepTools /> : <YouTubeScrobblerTools />}
             </div>
           )}
         </div>
