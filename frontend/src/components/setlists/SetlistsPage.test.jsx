@@ -99,4 +99,20 @@ describe("SetlistsPage", () => {
       expect(screen.getByText("Die Spitz")).toBeInTheDocument();
     });
   });
+
+  it("renders Setlist.fm attribution link complying with Terms of Service", () => {
+    render(
+      <MemoryRouter>
+        <SetlistsPage />
+      </MemoryRouter>
+    );
+
+    const attributionLink = screen.getByRole("link", { name: "setlist.fm" });
+    expect(attributionLink).toBeInTheDocument();
+    expect(attributionLink).toHaveAttribute("href", "https://www.setlist.fm");
+
+    const termsLink = screen.getByRole("link", { name: "Terms of Service" });
+    expect(termsLink).toBeInTheDocument();
+    expect(termsLink).toHaveAttribute("href", "https://www.setlist.fm/help/terms");
+  });
 });

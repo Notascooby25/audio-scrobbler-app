@@ -77,7 +77,7 @@ export default function ImportExportModal({ isOpen, onClose, onImport, isImporti
 
   const handleExport = (format) => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
-    const url = `${API_BASE_URL}/api/setlists/export?format=${format}`;
+    const url = `${API_BASE_URL}/setlists/export?format=${format}`;
     fetch(url, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => res.blob())
       .then((blob) => {

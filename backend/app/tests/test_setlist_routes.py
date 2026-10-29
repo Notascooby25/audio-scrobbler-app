@@ -78,53 +78,53 @@ def test_setlist_routes_crud():
         mock_svc.get_venue_date_setlists.return_value = []
 
         # 1. Search
-        search_res = client.get("/api/setlists/search?artist_name=Public+Service+Broadcasting")
+        search_res = client.get("/setlists/search?artist_name=Public+Service+Broadcasting")
         assert search_res.status_code == 200
         assert search_res.json()["total"] == 1
 
         # 2. Log attendance
-        attend_res = client.post("/api/setlists/attend", json={"setlist_id": "show_123", "support_setlist_ids": []})
+        attend_res = client.post("/setlists/attend", json={"setlist_id": "show_123", "support_setlist_ids": []})
         assert attend_res.status_code == 201
         logged_concert = attend_res.json()
         assert logged_concert["artist_name"] == "Public Service Broadcasting"
         concert_id = logged_concert["id"]
 
         # 3. Get attendances (My Gigs)
-        gigs_res = client.get("/api/setlists/attendances")
+        gigs_res = client.get("/setlists/attendances")
         assert gigs_res.status_code == 200
         assert len(gigs_res.json()) == 1
 
         # 4. Stats endpoints
-        artists_res = client.get("/api/setlists/stats/artists")
+        artists_res = client.get("/setlists/stats/artists")
         assert artists_res.status_code == 200
         assert len(artists_res.json()) == 1
         assert artists_res.json()[0]["artist_name"] == "Public Service Broadcasting"
 
-        songs_res = client.get("/api/setlists/stats/songs")
+        songs_res = client.get("/setlists/stats/songs")
         assert songs_res.status_code == 200
         assert len(songs_res.json()) == 2
 
-        venues_res = client.get("/api/setlists/stats/venues")
+        venues_res = client.get("/setlists/stats/venues")
         assert venues_res.status_code == 200
         assert len(venues_res.json()) == 1
         assert venues_res.json()[0]["venue_name"] == "Alexandra Palace"
 
         # 5. Export
-        export_json = client.get("/api/setlists/export?format=json")
+        export_json = client.get("/setlists/export?format=json")
         assert export_json.status_code == 200
         assert "Public Service Broadcasting" in export_json.text
 
-        export_csv = client.get("/api/setlists/export?format=csv")
+        export_csv = client.get("/setlists/export?format=csv")
         assert export_csv.status_code == 200
         assert "Alexandra Palace" in export_csv.text
 
         # 6. Delete gig
-        del_res = client.delete(f"/api/setlists/{concert_id}?include_support_acts=true")
+        del_res = client.delete(f"/setlists/{concert_id}?include_support_acts=true")
         assert del_res.status_code == 200
         assert del_res.json()["deleted_count"] == 1
 
         # Verify attendances now empty
-        empty_gigs = client.get("/api/setlists/attendances")
+        empty_gigs = client.get("/setlists/attendances")
         assert empty_gigs.status_code == 200
         assert len(empty_gigs.json()) == 0
 
@@ -152,7 +152,7 @@ def test_import_preview_and_selective_import():
         mock_sync.return_value = {"status": "completed", "imported_count": 1, "total_found": 1}
 
         # 1. Preview
-        preview_res = client.get("/api/setlists/import/preview?username=crispylettuce&page=1")
+        preview_res = client.get("/setlists/import/preview?username=crispylettuce&page=1")
         assert preview_res.status_code == 200
         preview_json = preview_res.json()
         assert preview_json["total"] == 1
@@ -162,7 +162,7 @@ def test_import_preview_and_selective_import():
 
         # 2. Selective Import
         import_res = client.post(
-            "/api/setlists/import",
+            "/setlists/import",
             json={"username": "crispylettuce", "setlist_ids": ["show_preview_1"]},
         )
         assert import_res.status_code == 200

@@ -17,6 +17,15 @@ async function parseResponse(response) {
     error.detail = detail;
     throw error;
   }
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    const text = await response.text().catch(() => "");
+    if (text.includes("<!doctype") || text.includes("<html")) {
+      throw new Error(
+        "Received HTML instead of JSON from server. Please ensure the proxy is properly routing /setlists to the backend."
+      );
+    }
+  }
   return response.json();
 }
 
@@ -28,7 +37,7 @@ export async function searchSetlists({ token, artistName, countryCode, year, ven
   if (venueName) params.set("venue_name", venueName);
   if (p) params.set("p", p);
 
-  const response = await fetch(`${API_BASE_URL}/api/setlists/search?${params.toString()}`, {
+  const response = await fetch(`${API_BASE_URL}/setlists/search?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return parseResponse(response);
@@ -38,14 +47,14 @@ export async function fetchVenueSupportActs({ token, venueId, eventDate, exclude
   const params = new URLSearchParams({ venue_id: venueId, event_date: eventDate });
   if (excludeSetlistId) params.set("exclude_setlist_id", excludeSetlistId);
 
-  const response = await fetch(`${API_BASE_URL}/api/setlists/venue-support?${params.toString()}`, {
+  const response = await fetch(`${API_BASE_URL}/setlists/venue-support?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return parseResponse(response);
 }
 
 export async function logConcertAttendance({ token, setlistId, supportSetlistIds = [] }) {
-  const response = await fetch(`${API_BASE_URL}/api/setlists/attend`, {
+  const response = await fetch(`${API_BASE_URL}/setlists/attend`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -61,7 +70,7 @@ export async function logConcertAttendance({ token, setlistId, supportSetlistIds
 
 export async function fetchAttendances({ token, limit = 50, offset = 0 }) {
   const params = new URLSearchParams({ limit, offset });
-  const response = await fetch(`${API_BASE_URL}/api/setlists/attendances?${params.toString()}`, {
+  const response = await fetch(`${API_BASE_URL}/setlists/attendances?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return parseResponse(response);
@@ -69,7 +78,7 @@ export async function fetchAttendances({ token, limit = 50, offset = 0 }) {
 
 export async function deleteAttendance({ token, concertId, includeSupportActs = true }) {
   const params = new URLSearchParams({ include_support_acts: includeSupportActs });
-  const response = await fetch(`${API_BASE_URL}/api/setlists/${concertId}?${params.toString()}`, {
+  const response = await fetch(`${API_BASE_URL}/setlists/${concertId}?${params.toString()}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -77,7 +86,7 @@ export async function deleteAttendance({ token, concertId, includeSupportActs = 
 }
 
 export async function refreshConcertSetlist({ token, concertId }) {
-  const response = await fetch(`${API_BASE_URL}/api/setlists/${concertId}/refresh`, {
+  const response = await fetch(`${API_BASE_URL}/setlists/${concertId}/refresh`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -85,21 +94,21 @@ export async function refreshConcertSetlist({ token, concertId }) {
 }
 
 export async function fetchArtistsSeenLeaderboard({ token }) {
-  const response = await fetch(`${API_BASE_URL}/api/setlists/stats/artists`, {
+  const response = await fetch(`${API_BASE_URL}/setlists/stats/artists`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return parseResponse(response);
 }
 
 export async function fetchSongsHeardLeaderboard({ token, limit = 100 }) {
-  const response = await fetch(`${API_BASE_URL}/api/setlists/stats/songs?limit=${limit}`, {
+  const response = await fetch(`${API_BASE_URL}/setlists/stats/songs?limit=${limit}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return parseResponse(response);
 }
 
 export async function fetchVenuesVisitedLeaderboard({ token }) {
-  const response = await fetch(`${API_BASE_URL}/api/setlists/stats/venues`, {
+  const response = await fetch(`${API_BASE_URL}/setlists/stats/venues`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return parseResponse(response);
@@ -107,14 +116,14 @@ export async function fetchVenuesVisitedLeaderboard({ token }) {
 
 export async function previewSetlistsImport({ token, username, page = 1 }) {
   const params = new URLSearchParams({ username, page });
-  const response = await fetch(`${API_BASE_URL}/api/setlists/import/preview?${params.toString()}`, {
+  const response = await fetch(`${API_BASE_URL}/setlists/import/preview?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return parseResponse(response);
 }
 
 export async function importSetlistHistory({ token, username, setlistIds = null }) {
-  const response = await fetch(`${API_BASE_URL}/api/setlists/import`, {
+  const response = await fetch(`${API_BASE_URL}/setlists/import`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

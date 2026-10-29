@@ -24,7 +24,7 @@ from ..services.setlist_service import SetlistRateLimitError, SetlistService
 from ..services.setlist_import_service import sync_user_setlist_history
 from ..services.setlist_stats_service import SetlistStatsService
 
-router = APIRouter(prefix="/api/setlists", tags=["setlists"])
+router = APIRouter(prefix="/setlists", tags=["setlists"])
 
 
 @router.get("/search")

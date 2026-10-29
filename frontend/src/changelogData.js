@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.15.2",
+    date: "2026-10-29",
+    changes: [
+      "Fixed reverse proxy routing for Set Lists by aligning API prefix with nginx.conf and Vite proxy rules, resolving JSON parse error on gig search and import preview.",
+      "Added Setlist.fm Terms of Service attribution footer on Set Lists page.",
+    ],
+  },
+  {
     version: "0.15.1",
     date: "2026-10-29",
     changes: [

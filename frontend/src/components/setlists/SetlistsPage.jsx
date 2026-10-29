@@ -371,6 +371,32 @@ export default function SetlistsPage() {
         </div>
       )}
 
+      {/* Setlist.fm Attribution */}
+      <footer
+        className="mt-12 pt-6 pb-2 text-center text-xs text-muted"
+        style={{ borderTop: "0.5px solid var(--color-border)" }}
+      >
+        Concert and setlist data provided by{" "}
+        <a
+          href="https://www.setlist.fm"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-ink transition-colors"
+        >
+          setlist.fm
+        </a>{" "}
+        under their{" "}
+        <a
+          href="https://www.setlist.fm/help/terms"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-ink transition-colors"
+        >
+          Terms of Service
+        </a>
+        .
+      </footer>
+
       {/* Support Acts Prompt Modal */}
       <SupportActsPromptModal
         isOpen={isSupportModalOpen}
