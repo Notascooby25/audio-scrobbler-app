@@ -29,6 +29,16 @@ class LogManualConcertRequest(BaseModel):
     allow_duplicate: bool = False
 
 
+class UpdateConcertRequest(BaseModel):
+    artist_name: str = Field(..., min_length=1, max_length=255)
+    venue_name: str = Field(..., min_length=1, max_length=255)
+    city: str = Field("", max_length=128)
+    country: str = Field("", max_length=128)
+    event_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    tour_name: str | None = Field(None, max_length=255)
+    allow_duplicate: bool = False
+
+
 class AttendedConcertResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

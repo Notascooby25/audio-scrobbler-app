@@ -25,6 +25,7 @@ from ..schemas.setlists import (
     SetlistPreviewResponse,
     SongLeaderboardItem,
     UpdateConcertNotesRequest,
+    UpdateConcertRequest,
     VenueLeaderboardItem,
 )
 from ..services.setlist_artwork_service import backfill_live_artwork
@@ -183,6 +184,35 @@ def log_manual_concert(
         raise _already_logged(exc) from exc
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.patch("/{concert_id}", response_model=AttendedConcertResponse)
+def update_concert(
+    concert_id: int,
+    payload: UpdateConcertRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> AttendedConcertResponse:
+    attendance_svc = SetlistAttendanceService(db=db, setlist_service=SetlistService(db=db))
+    try:
+        concert = attendance_svc.update_concert_details(
+            user_id=current_user.id,
+            concert_id=concert_id,
+            artist_name=payload.artist_name,
+            venue_name=payload.venue_name,
+            city=payload.city,
+            country=payload.country,
+            event_date_str=payload.event_date,
+            tour_name=payload.tour_name,
+            allow_duplicate=payload.allow_duplicate,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gig not found.") from exc
+    except DuplicateGigError as exc:
+        raise _already_logged(exc) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return AttendedConcertResponse.model_validate(concert)
 
 
 @router.patch("/{concert_id}/notes", response_model=AttendedConcertResponse)

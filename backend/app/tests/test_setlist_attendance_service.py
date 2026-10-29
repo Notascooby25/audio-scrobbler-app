@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.db import Base
 from backend.app.models import AttendedConcert, ListeningEvent
-from backend.app.services.setlist_attendance_service import SetlistAttendanceService
+from backend.app.services.setlist_attendance_service import DuplicateGigError, SetlistAttendanceService
 
 
 @pytest.fixture
@@ -190,3 +190,100 @@ def test_log_and_update_concert_notes(db_session: Session):
     # Clear notes with empty string
     cleared = service.update_concert_notes(user_id=1, concert_id=concert.id, notes="")
     assert cleared.notes is None
+
+
+def _bill_service(db_session: Session) -> SetlistAttendanceService:
+    shows = {
+        "head": {
+            "id": "head",
+            "artist": {"name": "Doves"},
+            "venue": {"name": "Rock City", "city": {"name": "Nottingham", "country": {"name": "UK"}}},
+            "eventDate": "01-05-2025",
+            "sets": {"set": [{"song": [{"name": "Pounding"}, {"name": "There Goes the Fear"}]}]},
+        },
+        "supp": {
+            "id": "supp",
+            "artist": {"name": "Support Band"},
+            "venue": {"name": "Rock City", "city": {"name": "Nottingham", "country": {"name": "UK"}}},
+            "eventDate": "01-05-2025",
+            "sets": {"set": [{"song": [{"name": "Opener"}]}]},
+        },
+    }
+    mock = MagicMock()
+    mock.get_setlist.side_effect = lambda sid, force_refresh=False: shows[sid]
+    return SetlistAttendanceService(db=db_session, setlist_service=mock)
+
+
+def _plays(db_session: Session, artist: str) -> list[ListeningEvent]:
+    return (
+        db_session.query(ListeningEvent)
+        .filter_by(user_id=1, artist_name=artist)
+        .order_by(ListeningEvent.played_at)
+        .all()
+    )
+
+
+def test_editing_a_gig_moves_its_scrobbles_and_support_acts(db_session: Session):
+    service = _bill_service(db_session)
+    gig = service.log_concert_attendance(user_id=1, setlist_id="head", support_setlist_ids=["supp"])
+    times_before = [e.played_at.time() for e in _plays(db_session, "Doves")]
+
+    edited = service.update_concert_details(
+        user_id=1,
+        concert_id=gig.id,
+        artist_name="Doves ",
+        venue_name="Rescue Rooms",
+        city="Nottingham",
+        country="UK",
+        event_date_str="2025-05-02",
+        tour_name="The Universal Want",
+    )
+
+    assert (edited.venue_name, edited.event_date.date().isoformat(), edited.tour_name) == (
+        "Rescue Rooms",
+        "2025-05-02",
+        "The Universal Want",
+    )
+    head_plays = _plays(db_session, "Doves")
+    assert {e.played_at.date().isoformat() for e in head_plays} == {"2025-05-02"}
+    # Same start times, just on the corrected night
+    assert [e.played_at.time() for e in head_plays] == times_before
+    assert {e.album_name for e in head_plays} == {"Live at Rescue Rooms"}
+    support = db_session.query(AttendedConcert).filter_by(setlist_id="supp").one()
+    assert (support.venue_name, support.event_date.date().isoformat()) == ("Rescue Rooms", "2025-05-02")
+    assert _plays(db_session, "Support Band")[0].played_at.date().isoformat() == "2025-05-02"
+    # Setlist.fm's own copy is untouched
+    assert edited.raw_data["eventDate"] == "01-05-2025"
+
+
+def test_refresh_after_an_edit_keeps_the_corrected_date(db_session: Session):
+    service = _bill_service(db_session)
+    gig = service.log_concert_attendance(user_id=1, setlist_id="head")
+    service.update_concert_details(1, gig.id, "Doves", "Rock City", "Nottingham", "UK", "2025-05-03")
+
+    refreshed = service.refresh_concert_setlist(user_id=1, concert_id=gig.id)
+
+    assert refreshed.event_date.date().isoformat() == "2025-05-03"
+    assert {e.played_at.date().isoformat() for e in _plays(db_session, "Doves")} == {"2025-05-03"}
+
+
+def test_editing_into_a_clash_needs_confirmation(db_session: Session):
+    service = _bill_service(db_session)
+    first = service.log_manual_concert(1, "Elbow", "Arena", "Leeds", "UK", "2025-06-01")
+    second = service.log_manual_concert(1, "Elbow", "Arena", "Leeds", "UK", "2025-06-08")
+
+    # Re-saving a gig unchanged never clashes with itself
+    service.update_concert_details(1, first.id, "Elbow", "Arena", "Leeds", "UK", "2025-06-01")
+    with pytest.raises(DuplicateGigError):
+        service.update_concert_details(1, second.id, "elbow", "Arena", "Leeds", "UK", "2025-06-01")
+    moved = service.update_concert_details(
+        1, second.id, "Elbow", "Arena", "Leeds", "UK", "2025-06-01", allow_duplicate=True
+    )
+    assert moved.event_date.date().isoformat() == "2025-06-01"
+
+
+def test_editing_someone_elses_gig_is_not_found(db_session: Session):
+    service = _bill_service(db_session)
+    gig = service.log_manual_concert(1, "Elbow", "Arena", "Leeds", "UK", "2025-06-01")
+    with pytest.raises(LookupError):
+        service.update_concert_details(2, gig.id, "Elbow", "Arena", "Leeds", "UK", "2025-06-02")
