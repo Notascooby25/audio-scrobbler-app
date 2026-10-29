@@ -298,6 +298,8 @@ class SetlistService:
         data = self.search_setlists_raw(params=params)
         if not data:
             return {"total": 0, "setlist": []}
+        # Search results are full setlists, so logging one from the results needs no extra call
+        self.remember_setlists(data.get("setlist"))
 
         if month:
             raw_list = data.get("setlist", []) if isinstance(data, dict) else []
@@ -313,6 +315,7 @@ class SetlistService:
                 next_setlists = next_data.get("setlist", []) if isinstance(next_data, dict) else []
                 if not next_setlists:
                     break
+                self.remember_setlists(next_setlists)
                 filtered_list.extend(
                     [s for s in next_setlists if isinstance(s, dict) and _matches_month(s.get("eventDate"), month)]
                 )
@@ -349,6 +352,8 @@ class SetlistService:
             setlists = data.get("setlist", []) if isinstance(data, dict) else []
             if not isinstance(setlists, list):
                 setlists = []
+            # Bill entries are full setlists too, so "+ I was there" and support acts reuse them
+            self.remember_setlists(setlists)
             ttl = timedelta(days=7) if setlists else timedelta(hours=1)
             self.db.merge(SetlistCache(cache_key=cache_key, response_json={"setlist": setlists}, expires_at=now + ttl))
             self.db.commit()

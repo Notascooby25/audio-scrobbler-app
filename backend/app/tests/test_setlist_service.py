@@ -298,3 +298,19 @@ def test_force_refresh_skips_the_cache_and_stores_the_new_copy(db_session: Sessi
         fresh = service.get_setlist("aa11bb22", force_refresh=True)
     assert fresh["sets"]["set"][0]["song"][0]["name"] == "Fixed Name"
     assert service.get_setlist("aa11bb22")["sets"]["set"][0]["song"][0]["name"] == "Fixed Name"
+
+
+def test_logging_from_search_or_the_bill_needs_no_extra_call(db_session: Session):
+    service = SetlistService(db=db_session, api_key="dummy_key")
+    search_page = {"total": 1, "setlist": [_full_setlist("aa11bb22")]}
+    bill = {"setlist": [_full_setlist("cc33dd44", song="Support Song")]}
+
+    with (
+        patch("time.sleep"),
+        patch("httpx.get", side_effect=[_fake_response(search_page), _fake_response(bill)]) as mock_get,
+    ):
+        service.search_setlists(artist_name="Red Rum Club", country_code="GB")
+        service.get_venue_date_setlists(venue_id="v1", event_date_str="16-10-2026")
+        assert service.get_setlist("aa11bb22")["id"] == "aa11bb22"
+        assert service.get_setlist("cc33dd44")["sets"]["set"][0]["song"][0]["name"] == "Support Song"
+    assert mock_get.call_count == 2
