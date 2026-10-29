@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { readSession } from "../../session";
+import { fetchUserProfile } from "../../api";
 import {
   searchSetlists,
   fetchVenueSupportActs,
@@ -43,11 +44,24 @@ export default function SetlistsPage() {
 
   // The active tab lives in the URL (?tab=) so the browser Back button returns to it
   const [searchParams, setSearchParams] = useSearchParams();
+  // ?userId= shows a followed person's gigs, read-only (like viewing their Library)
+  const routeUserId = searchParams.get("userId");
+  const viewUserId =
+    routeUserId && Number(routeUserId) !== session?.userId ? Number(routeUserId) : undefined;
+  const isViewing = viewUserId !== undefined;
+  const [viewedProfile, setViewedProfile] = useState(null);
+  const [viewError, setViewError] = useState("");
   const tabParam = searchParams.get("tab");
-  const activeTab = TAB_IDS.includes(tabParam) ? tabParam : "gigs";
-  const setActiveTab = (tab) => setSearchParams(tab === "gigs" ? {} : { tab });
+  const activeTab =
+    TAB_IDS.includes(tabParam) && !(isViewing && tabParam === "log") ? tabParam : "gigs";
+  const setActiveTab = (tab) =>
+    setSearchParams({
+      ...(isViewing ? { userId: String(viewUserId) } : {}),
+      ...(tab === "gigs" ? {} : { tab }),
+    });
   const navigate = useNavigate();
-  const openGig = (concertId) => navigate(`/gigs/${concertId}`);
+  const openGig = (concertId) =>
+    navigate(isViewing ? `/gigs/${concertId}?userId=${viewUserId}` : `/gigs/${concertId}`);
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
@@ -120,22 +134,31 @@ export default function SetlistsPage() {
   const loadData = async () => {
     if (!token) return;
     setIsLoadingData(true);
+    setViewError("");
+    const userId = viewUserId;
     try {
       if (activeTab === "gigs") {
-        const data = await fetchAttendances({ token });
+        const data = await fetchAttendances({ token, userId });
         setMyGigs(data || []);
       } else if (activeTab === "artists") {
-        const data = await fetchArtistsSeenLeaderboard({ token });
+        const data = await fetchArtistsSeenLeaderboard({ token, userId });
         setArtistsLeaderboard(data || []);
       } else if (activeTab === "songs") {
-        const data = await fetchSongsHeardLeaderboard({ token });
+        const data = await fetchSongsHeardLeaderboard({ token, userId });
         setSongsLeaderboard(data || []);
       } else if (activeTab === "venues") {
-        const data = await fetchVenuesVisitedLeaderboard({ token });
+        const data = await fetchVenuesVisitedLeaderboard({ token, userId });
         setVenuesLeaderboard(data || []);
       }
     } catch (err) {
       console.error("Error loading setlists data:", err);
+      if (isViewing) {
+        setViewError(
+          err?.status === 403
+            ? "Follow this person to see their gigs."
+            : "Couldn't load their gigs."
+        );
+      }
     } finally {
       setIsLoadingData(false);
     }
@@ -143,7 +166,15 @@ export default function SetlistsPage() {
 
   useEffect(() => {
     loadData();
-  }, [activeTab, token]);
+  }, [activeTab, token, viewUserId]);
+
+  useEffect(() => {
+    setViewedProfile(null);
+    if (!token || !isViewing) return;
+    fetchUserProfile({ token, userId: viewUserId })
+      .then(setViewedProfile)
+      .catch(() => {});
+  }, [token, viewUserId]);
 
   useEffect(() => {
     if (token) {
@@ -313,13 +344,33 @@ export default function SetlistsPage() {
       )}
 
       <header className="sfm-page-header">
-        <h1>Set Lists</h1>
-        <p className="sfm-page-intro">
-          Track your concert attendances, live song history, and artist stats
-        </p>
+        {isViewing ? (
+          <>
+            <h1>@{viewedProfile?.username || "..."}&apos;s Set Lists</h1>
+            <p className="sfm-page-intro">
+              The gigs they&apos;ve logged. Their notes stay private.{" "}
+              <Link className="sfm-link" to={`/profile/${viewUserId}`}>
+                Back to profile
+              </Link>
+            </p>
+          </>
+        ) : (
+          <>
+            <h1>Set Lists</h1>
+            <p className="sfm-page-intro">
+              Track your concert attendances, live song history, and artist stats
+            </p>
+          </>
+        )}
       </header>
 
-      {apiConfigured === false && (
+      {viewError && (
+        <p className="sfm-error" role="alert">
+          {viewError}
+        </p>
+      )}
+
+      {apiConfigured === false && !isViewing && (
         <div className="sfm-warning" data-testid="unconfigured-warning">
           <strong>Setlist.fm API key is not detected by the server.</strong>
           <p>
@@ -342,30 +393,34 @@ export default function SetlistsPage() {
                 className={`sfm-tab ${activeTab === tab.id ? "active" : ""}`}
                 onClick={() => setActiveTab(tab.id)}
               >
-                <span className="sfm-tab-long">{tab.label}</span>
+                <span className="sfm-tab-long">
+                  {isViewing && tab.id === "gigs" ? "Gigs" : tab.label}
+                </span>
                 <span className="sfm-tab-short" aria-hidden="true">
                   {tab.short}
                 </span>
               </button>
             ))}
           </div>
-          <div className="sfm-tabbar-actions">
-            <button
-              type="button"
-              className={`sfm-link ${activeTab === "log" ? "is-current" : ""}`}
-              onClick={() => setActiveTab("log")}
-            >
-              + Log a Gig
-            </button>
-            <button
-              type="button"
-              className="sfm-link"
-              onClick={() => setIsImportExportOpen(true)}
-              title="Import from Setlist.fm or Export your gigs"
-            >
-              Import / Export
-            </button>
-          </div>
+          {!isViewing && (
+            <div className="sfm-tabbar-actions">
+              <button
+                type="button"
+                className={`sfm-link ${activeTab === "log" ? "is-current" : ""}`}
+                onClick={() => setActiveTab("log")}
+              >
+                + Log a Gig
+              </button>
+              <button
+                type="button"
+                className="sfm-link"
+                onClick={() => setIsImportExportOpen(true)}
+                title="Import from Setlist.fm or Export your gigs"
+              >
+                Import / Export
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Main Tab Content */}
@@ -478,11 +533,18 @@ export default function SetlistsPage() {
 
         {activeTab === "gigs" && (
           <div>
-            <GigInvites token={token} onAdded={() => loadData()} />
+            {!isViewing && <GigInvites token={token} onAdded={() => loadData()} />}
             {isLoadingData ? (
-              <div className="sfm-empty">Loading your gigs...</div>
+              <div className="sfm-empty">
+                {isViewing ? "Loading their gigs..." : "Loading your gigs..."}
+              </div>
             ) : (
-              <MyGigsTimeline gigs={myGigs} onOpenGig={openGig} onRemoveGig={setGigToRemove} />
+              <MyGigsTimeline
+                gigs={myGigs}
+                onOpenGig={openGig}
+                onRemoveGig={isViewing ? null : setGigToRemove}
+                isOwn={!isViewing}
+              />
             )}
           </div>
         )}

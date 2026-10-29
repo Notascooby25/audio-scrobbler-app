@@ -55,6 +55,7 @@ test.beforeEach(async ({ page }) => {
     }
     if (pathname === '/setlists/attendances') return route.fulfill({ json: [gig] })
     if (pathname === '/setlists/status') return route.fulfill({ json: { configured: true } })
+    if (pathname === '/users/2/profile') return route.fulfill({ json: { id: 2, username: 'sam' } })
     return route.fulfill({ json: [] })
   })
 })
@@ -84,6 +85,28 @@ test.describe('set lists', () => {
     await expect(page).toHaveURL(/\/setlists$/)
     await expect(page.getByRole('heading', { name: 'All Gigs (1)' })).toBeVisible()
   })
+  test("a followed person's gigs open read-only and Back returns to their list", async ({ page }) => {
+    const viewedWith = []
+    page.on('request', (request) => {
+      const url = new URL(request.url())
+      if (url.pathname.startsWith('/setlists/attendances')) viewedWith.push(url.searchParams.get('user_id'))
+    })
+    await page.goto('/setlists?userId=2')
+    await expect(page.getByRole('heading', { name: "@sam's Set Lists" })).toBeVisible()
+    await expect(page.getByRole('button', { name: '+ Log a Gig' })).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'The Lottery Winners' }).click()
+    await expect(page).toHaveURL(/\/gigs\/7\?userId=2$/)
+    await expect(page.getByText("From @sam's gigs")).toBeVisible()
+    await expect(page.getByRole('button', { name: '+ I was there too' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Edit details' })).toHaveCount(0)
+    expect(viewedWith.length).toBeGreaterThan(0)
+    expect(viewedWith.every((id) => id === '2')).toBe(true)
+
+    await page.getByRole('button', { name: /back/i }).click()
+    await expect(page).toHaveURL(/\/setlists\?userId=2$/)
+  })
+
   test('an invite from someone you follow adds the gig to My Gigs', async ({ page }) => {
     let added = false
     // Registered after the catch-all, so these win

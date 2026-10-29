@@ -5,7 +5,12 @@ import { isFutureDate } from "./SetlistDateBadge";
 import SetlistPagination from "./SetlistPagination";
 import useListPaging from "./useListPaging";
 
-export default function MyGigsTimeline({ gigs = [], onOpenGig = null, onRemoveGig = null }) {
+export default function MyGigsTimeline({
+  gigs = [],
+  onOpenGig = null,
+  onRemoveGig = null,
+  isOwn = true,
+}) {
   const pastGigs = gigs.filter((g) => !isFutureDate(g.event_date));
   const futureGigs = gigs.filter((g) => isFutureDate(g.event_date));
 
@@ -20,6 +25,7 @@ export default function MyGigsTimeline({ gigs = [], onOpenGig = null, onRemoveGi
   const setFilter = (next) => updateParams({ filter: next === "all" ? null : next, page: null });
 
   if (gigs.length === 0) {
+    if (!isOwn) return <p className="sfm-empty">No gigs logged yet.</p>;
     return (
       <p className="sfm-empty">
         You haven&apos;t logged any gigs yet. Use <strong>+ Log a Gig</strong> to get started.

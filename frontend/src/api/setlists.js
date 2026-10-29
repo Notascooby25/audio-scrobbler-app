@@ -202,26 +202,38 @@ export async function fetchSetlistDetail({ token, setlistId }) {
   return parseResponse(response);
 }
 
+/** Query string for viewing a followed person's gigs ("" for your own). */
+function viewingQuery(userId, prefix = "?") {
+  return userId ? `${prefix}user_id=${encodeURIComponent(userId)}` : "";
+}
+
 // My Gigs pages through the list in the browser, so ask for every gig by default
-export async function fetchAttendances({ token, limit = 2000, offset = 0 }) {
+export async function fetchAttendances({ token, limit = 2000, offset = 0, userId }) {
   const params = new URLSearchParams({ limit, offset });
+  if (userId) params.set("user_id", userId);
   const response = await fetch(`${API_BASE_URL}/setlists/attendances?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return parseResponse(response);
 }
 
-export async function fetchAttendance({ token, concertId }) {
-  const response = await fetch(`${API_BASE_URL}/setlists/attendances/${concertId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+export async function fetchAttendance({ token, concertId, userId }) {
+  const response = await fetch(
+    `${API_BASE_URL}/setlists/attendances/${concertId}${viewingQuery(userId)}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
   return parseResponse(response);
 }
 
-export async function fetchGigBill({ token, concertId }) {
-  const response = await fetch(`${API_BASE_URL}/setlists/attendances/${concertId}/bill`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+export async function fetchGigBill({ token, concertId, userId }) {
+  const response = await fetch(
+    `${API_BASE_URL}/setlists/attendances/${concertId}/bill${viewingQuery(userId)}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
   return parseResponse(response);
 }
 
@@ -254,24 +266,36 @@ export async function refreshConcertSetlist({ token, concertId }) {
   return parseResponse(response);
 }
 
-export async function fetchArtistsSeenLeaderboard({ token }) {
-  const response = await fetch(`${API_BASE_URL}/setlists/stats/artists`, {
+export async function fetchArtistsSeenLeaderboard({ token, userId }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/stats/artists${viewingQuery(userId)}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return parseResponse(response);
 }
 
-export async function fetchSongsHeardLeaderboard({ token, limit = 1000 }) {
-  const response = await fetch(`${API_BASE_URL}/setlists/stats/songs?limit=${limit}`, {
+export async function fetchSongsHeardLeaderboard({ token, limit = 1000, userId }) {
+  const response = await fetch(
+    `${API_BASE_URL}/setlists/stats/songs?limit=${limit}${viewingQuery(userId, "&")}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  return parseResponse(response);
+}
+
+export async function fetchVenuesVisitedLeaderboard({ token, userId }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/stats/venues${viewingQuery(userId)}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return parseResponse(response);
 }
 
-export async function fetchVenuesVisitedLeaderboard({ token }) {
-  const response = await fetch(`${API_BASE_URL}/setlists/stats/venues`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+/** "I was there too": copies a followed person's gig (and its support acts) to your gigs. */
+export async function addFriendsGig({ token, concertId, userId }) {
+  const response = await fetch(
+    `${API_BASE_URL}/setlists/attendances/${concertId}/add-to-mine${viewingQuery(userId)}`,
+    { method: "POST", headers: { Authorization: `Bearer ${token}` } }
+  );
   return parseResponse(response);
 }
 

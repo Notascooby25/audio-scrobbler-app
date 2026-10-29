@@ -16,8 +16,13 @@ vi.mock("../../api/setlists", () => ({
   removeGigCompanion: vi.fn().mockResolvedValue(null),
   fetchGigBill: vi.fn().mockResolvedValue({ acts: [], complete: true, capped: false }),
   logBillAct: vi.fn(),
+  addFriendsGig: vi.fn(),
   alreadyLoggedInfo: (err) =>
     err?.status === 409 && err?.detail?.code === "already_logged" ? err.detail : null,
+}));
+
+vi.mock("../../api", () => ({
+  fetchUserProfile: vi.fn().mockResolvedValue({ id: 2, username: "sam" }),
 }));
 
 vi.mock("../../session", () => ({
@@ -374,5 +379,76 @@ describe("SetlistGigPage", () => {
     setlistsApi.fetchGigBill.mockResolvedValueOnce({ acts: [], complete: false, capped: false });
     renderGigPage();
     expect(await screen.findByText(/may be incomplete/i)).toBeInTheDocument();
+  });
+
+  it("shows a followed person's gig read-only and adds it to yours", async () => {
+    setlistsApi.fetchAttendance.mockResolvedValueOnce({ ...gig, notes: null });
+    setlistsApi.fetchGigBill.mockResolvedValueOnce({
+      acts: [
+        {
+          setlist_id: "s1",
+          artist_name: "Pip Blom",
+          logged: true,
+          concert_id: 13,
+          role: "support",
+        },
+        { setlist_id: "s2", artist_name: "Die Spitz", logged: false, concert_id: null, role: null },
+      ],
+      complete: true,
+      capped: false,
+    });
+    setlistsApi.addFriendsGig.mockResolvedValueOnce({ id: 501 });
+    renderGigPage(["/gigs/12?userId=2"]);
+
+    await screen.findByRole("heading", { name: "Bombay Bicycle Club Setlist" });
+    expect(setlistsApi.fetchAttendance).toHaveBeenCalledWith({
+      token: "test-token",
+      concertId: "12",
+      userId: 2,
+    });
+    expect(await screen.findByText("From @sam's gigs")).toBeInTheDocument();
+    for (const name of [/refresh from setlist\.fm/i, /edit details/i, /delete gig/i, /add note/i]) {
+      expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
+    }
+    expect(screen.queryByRole("heading", { name: "My notes" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Went with" })).not.toBeInTheDocument();
+    expect(setlistsApi.fetchGigCompanions).not.toHaveBeenCalled();
+
+    // Their bill is read-only and links stay on their gigs
+    expect(await screen.findByRole("link", { name: "Pip Blom" })).toHaveAttribute(
+      "href",
+      "/gigs/13?userId=2"
+    );
+    expect(screen.getByText("✓ Saw them")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "I was there for Die Spitz" })
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "+ I was there too" }));
+    expect(await screen.findByText(/Added to your gigs\./)).toBeInTheDocument();
+    expect(setlistsApi.addFriendsGig).toHaveBeenCalledWith({
+      token: "test-token",
+      concertId: 12,
+      userId: 2,
+    });
+    expect(screen.getByRole("link", { name: "View your gig" })).toHaveAttribute(
+      "href",
+      "/gigs/501"
+    );
+    expect(screen.queryByRole("button", { name: "+ I was there too" })).not.toBeInTheDocument();
+  });
+
+  it("says so when you already logged a friend's gig", async () => {
+    setlistsApi.fetchAttendance.mockResolvedValueOnce({ ...gig, notes: null });
+    setlistsApi.addFriendsGig.mockRejectedValueOnce(
+      Object.assign(new Error("HTTP 409: Gig already logged."), {
+        status: 409,
+        detail: { code: "already_logged", same_show: true, existing: { id: 7 } },
+      })
+    );
+    renderGigPage(["/gigs/12?userId=2"]);
+    fireEvent.click(await screen.findByRole("button", { name: "+ I was there too" }));
+    expect(await screen.findByText(/already logged this gig/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View your gig" })).toHaveAttribute("href", "/gigs/7");
   });
 });
