@@ -253,6 +253,21 @@ export async function previewSetlistsImport({ token, username, page = 1 }) {
   return parseResponse(response);
 }
 
+export async function fetchImportJob({ token }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/import/job`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function cancelImportJob({ token }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/import/job`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
 export async function importSetlistsFromFile({ token, format, content }) {
   const response = await fetch(`${API_BASE_URL}/setlists/import/file`, {
     method: "POST",

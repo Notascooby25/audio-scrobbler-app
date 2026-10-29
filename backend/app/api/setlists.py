@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from ..api.deps import get_current_user
+from ..api.ingestion import require_worker_token
 from ..db import get_db
 from ..models import AttendedConcert, User
 from ..schemas.setlists import (
@@ -15,6 +16,7 @@ from ..schemas.setlists import (
     FileImportRequest,
     FileImportResponse,
     GigBillResponse,
+    SetlistImportJobResponse,
     LogBillActRequest,
     LogAttendanceRequest,
     LogManualConcertRequest,
@@ -34,6 +36,7 @@ from ..services.setlist_service import (
     SetlistUserNotFoundError,
 )
 from ..services.setlist_file_import_service import FileImportError, import_gigs_from_file
+from ..services import setlist_import_job_service as import_jobs
 from ..services.setlist_import_service import sync_user_setlist_history
 from ..services.setlist_stats_service import SetlistStatsService
 
@@ -481,7 +484,7 @@ def import_setlists_from_file(
     current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     try:
-        return import_gigs_from_file(
+        result = import_gigs_from_file(
             user_id=current_user.id,
             file_format=payload.format,
             content=payload.content,
@@ -490,6 +493,43 @@ def import_setlists_from_file(
         )
     except FileImportError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    if result["awaiting_songs_ids"]:
+        import_jobs.save_paused_import(
+            db,
+            current_user.id,
+            "file_songs",
+            {"status": "paused_rate_limit", "total_found": len(result["awaiting_songs_ids"])},
+            payload=result["awaiting_songs_ids"],
+        )
+        result["resumes_automatically"] = True
+    return result
+
+
+@router.get("/import/job", response_model=SetlistImportJobResponse)
+def get_import_job(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    return {"job": import_jobs.job_summary(import_jobs.open_job(db, current_user.id))}
+
+
+@router.delete("/import/job", response_model=SetlistImportJobResponse)
+def cancel_import_job(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    if not import_jobs.cancel_open_job(db, current_user.id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No paused import.")
+    return {"job": None}
+
+
+@router.post("/internal/resume-imports")
+def resume_paused_imports(
+    db: Session = Depends(get_db),
+    _: None = Depends(require_worker_token),
+) -> dict[str, int]:
+    """Called by the worker: carries on Setlist.fm imports paused at the daily quota."""
+    return import_jobs.resume_due_jobs(db)
 
 
 @router.post("/import")
@@ -498,10 +538,11 @@ def import_setlists_from_profile(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
+    username = payload.username.strip()
     try:
-        return sync_user_setlist_history(
+        result = sync_user_setlist_history(
             user_id=current_user.id,
-            setlist_username=payload.username.strip(),
+            setlist_username=username,
             db=db,
             selected_setlist_ids=payload.setlist_ids,
         )
@@ -513,3 +554,18 @@ def import_setlists_from_profile(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except SetlistRateLimitError as exc:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
+    if result.get("status") == "paused_rate_limit":
+        import_jobs.save_paused_import(
+            db,
+            current_user.id,
+            "selected" if payload.setlist_ids is not None else "profile",
+            result,
+            setlist_username=username,
+            payload=result.get("remaining_ids"),
+        )
+        result["resumes_automatically"] = True
+    elif result.get("status") == "completed":
+        import_jobs.finish_open_job(db, current_user.id, "selected" if payload.setlist_ids is not None else "profile")
+    result.pop("remaining_ids", None)
+    result.pop("resume_page", None)
+    return result

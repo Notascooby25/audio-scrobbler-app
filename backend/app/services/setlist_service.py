@@ -185,16 +185,18 @@ class SetlistService:
             logger.error("Setlist.fm HTTP error: %s", e)
             raise
 
-    def get_setlist(self, setlist_id: str) -> dict[str, Any]:
+    def get_setlist(self, setlist_id: str, force_refresh: bool = False) -> dict[str, Any]:
+        """One setlist, served from the cache unless `force_refresh` (Refresh from Setlist.fm)."""
         cache_key = f"setlist:{setlist_id}"
         now = datetime.utcnow()
-        cached = (
-            self.db.query(SetlistCache)
-            .filter(SetlistCache.cache_key == cache_key, SetlistCache.expires_at > now)
-            .first()
-        )
-        if cached and isinstance(cached.response_json, dict):
-            return cached.response_json
+        if not force_refresh:
+            cached = (
+                self.db.query(SetlistCache)
+                .filter(SetlistCache.cache_key == cache_key, SetlistCache.expires_at > now)
+                .first()
+            )
+            if cached and isinstance(cached.response_json, dict):
+                return cached.response_json
 
         data = self._request(f"/setlist/{setlist_id}")
         if data:
@@ -206,6 +208,28 @@ class SetlistService:
             self.db.merge(new_cache)
             self.db.commit()
         return data
+
+    def remember_setlists(self, items: object) -> None:
+        """Caches full setlists that list responses (attended, search, venue bill) already
+        returned, so logging one of them later doesn't spend another API call.
+
+        Only setlists with songs are kept: an empty one may be filled in on Setlist.fm
+        later, and AGENTS.md rules out long-lived empty cache entries.
+        """
+        if not isinstance(items, list):
+            return
+        expires_at = datetime.utcnow() + timedelta(days=7)
+        stored = False
+        for item in items:
+            if not isinstance(item, dict) or not isinstance(item.get("id"), str) or not item["id"]:
+                continue
+            sets = item.get("sets")
+            if not isinstance(sets, dict) or not sets.get("set"):
+                continue
+            self.db.merge(SetlistCache(cache_key=f"setlist:{item['id']}", response_json=item, expires_at=expires_at))
+            stored = True
+        if stored:
+            self.db.commit()
 
     def search_setlists_raw(self, params: dict[str, Any]) -> dict[str, Any]:
         return self._request("/search/setlists", params=params)
@@ -274,6 +298,8 @@ class SetlistService:
         data = self.search_setlists_raw(params=params)
         if not data:
             return {"total": 0, "setlist": []}
+        # Search results are full setlists, so logging one from the results needs no extra call
+        self.remember_setlists(data.get("setlist"))
 
         if month:
             raw_list = data.get("setlist", []) if isinstance(data, dict) else []
@@ -289,6 +315,7 @@ class SetlistService:
                 next_setlists = next_data.get("setlist", []) if isinstance(next_data, dict) else []
                 if not next_setlists:
                     break
+                self.remember_setlists(next_setlists)
                 filtered_list.extend(
                     [s for s in next_setlists if isinstance(s, dict) and _matches_month(s.get("eventDate"), month)]
                 )
@@ -325,6 +352,8 @@ class SetlistService:
             setlists = data.get("setlist", []) if isinstance(data, dict) else []
             if not isinstance(setlists, list):
                 setlists = []
+            # Bill entries are full setlists too, so "+ I was there" and support acts reuse them
+            self.remember_setlists(setlists)
             ttl = timedelta(days=7) if setlists else timedelta(hours=1)
             self.db.merge(SetlistCache(cache_key=cache_key, response_json={"setlist": setlists}, expires_at=now + ttl))
             self.db.commit()
@@ -379,6 +408,8 @@ class SetlistService:
                 setlists = data.get("setlist", []) if isinstance(data, dict) else []
                 if total > 0 or len(setlists) > 0:
                     logger.info("Setlist.fm found %s shows with username casing '%s'", total, candidate)
+                    # Each attended show is a full setlist; keep them so importing costs no extra calls
+                    self.remember_setlists(setlists)
                     return data
                 if last_data is None:
                     last_data = data

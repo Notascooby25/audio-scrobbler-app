@@ -10,10 +10,15 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.app.api.deps import get_current_user
+from backend.app.config import settings
 from backend.app.db import Base, get_db
 from backend.app.main import app
-from backend.app.models import AttendedConcert, ListeningEvent, User
-from backend.app.services.setlist_service import SetlistApiKeyMissingError, SetlistUserNotFoundError
+from backend.app.models import AttendedConcert, ListeningEvent, SetlistImportJob, User
+from backend.app.services.setlist_service import (
+    SetlistApiKeyMissingError,
+    SetlistRateLimitError,
+    SetlistUserNotFoundError,
+)
 
 engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
 TestingSession = sessionmaker(bind=engine)
@@ -44,6 +49,7 @@ def setup_function():
     db = TestingSession()
     db.query(ListeningEvent).delete()
     db.query(AttendedConcert).delete()
+    db.query(SetlistImportJob).delete()
     db.query(User).delete()
     db.add(
         User(
@@ -496,3 +502,59 @@ def test_log_bill_act_is_owner_only():
     assert res.status_code == 404
     mine = _add_gig(42, "hl_mine", "Elbow")
     assert client.post(f"/setlists/attendances/{mine}/bill", json={"setlist_id": "../user/x"}).status_code == 422
+
+
+def test_paused_profile_import_becomes_a_job_you_can_see_and_cancel():
+    assert client.get("/setlists/import/job").json() == {"job": None}
+
+    with patch("backend.app.api.setlists.sync_user_setlist_history") as mock_sync:
+        mock_sync.return_value = {
+            "status": "paused_rate_limit",
+            "imported_count": 20,
+            "total_found": 480,
+            "message": "Daily Setlist.fm API quota reached (1400/1400).",
+            "resume_page": 2,
+        }
+        res = client.post("/setlists/import", json={"username": "andy202"})
+    assert res.status_code == 200
+    body = res.json()
+    assert body["resumes_automatically"] is True
+    assert "resume_page" not in body
+
+    job = client.get("/setlists/import/job").json()["job"]
+    assert (job["kind"], job["imported_count"], job["total"]) == ("profile", 20, 480)
+
+    assert client.delete("/setlists/import/job").status_code == 200
+    assert client.get("/setlists/import/job").json() == {"job": None}
+    assert client.delete("/setlists/import/job").status_code == 404
+
+
+def test_file_import_over_quota_queues_the_missing_songs():
+    rows = [
+        {
+            "setlist_url": "https://www.setlist.fm/setlist/doves/2025/rock-city-nottingham-england-1a2b3c4d.html",
+            "artist_name": "Doves",
+            "venue_name": "Rock City",
+            "event_date": "2025-05-01",
+        }
+    ]
+    with patch("backend.app.api.setlists.SetlistService") as MockServiceCls:
+        MockServiceCls.return_value.get_setlist.side_effect = SetlistRateLimitError("quota")
+        res = client.post("/setlists/import/file", json={"format": "json", "content": json.dumps(rows)})
+
+    assert res.status_code == 200
+    assert res.json()["resumes_automatically"] is True
+    assert "awaiting_songs_ids" not in res.json()
+    job = client.get("/setlists/import/job").json()["job"]
+    assert (job["kind"], job["total"]) == ("file_songs", 1)
+
+
+def test_resume_imports_route_requires_the_worker_token():
+    assert client.post("/setlists/internal/resume-imports").status_code == 401
+    assert client.post("/setlists/internal/resume-imports", headers={"X-Worker-Token": "wrong"}).status_code == 401
+    with patch("backend.app.api.setlists.import_jobs.resume_due_jobs", return_value={"processed": 0}) as mock_resume:
+        res = client.post(
+            "/setlists/internal/resume-imports", headers={"X-Worker-Token": settings.worker_ingestion_token}
+        )
+    assert res.status_code == 200
+    mock_resume.assert_called_once()

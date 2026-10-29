@@ -282,6 +282,30 @@ class SetlistCache(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
+class SetlistImportJob(Base):
+    """A Setlist.fm import that stopped at the daily quota, resumed later by the worker."""
+
+    __tablename__ = "setlist_import_jobs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    # "profile" (attended pages), "selected" (chosen ids) or "file_songs" (fetch songs for gigs)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    setlist_username: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    # Remaining setlist ids ("selected") or concert ids ("file_songs")
+    payload: Mapped[list[object] | None] = mapped_column(JSON, nullable=True)
+    next_page: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), default="paused", index=True, nullable=False)
+    imported_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    resume_after: Mapped[datetime] = mapped_column(DateTime, index=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+
 class SetlistApiUsage(Base):
     __tablename__ = "setlist_api_usage"
 

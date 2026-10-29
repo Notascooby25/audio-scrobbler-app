@@ -270,7 +270,11 @@ export default function SetlistsPage() {
         showToast(`Imported ${res?.imported_count || 0} concerts from Setlist.fm!`);
       } else if (res?.status === "paused_rate_limit") {
         showToast(
-          `Import paused at ${res?.imported_count || 0} concerts (daily quota reached). Progress saved!`
+          `Imported ${res?.imported_count || 0} concerts, then paused at the daily Setlist.fm limit. ${
+            res?.resumes_automatically
+              ? "The rest will import automatically after midnight UTC."
+              : "Progress saved!"
+          }`
         );
       } else {
         showToast(`Import finished with status: ${res?.status}`);

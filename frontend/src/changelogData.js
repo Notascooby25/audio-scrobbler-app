@@ -1,5 +1,15 @@
 export const CHANGELOG = [
   {
+    version: "0.23.0",
+    date: "2026-10-29",
+    changes: [
+      "Much lighter on your Setlist.fm allowance: importing your profile now takes about one request per 20 gigs instead of 21, and logging a gig from search results or the bill needs no extra request.",
+      "Imports that hit the daily Setlist.fm limit now carry on by themselves after midnight UTC. Import / Export shows how far a paused import has got, with a Cancel link, and you'll get a notification when it finishes.",
+      "File imports that ran out of allowance now fetch the missing songs automatically later.",
+      "Fixed: Refresh from Setlist.fm now always fetches the latest setlist instead of a saved copy up to a week old.",
+    ],
+  },
+  {
     version: "0.22.0",
     date: "2026-10-29",
     changes: [

@@ -391,8 +391,8 @@ class SetlistAttendanceService:
         if not concert:
             raise ValueError(f"Concert {concert_id} not found.")
 
-        # Re-fetch from Setlist.fm (bypassing old cache or fresh)
-        data = self.setlist_service.get_setlist(concert.setlist_id)
+        # Always ask Setlist.fm: the cached copy may predate corrections made there
+        data = self.setlist_service.get_setlist(concert.setlist_id, force_refresh=True)
         if not data:
             return concert
 
