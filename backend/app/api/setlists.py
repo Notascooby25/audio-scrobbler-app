@@ -14,6 +14,8 @@ from ..schemas.setlists import (
     DeleteConcertResponse,
     FileImportRequest,
     FileImportResponse,
+    GigBillResponse,
+    LogBillActRequest,
     LogAttendanceRequest,
     LogManualConcertRequest,
     SetlistImportRequest,
@@ -274,6 +276,44 @@ def get_attendance(
     if gig is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gig not found.")
     return gig
+
+
+@router.get("/attendances/{concert_id}/bill", response_model=GigBillResponse)
+def get_attendance_bill(
+    concert_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    stats_svc = SetlistStatsService(db=db)
+    gig = stats_svc.get_gig(user_id=current_user.id, concert_id=concert_id)
+    if gig is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gig not found.")
+    return stats_svc.get_gig_bill(user_id=current_user.id, gig=gig, setlist_service=SetlistService(db=db))
+
+
+@router.post(
+    "/attendances/{concert_id}/bill",
+    response_model=AttendedConcertResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def log_attendance_bill_act(
+    concert_id: int,
+    payload: LogBillActRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> AttendedConcert:
+    gig = SetlistStatsService(db=db).get_gig(user_id=current_user.id, concert_id=concert_id)
+    if gig is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gig not found.")
+    attendance_svc = SetlistAttendanceService(db=db, setlist_service=SetlistService(db=db))
+    try:
+        return attendance_svc.log_bill_act(user_id=current_user.id, gig=gig, setlist_id=payload.setlist_id)
+    except DuplicateGigError as exc:
+        raise _already_logged(exc) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except SetlistRateLimitError as exc:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
 
 
 @router.get("/stats/artists", response_model=list[ArtistLeaderboardItem])

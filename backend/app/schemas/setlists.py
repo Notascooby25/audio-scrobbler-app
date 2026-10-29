@@ -100,6 +100,27 @@ class VenueLeaderboardItem(BaseModel):
     gigs: list[ConcertRefItem] = Field(default_factory=list)
 
 
+class GigBillAct(BaseModel):
+    setlist_id: str
+    artist_name: str
+    logged: bool
+    concert_id: int | None = None
+    role: Literal["support", "headliner"] | None = None
+    song_count: int | None = None
+
+
+class LogBillActRequest(BaseModel):
+    # Setlist.fm ids are short alphanumerics; anything else never reaches the API path
+    setlist_id: str = Field(..., min_length=1, max_length=32, pattern=r"^[0-9A-Za-z_-]+$")
+
+
+class GigBillResponse(BaseModel):
+    acts: list[GigBillAct]
+    # False when Setlist.fm couldn't be checked, so only logged acts are listed
+    complete: bool
+    capped: bool
+
+
 class FileImportRequest(BaseModel):
     format: Literal["csv", "json"]
     # The browser sends the file's text; 2 MB cap matches the service limit

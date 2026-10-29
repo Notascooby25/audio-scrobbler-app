@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from ..models import AttendedConcert, ListeningEvent
 from .setlist_service import SetlistService
+from .setlist_stats_service import _venue_key
 
 logger = logging.getLogger(__name__)
 
@@ -231,6 +232,80 @@ class SetlistAttendanceService:
 
         self.db.commit()
         return hl_concert
+
+    def log_bill_act(self, user_id: int, gig: AttendedConcert, setlist_id: str) -> AttendedConcert:
+        """Logs another act from the same venue and night as `gig`.
+
+        From a headliner's page the act becomes that gig's support act. From a support
+        act's page it's logged as a normal gig (usually the headliner) and linked as the
+        support act's parent if it had none.
+        """
+        data = self.setlist_service.get_setlist(setlist_id)
+        if not data:
+            raise ValueError(f"Setlist with ID {setlist_id} could not be found.")
+
+        venue = data.get("venue", {}) if isinstance(data.get("venue"), dict) else {}
+        city = venue.get("city", {}) if isinstance(venue.get("city"), dict) else {}
+        event_dt = parse_event_date(data.get("eventDate"))
+        gig_raw = gig.raw_data if isinstance(gig.raw_data, dict) else {}
+        gig_venue_id = (gig_raw.get("venue") or {}).get("id") if isinstance(gig_raw.get("venue"), dict) else None
+        same_venue = (
+            str(venue.get("id")) == str(gig_venue_id)
+            if gig_venue_id
+            else _venue_key(venue.get("name"), city.get("name")) == _venue_key(gig.venue_name, gig.city)
+        )
+        if not same_venue or not gig.event_date or event_dt.date() != gig.event_date.date():
+            raise ValueError("That act isn't on this gig's bill (different venue or night).")
+
+        artist_name = data.get("artist", {}).get("name", "Unknown Artist")
+        existing = self.find_existing_gig(user_id, setlist_id, artist_name, event_dt)
+        if existing:
+            raise DuplicateGigError(existing, same_show=existing.setlist_id == setlist_id)
+
+        as_support = not gig.is_support_act
+        day = datetime.combine(event_dt.date(), datetime.min.time())
+        if as_support:
+            earlier_supports = (
+                self.db.query(AttendedConcert)
+                .filter_by(user_id=user_id, parent_setlist_id=gig.setlist_id, is_support_act=True)
+                .count()
+            )
+            start_time = day + timedelta(hours=18, minutes=45 + earlier_supports * 45)
+        else:
+            start_time = day + timedelta(hours=20, minutes=45)
+            if not gig.parent_setlist_id:
+                gig.parent_setlist_id = setlist_id
+
+        songs = extract_songs_from_setlist_data(data)
+        concert = AttendedConcert(
+            user_id=user_id,
+            setlist_id=setlist_id,
+            artist_name=artist_name,
+            artist_mbid=data.get("artist", {}).get("mbid"),
+            venue_name=venue.get("name") or gig.venue_name,
+            city=city.get("name") or gig.city,
+            country=(city.get("country") or {}).get("name") or gig.country,
+            event_date=event_dt,
+            tour_name=(data.get("tour") or {}).get("name"),
+            setlist_url=data.get("url"),
+            is_support_act=as_support,
+            parent_setlist_id=gig.setlist_id if as_support else None,
+            raw_data=data,
+            song_count=len(songs),
+        )
+        self.db.add(concert)
+        self._create_scrobbles_for_setlist(
+            user_id=user_id,
+            setlist_id=setlist_id,
+            artist_name=artist_name,
+            venue_name=concert.venue_name,
+            tour_name=concert.tour_name,
+            songs=songs,
+            start_time=start_time,
+        )
+        self.db.commit()
+        self.db.refresh(concert)
+        return concert
 
     def _create_scrobbles_for_setlist(
         self,

@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.22.0",
+    date: "2026-10-29",
+    changes: [
+      "On the bill: each gig's page now lists the other acts at that venue that night, under My notes, with a tick for the ones you've logged.",
+      "Tap + I was there next to an act to log it in place (as a support act when you're on the headliner's page), with Undo straight after.",
+      "Faster, quota-friendly support act lookups: who-else-played results are now cached, so revisiting a gig doesn't use your Setlist.fm allowance.",
+    ],
+  },
+  {
     version: "0.21.0",
     date: "2026-10-29",
     changes: [

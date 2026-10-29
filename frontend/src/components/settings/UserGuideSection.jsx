@@ -290,6 +290,13 @@ export default function UserGuideSection() {
             preview its songs before logging it.
           </li>
           <li>
+            <strong>On the Bill:</strong> Under <em>My notes</em> on a gig&apos;s page, see the
+            other acts who played that venue the same night. Acts you&apos;ve logged show{" "}
+            <em>✓ I was there</em> and link to their own gig page; tap <em>+ I was there</em> next
+            to any other act to log it (from a headliner&apos;s page it&apos;s saved as a support
+            act), or <em>Undo</em> straight after.
+          </li>
+          <li>
             <strong>Already Logged &amp; Mistakes:</strong> If you log a gig you already have (the
             same Setlist.fm show, or the same artist on the same day), you&apos;re asked before
             it&apos;s logged again. Logged something by mistake? Tap <em>Undo</em> in the

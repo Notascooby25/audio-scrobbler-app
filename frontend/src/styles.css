@@ -5756,6 +5756,47 @@ button.sfm-back {
   justify-content: space-between;
 }
 
+.sfm-gig-side {
+  display: grid;
+  gap: 16px;
+}
+
+.sfm-bill {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sfm-bill li {
+  align-items: baseline;
+  border-bottom: 1px solid var(--color-border-subtle);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.sfm-bill li:last-child {
+  border-bottom: 0;
+}
+
+.sfm-bill-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sfm-bill-status {
+  display: flex;
+  flex: 0 0 auto;
+  font-size: 13px;
+  gap: 10px;
+}
+
+.sfm-bill-done {
+  color: var(--color-success);
+  font-weight: 500;
+}
+
 .sfm-notes-text {
   margin: 0;
   white-space: pre-line;

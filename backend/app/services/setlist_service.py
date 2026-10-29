@@ -305,6 +305,31 @@ class SetlistService:
         self.db.commit()
         return data
 
+    def _cached_venue_date_setlists(self, venue_id: str, event_date_str: str) -> list[dict[str, Any]]:
+        """Every setlist at a venue on a date, cached so gig pages don't spend API quota.
+
+        A found bill is kept for 7 days; an empty one for only an hour, so a show that
+        Setlist.fm hasn't indexed yet isn't hidden for long.
+        """
+        cache_key = f"venue-date:{venue_id}:{event_date_str}"
+        now = datetime.utcnow()
+        cached = (
+            self.db.query(SetlistCache)
+            .filter(SetlistCache.cache_key == cache_key, SetlistCache.expires_at > now)
+            .first()
+        )
+        if cached and isinstance(cached.response_json, dict):
+            setlists = cached.response_json.get("setlist", [])
+        else:
+            data = self.search_setlists_raw({"venueId": venue_id, "date": event_date_str})
+            setlists = data.get("setlist", []) if isinstance(data, dict) else []
+            if not isinstance(setlists, list):
+                setlists = []
+            ttl = timedelta(days=7) if setlists else timedelta(hours=1)
+            self.db.merge(SetlistCache(cache_key=cache_key, response_json={"setlist": setlists}, expires_at=now + ttl))
+            self.db.commit()
+        return [s for s in setlists if isinstance(s, dict)]
+
     def get_venue_date_setlists(
         self,
         venue_id: str,
@@ -315,11 +340,7 @@ class SetlistService:
 
         Capped at 10 items max to prevent festival lineups from overwhelming the UI.
         """
-        params = {"venueId": venue_id, "date": event_date_str}
-        data = self.search_setlists_raw(params)
-        setlists = data.get("setlist", []) if isinstance(data, dict) else []
-        if not isinstance(setlists, list):
-            return []
+        setlists = self._cached_venue_date_setlists(venue_id, event_date_str)
 
         results = []
         for s in setlists:

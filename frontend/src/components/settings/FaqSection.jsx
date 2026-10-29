@@ -260,6 +260,20 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "setlists-on-the-bill",
+    category: "Set Lists & Gigs",
+    question: "Can I see who else played at a gig, and log the support acts I saw?",
+    answer: (
+      <p>
+        <strong>Yes.</strong> Open any gig and look under <em>My notes</em> for{" "}
+        <strong>On the bill</strong>. It lists the other acts Setlist.fm has for that venue and
+        night (up to 10), plus any you&apos;ve logged yourself. A tick means you&apos;ve already
+        logged them; tap <em>+ I was there</em> to add one. Upcoming gigs usually have nobody listed
+        until after the show.
+      </p>
+    ),
+  },
+  {
     id: "setlists-duplicates",
     category: "Set Lists & Gigs",
     question: "What happens if I log a gig I've already logged, or log one by mistake?",

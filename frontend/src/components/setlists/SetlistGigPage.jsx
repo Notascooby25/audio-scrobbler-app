@@ -9,6 +9,7 @@ import {
   updateConcertNotes,
 } from "../../api/setlists";
 import DeleteGigConfirmModal from "./DeleteGigConfirmModal";
+import GigBill from "./GigBill";
 import SetlistAttribution from "./SetlistAttribution";
 import SetlistDateBadge, { isFutureDate, parseDateParts } from "./SetlistDateBadge";
 import SetlistSongs from "./SetlistSongs";
@@ -280,12 +281,15 @@ export default function SetlistGigPage() {
           {setlistData?.info && <p className="sfm-gig-meta">{setlistData.info}</p>}
         </section>
 
-        <NotesEditor
-          key={gig.id}
-          gig={gig}
-          token={token}
-          onSaved={(notes) => setGig((prev) => ({ ...prev, notes }))}
-        />
+        <div className="sfm-gig-side">
+          <NotesEditor
+            key={gig.id}
+            gig={gig}
+            token={token}
+            onSaved={(notes) => setGig((prev) => ({ ...prev, notes }))}
+          />
+          <GigBill key={`bill-${gig.id}`} concertId={gig.id} token={token} />
+        </div>
       </div>
 
       <SetlistAttribution />

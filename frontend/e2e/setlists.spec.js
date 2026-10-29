@@ -50,6 +50,9 @@ test.beforeEach(async ({ page }) => {
     const { pathname } = new URL(request.url())
     if (pathname === '/setlists/stats/artists') return route.fulfill({ json: artists })
     if (pathname === '/setlists/attendances/7') return route.fulfill({ json: gig })
+    if (pathname === '/setlists/attendances/7/bill') {
+      return route.fulfill({ json: { acts: [], complete: true, capped: false } })
+    }
     if (pathname === '/setlists/attendances') return route.fulfill({ json: [gig] })
     if (pathname === '/setlists/status') return route.fulfill({ json: { configured: true } })
     return route.fulfill({ json: [] })

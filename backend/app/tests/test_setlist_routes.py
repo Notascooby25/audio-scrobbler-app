@@ -386,3 +386,113 @@ def test_import_file_route_imports_for_the_current_user_only():
 
     assert client.post("/setlists/import/file", json={"format": "json", "content": "{bad"}).status_code == 400
     assert client.post("/setlists/import/file", json={"format": "xml", "content": "<a/>"}).status_code == 422
+
+
+def test_gig_bill_route_is_owner_only():
+    db = TestingSession()
+    mine = AttendedConcert(
+        user_id=42,
+        setlist_id="manual-bill1",
+        artist_name="Shed Seven",
+        venue_name="O2 Academy",
+        city="Birmingham",
+        country="United Kingdom",
+        event_date=datetime(2026, 11, 14, 20),
+    )
+    theirs = AttendedConcert(
+        user_id=7,
+        setlist_id="manual-bill2",
+        artist_name="Doves",
+        venue_name="O2 Academy",
+        city="Birmingham",
+        country="United Kingdom",
+        event_date=datetime(2026, 11, 14, 20),
+    )
+    db.add_all([mine, theirs])
+    db.commit()
+    mine_id, theirs_id = mine.id, theirs.id
+    db.close()
+
+    res = client.get(f"/setlists/attendances/{mine_id}/bill")
+    assert res.status_code == 200
+    # Another user's gig that night is never listed
+    assert res.json() == {"acts": [], "complete": True, "capped": False}
+    assert client.get(f"/setlists/attendances/{theirs_id}/bill").status_code == 404
+
+
+def _bill_setlist(setlist_id: str, artist: str, date: str = "27-06-2026", venue_id: str = "v_anfield") -> dict:
+    return {
+        "id": setlist_id,
+        "artist": {"name": artist},
+        "venue": {"id": venue_id, "name": "Anfield", "city": {"name": "Liverpool", "country": {"name": "UK"}}},
+        "eventDate": date,
+        "sets": {"set": [{"song": [{"name": f"{artist} song"}]}]},
+    }
+
+
+def _add_gig(user_id: int, setlist_id: str, artist: str, is_support: bool = False) -> int:
+    db = TestingSession()
+    gig = AttendedConcert(
+        user_id=user_id,
+        setlist_id=setlist_id,
+        artist_name=artist,
+        venue_name="Anfield",
+        city="Liverpool",
+        country="UK",
+        event_date=datetime(2026, 6, 27),
+        is_support_act=is_support,
+        raw_data={"id": setlist_id, "venue": {"id": "v_anfield"}},
+    )
+    db.add(gig)
+    db.commit()
+    gig_id = gig.id
+    db.close()
+    return gig_id
+
+
+def test_log_act_from_headliner_bill_saves_it_as_support():
+    headliner_id = _add_gig(42, "hl_ff", "Foo Fighters")
+    with patch("backend.app.api.setlists.SetlistService") as MockServiceCls:
+        MockServiceCls.return_value.get_setlist.side_effect = lambda sid: {
+            "sp_ro": _bill_setlist("sp_ro", "Royel Otis"),
+            "sp_late": _bill_setlist("sp_late", "Late Band", date="28-06-2026"),
+        }.get(sid, {})
+
+        res = client.post(f"/setlists/attendances/{headliner_id}/bill", json={"setlist_id": "sp_ro"})
+        assert res.status_code == 201
+        assert res.json()["is_support_act"] is True
+        assert res.json()["parent_setlist_id"] == "hl_ff"
+
+        assert (
+            client.post(f"/setlists/attendances/{headliner_id}/bill", json={"setlist_id": "sp_ro"}).status_code == 409
+        )
+        other_night = client.post(f"/setlists/attendances/{headliner_id}/bill", json={"setlist_id": "sp_late"})
+        assert other_night.status_code == 400
+
+    db = TestingSession()
+    play = db.query(ListeningEvent).filter_by(user_id=42, track_name="Royel Otis song").one()
+    assert (play.played_at.hour, play.played_at.minute) == (18, 45)
+    db.close()
+
+
+def test_log_headliner_from_support_bill_links_the_support_act():
+    support_id = _add_gig(42, "sp_ro", "Royel Otis", is_support=True)
+    with patch("backend.app.api.setlists.SetlistService") as MockServiceCls:
+        MockServiceCls.return_value.get_setlist.return_value = _bill_setlist("hl_ff", "Foo Fighters")
+        res = client.post(f"/setlists/attendances/{support_id}/bill", json={"setlist_id": "hl_ff"})
+
+    assert res.status_code == 201
+    assert res.json()["is_support_act"] is False
+    db = TestingSession()
+    assert db.get(AttendedConcert, support_id).parent_setlist_id == "hl_ff"
+    db.close()
+
+
+def test_log_bill_act_is_owner_only():
+    theirs = _add_gig(7, "hl_theirs", "Doves")
+    with patch("backend.app.api.setlists.SetlistService") as MockServiceCls:
+        MockServiceCls.return_value.get_setlist.return_value = _bill_setlist("sp_x", "Someone")
+        res = client.post(f"/setlists/attendances/{theirs}/bill", json={"setlist_id": "spx"})
+    assert res.status_code == 404
+    mine = _add_gig(42, "hl_mine", "Elbow")
+    assert client.post(f"/setlists/attendances/{mine}/bill", json={"setlist_id": "../user/x"}).status_code == 422

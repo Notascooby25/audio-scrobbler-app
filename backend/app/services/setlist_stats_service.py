@@ -8,10 +8,15 @@ from collections import Counter
 from datetime import datetime
 from typing import Any
 
+import httpx
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from ..models import AttendedConcert, ListeningEvent
+from .setlist_service import SetlistApiAuthError, SetlistApiKeyMissingError, SetlistRateLimitError
+
+BILL_LIMIT = 10
+_SETLIST_FM_ID = re.compile(r"[0-9A-Za-z_-]{1,32}")
 
 
 def _display_date(value: datetime | None) -> str:
@@ -98,6 +103,78 @@ class SetlistStatsService:
 
     def get_gig(self, user_id: int, concert_id: int) -> AttendedConcert | None:
         return self.db.query(AttendedConcert).filter_by(id=concert_id, user_id=user_id).first()
+
+    def get_gig_bill(self, user_id: int, gig: AttendedConcert, setlist_service: Any) -> dict[str, Any]:
+        """Other acts at the same venue on the same night, and whether the user logged each.
+
+        Combines the user's own gigs that night with Setlist.fm's list for the venue and
+        date. If Setlist.fm can't be reached the logged acts are still returned, with
+        complete=False, so the gig page never fails because of it.
+        """
+        user_gigs = self.db.query(AttendedConcert).filter_by(user_id=user_id).all()
+        by_setlist = {c.setlist_id: c for c in user_gigs}
+        night = gig.event_date.date() if gig.event_date else None
+        venue = _venue_key(gig.venue_name, gig.city)
+        same_night = [
+            c
+            for c in user_gigs
+            if c.id != gig.id
+            and night is not None
+            and c.event_date is not None
+            and c.event_date.date() == night
+            and _venue_key(c.venue_name, c.city) == venue
+        ]
+
+        def role(c: AttendedConcert | None) -> str | None:
+            if c is None:
+                return None
+            if c.is_support_act:
+                return "support"
+            if gig.is_support_act and c.setlist_id == gig.parent_setlist_id:
+                return "headliner"
+            return None
+
+        def act(setlist_id: str, artist_name: str, logged: AttendedConcert | None) -> dict[str, Any]:
+            return {
+                "setlist_id": setlist_id,
+                "artist_name": artist_name,
+                "logged": logged is not None,
+                "concert_id": logged.id if logged else None,
+                "role": role(logged),
+                "song_count": logged.song_count if logged else None,
+            }
+
+        acts: list[dict[str, Any]] = []
+        complete = True
+        capped = False
+        raw = gig.raw_data if isinstance(gig.raw_data, dict) else {}
+        venue_id = raw.get("venue", {}).get("id") if isinstance(raw.get("venue"), dict) else None
+        # Stored data can come from an imported file, so only look up real-looking venue ids
+        venue_id = str(venue_id) if venue_id is not None and _SETLIST_FM_ID.fullmatch(str(venue_id)) else None
+        if venue_id and night and not gig.setlist_id.startswith("manual-"):
+            try:
+                listed = setlist_service.get_venue_date_setlists(
+                    venue_id=venue_id,
+                    event_date_str=night.strftime("%d-%m-%Y"),
+                    exclude_setlist_id=gig.setlist_id,
+                )
+                capped = len(listed) >= BILL_LIMIT
+                for s in listed:
+                    sid = s.get("id")
+                    if isinstance(sid, str) and sid:
+                        name = (s.get("artist") or {}).get("name") or "Unknown Artist"
+                        acts.append(act(sid, name, by_setlist.get(sid)))
+            except (SetlistRateLimitError, SetlistApiKeyMissingError, SetlistApiAuthError, httpx.HTTPError):
+                complete = False
+        else:
+            # Manual gigs have no Setlist.fm venue, so only the user's own gigs are known
+            complete = not venue_id and gig.setlist_id.startswith("manual-")
+
+        listed_ids = {a["setlist_id"] for a in acts}
+        acts.extend(act(c.setlist_id, c.artist_name, c) for c in same_night if c.setlist_id not in listed_ids)
+        # Headliner first, then logged acts, keeping Setlist.fm's order otherwise
+        acts.sort(key=lambda a: (a["role"] != "headliner", not a["logged"]))
+        return {"acts": acts, "complete": complete, "capped": capped}
 
     def get_artists_seen_leaderboard(self, user_id: int) -> list[dict[str, Any]]:
         all_concerts = (
