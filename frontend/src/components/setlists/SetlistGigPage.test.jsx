@@ -162,4 +162,16 @@ describe("SetlistGigPage", () => {
     renderGigPage();
     expect(await screen.findByText("Gig not found.")).toBeInTheDocument();
   });
+
+  it("never renders a non-http link from stored gig data", async () => {
+    setlistsApi.fetchAttendance.mockResolvedValueOnce({
+      ...gig,
+      setlist_url: "javascript:alert(1)",
+      raw_data: { ...gig.raw_data, url: "javascript:alert(2)" },
+    });
+    renderGigPage();
+
+    await screen.findByRole("heading", { name: "Bombay Bicycle Club Setlist" });
+    expect(screen.queryByRole("link", { name: /view on setlist\.fm/i })).not.toBeInTheDocument();
+  });
 });

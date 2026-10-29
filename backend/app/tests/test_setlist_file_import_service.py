@@ -176,3 +176,33 @@ def test_long_song_names_are_truncated_to_fit_the_column(db_session: Session):
 
     play = db_session.query(ListeningEvent).filter_by(user_id=2).one()
     assert len(play.track_name) == 255
+
+
+def test_non_http_links_inside_imported_setlist_data_are_dropped(db_session: Session):
+    rows = [
+        {
+            "setlist_id": "7a7a7a7a",
+            "artist_name": "Doves",
+            "venue_name": "Rock City",
+            "event_date": "2025-05-01",
+            "raw_data": {"url": "javascript:alert(document.cookie)", "sets": {"set": []}},
+        }
+    ]
+
+    result = import_gigs_from_file(2, "json", json.dumps(rows), db_session, MagicMock(get_setlist=lambda _id: {}))
+
+    assert result["imported"] == 1
+    gig = db_session.query(AttendedConcert).filter_by(user_id=2).one()
+    assert gig.raw_data["url"] == ""
+
+
+@pytest.mark.parametrize(
+    ("file_format", "content"),
+    [
+        ("csv", "artist_name,venue_name\n" + "x" * 200_000 + ",Rock City\n"),
+        ("json", "[" * 100_000 + "]" * 100_000),
+    ],
+)
+def test_malformed_files_give_a_clear_error(db_session: Session, file_format: str, content: str):
+    with pytest.raises(FileImportError):
+        import_gigs_from_file(2, file_format, content, db_session, _no_api())

@@ -87,8 +87,14 @@ class ImportedGigRow(BaseModel):
     @field_validator("raw_data")
     @classmethod
     def _cap_raw_data(cls, value: dict[str, Any] | None) -> dict[str, Any] | None:
-        if value is not None and len(json.dumps(value)) > MAX_RAW_DATA_CHARS:
+        if value is None:
+            return None
+        if len(json.dumps(value)) > MAX_RAW_DATA_CHARS:
             raise ValueError("setlist data is too large")
+        # The app links to this; a file from someone else could carry a javascript: URL
+        url = value.get("url")
+        if url is not None and not (isinstance(url, str) and url.lower().startswith(("https://", "http://"))):
+            value = {**value, "url": ""}
         return value
 
 
@@ -101,17 +107,20 @@ def _read_rows(file_format: str, content: str) -> list[tuple[int, dict[str, Any]
     if file_format == "json":
         try:
             data = json.loads(content)
-        except json.JSONDecodeError as exc:
+        except (json.JSONDecodeError, RecursionError) as exc:
             raise FileImportError("File isn't valid JSON.") from exc
         if not isinstance(data, list):
             raise FileImportError("JSON file should be a list of gigs, like the Set Lists export.")
         rows = [(idx + 1, item if isinstance(item, dict) else {}) for idx, item in enumerate(data)]
     else:
-        reader = csv.DictReader(io.StringIO(content))
-        if not reader.fieldnames or "artist_name" not in reader.fieldnames:
-            raise FileImportError("CSV file needs an artist_name column, like the Set Lists export.")
-        # Line numbers count the header as line 1
-        rows = [(idx + 2, dict(row)) for idx, row in enumerate(reader)]
+        try:
+            reader = csv.DictReader(io.StringIO(content))
+            if not reader.fieldnames or "artist_name" not in reader.fieldnames:
+                raise FileImportError("CSV file needs an artist_name column, like the Set Lists export.")
+            # Line numbers count the header as line 1
+            rows = [(idx + 2, dict(row)) for idx, row in enumerate(reader)]
+        except csv.Error as exc:
+            raise FileImportError(f"File isn't a readable CSV ({exc}).") from exc
 
     if len(rows) > MAX_ROWS:
         raise FileImportError(f"File has {len(rows)} gigs; the limit is {MAX_ROWS} per import.")

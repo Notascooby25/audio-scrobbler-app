@@ -1,7 +1,7 @@
 import { useState } from "react";
 import SetlistDateBadge, { isFutureDate } from "./SetlistDateBadge";
 import SetlistSongs from "./SetlistSongs";
-import { processSetlistSets } from "./setlistUiUtils";
+import { processSetlistSets, safeExternalUrl } from "./setlistUiUtils";
 
 /** One Setlist.fm search result, styled as a setlist.fm row with its log action. */
 export default function GigCard({ setlist, onLogAttendance, isLogging }) {
@@ -68,8 +68,13 @@ export default function GigCard({ setlist, onLogAttendance, isLogging }) {
             <p className="sfm-gig-meta">No songs on Setlist.fm for this show yet.</p>
           )}
           <div className="sfm-gig-actions">
-            {setlist?.url && (
-              <a className="sfm-link" href={setlist.url} target="_blank" rel="noopener noreferrer">
+            {safeExternalUrl(setlist?.url) && (
+              <a
+                className="sfm-link"
+                href={safeExternalUrl(setlist.url)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 View on Setlist.fm &#8599;
               </a>
             )}
