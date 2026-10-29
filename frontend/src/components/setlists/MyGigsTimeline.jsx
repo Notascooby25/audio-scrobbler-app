@@ -1,17 +1,23 @@
 import { useSearchParams } from "react-router-dom";
 import GigRows from "./GigRows";
+import PageSizeSelect from "./PageSizeSelect";
 import { isFutureDate } from "./SetlistDateBadge";
+import SetlistPagination from "./SetlistPagination";
+import useListPaging from "./useListPaging";
 
 export default function MyGigsTimeline({ gigs = [], onOpenGig = null }) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const pastGigs = gigs.filter((g) => !isFutureDate(g.event_date));
+  const futureGigs = gigs.filter((g) => isFutureDate(g.event_date));
+
+  const [searchParams] = useSearchParams();
   const filterParam = searchParams.get("filter");
   const filter = filterParam === "past" || filterParam === "future" ? filterParam : "all";
-  const setFilter = (next) => {
-    const params = new URLSearchParams(searchParams);
-    if (next === "all") params.delete("filter");
-    else params.set("filter", next);
-    setSearchParams(params, { replace: true });
-  };
+  const filteredGigs = filter === "past" ? pastGigs : filter === "future" ? futureGigs : gigs;
+  const { pageSize, currentPage, totalPages, updateParams, pageSlice } = useListPaging(
+    filteredGigs.length
+  );
+  // Switching All / Attended / Upcoming starts again from page 1
+  const setFilter = (next) => updateParams({ filter: next === "all" ? null : next, page: null });
 
   if (gigs.length === 0) {
     return (
@@ -20,10 +26,6 @@ export default function MyGigsTimeline({ gigs = [], onOpenGig = null }) {
       </p>
     );
   }
-
-  const pastGigs = gigs.filter((g) => !isFutureDate(g.event_date));
-  const futureGigs = gigs.filter((g) => isFutureDate(g.event_date));
-  const filteredGigs = filter === "past" ? pastGigs : filter === "future" ? futureGigs : gigs;
 
   return (
     <div>
@@ -63,20 +65,35 @@ export default function MyGigsTimeline({ gigs = [], onOpenGig = null }) {
       {filteredGigs.length === 0 ? (
         <p className="sfm-empty">No {filter === "future" ? "upcoming" : "attended"} gigs found.</p>
       ) : (
-        <GigRows
-          rows={filteredGigs.map((gig) => {
-            const isFuture = isFutureDate(gig.event_date);
-            return {
-              key: gig.id,
-              date: gig.event_date,
-              title: gig.artist_name,
-              meta: [gig.venue_name, gig.city, gig.country].filter(Boolean).join(", "),
-              tag: isFuture ? "Upcoming" : gig.is_support_act ? "Support" : null,
-              tagMuted: !isFuture,
-              onOpen: onOpenGig ? () => onOpenGig(gig.id) : null,
-            };
-          })}
-        />
+        <>
+          <PageSizeSelect
+            id="gigs-per-page"
+            noun="gigs"
+            value={pageSize}
+            onChange={(size) => updateParams({ size, page: null })}
+          />
+          <div className="sfm-table-wrap">
+            <GigRows
+              rows={pageSlice(filteredGigs).map((gig) => {
+                const isFuture = isFutureDate(gig.event_date);
+                return {
+                  key: gig.id,
+                  date: gig.event_date,
+                  title: gig.artist_name,
+                  meta: [gig.venue_name, gig.city, gig.country].filter(Boolean).join(", "),
+                  tag: isFuture ? "Upcoming" : gig.is_support_act ? "Support" : null,
+                  tagMuted: !isFuture,
+                  onOpen: onOpenGig ? () => onOpenGig(gig.id) : null,
+                };
+              })}
+            />
+          </div>
+          <SetlistPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={(page) => updateParams({ page: page === 1 ? null : page })}
+          />
+        </>
       )}
     </div>
   );

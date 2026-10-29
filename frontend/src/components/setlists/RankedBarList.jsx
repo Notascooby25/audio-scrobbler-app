@@ -1,9 +1,7 @@
-import { useSearchParams } from "react-router-dom";
+import PageSizeSelect from "./PageSizeSelect";
 import SetlistPagination from "./SetlistPagination";
 import { computeTieRanks } from "./setlistUiUtils";
-
-const PAGE_SIZES = [10, 15, 25, 50];
-const DEFAULT_PAGE_SIZE = 15;
+import useListPaging from "./useListPaging";
 
 /**
  * Setlist.fm-style ranked table: rank (blank on ties) | name | proportional bar.
@@ -19,25 +17,9 @@ export default function RankedBarList({
   emptyText = "Nothing recorded yet.",
   idPrefix = "ranked",
 }) {
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const sizeParam = Number(searchParams.get("size"));
-  const pageSize = PAGE_SIZES.includes(sizeParam) ? sizeParam : DEFAULT_PAGE_SIZE;
-  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
-  const pageParam = Number(searchParams.get("page"));
-  const currentPage =
-    Number.isInteger(pageParam) && pageParam >= 1 ? Math.min(pageParam, totalPages) : 1;
+  const { searchParams, pageSize, currentPage, totalPages, updateParams, pageSlice } =
+    useListPaging(items.length);
   const openKey = searchParams.get("open");
-
-  // Expanding rows and paging replace the history entry, so Back skips them
-  const updateParams = (changes) => {
-    const params = new URLSearchParams(searchParams);
-    Object.entries(changes).forEach(([key, value]) => {
-      if (value === null || value === undefined) params.delete(key);
-      else params.set(key, String(value));
-    });
-    setSearchParams(params, { replace: true });
-  };
 
   if (items.length === 0) {
     return <p className="sfm-empty">{emptyText}</p>;
@@ -45,25 +27,16 @@ export default function RankedBarList({
 
   const maxCount = Math.max(...items.map((i) => i.count || 0), 1);
   const ranked = computeTieRanks(items, "count");
-  const pageItems = ranked.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const selectId = `${idPrefix}-per-page`;
+  const pageItems = pageSlice(ranked);
 
   return (
     <div>
-      <label htmlFor={selectId} className="sfm-page-size">
-        {noun.charAt(0).toUpperCase() + noun.slice(1)} shown per page
-        <select
-          id={selectId}
-          value={pageSize}
-          onChange={(e) => updateParams({ size: e.target.value, page: null, open: null })}
-        >
-          {PAGE_SIZES.map((size) => (
-            <option key={size} value={size}>
-              {size}
-            </option>
-          ))}
-        </select>
-      </label>
+      <PageSizeSelect
+        id={`${idPrefix}-per-page`}
+        noun={noun}
+        value={pageSize}
+        onChange={(size) => updateParams({ size, page: null, open: null })}
+      />
 
       <div className="sfm-table-wrap">
         {headings && (

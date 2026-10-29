@@ -149,6 +149,46 @@ describe("SetlistsStats and Modals", () => {
     expect(screen.queryByText("Elbow")).not.toBeInTheDocument();
   });
 
+  it("paginates My Gigs 15 per page with a page size option", () => {
+    const gigs = Array.from({ length: 40 }, (_, i) => ({
+      id: i + 1,
+      artist_name: `Band ${i + 1}`,
+      venue_name: "Rock City",
+      city: "Nottingham",
+      country: "United Kingdom",
+      event_date: `20${String(10 + Math.floor(i / 12)).padStart(2, "0")}-01-${String((i % 12) + 1).padStart(2, "0")}T20:00:00`,
+    }));
+
+    render(
+      <MemoryRouter>
+        <MyGigsTimeline gigs={gigs} />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole("heading", { name: "All Gigs (40)" })).toBeInTheDocument();
+    expect(screen.getByText("Band 15")).toBeInTheDocument();
+    expect(screen.queryByText("Band 16")).not.toBeInTheDocument();
+    expect([...screen.getByLabelText(/gigs shown per page/i).options].map((o) => o.value)).toEqual([
+      "10",
+      "15",
+      "25",
+      "50",
+    ]);
+
+    fireEvent.click(screen.getByRole("button", { name: "3" }));
+    expect(screen.getByText("Band 31")).toBeInTheDocument();
+    expect(screen.getByText("Band 40")).toBeInTheDocument();
+    expect(screen.queryByText("Band 30")).not.toBeInTheDocument();
+
+    // Changing the filter goes back to page 1
+    fireEvent.click(screen.getByRole("button", { name: "Attended (40)" }));
+    expect(screen.getByText("Band 1")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/gigs shown per page/i), { target: { value: "50" } });
+    expect(screen.getByText("Band 40")).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Pagination" })).not.toBeInTheDocument();
+  });
+
   it("renders ImportExportModal and handles selective gig preview and import", async () => {
     const onImport = vi.fn();
     const onClose = vi.fn();

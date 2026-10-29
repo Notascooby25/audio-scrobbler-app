@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import ANY, patch
 
 from fastapi.testclient import TestClient
@@ -274,3 +274,28 @@ def test_get_single_attendance_is_owner_only():
     # Another user's gig is indistinguishable from a missing one
     assert client.get(f"/setlists/attendances/{theirs_id}").status_code == 404
     assert client.get("/setlists/attendances/999999").status_code == 404
+
+
+def test_list_attendances_returns_more_than_fifty_gigs():
+    db = TestingSession()
+    db.add_all(
+        [
+            AttendedConcert(
+                user_id=42,
+                setlist_id=f"bulk_{i}",
+                artist_name=f"Band {i}",
+                venue_name="Rock City",
+                city="Nottingham",
+                country="United Kingdom",
+                event_date=datetime(2020, 1, 1) + timedelta(days=i),
+            )
+            for i in range(60)
+        ]
+    )
+    db.commit()
+    db.close()
+
+    response = client.get("/setlists/attendances?limit=2000")
+    assert response.status_code == 200
+    assert len(response.json()) == 60
+    assert client.get("/setlists/attendances?limit=2001").status_code == 422

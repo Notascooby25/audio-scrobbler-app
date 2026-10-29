@@ -10,6 +10,7 @@ export const CHANGELOG = [
       "Gig setlist pages: tap any gig to open its own page with the date, venue, tour, numbered songs and your notes. Refresh, Copy and Delete live here, and Back returns you to the exact list you came from.",
       "Cleaner navigation: folder-style tabs with plain text links for + Log a Gig and Import / Export, and no more blue pill buttons on titles or rows.",
       "Artists Seen is now sorted by times seen, then most recently seen, matching the page description.",
+      "My Gigs now shows every gig you've logged (it previously stopped at your 50 most recent), with numbered pages and a choice of 10, 15, 25 or 50 gigs per page.",
     ],
   },
   {
