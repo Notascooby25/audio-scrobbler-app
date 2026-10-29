@@ -54,6 +54,7 @@ class ArtistGigItem(BaseModel):
     id: int
     setlist_id: str
     date: str
+    event_date: str | None = None
     venue: str
     city: str
     country: str
@@ -69,10 +70,23 @@ class ArtistLeaderboardItem(BaseModel):
     gigs: list[ArtistGigItem] = Field(default_factory=list)
 
 
+class ConcertRefItem(BaseModel):
+    id: int
+    setlist_id: str
+    artist_name: str
+    venue_name: str
+    city: str
+    country: str
+    event_date: str | None = None
+    date: str
+    is_support: bool = False
+
+
 class SongLeaderboardItem(BaseModel):
     track_name: str
     artist_name: str
     count: int
+    gigs: list[ConcertRefItem] = Field(default_factory=list)
 
 
 class VenueLeaderboardItem(BaseModel):
@@ -80,6 +94,7 @@ class VenueLeaderboardItem(BaseModel):
     city: str
     country: str
     count: int
+    gigs: list[ConcertRefItem] = Field(default_factory=list)
 
 
 class SetlistPreviewItem(BaseModel):

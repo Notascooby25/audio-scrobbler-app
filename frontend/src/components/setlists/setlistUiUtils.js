@@ -51,3 +51,50 @@ export function getPaginationRange(currentPage, totalPages, maxVisible = 5) {
 
   return pages;
 }
+
+const asArray = (value) => (Array.isArray(value) ? value : value ? [value] : []);
+
+/**
+ * Normalises Setlist.fm `sets.set[]` into named sets with continuous song numbers.
+ * Tape songs are kept but unnumbered, matching setlist.fm.
+ */
+export function processSetlistSets(data) {
+  const setsList = asArray(data?.sets?.set);
+  let songNumber = 1;
+
+  return setsList.map((set, idx) => {
+    const songs = asArray(set.song).map((song) => ({
+      name: song.name || "Untitled Song",
+      number: song.tape ? null : songNumber++,
+      tape: Boolean(song.tape),
+      guest: song.with?.name || null,
+      coverArtist: song.cover?.name || null,
+      info: song.info || null,
+    }));
+    const encoreLabel = set.encore
+      ? typeof set.encore === "number" && set.encore > 1
+        ? `Encore ${set.encore}`
+        : "Encore"
+      : null;
+    return {
+      name: set.name || encoreLabel || (setsList.length > 1 ? `Set ${idx + 1}` : null),
+      songs,
+    };
+  });
+}
+
+export function setlistAsText({ artistName, venueName, eventDate, sets }) {
+  const lines = [`${artistName} at ${venueName} (${eventDate})`, ""];
+  sets.forEach((set) => {
+    if (set.name) lines.push(`-- ${set.name} --`);
+    set.songs.forEach((song) => {
+      let line = song.number ? `${song.number}. ${song.name}` : `[Tape] ${song.name}`;
+      if (song.guest) line += ` (with ${song.guest})`;
+      if (song.coverArtist) line += ` (${song.coverArtist} cover)`;
+      if (song.info) line += ` (${song.info})`;
+      lines.push(line);
+    });
+    lines.push("");
+  });
+  return lines.join("\n").trim();
+}

@@ -160,9 +160,17 @@ export async function fetchSetlistDetail({ token, setlistId }) {
   return parseResponse(response);
 }
 
-export async function fetchAttendances({ token, limit = 50, offset = 0 }) {
+// My Gigs pages through the list in the browser, so ask for every gig by default
+export async function fetchAttendances({ token, limit = 2000, offset = 0 }) {
   const params = new URLSearchParams({ limit, offset });
   const response = await fetch(`${API_BASE_URL}/setlists/attendances?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function fetchAttendance({ token, concertId }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/attendances/${concertId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return parseResponse(response);
@@ -192,7 +200,7 @@ export async function fetchArtistsSeenLeaderboard({ token }) {
   return parseResponse(response);
 }
 
-export async function fetchSongsHeardLeaderboard({ token, limit = 100 }) {
+export async function fetchSongsHeardLeaderboard({ token, limit = 1000 }) {
   const response = await fetch(`${API_BASE_URL}/setlists/stats/songs?limit=${limit}`, {
     headers: { Authorization: `Bearer ${token}` },
   });

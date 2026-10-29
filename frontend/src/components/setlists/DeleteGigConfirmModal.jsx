@@ -5,47 +5,42 @@ export default function DeleteGigConfirmModal({ isOpen, onClose, gig, onConfirm,
 
   if (!isOpen || !gig) return null;
 
-  const handleDelete = () => {
-    onConfirm(gig.id, includeSupportActs);
-  };
-
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
-      style={{ backdropFilter: "blur(2px)" }}
+      className="modal-backdrop"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isDeleting) onClose?.();
+      }}
     >
       <div
-        className="card w-full max-w-md p-6"
-        style={{
-          border: "0.5px solid var(--color-border)",
-          backgroundColor: "var(--color-surface)",
-        }}
+        className="modal-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-gig-title"
       >
-        <h3 className="text-lg font-bold text-danger mb-2">Delete Attended Gig</h3>
-        <p className="text-sm mb-3">
+        <h3 id="delete-gig-title" className="modal-title">
+          Delete Attended Gig
+        </h3>
+        <p className="modal-description">
           Are you sure you want to remove <strong>{gig.artist_name}</strong> at{" "}
-          <strong>{gig.venue_name}</strong>?
-        </p>
-        <p className="text-xs text-muted mb-4">
-          This will also remove all associated concert songs from your scrobble library and update
-          your live stats.
+          <strong>{gig.venue_name}</strong>? This also removes its songs from your scrobble library
+          and live stats.
         </p>
 
-        <label className="flex items-center gap-2 mb-6 cursor-pointer text-sm">
+        <label className="sfm-check">
           <input
             type="checkbox"
             checked={includeSupportActs}
             onChange={(e) => setIncludeSupportActs(e.target.checked)}
-            className="rounded text-primary focus:ring-0"
             aria-label="Also delete support acts"
           />
           <span>Also delete support acts logged with this show</span>
         </label>
 
-        <div className="flex justify-end gap-3">
+        <div className="modal-actions">
           <button
             type="button"
-            className="btn btn-secondary"
+            className="modal-cancel-button"
             onClick={onClose}
             disabled={isDeleting}
           >
@@ -53,9 +48,8 @@ export default function DeleteGigConfirmModal({ isOpen, onClose, gig, onConfirm,
           </button>
           <button
             type="button"
-            className="btn"
-            style={{ backgroundColor: "#dc2626", color: "#ffffff", fontWeight: 600 }}
-            onClick={handleDelete}
+            className="danger-button modal-confirm-button"
+            onClick={() => onConfirm(gig.id, includeSupportActs)}
             disabled={isDeleting}
           >
             {isDeleting ? "Deleting..." : "Delete Gig"}

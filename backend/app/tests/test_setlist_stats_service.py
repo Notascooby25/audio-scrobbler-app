@@ -64,7 +64,7 @@ def test_stats_leaderboards_and_gigs(db_session: Session):
         artist_name="Public Service Broadcasting",
         played_at=datetime(2026, 9, 26, 21, 0),
         source="setlistfm",
-        play_id="psb_1_0",
+        play_id="setlistfm_psb_1_0",
     )
     e2 = ListeningEvent(
         user_id=1,
@@ -73,7 +73,7 @@ def test_stats_leaderboards_and_gigs(db_session: Session):
         artist_name="Public Service Broadcasting",
         played_at=datetime(2025, 11, 1, 21, 0),
         source="setlistfm",
-        play_id="psb_2_0",
+        play_id="setlistfm_psb_2_0",
     )
     e3 = ListeningEvent(
         user_id=1,
@@ -82,7 +82,7 @@ def test_stats_leaderboards_and_gigs(db_session: Session):
         artist_name="Public Service Broadcasting",
         played_at=datetime(2026, 9, 26, 21, 5),
         source="setlistfm",
-        play_id="psb_1_1",
+        play_id="setlistfm_psb_1_1",
     )
     e4 = ListeningEvent(
         user_id=1,
@@ -91,7 +91,7 @@ def test_stats_leaderboards_and_gigs(db_session: Session):
         artist_name="Oasis",
         played_at=datetime(2025, 7, 26, 21, 0),
         source="setlistfm",
-        play_id="oasis_1_0",
+        play_id="setlistfm_oasis_1_0",
     )
     db_session.add_all([e1, e2, e3, e4])
     db_session.commit()
@@ -122,6 +122,9 @@ def test_stats_leaderboards_and_gigs(db_session: Session):
     assert songs_leaderboard[0]["track_name"] == "Gagarin"
     assert songs_leaderboard[0]["count"] == 2
     assert songs_leaderboard[0]["artist_name"] == "Public Service Broadcasting"
+    # Each song lists the gigs it was heard at, most recent first
+    assert [g["venue_name"] for g in songs_leaderboard[0]["gigs"]] == ["Alexandra Palace", "Barbican Centre"]
+    assert songs_leaderboard[0]["gigs"][0]["date"] == "26 Sep 2026"
 
     # 4. Venues visited
     venues_leaderboard = service.get_venues_visited_leaderboard(user_id=1)
@@ -129,6 +132,103 @@ def test_stats_leaderboards_and_gigs(db_session: Session):
     venue_names = {v["venue_name"] for v in venues_leaderboard}
     assert "Alexandra Palace" in venue_names
     assert "Wembley Stadium" in venue_names
+    wembley = next(v for v in venues_leaderboard if v["venue_name"] == "Wembley Stadium")
+    assert [g["artist_name"] for g in wembley["gigs"]] == ["Oasis"]
+
+
+def _concert(setlist_id: str, artist: str, venue: str, when: datetime, **kwargs: object) -> AttendedConcert:
+    return AttendedConcert(
+        user_id=1,
+        setlist_id=setlist_id,
+        artist_name=artist,
+        venue_name=venue,
+        city="Birmingham",
+        country="United Kingdom",
+        event_date=when,
+        **kwargs,
+    )
+
+
+def _live_play(setlist_id: str, idx: int, track: str, artist: str, *, with_metadata: bool = True) -> ListeningEvent:
+    return ListeningEvent(
+        user_id=1,
+        track_id=f"setlistfm:{setlist_id}:{idx}",
+        track_name=track,
+        artist_name=artist,
+        played_at=datetime(2026, 1, 1, 21, idx),
+        source="setlistfm",
+        play_id=f"setlistfm_{setlist_id}_{idx}",
+        raw_metadata={"setlist_id": setlist_id} if with_metadata else None,
+    )
+
+
+def test_songs_leaderboard_counts_performances_but_lists_each_gig_once(db_session: Session):
+    db_session.add_all(
+        [
+            _concert("rrc_a1", "Red Rum Club", "O2 Institute", datetime(2026, 10, 16)),
+            _concert("rrc_b2", "Red Rum Club", "O2 Academy", datetime(2025, 3, 1)),
+            # Played twice in one show (e.g. an encore reprise) counts as two performances
+            _live_play("rrc_a1", 0, "Eleanor", "Red Rum Club"),
+            _live_play("rrc_a1", 9, "Eleanor", "Red Rum Club"),
+            # Older scrobble without raw_metadata falls back to the play_id
+            _live_play("rrc_b2", 0, "Eleanor", "Red Rum Club", with_metadata=False),
+            # Orphaned scrobble whose gig was removed still counts but has no gig link
+            _live_play("deleted_gig", 0, "Afternoon", "Red Rum Club"),
+        ]
+    )
+    db_session.commit()
+
+    songs = SetlistStatsService(db=db_session).get_songs_heard_leaderboard(user_id=1)
+
+    assert [(s["track_name"], s["count"]) for s in songs] == [("Eleanor", 3), ("Afternoon", 1)]
+    assert [g["setlist_id"] for g in songs[0]["gigs"]] == ["rrc_a1", "rrc_b2"]
+    assert songs[1]["gigs"] == []
+
+
+def test_songs_leaderboard_is_scoped_to_the_user(db_session: Session):
+    other_gig = _concert("x1", "Doves", "Rock City", datetime(2026, 1, 1))
+    other_gig.user_id = 2
+    other_play = _live_play("x1", 0, "There Goes the Fear", "Doves")
+    other_play.user_id = 2
+    db_session.add_all([other_gig, other_play])
+    db_session.commit()
+
+    assert SetlistStatsService(db=db_session).get_songs_heard_leaderboard(user_id=1) == []
+
+
+def test_artists_ordered_by_times_seen_then_most_recent(db_session: Session):
+    db_session.add_all(
+        [
+            _concert("a1", "Doves", "Rock City", datetime(2024, 5, 1)),
+            _concert("b1", "The Black Keys", "Victorious", datetime(2026, 8, 29)),
+            _concert("c1", "The Lottery Winners", "HMV Empire", datetime(2025, 11, 25)),
+            _concert("c2", "The Lottery Winners", "Victorious", datetime(2026, 8, 29)),
+        ]
+    )
+    db_session.commit()
+
+    artists = SetlistStatsService(db=db_session).get_artists_seen_leaderboard(user_id=1)
+
+    assert [a["artist_name"] for a in artists] == ["The Lottery Winners", "The Black Keys", "Doves"]
+    assert artists[0]["gigs"][0]["event_date"] == "2026-08-29T00:00:00"
+
+
+def test_venue_counts_unique_nights_and_lists_every_act(db_session: Session):
+    db_session.add_all(
+        [
+            _concert("h1", "Foo Fighters", "Anfield", datetime(2026, 6, 27, 20)),
+            _concert("s1", "Royel Otis", "Anfield", datetime(2026, 6, 27, 19), is_support_act=True),
+            _concert("h2", "Oasis", "Anfield", datetime(2025, 7, 1, 20)),
+        ]
+    )
+    db_session.commit()
+
+    venues = SetlistStatsService(db=db_session).get_venues_visited_leaderboard(user_id=1)
+
+    assert len(venues) == 1
+    assert venues[0]["count"] == 2
+    assert [g["artist_name"] for g in venues[0]["gigs"]] == ["Foo Fighters", "Royel Otis", "Oasis"]
+    assert venues[0]["gigs"][1]["is_support"] is True
 
 
 def test_export_attended_gigs_json_and_csv(db_session: Session):

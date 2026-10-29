@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from unittest.mock import ANY, patch
 
 from fastapi.testclient import TestClient
@@ -235,3 +236,66 @@ def test_log_manual_concert_route():
     gigs_res = client.get("/setlists/attendances")
     assert gigs_res.status_code == 200
     assert any(g["artist_name"] == "Shed Seven" for g in gigs_res.json())
+
+
+def test_get_single_attendance_is_owner_only():
+    db = TestingSession()
+    mine = AttendedConcert(
+        user_id=42,
+        setlist_id="mine_1",
+        artist_name="Red Rum Club",
+        venue_name="O2 Institute",
+        city="Birmingham",
+        country="United Kingdom",
+        event_date=datetime(2026, 10, 16),
+        song_count=22,
+        notes="Front row",
+    )
+    theirs = AttendedConcert(
+        user_id=7,
+        setlist_id="theirs_1",
+        artist_name="Doves",
+        venue_name="Rock City",
+        city="Nottingham",
+        country="United Kingdom",
+        event_date=datetime(2026, 1, 1),
+    )
+    db.add_all([mine, theirs])
+    db.commit()
+    mine_id, theirs_id = mine.id, theirs.id
+    db.close()
+
+    response = client.get(f"/setlists/attendances/{mine_id}")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["artist_name"] == "Red Rum Club"
+    assert body["notes"] == "Front row"
+
+    # Another user's gig is indistinguishable from a missing one
+    assert client.get(f"/setlists/attendances/{theirs_id}").status_code == 404
+    assert client.get("/setlists/attendances/999999").status_code == 404
+
+
+def test_list_attendances_returns_more_than_fifty_gigs():
+    db = TestingSession()
+    db.add_all(
+        [
+            AttendedConcert(
+                user_id=42,
+                setlist_id=f"bulk_{i}",
+                artist_name=f"Band {i}",
+                venue_name="Rock City",
+                city="Nottingham",
+                country="United Kingdom",
+                event_date=datetime(2020, 1, 1) + timedelta(days=i),
+            )
+            for i in range(60)
+        ]
+    )
+    db.commit()
+    db.close()
+
+    response = client.get("/setlists/attendances?limit=2000")
+    assert response.status_code == 200
+    assert len(response.json()) == 60
+    assert client.get("/setlists/attendances?limit=2001").status_code == 422

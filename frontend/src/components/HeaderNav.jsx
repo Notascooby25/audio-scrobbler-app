@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { readSession } from "../session";
 import { fetchUnreadNotificationCount } from "../api";
 
@@ -7,7 +7,8 @@ const NAV_LINKS = [
   { to: "/overview", label: "Overview" },
   { to: "/library", label: "Library" },
   { to: "/reports", label: "Reports" },
-  { to: "/setlists", label: "Set Lists" },
+  // A gig's setlist page (/gigs/:id) belongs to the Set Lists section
+  { to: "/setlists", label: "Set Lists", alsoActive: "/gigs/" },
   { to: "/profile", label: "Profile" },
   { to: "/connect", label: "Connect" },
 ];
@@ -61,7 +62,14 @@ export default function HeaderNav() {
     };
   }, [session?.accessToken]);
 
+  const { pathname } = useLocation();
   const linkClassName = ({ isActive }) => (isActive ? "nav-link nav-link-active" : "nav-link");
+  const navLinkClassName =
+    (alsoActive) =>
+    ({ isActive }) =>
+      linkClassName({
+        isActive: isActive || Boolean(alsoActive && pathname.startsWith(alsoActive)),
+      });
 
   const bellAriaLabel =
     unreadCount > 0
@@ -125,8 +133,13 @@ export default function HeaderNav() {
         className={isMenuOpen ? "topbar-nav topbar-nav-open" : "topbar-nav"}
         aria-label="Primary navigation"
       >
-        {NAV_LINKS.map(({ to, label }) => (
-          <NavLink key={to} to={to} className={linkClassName} onClick={() => setIsMenuOpen(false)}>
+        {NAV_LINKS.map(({ to, label, alsoActive }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={navLinkClassName(alsoActive)}
+            onClick={() => setIsMenuOpen(false)}
+          >
             {label}
           </NavLink>
         ))}

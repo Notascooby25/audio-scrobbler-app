@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { readSession } from "../../session";
 import {
   searchSetlists,
   fetchVenueSupportActs,
   logConcertAttendance,
   fetchAttendances,
-  deleteAttendance,
-  refreshConcertSetlist,
   fetchArtistsSeenLeaderboard,
   fetchSongsHeardLeaderboard,
   fetchVenuesVisitedLeaderboard,
@@ -20,16 +19,30 @@ import MyGigsTimeline from "./MyGigsTimeline";
 import ArtistsSeenLeaderboard from "./ArtistsSeenLeaderboard";
 import SongsHeardLeaderboard from "./SongsHeardLeaderboard";
 import VenuesLeaderboard from "./VenuesLeaderboard";
-import DeleteGigConfirmModal from "./DeleteGigConfirmModal";
 import ImportExportModal from "./ImportExportModal";
 import ManualConcertModal from "./ManualConcertModal";
+import SetlistAttribution from "./SetlistAttribution";
 import { isFutureDate } from "./SetlistDateBadge";
+
+const TABS = [
+  { id: "gigs", label: "My Gigs", short: "Gigs" },
+  { id: "artists", label: "Artists Seen", short: "Artists" },
+  { id: "songs", label: "Songs Heard", short: "Songs" },
+  { id: "venues", label: "Venues", short: "Venues" },
+];
+const TAB_IDS = [...TABS.map((t) => t.id), "log"];
 
 export default function SetlistsPage() {
   const session = readSession();
   const token = session?.accessToken;
 
-  const [activeTab, setActiveTab] = useState("gigs"); // 'gigs' | 'artists' | 'songs' | 'venues' | 'log'
+  // The active tab lives in the URL (?tab=) so the browser Back button returns to it
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const activeTab = TAB_IDS.includes(tabParam) ? tabParam : "gigs";
+  const setActiveTab = (tab) => setSearchParams(tab === "gigs" ? {} : { tab });
+  const navigate = useNavigate();
+  const openGig = (concertId) => navigate(`/gigs/${concertId}`);
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
@@ -51,13 +64,6 @@ export default function SetlistsPage() {
   const [isLogging, setIsLogging] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
-  // Delete modal state
-  const [gigToDelete, setGigToDelete] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  // Refresh setlist state
-  const [isRefreshingId, setIsRefreshingId] = useState(null);
-
   // Import/Export modal state
   const [isImportExportOpen, setIsImportExportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -67,7 +73,8 @@ export default function SetlistsPage() {
   const [artistsLeaderboard, setArtistsLeaderboard] = useState([]);
   const [songsLeaderboard, setSongsLeaderboard] = useState([]);
   const [venuesLeaderboard, setVenuesLeaderboard] = useState([]);
-  const [isLoadingData, setIsLoadingData] = useState(false);
+  // Start in the loading state so empty-state text doesn't flash before the first fetch
+  const [isLoadingData, setIsLoadingData] = useState(Boolean(token));
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -203,36 +210,6 @@ export default function SetlistsPage() {
     }
   };
 
-  const handleRefreshSetlist = async (gig) => {
-    if (!token || !gig) return;
-    setIsRefreshingId(gig.id);
-    try {
-      await refreshConcertSetlist({ token, concertId: gig.id });
-      showToast(`Setlist for ${gig.artist_name} refreshed!`);
-      loadData();
-    } catch (err) {
-      alert(`Error refreshing setlist: ${err.message}`);
-    } finally {
-      setIsRefreshingId(null);
-    }
-  };
-
-  const handleDeleteConfirm = async (gigOrId, includeSupportActs = true) => {
-    if (!token) return;
-    const concertId = typeof gigOrId === "object" ? gigOrId.id : gigOrId;
-    setIsDeleting(true);
-    try {
-      const res = await deleteAttendance({ token, concertId, includeSupportActs });
-      setGigToDelete(null);
-      showToast(`Gig removed (${res?.deleted_count || 1} acts purged from scrobbles).`);
-      loadData();
-    } catch (err) {
-      alert(`Error deleting gig: ${err.message}`);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
   const handleImportSubmit = async (username, setlistIds = null) => {
     if (!token) return;
     setIsImporting(true);
@@ -256,16 +233,6 @@ export default function SetlistsPage() {
     }
   };
 
-  const handleNotesSaved = (concertId, newNotes) => {
-    setMyGigs((prev) => prev.map((g) => (g.id === concertId ? { ...g, notes: newNotes } : g)));
-    setArtistsLeaderboard((prev) =>
-      prev.map((artist) => ({
-        ...artist,
-        gigs: (artist.gigs || []).map((g) => (g.id === concertId ? { ...g, notes: newNotes } : g)),
-      }))
-    );
-  };
-
   const handleManualSaved = (newGig) => {
     showToast(`Logged "${newGig?.artist_name || "Upcoming gig"}"!`);
     loadData();
@@ -273,334 +240,219 @@ export default function SetlistsPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-5xl">
-      {/* Toast Notification */}
+    <div className="sfm-page">
       {toastMessage && (
-        <div
-          className="fixed bottom-5 right-5 z-50 p-4 rounded bg-success text-white font-medium shadow-md transition-all"
-          style={{ backgroundColor: "#15803d" }}
-        >
+        <div className="sfm-toast" role="status">
           {toastMessage}
         </div>
       )}
 
-      {/* Header and Setlist.fm-style Navigation Tabs */}
-      <div className="mb-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Set Lists</h1>
-            <p className="text-sm text-muted">
-              Track your concert attendances, live song history, and artist stats
-            </p>
-          </div>
-          <button
-            type="button"
-            className="btn btn-secondary text-xs px-3 py-1.5 shrink-0 self-start sm:self-auto"
-            onClick={() => setIsImportExportOpen(true)}
-            title="Import from Setlist.fm or Export your gigs"
-          >
-            Import / Export
-          </button>
-        </div>
+      <header className="sfm-page-header">
+        <h1>Set Lists</h1>
+        <p className="sfm-page-intro">
+          Track your concert attendances, live song history, and artist stats
+        </p>
+      </header>
 
-        {/* Full-width Setlist.fm Tab Strip */}
-        <div
-          className="flex items-end gap-1 border-b border-border overflow-x-auto pb-0 scrollbar-none"
-          role="tablist"
-        >
-          <button
-            type="button"
-            className={`setlist-tab-btn ${activeTab === "gigs" ? "active" : ""}`}
-            onClick={() => setActiveTab("gigs")}
-          >
-            My Gigs
-          </button>
-          <button
-            type="button"
-            className={`setlist-tab-btn ${activeTab === "artists" ? "active" : ""}`}
-            onClick={() => setActiveTab("artists")}
-          >
-            Artists Seen
-          </button>
-          <button
-            type="button"
-            className={`setlist-tab-btn ${activeTab === "songs" ? "active" : ""}`}
-            onClick={() => setActiveTab("songs")}
-          >
-            Songs Heard
-          </button>
-          <button
-            type="button"
-            className={`setlist-tab-btn ${activeTab === "venues" ? "active" : ""}`}
-            onClick={() => setActiveTab("venues")}
-          >
-            Venues
-          </button>
-          <button
-            type="button"
-            className={`setlist-tab-btn ${activeTab === "log" ? "active" : ""}`}
-            onClick={() => setActiveTab("log")}
-          >
-            + Log a Gig
-          </button>
-        </div>
-      </div>
-
-      {/* Setlist.fm API Key Unconfigured Warning */}
       {apiConfigured === false && (
-        <div
-          className="p-4 mb-6 rounded text-sm flex items-start gap-3"
-          style={{
-            border: "0.5px solid var(--color-danger, #ef4444)",
-            backgroundColor: "rgba(239, 68, 68, 0.1)",
-            color: "var(--color-ink, #ffffff)",
-          }}
-          data-testid="unconfigured-warning"
-        >
-          <span className="text-lg leading-none">⚠️</span>
-          <div>
-            <strong>Setlist.fm API key is not detected by the server.</strong>
-            <p className="mt-1 text-xs text-muted">
-              Concert searches and Setlist.fm imports require <code>SETLIST_FM_API_KEY</code>. If
-              you added it to your <code>.env.production</code> on the NUC, make sure to reload it
-              with:
-              <br />
-              <code className="text-xs bg-black/40 px-1 py-0.5 rounded mt-1 inline-block">
-                docker compose --env-file .env.production -f docker-compose.prod.yml up -d
-              </code>
-            </p>
-          </div>
+        <div className="sfm-warning" data-testid="unconfigured-warning">
+          <strong>Setlist.fm API key is not detected by the server.</strong>
+          <p>
+            Concert searches and Setlist.fm imports require <code>SETLIST_FM_API_KEY</code>. If you
+            added it to your <code>.env.production</code> on the NUC, reload it with:{" "}
+            <code>docker compose --env-file .env.production -f docker-compose.prod.yml up -d</code>
+          </p>
         </div>
       )}
 
-      {/* Main Tab Content */}
-      {activeTab === "log" && (
-        <div>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-            <span className="text-xs text-muted">
-              Search Setlist.fm or paste direct show link / ID:
-            </span>
+      <section className="sfm-panel">
+        <div className="sfm-tabbar">
+          <div className="sfm-tabs" role="tablist" aria-label="Set Lists sections">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                className={`sfm-tab ${activeTab === tab.id ? "active" : ""}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                <span className="sfm-tab-long">{tab.label}</span>
+                <span className="sfm-tab-short" aria-hidden="true">
+                  {tab.short}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="sfm-tabbar-actions">
             <button
               type="button"
-              className="text-xs text-primary hover:underline font-bold cursor-pointer bg-transparent border-0 p-0 text-left sm:text-right"
-              onClick={() => setIsManualModalOpen(true)}
+              className={`sfm-link ${activeTab === "log" ? "is-current" : ""}`}
+              onClick={() => setActiveTab("log")}
             >
-              + Add Upcoming Show Manually
+              + Log a Gig
+            </button>
+            <button
+              type="button"
+              className="sfm-link"
+              onClick={() => setIsImportExportOpen(true)}
+              title="Import from Setlist.fm or Export your gigs"
+            >
+              Import / Export
             </button>
           </div>
+        </div>
 
-          <GigSearchBar onSearch={handleSearch} isLoading={isSearching} />
-
-          {searchError && (
-            <div className="card p-4 mb-4 text-danger bg-danger-soft text-sm">{searchError}</div>
-          )}
-
-          {isSearching && (
-            <div className="text-center py-10 text-muted text-sm">Searching Setlist.fm...</div>
-          )}
-
-          {!isSearching && searchResults.length > 0 && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between text-xs text-muted uppercase tracking-wider">
-                <span>Found {totalSearchResults || searchResults.length} Results</span>
-                <span>
-                  Showing {searchResults.length} of {totalSearchResults || searchResults.length}
-                </span>
+        {/* Main Tab Content */}
+        {activeTab === "log" && (
+          <div>
+            <div className="sfm-section-head">
+              <h2>Log a Gig</h2>
+              <div className="sfm-search-hint">
+                <p className="sfm-section-desc">
+                  Search Setlist.fm, or paste a show&apos;s Setlist.fm link or ID.
+                </p>
+                <button
+                  type="button"
+                  className="sfm-link"
+                  onClick={() => setIsManualModalOpen(true)}
+                >
+                  + Add Upcoming Show Manually
+                </button>
               </div>
-
-              {/* Upcoming Shows Group */}
-              {searchResults.some((s) => isFutureDate(s.eventDate)) && (
-                <div>
-                  <div className="flex items-center gap-2 mb-3 pb-1 border-b border-border">
-                    <h2 className="text-sm font-bold text-ink uppercase tracking-wider">
-                      Upcoming Shows
-                    </h2>
-                    <span className="badge text-[11px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-                      {searchResults.filter((s) => isFutureDate(s.eventDate)).length}
-                    </span>
-                  </div>
-                  <div>
-                    {searchResults
-                      .filter((s) => isFutureDate(s.eventDate))
-                      .map((setlist) => (
-                        <GigCard
-                          key={setlist.id}
-                          setlist={setlist}
-                          token={token}
-                          onLogAttendance={handleOpenAttendanceModal}
-                          isLogging={isLogging}
-                        />
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Past Shows Group */}
-              {searchResults.some((s) => !isFutureDate(s.eventDate)) && (
-                <div>
-                  {searchResults.some((s) => isFutureDate(s.eventDate)) && (
-                    <div className="flex items-center gap-2 mb-3 pb-1 border-b border-border">
-                      <h2 className="text-sm font-bold text-ink uppercase tracking-wider">
-                        Past Shows
-                      </h2>
-                      <span className="badge text-[11px] font-bold px-2 py-0.5 rounded bg-surface-hover text-muted border border-border">
-                        {searchResults.filter((s) => !isFutureDate(s.eventDate)).length}
-                      </span>
-                    </div>
-                  )}
-                  <div>
-                    {searchResults
-                      .filter((s) => !isFutureDate(s.eventDate))
-                      .map((setlist) => (
-                        <GigCard
-                          key={setlist.id}
-                          setlist={setlist}
-                          token={token}
-                          onLogAttendance={handleOpenAttendanceModal}
-                          isLogging={isLogging}
-                        />
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Pagination Button: View More Shows */}
-              {searchResults.length < totalSearchResults && (
-                <div className="text-center pt-2">
-                  <button
-                    type="button"
-                    className="btn btn-secondary px-5 py-2 text-xs font-bold"
-                    onClick={handleLoadMore}
-                    disabled={isLoadingMore}
-                  >
-                    {isLoadingMore ? "Loading more shows..." : "View More Shows (+20)"}
-                  </button>
-                </div>
-              )}
             </div>
-          )}
 
-          {!isSearching && searchResults.length === 0 && !searchError && (
-            <div className="card p-8 text-center text-muted text-sm space-y-3">
-              {hasSearched ? (
-                <>
-                  <p>
-                    No concerts found matching &quot;<strong>{lastSearchQuery}</strong>&quot;. Try
-                    checking the artist spelling, clearing the venue or year filter (the tour may
-                    have taken place in a different year), or selecting &quot;All Countries&quot;.
-                  </p>
-                  <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+            <GigSearchBar onSearch={handleSearch} isLoading={isSearching} />
+
+            {searchError && (
+              <p className="sfm-error" role="alert">
+                {searchError}
+              </p>
+            )}
+
+            {isSearching && <p className="sfm-empty">Searching Setlist.fm...</p>}
+
+            {!isSearching && searchResults.length > 0 && (
+              <div>
+                <div className="sfm-results-head">
+                  <span>Found {totalSearchResults || searchResults.length} results</span>
+                  <span>
+                    Showing {searchResults.length} of {totalSearchResults || searchResults.length}
+                  </span>
+                </div>
+
+                {[
+                  ["Upcoming Shows", searchResults.filter((s) => isFutureDate(s.eventDate))],
+                  ["Past Shows", searchResults.filter((s) => !isFutureDate(s.eventDate))],
+                ]
+                  .filter(([, group]) => group.length > 0)
+                  .map(([title, group], _idx, groups) => (
+                    <div key={title} className="sfm-results-group">
+                      {/* Only label the groups when results span both */}
+                      {(groups.length > 1 || title === "Upcoming Shows") && (
+                        <h3>
+                          {title} ({group.length})
+                        </h3>
+                      )}
+                      <div className="sfm-gig-list">
+                        {group.map((setlist) => (
+                          <GigCard
+                            key={setlist.id}
+                            setlist={setlist}
+                            onLogAttendance={handleOpenAttendanceModal}
+                            isLogging={isLogging}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                {searchResults.length < totalSearchResults && (
+                  <div className="sfm-load-more">
                     <button
                       type="button"
-                      className="btn btn-primary text-xs px-3 py-1.5 font-bold"
-                      onClick={() => setIsManualModalOpen(true)}
+                      className="sfm-action"
+                      onClick={handleLoadMore}
+                      disabled={isLoadingMore}
                     >
-                      + Add Upcoming / Custom Show Manually
+                      {isLoadingMore ? "Loading more shows..." : "View More Shows (+20)"}
                     </button>
                   </div>
-                  <p className="text-[11px] text-muted">
-                    Upcoming tour dates not yet on Setlist.fm? You can paste their direct Setlist.fm
-                    show link into the search bar, or add them manually above.
-                  </p>
-                </>
-              ) : (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
-                  <span>
-                    Search for an artist or venue above to find your concert and log attendance.
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn-secondary text-xs px-3 py-1.5 shrink-0"
-                    onClick={() => setIsManualModalOpen(true)}
-                  >
-                    + Add Show Manually
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+                )}
+              </div>
+            )}
 
-      {activeTab === "gigs" && (
-        <div>
-          {isLoadingData ? (
-            <div className="text-center py-10 text-muted">Loading your gigs...</div>
-          ) : (
-            <MyGigsTimeline
-              gigs={myGigs}
-              token={token}
-              onRefreshSetlist={handleRefreshSetlist}
-              onDeleteGig={handleDeleteConfirm}
-              onNotesSaved={handleNotesSaved}
-              isRefreshingId={isRefreshingId}
-            />
-          )}
-        </div>
-      )}
+            {!isSearching && searchResults.length === 0 && !searchError && (
+              <div className="sfm-empty">
+                {hasSearched ? (
+                  <>
+                    <p>
+                      No concerts found matching &quot;<strong>{lastSearchQuery}</strong>&quot;. Try
+                      checking the artist spelling, clearing the venue or year filter (the tour may
+                      have taken place in a different year), or selecting &quot;All Countries&quot;.
+                    </p>
+                    <p>
+                      Upcoming tour dates not yet on Setlist.fm? Paste the show&apos;s Setlist.fm
+                      link above, or{" "}
+                      <button
+                        type="button"
+                        className="sfm-link"
+                        onClick={() => setIsManualModalOpen(true)}
+                      >
+                        + Add Upcoming / Custom Show Manually
+                      </button>
+                    </p>
+                  </>
+                ) : (
+                  <p>Search for an artist or venue above to find your concert and log it.</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
-      {activeTab === "artists" && (
-        <div>
-          {isLoadingData ? (
-            <div className="text-center py-10 text-muted">Loading artists seen...</div>
-          ) : (
-            <ArtistsSeenLeaderboard
-              artists={artistsLeaderboard}
-              token={token}
-              onRefreshSetlist={handleRefreshSetlist}
-              onDeleteGig={handleDeleteConfirm}
-              onNotesSaved={handleNotesSaved}
-              isRefreshingId={isRefreshingId}
-            />
-          )}
-        </div>
-      )}
+        {activeTab === "gigs" && (
+          <div>
+            {isLoadingData ? (
+              <div className="sfm-empty">Loading your gigs...</div>
+            ) : (
+              <MyGigsTimeline gigs={myGigs} onOpenGig={openGig} />
+            )}
+          </div>
+        )}
 
-      {activeTab === "songs" && (
-        <div>
-          {isLoadingData ? (
-            <div className="text-center py-10 text-muted">Loading songs heard live...</div>
-          ) : (
-            <SongsHeardLeaderboard songs={songsLeaderboard} />
-          )}
-        </div>
-      )}
+        {activeTab === "artists" && (
+          <div>
+            {isLoadingData ? (
+              <div className="sfm-empty">Loading artists seen...</div>
+            ) : (
+              <ArtistsSeenLeaderboard artists={artistsLeaderboard} onOpenGig={openGig} />
+            )}
+          </div>
+        )}
 
-      {activeTab === "venues" && (
-        <div>
-          {isLoadingData ? (
-            <div className="text-center py-10 text-muted">Loading venues leaderboard...</div>
-          ) : (
-            <VenuesLeaderboard venues={venuesLeaderboard} />
-          )}
-        </div>
-      )}
+        {activeTab === "songs" && (
+          <div>
+            {isLoadingData ? (
+              <div className="sfm-empty">Loading songs heard live...</div>
+            ) : (
+              <SongsHeardLeaderboard songs={songsLeaderboard} onOpenGig={openGig} />
+            )}
+          </div>
+        )}
 
-      {/* Setlist.fm Attribution */}
-      <footer
-        className="mt-12 pt-6 pb-2 text-center text-xs text-muted"
-        style={{ borderTop: "0.5px solid var(--color-border)" }}
-      >
-        Concert and setlist data provided by{" "}
-        <a
-          href="https://www.setlist.fm"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline hover:text-ink transition-colors"
-        >
-          setlist.fm
-        </a>{" "}
-        under their{" "}
-        <a
-          href="https://www.setlist.fm/help/terms"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline hover:text-ink transition-colors"
-        >
-          Terms of Service
-        </a>
-        .
-      </footer>
+        {activeTab === "venues" && (
+          <div>
+            {isLoadingData ? (
+              <div className="sfm-empty">Loading venues leaderboard...</div>
+            ) : (
+              <VenuesLeaderboard venues={venuesLeaderboard} onOpenGig={openGig} />
+            )}
+          </div>
+        )}
+      </section>
+
+      <SetlistAttribution />
 
       {/* Support Acts Prompt Modal */}
       <SupportActsPromptModal
@@ -610,15 +462,6 @@ export default function SetlistsPage() {
         supportActs={supportActs}
         onConfirm={handleConfirmAttendance}
         isSubmitting={isLogging}
-      />
-
-      {/* Delete Confirmation Modal */}
-      <DeleteGigConfirmModal
-        isOpen={!!gigToDelete}
-        onClose={() => setGigToDelete(null)}
-        gig={gigToDelete}
-        onConfirm={handleDeleteConfirm}
-        isDeleting={isDeleting}
       />
 
       {/* Import / Export Modal */}

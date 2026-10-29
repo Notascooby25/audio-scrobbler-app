@@ -96,7 +96,7 @@ def get_venue_date_support_acts(
 
 @router.get("/attendances")
 def list_attendances(
-    limit: int = Query(50, ge=1, le=200),
+    limit: int = Query(50, ge=1, le=2000),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -236,6 +236,18 @@ def refresh_setlist(
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
 
 
+@router.get("/attendances/{concert_id}", response_model=AttendedConcertResponse)
+def get_attendance(
+    concert_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> AttendedConcert:
+    gig = SetlistStatsService(db=db).get_gig(user_id=current_user.id, concert_id=concert_id)
+    if gig is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gig not found.")
+    return gig
+
+
 @router.get("/stats/artists", response_model=list[ArtistLeaderboardItem])
 def get_artists_seen_leaderboard(
     db: Session = Depends(get_db),
@@ -249,7 +261,7 @@ def get_artists_seen_leaderboard(
 
 @router.get("/stats/songs", response_model=list[SongLeaderboardItem])
 def get_songs_heard_leaderboard(
-    limit: int = Query(100, ge=1, le=500),
+    limit: int = Query(1000, ge=1, le=2000),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[SongLeaderboardItem]:

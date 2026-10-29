@@ -35,63 +35,51 @@ export default function SupportActsPromptModal({
   const eventDate = mainSetlist?.eventDate || "";
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
-      style={{ backdropFilter: "blur(2px)" }}
-    >
+    <div className="modal-backdrop">
       <div
-        className="card w-full max-w-lg p-6"
-        style={{
-          border: "0.5px solid var(--color-border)",
-          backgroundColor: "var(--color-surface)",
-        }}
+        className="modal-dialog sfm-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="support-acts-title"
       >
-        <h3 className="text-lg font-bold mb-1">Did you catch any support bands?</h3>
-        <p className="text-xs text-muted mb-4">
-          We found other acts who performed at <strong>{venueName}</strong> on{" "}
-          <strong>{eventDate}</strong>. Select any you watched so we can add them to your gig
-          history and scrobbles:
-        </p>
+        <div className="sfm-modal-head">
+          <div>
+            <h3 id="support-acts-title">Did you catch any support bands?</h3>
+            <p>
+              We found other acts who performed at <strong>{venueName}</strong> on{" "}
+              <strong>{eventDate}</strong>. Select any you watched so we can add them to your gig
+              history and scrobbles:
+            </p>
+          </div>
+        </div>
 
         {supportActs.length === 0 ? (
-          <p className="text-sm text-muted my-4 italic">
+          <p className="sfm-gig-meta">
             No other acts were listed for this venue and date. Only {mainSetlist?.artist?.name} will
             be logged.
           </p>
         ) : (
-          <div className="space-y-2 mb-6 max-h-60 overflow-y-auto pr-1">
-            {supportActs.map((act) => {
-              const isChecked = selectedIds.includes(act.id);
-              const actName = act?.artist?.name || "Support Act";
-              return (
-                <label
-                  key={act.id}
-                  className="flex items-center gap-3 p-3 rounded cursor-pointer transition-colors"
-                  style={{
-                    backgroundColor: isChecked ? "var(--color-surface-hover)" : "transparent",
-                    border: "0.5px solid var(--color-border)",
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isChecked}
-                    onChange={() => handleToggle(act.id)}
-                    className="rounded text-primary focus:ring-0"
-                  />
-                  <div>
-                    <div className="font-semibold text-sm">{actName}</div>
-                    <div className="text-xs text-muted">Support Act</div>
-                  </div>
-                </label>
-              );
-            })}
+          <div className="sfm-check-list">
+            {supportActs.map((act) => (
+              <label key={act.id} className="sfm-check-row">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(act.id)}
+                  onChange={() => handleToggle(act.id)}
+                />
+                <span className="sfm-check-body">
+                  <strong>{act?.artist?.name || "Support Act"}</strong>
+                  <span className="sfm-sub">Support act</span>
+                </span>
+              </label>
+            ))}
           </div>
         )}
 
-        <div className="flex justify-end gap-3">
+        <div className="modal-actions">
           <button
             type="button"
-            className="btn btn-secondary"
+            className="modal-cancel-button"
             onClick={onClose}
             disabled={isSubmitting}
           >
@@ -99,7 +87,7 @@ export default function SupportActsPromptModal({
           </button>
           <button
             type="button"
-            className="btn btn-primary"
+            className="modal-confirm-button"
             onClick={handleSave}
             disabled={isSubmitting}
           >

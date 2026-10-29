@@ -3,12 +3,41 @@ from __future__ import annotations
 import csv
 import io
 import json
+from datetime import datetime
 from typing import Any
 
-from sqlalchemy import desc, func
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from ..models import AttendedConcert, ListeningEvent
+
+
+def _display_date(value: datetime | None) -> str:
+    return value.strftime("%d %b %Y") if value else ""
+
+
+def _concert_ref(c: AttendedConcert) -> dict[str, Any]:
+    """Compact gig reference used to list the concerts behind a song or venue count."""
+    return {
+        "id": c.id,
+        "setlist_id": c.setlist_id,
+        "artist_name": c.artist_name,
+        "venue_name": c.venue_name,
+        "city": c.city,
+        "country": c.country,
+        "event_date": c.event_date.isoformat() if c.event_date else None,
+        "date": _display_date(c.event_date),
+        "is_support": c.is_support_act,
+    }
+
+
+def _event_setlist_id(play_id: str | None, raw_metadata: dict[str, object] | None) -> str | None:
+    """Recover the setlist a live scrobble came from (play_id is setlistfm_{setlist_id}_{n})."""
+    if isinstance(raw_metadata, dict) and isinstance(raw_metadata.get("setlist_id"), str):
+        return raw_metadata["setlist_id"]
+    if play_id and play_id.startswith("setlistfm_") and "_" in play_id[len("setlistfm_") :]:
+        return play_id[len("setlistfm_") :].rsplit("_", 1)[0]
+    return None
 
 
 def _sanitize_csv_cell(val: object) -> object:
@@ -52,32 +81,29 @@ class SetlistStatsService:
             )
         return results
 
+    def get_gig(self, user_id: int, concert_id: int) -> AttendedConcert | None:
+        return self.db.query(AttendedConcert).filter_by(id=concert_id, user_id=user_id).first()
+
     def get_artists_seen_leaderboard(self, user_id: int) -> list[dict[str, Any]]:
-        # Count concerts per artist
-        counts = (
-            self.db.query(
-                AttendedConcert.artist_name,
-                func.count(AttendedConcert.id).label("total_gigs"),
-            )
+        all_concerts = (
+            self.db.query(AttendedConcert)
             .filter_by(user_id=user_id)
-            .group_by(AttendedConcert.artist_name)
-            .order_by(desc("total_gigs"), AttendedConcert.artist_name.asc())
+            .order_by(desc(AttendedConcert.event_date), desc(AttendedConcert.id))
             .all()
         )
 
-        all_concerts = (
-            self.db.query(AttendedConcert).filter_by(user_id=user_id).order_by(desc(AttendedConcert.event_date)).all()
-        )
-
         gigs_by_artist: dict[str, list[dict[str, Any]]] = {}
+        last_seen: dict[str, datetime] = {}
         for c in all_concerts:
             if c.artist_name not in gigs_by_artist:
                 gigs_by_artist[c.artist_name] = []
+                last_seen[c.artist_name] = c.event_date or datetime.min
             gigs_by_artist[c.artist_name].append(
                 {
                     "id": c.id,
                     "setlist_id": c.setlist_id,
-                    "date": c.event_date.strftime("%d %b %Y") if c.event_date else "",
+                    "date": _display_date(c.event_date),
+                    "event_date": c.event_date.isoformat() if c.event_date else None,
                     "venue": c.venue_name,
                     "city": c.city,
                     "country": c.country,
@@ -88,78 +114,85 @@ class SetlistStatsService:
                 }
             )
 
-        leaderboard = []
-        for artist_name, count in counts:
-            leaderboard.append(
-                {
-                    "artist_name": artist_name,
-                    "count": count,
-                    "gigs": gigs_by_artist.get(artist_name, []),
-                }
-            )
-        return leaderboard
+        # Times seen, then most recently seen, then name (matches the page description)
+        names = sorted(gigs_by_artist, key=lambda n: n.lower())
+        names.sort(key=lambda n: last_seen[n], reverse=True)
+        names.sort(key=lambda n: len(gigs_by_artist[n]), reverse=True)
+        return [
+            {"artist_name": name, "count": len(gigs_by_artist[name]), "gigs": gigs_by_artist[name]} for name in names
+        ]
 
-    def get_songs_heard_leaderboard(self, user_id: int, limit: int = 100) -> list[dict[str, Any]]:
-        results = (
+    def get_songs_heard_leaderboard(self, user_id: int, limit: int = 1000) -> list[dict[str, Any]]:
+        events = (
             self.db.query(
                 ListeningEvent.track_name,
                 ListeningEvent.artist_name,
-                func.count(ListeningEvent.id).label("live_count"),
+                ListeningEvent.play_id,
+                ListeningEvent.raw_metadata,
             )
             .filter(
                 ListeningEvent.user_id == user_id,
                 ListeningEvent.source == "setlistfm",
             )
-            .group_by(ListeningEvent.track_name, ListeningEvent.artist_name)
-            .order_by(desc("live_count"), ListeningEvent.track_name.asc())
-            .limit(limit)
             .all()
         )
+        concerts = {
+            c.setlist_id: c
+            for c in self.db.query(AttendedConcert).filter_by(user_id=user_id).order_by(AttendedConcert.id).all()
+        }
 
-        return [
-            {
-                "track_name": track_name,
-                "artist_name": artist_name,
-                "count": live_count,
-            }
-            for track_name, artist_name, live_count in results
-        ]
+        counts: dict[tuple[str, str], int] = {}
+        setlists_by_song: dict[tuple[str, str], list[str]] = {}
+        for track_name, artist_name, play_id, raw_metadata in events:
+            key = (track_name, artist_name)
+            counts[key] = counts.get(key, 0) + 1
+            setlist_id = _event_setlist_id(play_id, raw_metadata)
+            seen = setlists_by_song.setdefault(key, [])
+            if setlist_id in concerts and setlist_id not in seen:
+                seen.append(setlist_id)
+
+        ordered = sorted(counts, key=lambda k: (-counts[k], k[0], k[1]))[:limit]
+        results = []
+        for key in ordered:
+            song_gigs = [concerts[sid] for sid in setlists_by_song.get(key, [])]
+            song_gigs.sort(key=lambda c: c.event_date or datetime.min, reverse=True)
+            results.append(
+                {
+                    "track_name": key[0],
+                    "artist_name": key[1],
+                    "count": counts[key],
+                    "gigs": [_concert_ref(c) for c in song_gigs],
+                }
+            )
+        return results
 
     def get_venues_visited_leaderboard(self, user_id: int) -> list[dict[str, Any]]:
-        # Count unique dates visited per venue (to avoid counting support acts as extra venue visits)
-        subq = (
-            self.db.query(
-                AttendedConcert.venue_name,
-                AttendedConcert.city,
-                AttendedConcert.country,
-                func.date(AttendedConcert.event_date).label("visit_date"),
-            )
+        concerts = (
+            self.db.query(AttendedConcert)
             .filter_by(user_id=user_id)
-            .distinct()
-            .subquery()
-        )
-
-        counts = (
-            self.db.query(
-                subq.c.venue_name,
-                subq.c.city,
-                subq.c.country,
-                func.count().label("visit_count"),
-            )
-            .group_by(subq.c.venue_name, subq.c.city, subq.c.country)
-            .order_by(desc("visit_count"), subq.c.venue_name.asc())
+            .order_by(desc(AttendedConcert.event_date), desc(AttendedConcert.id))
             .all()
         )
 
-        return [
-            {
-                "venue_name": row[0],
-                "city": row[1],
-                "country": row[2],
-                "count": row[3],
-            }
-            for row in counts
-        ]
+        gigs_by_venue: dict[tuple[str, str, str], list[AttendedConcert]] = {}
+        for c in concerts:
+            gigs_by_venue.setdefault((c.venue_name, c.city, c.country), []).append(c)
+
+        results = []
+        for (venue_name, city, country), venue_gigs in gigs_by_venue.items():
+            # Count unique dates so support acts on the same night aren't extra visits
+            visit_count = len({c.event_date.date() if c.event_date else None for c in venue_gigs})
+            results.append(
+                {
+                    "venue_name": venue_name,
+                    "city": city,
+                    "country": country,
+                    "count": visit_count,
+                    "gigs": [_concert_ref(c) for c in venue_gigs],
+                }
+            )
+        results.sort(key=lambda v: (-v["count"], v["venue_name"]))
+        return results
 
     def export_attended_gigs(self, user_id: int, format: str = "json") -> tuple[str, str]:
         gigs = (

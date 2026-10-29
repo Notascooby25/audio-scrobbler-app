@@ -280,25 +280,23 @@ export default function UserGuideSection() {
             future concerts.
           </li>
           <li>
-            <strong>View Songs & Setlist Details (In-Place):</strong> On both <em>My Gigs</em> and{" "}
-            <em>Artists Seen</em>, tap on any concert title or the{" "}
-            <em>View Songs & Notes &rarr;</em> link to expand the setlist drawer right inside the
-            row where pressed without jumping around the page. See songs divided by Main Set and
-            Encores with continuous numbering, guest performers, cover artist tags, tape intro
-            callouts, and set times. You can also copy the formatted setlist directly to your
-            clipboard.
+            <strong>Gig Setlist Pages:</strong> Tap any gig in <em>My Gigs</em>, or inside an
+            expanded artist, song or venue, to open its own setlist page: the date, venue and tour,
+            then every song numbered in order, split into main set and encores, with guest, cover
+            and tape notes. Use <em>&larr; Back</em> to return to exactly where you were (same tab,
+            page and expanded row). From the gig page you can also <em>Refresh from Setlist.fm</em>,{" "}
+            <em>Copy setlist</em>, or <em>Delete gig</em> (with an option to remove the support acts
+            logged that night). In <em>Log a Gig</em> search results, tap a show&apos;s title to
+            preview its songs before logging it.
           </li>
           <li>
-            <strong>Personal Gig Diary & Inline Delete Confirmation:</strong> Add your own memories
-            (standing spots, who you went with, highlights) directly in the expanded card drawer
-            with quick editing and saving. Deleting a concert opens an inline confirmation bar right
-            on that row with support acts options, avoiding unexpected page jumps or detached
-            dialogs.
+            <strong>Personal Gig Diary:</strong> Add your own memories (standing spots, who you went
+            with, highlights) in the <em>My notes</em> box on each gig&apos;s page.
           </li>
           <li>
             <strong>Future Gigs & "I'M GOING":</strong> Concerts in the future automatically display{" "}
             <em>+ I'M GOING</em> instead of <em>✓ I WAS THERE</em>. In <em>My Gigs</em>, use the
-            sub-filter buttons to switch between <em>All Gigs</em>, <em>Attended</em>, or{" "}
+            links under the heading to switch between <em>All</em>, <em>Attended</em>, or{" "}
             <em>Upcoming</em>.
           </li>
           <li>
@@ -312,10 +310,12 @@ export default function UserGuideSection() {
             <code>setlistfm</code>, so they appear in your reports and charts.
           </li>
           <li>
-            <strong>Live Music Leaderboards:</strong> Switch between <em>Artists Seen</em> (ranked
-            by total gigs with proportional bars and expandable accordions showing every show you
-            attended, with in-place setlist drawers and inline delete actions), <em>Songs Heard</em>{" "}
-            (live play counts), and <em>Venues Visited</em>.
+            <strong>Live Music Statistics:</strong> <em>Artists Seen</em> ranks artists by times
+            seen (then most recently seen), with a proportional bar so the gaps are obvious at a
+            glance; tied artists share a rank. Tap an artist to list every gig you saw them at.{" "}
+            <em>Songs Heard</em> counts every live performance and has a sidebar to narrow the table
+            to one year or one artist; tap a song to see which gigs you heard it at. <em>Venues</em>{" "}
+            ranks venues by nights visited; tap one to see every act you saw there.
           </li>
           <li>
             <strong>Setlist.fm Account Import & Export:</strong> Have an existing Setlist.fm profile

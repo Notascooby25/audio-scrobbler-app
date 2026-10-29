@@ -224,8 +224,8 @@ const FAQ_DATA = [
         <p>
           The songs are sequenced chronologically backwards through the evening (support acts first,
           headliner later) and stored in your primary listening history with source{" "}
-          <code>setlistfm</code>. If you ever un-log or delete a gig, a confirmation modal asks if
-          you'd like to purge those concert scrobbles from your library.
+          <code>setlistfm</code>. If you delete a gig from its setlist page, those concert scrobbles
+          are removed too, and you can choose whether to remove the support acts logged that night.
         </p>
       </>
     ),
@@ -251,11 +251,11 @@ const FAQ_DATA = [
     question: "Can I view the songs played at a gig, see encores, or copy the setlist?",
     answer: (
       <p>
-        <strong>Yes!</strong> Click on any concert headline or tap <em>View Songs &rarr;</em> to
-        expand the setlist drawer right inside the card where pressed. You will see songs divided
-        into main sets and encores, complete with continuous song numbering, guest features, cover
-        artist notes, and tape intro tags. You can also click <em>Copy Setlist</em> to copy a
-        formatted setlist text to your clipboard.
+        <strong>Yes!</strong> Tap any gig in <em>My Gigs</em> (or inside an expanded artist, song or
+        venue) to open its setlist page. Songs are numbered in order and split into main sets and
+        encores, with guest features, cover artist notes and tape intro tags. Tap{" "}
+        <em>Copy setlist</em> to copy it as text, and <em>&larr; Back</em> to return to the list
+        where you left it.
       </p>
     ),
   },
@@ -265,10 +265,10 @@ const FAQ_DATA = [
     question: "Can I add personal notes or memories to my gigs?",
     answer: (
       <p>
-        <strong>Yes.</strong> Every attended gig supports personal diary notes. In the setlist modal
-        or your My Gigs timeline, write any personal memories (e.g. standing spots, who you attended
-        with, favorite encore track). Your notes are securely saved in your database and displayed
-        alongside the concert.
+        <strong>Yes.</strong> Every attended gig supports personal diary notes. Open the gig from My
+        Gigs and use the <em>My notes</em> box to write any personal memories (e.g. standing spots,
+        who you attended with, favorite encore track). Your notes are securely saved in your
+        database and displayed alongside the concert.
       </p>
     ),
   },
@@ -279,8 +279,8 @@ const FAQ_DATA = [
     answer: (
       <p>
         <strong>Yes.</strong> Any concert with a future date automatically displays{" "}
-        <strong>+ I&apos;M GOING</strong> instead of <em>✓ I WAS THERE</em>. In the My Gigs
-        timeline, you can filter by <strong>Upcoming</strong> to see shows on your horizon.
+        <strong>+ I&apos;m going</strong> instead of <em>✓ I was there</em>. In My Gigs, tap{" "}
+        <strong>Upcoming</strong> under the heading to see shows on your horizon.
       </p>
     ),
   },
