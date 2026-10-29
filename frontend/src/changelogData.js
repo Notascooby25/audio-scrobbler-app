@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.25.0",
+    date: "2026-10-29",
+    changes: [
+      "See a friend's gigs: on the profile of someone you follow, tap View Gigs to browse their gigs, artists seen, songs heard and venues, the same way View Library shows their scrobbles. Their notes stay private, and nothing can be changed from there.",
+      "I was there too: on a friend's gig page, tap + I was there too to add that gig (songs and support acts included) to your own gigs in one go. It answers any Were you there? invite for that gig, and they get a notification.",
+    ],
+  },
+  {
     version: "0.24.0",
     date: "2026-10-29",
     changes: [
