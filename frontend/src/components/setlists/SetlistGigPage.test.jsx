@@ -10,6 +10,10 @@ vi.mock("../../api/setlists", () => ({
   refreshConcertSetlist: vi.fn(),
   deleteAttendance: vi.fn().mockResolvedValue({ deleted_count: 1 }),
   updateConcertNotes: vi.fn().mockResolvedValue({}),
+  fetchGigBill: vi.fn().mockResolvedValue({ acts: [], complete: true, capped: false }),
+  logBillAct: vi.fn(),
+  alreadyLoggedInfo: (err) =>
+    err?.status === 409 && err?.detail?.code === "already_logged" ? err.detail : null,
 }));
 
 vi.mock("../../session", () => ({
@@ -173,5 +177,77 @@ describe("SetlistGigPage", () => {
 
     await screen.findByRole("heading", { name: "Bombay Bicycle Club Setlist" });
     expect(screen.queryByRole("link", { name: /view on setlist\.fm/i })).not.toBeInTheDocument();
+  });
+
+  it("shows who else was on the bill and logs one with I was there", async () => {
+    setlistsApi.fetchAttendance.mockResolvedValueOnce(gig);
+    setlistsApi.fetchGigBill.mockResolvedValueOnce({
+      acts: [
+        {
+          setlist_id: "sp_1",
+          artist_name: "Royel Otis",
+          logged: true,
+          concert_id: 40,
+          role: "support",
+        },
+        {
+          setlist_id: "sp_2",
+          artist_name: "Die Spitz",
+          logged: false,
+          concert_id: null,
+          role: null,
+        },
+      ],
+      complete: true,
+      capped: false,
+    });
+    setlistsApi.logBillAct.mockResolvedValueOnce({ id: 41, is_support_act: true });
+    renderGigPage();
+
+    expect(await screen.findByRole("heading", { name: "On the bill" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Royel Otis" })).toHaveAttribute("href", "/gigs/40");
+    expect(screen.getByText("Support")).toBeInTheDocument();
+    expect(screen.getAllByText("✓ I was there")).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "I was there for Die Spitz" }));
+    await waitFor(() =>
+      expect(setlistsApi.logBillAct).toHaveBeenCalledWith({
+        token: "test-token",
+        concertId: 12,
+        setlistId: "sp_2",
+      })
+    );
+    expect(await screen.findByRole("link", { name: "Die Spitz" })).toHaveAttribute(
+      "href",
+      "/gigs/41"
+    );
+    expect(screen.getAllByText("✓ I was there")).toHaveLength(2);
+
+    // A just-logged act can be undone from the same row
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    await waitFor(() =>
+      expect(setlistsApi.deleteAttendance).toHaveBeenCalledWith({
+        token: "test-token",
+        concertId: 41,
+        includeSupportActs: false,
+      })
+    );
+    expect(
+      await screen.findByRole("button", { name: "I was there for Die Spitz" })
+    ).toBeInTheDocument();
+  });
+
+  it("hides the bill when nobody else played and notes when it may be incomplete", async () => {
+    setlistsApi.fetchAttendance.mockResolvedValueOnce(gig);
+    renderGigPage();
+    await screen.findByRole("heading", { name: "Bombay Bicycle Club Setlist" });
+    await waitFor(() => expect(setlistsApi.fetchGigBill).toHaveBeenCalled());
+    expect(screen.queryByRole("heading", { name: "On the bill" })).not.toBeInTheDocument();
+
+    cleanup();
+    setlistsApi.fetchAttendance.mockResolvedValueOnce(gig);
+    setlistsApi.fetchGigBill.mockResolvedValueOnce({ acts: [], complete: false, capped: false });
+    renderGigPage();
+    expect(await screen.findByText(/may be incomplete/i)).toBeInTheDocument();
   });
 });

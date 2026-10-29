@@ -187,6 +187,25 @@ export async function fetchAttendance({ token, concertId }) {
   return parseResponse(response);
 }
 
+export async function fetchGigBill({ token, concertId }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/attendances/${concertId}/bill`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function logBillAct({ token, concertId, setlistId }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/attendances/${concertId}/bill`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ setlist_id: setlistId }),
+  });
+  return parseResponse(response);
+}
+
 export async function deleteAttendance({ token, concertId, includeSupportActs = true }) {
   const params = new URLSearchParams({ include_support_acts: includeSupportActs });
   const response = await fetch(`${API_BASE_URL}/setlists/${concertId}?${params.toString()}`, {
