@@ -37,15 +37,27 @@ describe("SetlistsPage", () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole("button", { name: /my gigs/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /artists seen/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /songs heard/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /venues/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /my gigs/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /artists seen/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /songs heard/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /venues/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /\+ log a gig/i })).toBeInTheDocument();
 
     // Switch to Log a Gig tab
     fireEvent.click(screen.getByRole("button", { name: /\+ log a gig/i }));
     expect(screen.getByPlaceholderText(/search artist/i)).toBeInTheDocument();
+  });
+
+  it("opens the tab named in the ?tab= query string", async () => {
+    render(
+      <MemoryRouter initialEntries={["/setlists?tab=venues"]}>
+        <SetlistsPage />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole("tab", { name: /venues/i })).toHaveAttribute("aria-selected", "true");
+    await waitFor(() => expect(setlistsApi.fetchVenuesVisitedLeaderboard).toHaveBeenCalled());
+    expect(setlistsApi.fetchAttendances).not.toHaveBeenCalled();
   });
 
   it('performs gig search and displays results with "I WAS THERE" button', async () => {

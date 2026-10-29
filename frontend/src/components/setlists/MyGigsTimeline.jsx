@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import SetlistDateBadge, { isFutureDate } from "./SetlistDateBadge";
 import SetlistTracklistDrawer from "./SetlistTracklistDrawer";
 
@@ -10,7 +11,15 @@ export default function MyGigsTimeline({
   onNotesSaved,
   isRefreshingId,
 }) {
-  const [filter, setFilter] = useState("all"); // 'all' | 'past' | 'future'
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filterParam = searchParams.get("filter");
+  const filter = filterParam === "past" || filterParam === "future" ? filterParam : "all";
+  const setFilter = (next) => {
+    const params = new URLSearchParams(searchParams);
+    if (next === "all") params.delete("filter");
+    else params.set("filter", next);
+    setSearchParams(params);
+  };
   const [expandedGigId, setExpandedGigId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [includeSupportActs, setIncludeSupportActs] = useState(true);
@@ -49,52 +58,37 @@ export default function MyGigsTimeline({
   };
 
   return (
-    <div className="space-y-3">
-      {/* Setlist.fm Sub-Filters Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-border">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight text-ink">
-            {filter === "past"
-              ? `Attended Shows (${pastGigs.length})`
-              : filter === "future"
-                ? `Upcoming Shows (${futureGigs.length})`
-                : `All Gigs (${gigs.length})`}
-          </h2>
-        </div>
-        <div className="flex items-center gap-3 text-xs">
-          <button
-            type="button"
-            className={`btn-plain-text text-xs ${
-              filter === "all" ? "text-ink font-bold !no-underline" : "text-primary hover:underline"
-            }`}
-            onClick={() => setFilter("all")}
-          >
-            All Gigs ({gigs.length})
-          </button>
-          <span className="text-muted">·</span>
-          <button
-            type="button"
-            className={`btn-plain-text text-xs ${
-              filter === "past"
-                ? "text-ink font-bold !no-underline"
-                : "text-primary hover:underline"
-            }`}
-            onClick={() => setFilter("past")}
-          >
-            Attended ({pastGigs.length})
-          </button>
-          <span className="text-muted">·</span>
-          <button
-            type="button"
-            className={`btn-plain-text text-xs ${
-              filter === "future"
-                ? "text-ink font-bold !no-underline"
-                : "text-primary hover:underline"
-            }`}
-            onClick={() => setFilter("future")}
-          >
-            Upcoming ({futureGigs.length})
-          </button>
+    <div>
+      <div className="sfm-section-head">
+        <h2>
+          {filter === "past"
+            ? `Attended Shows (${pastGigs.length})`
+            : filter === "future"
+              ? `Upcoming Shows (${futureGigs.length})`
+              : `All Gigs (${gigs.length})`}
+        </h2>
+        <div className="sfm-filter">
+          {[
+            ["all", `All (${gigs.length})`],
+            ["past", `Attended (${pastGigs.length})`],
+            ["future", `Upcoming (${futureGigs.length})`],
+          ].map(([key, label], idx) => (
+            <span key={key}>
+              {idx > 0 && (
+                <span className="sfm-filter-sep" aria-hidden="true">
+                  &middot;
+                </span>
+              )}
+              <button
+                type="button"
+                className={`sfm-link ${filter === key ? "is-current" : ""}`}
+                aria-pressed={filter === key}
+                onClick={() => setFilter(key)}
+              >
+                {label}
+              </button>
+            </span>
+          ))}
         </div>
       </div>
 

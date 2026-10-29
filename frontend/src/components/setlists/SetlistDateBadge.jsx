@@ -53,36 +53,15 @@ export function isFutureDate(rawDate) {
   return parsed.getTime() > Date.now();
 }
 
-export default function SetlistDateBadge({ date, className = "", size = "md" }) {
+export default function SetlistDateBadge({ date, className = "", size = "sm" }) {
   const { day, month, year } = parseDateParts(date);
-  const isSm = size === "sm";
+  const sizeClass = size === "lg" ? "sfm-date-block" : "sfm-date";
 
   return (
-    <div
-      className={`flex flex-col items-center justify-center rounded text-center shrink-0 select-none ${
-        isSm ? "w-11 py-1 px-1" : "w-14 py-1.5 px-1.5"
-      } ${className}`}
-      style={{
-        backgroundColor: "var(--color-surface-hover)",
-        border: "0.5px solid var(--color-border)",
-      }}
-      aria-label={`${day} ${month} ${year}`}
-    >
-      <span
-        className={`${isSm ? "text-[9px]" : "text-[10px]"} font-bold text-muted uppercase tracking-wider leading-none`}
-      >
-        {month}
-      </span>
-      <span
-        className={`${isSm ? "text-base font-extrabold" : "text-lg font-black"} text-ink leading-tight my-0.5`}
-      >
-        {day}
-      </span>
-      <span
-        className={`${isSm ? "text-[9px]" : "text-[10px]"} font-medium text-muted leading-none`}
-      >
-        {year}
-      </span>
+    <div className={`${sizeClass} ${className}`.trim()} aria-label={`${day} ${month} ${year}`}>
+      <span className="sfm-date-month">{month}</span>
+      <span className="sfm-date-day">{day}</span>
+      <span className="sfm-date-year">{year}</span>
     </div>
   );
 }

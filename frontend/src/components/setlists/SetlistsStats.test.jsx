@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import ArtistsSeenLeaderboard from "./ArtistsSeenLeaderboard";
 import DeleteGigConfirmModal from "./DeleteGigConfirmModal";
 import ImportExportModal from "./ImportExportModal";
@@ -118,12 +119,14 @@ describe("SetlistsStats and Modals", () => {
     ];
 
     render(
-      <MyGigsTimeline
-        gigs={gigs}
-        onRefreshSetlist={onRefresh}
-        onDeleteGig={onDelete}
-        isRefreshingId={null}
-      />
+      <MemoryRouter>
+        <MyGigsTimeline
+          gigs={gigs}
+          onRefreshSetlist={onRefresh}
+          onDeleteGig={onDelete}
+          isRefreshingId={null}
+        />
+      </MemoryRouter>
     );
 
     expect(screen.getByRole("button", { name: "Elbow" })).toBeInTheDocument();
