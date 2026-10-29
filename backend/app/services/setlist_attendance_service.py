@@ -5,10 +5,11 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
-from sqlalchemy import delete, func
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from ..models import AttendedConcert, ListeningEvent
+from ..models import AttendedConcert, GigCompanion, ListeningEvent
+from .setlist_artwork_service import existing_gig_artwork, local_live_artwork
 from .setlist_service import SetlistService
 from .setlist_stats_service import _venue_key
 
@@ -69,7 +70,12 @@ class SetlistAttendanceService:
         self.setlist_service = setlist_service
 
     def find_existing_gig(
-        self, user_id: int, setlist_id: str | None, artist_name: str, event_date: datetime
+        self,
+        user_id: int,
+        setlist_id: str | None,
+        artist_name: str,
+        event_date: datetime,
+        exclude_id: int | None = None,
     ) -> AttendedConcert | None:
         """The same Setlist.fm show, or the same artist (any spelling case) on the same day."""
         if setlist_id:
@@ -77,17 +83,15 @@ class SetlistAttendanceService:
             if same_show:
                 return same_show
         day_start = datetime.combine(event_date.date(), datetime.min.time())
-        return (
-            self.db.query(AttendedConcert)
-            .filter(
-                AttendedConcert.user_id == user_id,
-                func.lower(AttendedConcert.artist_name) == artist_name.strip().lower(),
-                AttendedConcert.event_date >= day_start,
-                AttendedConcert.event_date < day_start + timedelta(days=1),
-            )
-            .order_by(AttendedConcert.id)
-            .first()
+        query = self.db.query(AttendedConcert).filter(
+            AttendedConcert.user_id == user_id,
+            func.lower(AttendedConcert.artist_name) == artist_name.strip().lower(),
+            AttendedConcert.event_date >= day_start,
+            AttendedConcert.event_date < day_start + timedelta(days=1),
         )
+        if exclude_id is not None:
+            query = query.filter(AttendedConcert.id != exclude_id)
+        return query.order_by(AttendedConcert.id).first()
 
     def log_concert_attendance(
         self,
@@ -317,6 +321,10 @@ class SetlistAttendanceService:
         songs: list[str],
         start_time: datetime,
     ) -> None:
+        # Keep artwork the old scrobbles had, then fill gaps from the user's own plays
+        kept = existing_gig_artwork(self.db, user_id, setlist_id)
+        local_tracks, artist_image = local_live_artwork(self.db, user_id, artist_name) if songs else ({}, None)
+
         # First delete existing scrobbles for this setlist to ensure clean replacement
         self.db.execute(
             delete(ListeningEvent).where(
@@ -328,12 +336,15 @@ class SetlistAttendanceService:
 
         for idx, song_title in enumerate(songs):
             played_at = start_time + timedelta(seconds=idx * 210)
+            kept_art, kept_artist_art = kept.get(song_title.lower(), (None, None))
             event = ListeningEvent(
                 user_id=user_id,
                 track_id=f"setlistfm:{setlist_id}:{idx}",
                 track_name=song_title,
                 artist_name=artist_name,
                 album_name=f"Live at {venue_name}" if venue_name else None,
+                artwork_url=kept_art if kept_art is not None else local_tracks.get(song_title.lower()),
+                artist_artwork_url=kept_artist_art if kept_artist_art is not None else artist_image,
                 played_at=played_at,
                 duration_ms=210000,
                 source="setlistfm",
@@ -374,7 +385,19 @@ class SetlistAttendanceService:
                 )
             )
 
-        # 2. Delete attended concert records
+        # 2. Withdraw invites to these gigs (gigs friends already added stay theirs)
+        removed_ids = [
+            gig_id
+            for (gig_id,) in self.db.query(AttendedConcert.id).filter(
+                AttendedConcert.user_id == user_id, AttendedConcert.setlist_id.in_(setlist_ids_to_remove)
+            )
+        ]
+        if removed_ids:
+            self.db.query(GigCompanion).filter(GigCompanion.concert_id.in_(removed_ids)).delete(
+                synchronize_session=False
+            )
+
+        # 3. Delete attended concert records
         deleted_count = (
             self.db.query(AttendedConcert)
             .filter(
@@ -400,10 +423,16 @@ class SetlistAttendanceService:
         concert.raw_data = data
         concert.song_count = len(songs)
 
-        # Re-scrobble
-        event_dt = parse_event_date(data.get("eventDate"))
-        base_date = event_dt.date()
-        start_time = datetime.combine(base_date, datetime.min.time()) + timedelta(hours=20, minutes=0)
+        # Re-scrobble on the gig's saved night (the user may have corrected it), keeping
+        # the start time the scrobbles already had
+        first_play = self.db.execute(
+            select(func.min(ListeningEvent.played_at)).where(*self._gig_events(user_id, concert.setlist_id))
+        ).scalar()
+        if first_play is not None and first_play.date() == concert.event_date.date():
+            start_time = first_play
+        else:
+            start = timedelta(hours=18, minutes=45) if concert.is_support_act else timedelta(hours=20)
+            start_time = datetime.combine(concert.event_date.date(), datetime.min.time()) + start
 
         self._create_scrobbles_for_setlist(
             user_id=user_id,
@@ -416,6 +445,77 @@ class SetlistAttendanceService:
         )
 
         self.db.commit()
+        return concert
+
+    @staticmethod
+    def _gig_events(user_id: int, setlist_id: str) -> tuple[Any, ...]:
+        return (
+            ListeningEvent.user_id == user_id,
+            ListeningEvent.source == "setlistfm",
+            ListeningEvent.play_id.like(f"setlistfm_{setlist_id}_%"),
+        )
+
+    def update_concert_details(
+        self,
+        user_id: int,
+        concert_id: int,
+        artist_name: str,
+        venue_name: str,
+        city: str,
+        country: str,
+        event_date_str: str,
+        tour_name: str | None = None,
+        allow_duplicate: bool = False,
+    ) -> AttendedConcert:
+        """Corrects a gig's details. Its scrobbles, and support acts logged under it, move
+        with it. Setlist.fm's copy (raw_data) is left alone, so Refresh only updates songs."""
+        concert = self.db.query(AttendedConcert).filter_by(id=concert_id, user_id=user_id).first()
+        if not concert:
+            raise LookupError(f"Concert {concert_id} not found.")
+        try:
+            new_day = datetime.strptime(event_date_str, "%Y-%m-%d")
+        except ValueError as exc:
+            raise ValueError("Enter the date as YYYY-MM-DD.") from exc
+
+        artist, venue, city, country = (v.strip() for v in (artist_name, venue_name, city, country))
+        if not artist or not venue:
+            raise ValueError("Artist and venue are required.")
+        if not allow_duplicate:
+            existing = self.find_existing_gig(user_id, None, artist, new_day, exclude_id=concert.id)
+            if existing:
+                raise DuplicateGigError(existing, same_show=False)
+
+        old_day = datetime.combine(concert.event_date.date(), datetime.min.time())
+        shift = new_day - old_day
+        venue_moved = (venue, city, country) != (concert.venue_name, concert.city, concert.country)
+        supports = (
+            self.db.query(AttendedConcert)
+            .filter_by(user_id=user_id, parent_setlist_id=concert.setlist_id, is_support_act=True)
+            .filter(AttendedConcert.id != concert.id)
+            .all()
+            if not concert.is_support_act
+            else []
+        )
+
+        tour = tour_name.strip() if tour_name and tour_name.strip() else None
+        concert.artist_name, concert.tour_name = artist, tour
+        for gig in [concert, *supports]:
+            gig.event_date = gig.event_date + shift
+            if venue_moved:
+                gig.venue_name, gig.city, gig.country = venue, city, country
+            for event in self.db.query(ListeningEvent).filter(*self._gig_events(user_id, gig.setlist_id)):
+                event.played_at = event.played_at + shift
+                event.album_name = f"Live at {gig.venue_name}"
+                if gig is concert:
+                    event.artist_name = artist
+                event.raw_metadata = {
+                    **(event.raw_metadata or {}),
+                    "venue": gig.venue_name,
+                    **({"tour": tour} if gig is concert else {}),
+                }
+
+        self.db.commit()
+        self.db.refresh(concert)
         return concert
 
     def update_concert_notes(self, user_id: int, concert_id: int, notes: str | None) -> AttendedConcert:

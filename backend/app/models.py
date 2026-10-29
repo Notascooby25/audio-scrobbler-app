@@ -306,6 +306,26 @@ class SetlistImportJob(Base):
     )
 
 
+class GigCompanion(Base):
+    """Someone the gig's owner went with. The friend adds the gig to their own account
+    (status "added") or dismisses it; nothing is written to their account until then."""
+
+    __tablename__ = "gig_companions"
+    __table_args__ = (UniqueConstraint("concert_id", "friend_id", name="uq_gig_companion"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    concert_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    owner_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    friend_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    # "pending", "added" or "dismissed"
+    status: Mapped[str] = mapped_column(String(16), default="pending", index=True, nullable=False)
+    friend_concert_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+
 class SetlistApiUsage(Base):
     __tablename__ = "setlist_api_usage"
 

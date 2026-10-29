@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes, useNavigate } from "react-router-dom";
 import SetlistGigPage from "./SetlistGigPage";
@@ -10,6 +10,10 @@ vi.mock("../../api/setlists", () => ({
   refreshConcertSetlist: vi.fn(),
   deleteAttendance: vi.fn().mockResolvedValue({ deleted_count: 1 }),
   updateConcertNotes: vi.fn().mockResolvedValue({}),
+  updateConcert: vi.fn(),
+  fetchGigCompanions: vi.fn().mockResolvedValue({ companions: [], following: [] }),
+  addGigCompanions: vi.fn(),
+  removeGigCompanion: vi.fn().mockResolvedValue(null),
   fetchGigBill: vi.fn().mockResolvedValue({ acts: [], complete: true, capped: false }),
   logBillAct: vi.fn(),
   alreadyLoggedInfo: (err) =>
@@ -125,6 +129,127 @@ describe("SetlistGigPage", () => {
       })
     );
     expect(await screen.findByText("Front row, got a setlist.")).toBeInTheDocument();
+  });
+
+  it("edits the gig's details and shows them straight away", async () => {
+    setlistsApi.fetchAttendance.mockResolvedValueOnce(gig);
+    setlistsApi.updateConcert.mockResolvedValueOnce({
+      ...gig,
+      venue_name: "Junction",
+      event_date: "2024-02-11T00:00:00",
+    });
+    renderGigPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Edit details" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit gig details" });
+    expect(within(dialog).getByLabelText("Date *")).toHaveValue("2024-02-10");
+    fireEvent.change(within(dialog).getByLabelText("Venue *"), { target: { value: "Junction" } });
+    fireEvent.change(within(dialog).getByLabelText("Date *"), { target: { value: "2024-02-11" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() =>
+      expect(setlistsApi.updateConcert).toHaveBeenCalledWith({
+        token: "test-token",
+        concertId: 12,
+        artistName: "Bombay Bicycle Club",
+        venueName: "Junction",
+        city: "Cambridge",
+        country: "England",
+        eventDate: "2024-02-11",
+        tourName: "My Big Day",
+        allowDuplicate: false,
+      })
+    );
+    expect(await screen.findByText("Gig details saved.")).toBeInTheDocument();
+    expect(screen.getByText(/at Junction, Cambridge, England/)).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Edit gig details" })).not.toBeInTheDocument();
+  });
+
+  it("asks before saving an edit that clashes with another gig", async () => {
+    setlistsApi.fetchAttendance.mockResolvedValueOnce(gig);
+    const clash = Object.assign(new Error("HTTP 409: Gig already logged."), {
+      status: 409,
+      detail: {
+        code: "already_logged",
+        same_show: false,
+        existing: {
+          id: 99,
+          artist_name: "Bombay Bicycle Club",
+          venue_name: "Junction",
+          city: "Cambridge",
+          event_date: "2024-02-11T00:00:00",
+        },
+      },
+    });
+    setlistsApi.updateConcert.mockRejectedValueOnce(clash).mockResolvedValueOnce(gig);
+    renderGigPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Edit details" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    const ask = await screen.findByRole("alertdialog", { name: "Gig already logged" });
+    expect(within(ask).getByText(/Save your changes anyway\?/)).toBeInTheDocument();
+    fireEvent.click(within(ask).getByRole("button", { name: "Save anyway" }));
+
+    await waitFor(() =>
+      expect(setlistsApi.updateConcert).toHaveBeenLastCalledWith(
+        expect.objectContaining({ allowDuplicate: true })
+      )
+    );
+  });
+
+  it("adds people you follow to the gig, with ones who logged it first", async () => {
+    setlistsApi.fetchAttendance.mockResolvedValueOnce(gig);
+    setlistsApi.fetchGigCompanions.mockResolvedValueOnce({
+      companions: [{ user_id: 3, username: "jo", display_name: "Jo", status: "added" }],
+      following: [
+        { user_id: 2, username: "sam", display_name: "Sam", logged_it: false },
+        { user_id: 4, username: "kit", display_name: "Kit", logged_it: true },
+      ],
+    });
+    setlistsApi.addGigCompanions.mockResolvedValueOnce({
+      companions: [
+        { user_id: 3, username: "jo", display_name: "Jo", status: "added" },
+        { user_id: 2, username: "sam", display_name: "Sam", status: "pending" },
+      ],
+      following: [{ user_id: 4, username: "kit", display_name: "Kit", logged_it: true }],
+    });
+    renderGigPage();
+
+    const section = (await screen.findByRole("heading", { name: "Went with" })).closest("section");
+    expect(within(section).getByText("✓ Added it")).toBeInTheDocument();
+    fireEvent.click(within(section).getByRole("button", { name: "+ Add people" }));
+    expect(within(section).getByText("Logged this gig")).toBeInTheDocument();
+    fireEvent.click(within(section).getByLabelText("Sam"));
+    fireEvent.click(within(section).getByRole("button", { name: "Add (1)" }));
+
+    await waitFor(() =>
+      expect(setlistsApi.addGigCompanions).toHaveBeenCalledWith({
+        token: "test-token",
+        concertId: 12,
+        friendIds: [2],
+      })
+    );
+    expect(await within(section).findByText("Invited")).toBeInTheDocument();
+    fireEvent.click(within(section).getByRole("button", { name: "Remove Sam" }));
+    await waitFor(() =>
+      expect(setlistsApi.removeGigCompanion).toHaveBeenCalledWith({
+        token: "test-token",
+        concertId: 12,
+        friendId: 2,
+      })
+    );
+    expect(within(section).queryByText("Invited")).not.toBeInTheDocument();
+  });
+
+  it("hides Went with if it can't load", async () => {
+    setlistsApi.fetchAttendance.mockResolvedValueOnce(gig);
+    setlistsApi.fetchGigCompanions.mockRejectedValueOnce(new Error("boom"));
+    renderGigPage();
+
+    expect(await screen.findByText("Bombay Bicycle Club Setlist")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByRole("heading", { name: "Went with" })).not.toBeInTheDocument()
+    );
   });
 
   it("deletes the gig after confirmation and leaves the page", async () => {

@@ -69,6 +69,8 @@ file_import_dir = os.getenv("WORKER_IMPORT_DIR", "/data/imports")
 file_import_interval_minutes = int(os.getenv("WORKER_FILE_IMPORT_INTERVAL_MINUTES", "10"))
 # How often to check for Setlist.fm imports paused at the daily quota (resumed after midnight UTC)
 setlist_resume_interval_minutes = int(os.getenv("WORKER_SETLIST_RESUME_INTERVAL_MINUTES", "30"))
+# How often to look up artwork for gig scrobbles that have none (a few dozen songs per run)
+setlist_artwork_interval_minutes = int(os.getenv("WORKER_SETLIST_ARTWORK_INTERVAL_MINUTES", "15"))
 max_attempts = 3
 last_spotify_sync_at: str | None = None
 last_spotify_sync_users = 0
@@ -84,6 +86,8 @@ last_file_import_failed = 0
 last_setlist_resume_at: str | None = None
 last_setlist_resume_processed = 0
 last_setlist_resume_failed = 0
+last_setlist_artwork_at: str | None = None
+last_setlist_artwork_updated = 0
 
 last_genre_cache_sync_at = "never"
 last_genre_cache_sync_processed = 0
@@ -337,6 +341,31 @@ def run_setlist_import_resume() -> None:
         )
 
 
+def run_setlist_artwork_backfill() -> None:
+    global last_setlist_artwork_at, last_setlist_artwork_updated
+    try:
+        response = requests.post(
+            f"{backend_url}/setlists/internal/backfill-artwork",
+            headers={"X-Worker-Token": worker_token},
+            timeout=600,
+        )
+        response.raise_for_status()
+        counts = response.json()
+    except requests.RequestException as exc:
+        logger.warning("Gig artwork backfill failed: %s", exc)
+        return
+    last_setlist_artwork_at = datetime.now(timezone.utc).isoformat()
+    last_setlist_artwork_updated = int(counts.get("updated", 0))
+    if counts.get("checked"):
+        logger.info(
+            "Gig artwork backfill: %s songs checked, %s scrobbles updated, %s without artwork, %s lookups",
+            counts.get("checked", 0),
+            last_setlist_artwork_updated,
+            counts.get("missed", 0),
+            counts.get("lookups", 0),
+        )
+
+
 @app.get("/health")
 def health_check() -> dict[str, str]:
     blocked_until = spotify_rate_limit_blocked_until()
@@ -362,6 +391,8 @@ def health_check() -> dict[str, str]:
         "last_setlist_resume_at": last_setlist_resume_at or "never",
         "last_setlist_resume_processed": str(last_setlist_resume_processed),
         "last_setlist_resume_failed": str(last_setlist_resume_failed),
+        "last_setlist_artwork_at": last_setlist_artwork_at or "never",
+        "last_setlist_artwork_updated": str(last_setlist_artwork_updated),
 
         "last_genre_cache_sync_at": last_genre_cache_sync_at,
         "last_genre_cache_sync_processed": str(last_genre_cache_sync_processed),
@@ -421,6 +452,9 @@ def metrics() -> str:
         "# HELP audio_scrobbler_worker_setlist_resume_processed Paused Setlist.fm imports processed in the last run.",
         "# TYPE audio_scrobbler_worker_setlist_resume_processed gauge",
         f"audio_scrobbler_worker_setlist_resume_processed {last_setlist_resume_processed}",
+        "# HELP audio_scrobbler_worker_setlist_artwork_updated Gig scrobbles given artwork in the last run.",
+        "# TYPE audio_scrobbler_worker_setlist_artwork_updated gauge",
+        f"audio_scrobbler_worker_setlist_artwork_updated {last_setlist_artwork_updated}",
         "",
     ])
 
@@ -482,6 +516,13 @@ def start_scheduler() -> None:
         "interval",
         minutes=setlist_resume_interval_minutes,
         id="setlist-import-resume",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        run_setlist_artwork_backfill,
+        "interval",
+        minutes=setlist_artwork_interval_minutes,
+        id="setlist-artwork-backfill",
         replace_existing=True,
     )
 

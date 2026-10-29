@@ -379,6 +379,23 @@ the NAS listing.** The live setup has drifted from the repos before.
   - Replaced raw emoji 🔔 in `HeaderNav` with an accessible outline SVG `<BellIcon>` component and dynamic unread aria announcements.
   - Restored mobile touch parity for Library bulk selection (un-suppressed mobile selection toggles and styled sticky touch-friendly action bar ≥ 44pt).
   - Added loading indicator feedback for Reports date range switches, hardened design tokens, and resolved dark-mode contrast in the bulk action bar.
+- **Set Lists (2026-10-29, v0.20.0–v0.24.0, PRs #22–#25 and the gig
+  artwork/edit/went-with PR):**
+  - setlist.fm-style redesign with plain `sfm-*` CSS (Tailwind is not
+    installed); gig pages at `/gigs/:id`. See `agents/page_specs.md` §8a.
+  - Setlist.fm quota savings (setlists from imports, search and the bill are
+    cached), and paused imports (`setlist_import_jobs`, migration 0022) resumed
+    by the worker's `setlist-import-resume` job
+    (`WORKER_SETLIST_RESUME_INTERVAL_MINUTES`, default 30).
+  - Gig artwork: gig scrobbles reuse the user's own artwork; the worker's
+    `setlist-artwork-backfill` job (`WORKER_SETLIST_ARTWORK_INTERVAL_MINUTES`,
+    default 15) calls `POST /setlists/internal/backfill-artwork` (Deezer →
+    iTunes → artist photo, 60 lookups per run, misses retried after 7 days).
+    Cleared artwork on gig scrobbles is `""` so it isn't refilled.
+  - Edit a gig (`PATCH /setlists/{id}`): scrobbles and support acts move with
+    it; Refresh re-scrobbles on the saved date.
+  - Went with (`gig_companions`, migration 0023): invite people you follow;
+    the gig is only copied to their account when they accept.
 - **Also 2026-09-22/23:** listening heatmap, frontend redesign, nginx
   `client_max_body_size` raised for large imports, listening clock restored,
   friends-average removed from the UI, Library share-image feature,

@@ -287,8 +287,18 @@ export default function UserGuideSection() {
             encores, with guest, cover, and tape notes. Use <em>&larr; Back</em> to return to
             exactly where you were (same tab, pagination page, and expanded row). From the gig page
             you can also <em>Refresh from Setlist.fm</em> (always pulls the fresh live version,
-            bypassing older caches), <em>Copy setlist</em> to clipboard, or <em>Delete gig</em>{" "}
-            (with an option to remove the support acts logged that night).
+            bypassing older caches), <em>Copy setlist</em> to clipboard, <em>Edit details</em> to
+            fix a wrong date, artist, venue or tour (its scrobbles and support acts move with it,
+            and Refresh keeps your corrections), or <em>Delete gig</em> (with an option to remove
+            the support acts logged that night).
+          </li>
+          <li>
+            <strong>Went With:</strong> On a gig&apos;s page, tap <em>+ Add people</em> under{" "}
+            <em>Went with</em> to add people you follow who were there too (anyone who already
+            logged the show is listed first). Nothing is added to their account without asking: they
+            get a notification and a <em>Were you there?</em> box at the top of their{" "}
+            <em>My Gigs</em> to <em>Add to my gigs</em> (songs and support acts included) or{" "}
+            <em>Dismiss</em>. Your notes are never shared.
           </li>
           <li>
             <strong>On the Bill:</strong> Under <em>My notes</em> on any gig page, see the other
@@ -325,7 +335,9 @@ export default function UserGuideSection() {
             <strong>Automatic Concert Scrobbles:</strong> All songs from your logged gigs are
             sequenced chronologically and added to your listening library with source{" "}
             <code>setlistfm</code>, seamlessly appearing in your scrobble charts, top tracks, and
-            listening reports.
+            listening reports. Songs you&apos;ve also streamed reuse that artwork straight away; the
+            rest is looked up in the background (Deezer, then iTunes, then the artist&apos;s photo),
+            a few dozen songs every 15 minutes.
           </li>
           <li>
             <strong>Setlist.fm-Style Music Statistics:</strong>

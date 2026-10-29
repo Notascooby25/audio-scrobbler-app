@@ -558,3 +558,40 @@ def test_resume_imports_route_requires_the_worker_token():
         )
     assert res.status_code == 200
     mock_resume.assert_called_once()
+
+
+def test_backfill_artwork_route_requires_the_worker_token():
+    assert client.post("/setlists/internal/backfill-artwork").status_code == 401
+    with patch("backend.app.api.setlists.backfill_live_artwork", return_value={"updated": 0}) as mock_backfill:
+        res = client.post(
+            "/setlists/internal/backfill-artwork", headers={"X-Worker-Token": settings.worker_ingestion_token}
+        )
+    assert res.status_code == 200
+    mock_backfill.assert_called_once()
+
+
+def _manual(artist: str, date: str) -> int:
+    res = client.post(
+        "/setlists/manual",
+        json={"artist_name": artist, "venue_name": "Arena", "city": "Leeds", "country": "UK", "event_date": date},
+    )
+    assert res.status_code == 201
+    return res.json()["id"]
+
+
+def test_edit_gig_route_validates_and_reports_clashes():
+    first = _manual("Elbow", "2025-06-01")
+    second = _manual("Elbow", "2025-06-08")
+    body = {"artist_name": "Elbow", "venue_name": "Arena", "city": "Leeds", "country": "UK"}
+
+    res = client.patch(f"/setlists/{second}", json={**body, "event_date": "2025-06-09", "tour_name": "Tour"})
+    assert res.status_code == 200
+    assert (res.json()["event_date"][:10], res.json()["tour_name"]) == ("2025-06-09", "Tour")
+
+    clash = client.patch(f"/setlists/{second}", json={**body, "event_date": "2025-06-01"})
+    assert clash.status_code == 409
+    assert clash.json()["detail"]["existing"]["id"] == first
+
+    assert client.patch(f"/setlists/{second}", json={**body, "event_date": "09/06/2025"}).status_code == 422
+    assert client.patch(f"/setlists/{second}", json={**body, "event_date": "2025-13-45"}).status_code == 400
+    assert client.patch("/setlists/99999", json={**body, "event_date": "2025-06-01"}).status_code == 404

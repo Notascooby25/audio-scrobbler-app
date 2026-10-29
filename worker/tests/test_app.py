@@ -88,6 +88,8 @@ def test_health_reports_scheduler_and_fixture_status(monkeypatch):
         "last_setlist_resume_at": "never",
         "last_setlist_resume_processed": "0",
         "last_setlist_resume_failed": "0",
+        "last_setlist_artwork_at": "never",
+        "last_setlist_artwork_updated": "0",
         "last_genre_cache_sync_at": "never",
         "last_genre_cache_sync_processed": "0",
         "last_genre_cache_sync_resolved": "0",
@@ -156,3 +158,33 @@ def test_setlist_import_resume_survives_backend_errors(monkeypatch):
 
     monkeypatch.setattr(app.requests, "post", fail)
     app.run_setlist_import_resume()  # must not raise
+
+
+def test_setlist_artwork_backfill_calls_the_backend_with_the_worker_token(monkeypatch):
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"checked": 5, "updated": 12, "missed": 1, "lookups": 6}
+
+    calls = []
+    monkeypatch.setattr(app, "backend_url", "http://backend:8000")
+    monkeypatch.setattr(app, "worker_token", "test-token")
+    monkeypatch.setattr(app.requests, "post", lambda *args, **kwargs: calls.append((args, kwargs)) or Response())
+
+    app.run_setlist_artwork_backfill()
+
+    assert calls[0][0] == ("http://backend:8000/setlists/internal/backfill-artwork",)
+    assert calls[0][1]["headers"] == {"X-Worker-Token": "test-token"}
+    assert app.last_setlist_artwork_updated == 12
+    monkeypatch.setattr(app, "last_setlist_artwork_at", None)
+    monkeypatch.setattr(app, "last_setlist_artwork_updated", 0)
+
+
+def test_setlist_artwork_backfill_survives_backend_errors(monkeypatch):
+    def fail(*args, **kwargs):
+        raise app.requests.ConnectionError("backend down")
+
+    monkeypatch.setattr(app.requests, "post", fail)
+    app.run_setlist_artwork_backfill()  # must not raise
