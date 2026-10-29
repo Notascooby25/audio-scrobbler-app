@@ -21,7 +21,7 @@ from ..schemas.setlists import (
     UpdateConcertNotesRequest,
     VenueLeaderboardItem,
 )
-from ..services.setlist_attendance_service import SetlistAttendanceService
+from ..services.setlist_attendance_service import DuplicateGigError, SetlistAttendanceService
 from ..services.setlist_service import (
     SetlistApiAuthError,
     SetlistApiKeyMissingError,
@@ -33,6 +33,25 @@ from ..services.setlist_import_service import sync_user_setlist_history
 from ..services.setlist_stats_service import SetlistStatsService
 
 router = APIRouter(prefix="/setlists", tags=["setlists"])
+
+
+def _already_logged(exc: DuplicateGigError) -> HTTPException:
+    existing = exc.existing
+    return HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail={
+            "code": "already_logged",
+            "message": "Gig already logged.",
+            "same_show": exc.same_show,
+            "existing": {
+                "id": existing.id,
+                "artist_name": existing.artist_name,
+                "venue_name": existing.venue_name,
+                "city": existing.city,
+                "event_date": existing.event_date.isoformat() if existing.event_date else None,
+            },
+        },
+    )
 
 
 @router.get("/status")
@@ -119,8 +138,11 @@ def attend_concert(
             setlist_id=payload.setlist_id,
             support_setlist_ids=payload.support_setlist_ids,
             notes=payload.notes,
+            allow_duplicate=payload.allow_duplicate,
         )
         return AttendedConcertResponse.model_validate(concert)
+    except DuplicateGigError as exc:
+        raise _already_logged(exc) from exc
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except SetlistRateLimitError as exc:
@@ -145,8 +167,11 @@ def log_manual_concert(
             event_date_str=payload.event_date,
             notes=payload.notes,
             setlist_url=payload.setlist_url,
+            allow_duplicate=payload.allow_duplicate,
         )
         return AttendedConcertResponse.model_validate(concert)
+    except DuplicateGigError as exc:
+        raise _already_logged(exc) from exc
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 

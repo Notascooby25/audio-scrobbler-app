@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { logManualConcert } from "../../api/setlists";
+import { alreadyLoggedInfo, logManualConcert } from "../../api/setlists";
+import AlreadyLoggedModal from "./AlreadyLoggedModal";
 
 export default function ManualConcertModal({ isOpen, onClose, onSaved, token }) {
   const [artistName, setArtistName] = useState("");
@@ -11,11 +12,12 @@ export default function ManualConcertModal({ isOpen, onClose, onSaved, token }) 
   const [setlistUrl, setSetlistUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [duplicateInfo, setDuplicateInfo] = useState(null);
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e, allowDuplicate = false) => {
+    e?.preventDefault();
     if (!token) return;
     if (!artistName.trim() || !venueName.trim() || !city.trim() || !eventDate) {
       setError("Please fill in Artist, Venue, City, and Date.");
@@ -34,13 +36,17 @@ export default function ManualConcertModal({ isOpen, onClose, onSaved, token }) 
         eventDate,
         notes: notes.trim() || null,
         setlistUrl: setlistUrl.trim() || null,
+        allowDuplicate,
       });
+      setDuplicateInfo(null);
       if (onSaved) {
         onSaved(gig);
       }
       onClose();
     } catch (err) {
-      setError(err?.message || "Failed to log concert manually.");
+      const info = alreadyLoggedInfo(err);
+      if (info) setDuplicateInfo(info);
+      else setError(err?.message || "Failed to log concert manually.");
     } finally {
       setIsSubmitting(false);
     }
@@ -159,6 +165,13 @@ export default function ManualConcertModal({ isOpen, onClose, onSaved, token }) 
           </div>
         </form>
       </div>
+
+      <AlreadyLoggedModal
+        info={duplicateInfo}
+        isSubmitting={isSubmitting}
+        onCancel={() => setDuplicateInfo(null)}
+        onConfirm={() => handleSubmit(null, true)}
+      />
     </div>
   );
 }

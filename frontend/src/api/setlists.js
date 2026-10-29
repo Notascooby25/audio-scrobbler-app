@@ -27,10 +27,12 @@ async function parseResponse(response) {
     } catch {
       detail = await response.text().catch(() => "");
     }
-    const message = detail
-      ? detail.startsWith("HTTP")
-        ? detail
-        : `HTTP ${response.status}: ${detail}`
+    // Structured details (e.g. the 409 "already_logged" payload) carry their own message
+    const detailText = typeof detail === "string" ? detail : detail?.message || "";
+    const message = detailText
+      ? detailText.startsWith("HTTP")
+        ? detailText
+        : `HTTP ${response.status}: ${detailText}`
       : `Request failed with HTTP ${response.status}`;
     const error = new Error(message);
     error.status = response.status;
@@ -90,6 +92,7 @@ export async function logManualConcert({
   eventDate,
   notes = null,
   setlistUrl = null,
+  allowDuplicate = false,
 }) {
   const response = await fetch(`${API_BASE_URL}/setlists/manual`, {
     method: "POST",
@@ -105,9 +108,15 @@ export async function logManualConcert({
       event_date: eventDate,
       ...(notes !== null ? { notes } : {}),
       ...(setlistUrl ? { setlist_url: setlistUrl } : {}),
+      allow_duplicate: allowDuplicate,
     }),
   });
   return parseResponse(response);
+}
+
+/** The existing-gig details from a 409 "already logged" response, or null for other errors. */
+export function alreadyLoggedInfo(err) {
+  return err?.status === 409 && err?.detail?.code === "already_logged" ? err.detail : null;
 }
 
 export async function fetchVenueSupportActs({ token, venueId, eventDate, excludeSetlistId }) {
@@ -125,6 +134,7 @@ export async function logConcertAttendance({
   setlistId,
   supportSetlistIds = [],
   notes = null,
+  allowDuplicate = false,
 }) {
   const response = await fetch(`${API_BASE_URL}/setlists/attend`, {
     method: "POST",
@@ -136,6 +146,7 @@ export async function logConcertAttendance({
       setlist_id: setlistId,
       support_setlist_ids: supportSetlistIds,
       ...(notes !== null ? { notes } : {}),
+      allow_duplicate: allowDuplicate,
     }),
   });
   return parseResponse(response);

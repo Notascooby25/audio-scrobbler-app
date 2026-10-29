@@ -11,7 +11,9 @@ import {
   fetchVenuesVisitedLeaderboard,
   importSetlistHistory,
   fetchSetlistStatus,
+  alreadyLoggedInfo,
 } from "../../api/setlists";
+import AlreadyLoggedModal from "./AlreadyLoggedModal";
 import GigSearchBar from "./GigSearchBar";
 import GigCard from "./GigCard";
 import SupportActsPromptModal from "./SupportActsPromptModal";
@@ -62,6 +64,8 @@ export default function SetlistsPage() {
   const [supportActs, setSupportActs] = useState([]);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [isLogging, setIsLogging] = useState(false);
+  // Set when the backend says this gig is already logged; holds what to retry with
+  const [duplicatePrompt, setDuplicatePrompt] = useState(null);
   const [toastMessage, setToastMessage] = useState("");
 
   // Import/Export modal state
@@ -190,7 +194,7 @@ export default function SetlistsPage() {
     }
   };
 
-  const handleConfirmAttendance = async (chosenSupportIds) => {
+  const handleConfirmAttendance = async (chosenSupportIds, allowDuplicate = false) => {
     if (!token || !selectedMainSetlist) return;
     setIsLogging(true);
     try {
@@ -198,13 +202,21 @@ export default function SetlistsPage() {
         token,
         setlistId: selectedMainSetlist.id,
         supportSetlistIds: chosenSupportIds,
+        allowDuplicate,
       });
       setIsSupportModalOpen(false);
+      setDuplicatePrompt(null);
       setSelectedMainSetlist(null);
       showToast("Concert logged! Songs added to your scrobble library.");
       setActiveTab("gigs");
     } catch (err) {
-      alert(`Error logging concert: ${err.message}`);
+      const info = alreadyLoggedInfo(err);
+      if (info) {
+        setIsSupportModalOpen(false);
+        setDuplicatePrompt({ info, chosenSupportIds });
+      } else {
+        alert(`Error logging concert: ${err.message}`);
+      }
     } finally {
       setIsLogging(false);
     }
@@ -462,6 +474,16 @@ export default function SetlistsPage() {
         supportActs={supportActs}
         onConfirm={handleConfirmAttendance}
         isSubmitting={isLogging}
+      />
+
+      <AlreadyLoggedModal
+        info={duplicatePrompt?.info}
+        isSubmitting={isLogging}
+        onCancel={() => {
+          setDuplicatePrompt(null);
+          setSelectedMainSetlist(null);
+        }}
+        onConfirm={() => handleConfirmAttendance(duplicatePrompt.chosenSupportIds, true)}
       />
 
       {/* Import / Export Modal */}

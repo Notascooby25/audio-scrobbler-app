@@ -10,6 +10,8 @@ class LogAttendanceRequest(BaseModel):
     setlist_id: str = Field(..., min_length=1, max_length=64)
     support_setlist_ids: list[str] = Field(default_factory=list)
     notes: str | None = Field(None, max_length=2000)
+    # False: answer 409 if this gig looks already logged, so the app can ask first
+    allow_duplicate: bool = False
 
 
 class UpdateConcertNotesRequest(BaseModel):
@@ -24,6 +26,7 @@ class LogManualConcertRequest(BaseModel):
     event_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     notes: str | None = Field(None, max_length=2000)
     setlist_url: str | None = Field(None, max_length=500)
+    allow_duplicate: bool = False
 
 
 class AttendedConcertResponse(BaseModel):
