@@ -341,6 +341,44 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "setlists-stats-features",
+    category: "Set Lists & Gigs",
+    question: "How do the Artists Seen, Songs Heard, and Venues statistics work?",
+    answer: (
+      <>
+        <p>The statistics tabs reflect every gig you have logged:</p>
+        <ul>
+          <li>
+            <strong>Artists Seen:</strong> Ranked by times seen, then most recently seen. Uses
+            tie-aware ranks (artists with the same count share a position) and proportional visual
+            bars. Tap an artist to expand every gig you saw them at.
+          </li>
+          <li>
+            <strong>Songs Heard:</strong> Counts live song plays. Use the sidebar to filter down to
+            a single year or artist, and tap any song to see the exact concerts where you heard it.
+          </li>
+          <li>
+            <strong>Venues:</strong> Ranks venues by distinct nights visited (even if support acts
+            were saved with slight venue naming variations). Tap a venue to see all acts you watched
+            there.
+          </li>
+        </ul>
+      </>
+    ),
+  },
+  {
+    id: "setlists-refresh-latest",
+    category: "Set Lists & Gigs",
+    question: "Does 'Refresh from Setlist.fm' always get the newest tracklist?",
+    answer: (
+      <p>
+        <strong>Yes.</strong> Clicking <em>Refresh from Setlist.fm</em> on any gig page always
+        fetches the latest version directly from Setlist.fm, bypassing older cached copies so newly
+        updated encore tracks or tape intros appear immediately.
+      </p>
+    ),
+  },
+  {
     id: "setlists-upcoming-missing",
     category: "Set Lists & Gigs",
     question: "What if an upcoming gig isn't appearing in search on Setlist.fm?",

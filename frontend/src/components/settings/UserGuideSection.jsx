@@ -268,79 +268,103 @@ export default function UserGuideSection() {
         </p>
         <ul>
           <li>
-            <strong>Find & Log a Gig:</strong> Head to the <em>Set Lists</em> tab and tap{" "}
+            <strong>Find &amp; Log a Gig:</strong> Head to the <em>Set Lists</em> tab and tap{" "}
             <em>+ Log a Gig</em>. Search by artist name with optional filters for country, venue,
             month, or year. You can also paste direct Setlist.fm show/setlist links (e.g.{" "}
-            <code>https://www.setlist.fm/show/...</code>) or 8-character setlist IDs into the search
-            box to load any concert immediately. If an upcoming tour date isn't listed on Setlist.fm
-            yet, tap <strong>+ Add Upcoming Show Manually</strong> to save it to your timeline with
+            <code>https://www.setlist.fm/show/...</code> or <code>/setlist/...</code>) or
+            8-character setlist IDs directly into the search box to load any concert immediately
+            without extra API quota. If an upcoming tour date isn't listed on Setlist.fm yet, tap{" "}
+            <strong>+ Add Upcoming Show Manually</strong> to save it to your timeline with
             countdowns and notes. Results group into <em>Upcoming Shows</em> and <em>Past Shows</em>{" "}
-            with a <em>View More Shows (+20)</em> button for long tours. Click{" "}
-            <strong>✓ I WAS THERE</strong> to log past shows, or <strong>+ I'M GOING</strong> for
-            future concerts.
+            with a <em>View More Shows (+20)</em> button for long tours. Tap a show's title to
+            preview its setlist before logging. Click <strong>✓ I WAS THERE</strong> to log past
+            shows, or <strong>+ I'M GOING</strong> for future concerts.
           </li>
           <li>
-            <strong>Gig Setlist Pages:</strong> Tap any gig in <em>My Gigs</em>, or inside an
-            expanded artist, song or venue, to open its own setlist page: the date, venue and tour,
-            then every song numbered in order, split into main set and encores, with guest, cover
-            and tape notes. Use <em>&larr; Back</em> to return to exactly where you were (same tab,
-            page and expanded row). From the gig page you can also <em>Refresh from Setlist.fm</em>,{" "}
-            <em>Copy setlist</em>, or <em>Delete gig</em> (with an option to remove the support acts
-            logged that night). In <em>Log a Gig</em> search results, tap a show&apos;s title to
-            preview its songs before logging it.
+            <strong>Dedicated Gig Pages:</strong> Tap any gig in <em>My Gigs</em>, or inside an
+            expanded artist, song or venue row, to open its full gig page: date, venue, city, and
+            tour, followed by the setlist numbered in continuous order, split into main sets and
+            encores, with guest, cover, and tape notes. Use <em>&larr; Back</em> to return to
+            exactly where you were (same tab, pagination page, and expanded row). From the gig page
+            you can also <em>Refresh from Setlist.fm</em> (always pulls the fresh live version,
+            bypassing older caches), <em>Copy setlist</em> to clipboard, or <em>Delete gig</em>{" "}
+            (with an option to remove the support acts logged that night).
           </li>
           <li>
-            <strong>On the Bill:</strong> Under <em>My notes</em> on a gig&apos;s page, see the
-            other acts who played that venue the same night. Acts you&apos;ve logged show{" "}
-            <em>✓ I was there</em> and link to their own gig page; tap <em>+ I was there</em> next
-            to any other act to log it (from a headliner&apos;s page it&apos;s saved as a support
-            act), or <em>Undo</em> straight after.
+            <strong>On the Bill:</strong> Under <em>My notes</em> on any gig page, see the other
+            acts who played that venue the same night. Acts you&apos;ve already logged display{" "}
+            <em>✓ I was there</em> and link to their own gig page. Tap <em>+ I was there</em> next
+            to any unlogged act to record it in place (from a headliner&apos;s page it automatically
+            saves as a support act), with an instant <em>Undo</em> option straight after. Support
+            act lookups are cached so revisiting a gig uses no Setlist.fm quota.
           </li>
           <li>
-            <strong>Already Logged &amp; Mistakes:</strong> If you log a gig you already have (the
-            same Setlist.fm show, or the same artist on the same day), you&apos;re asked before
-            it&apos;s logged again. Logged something by mistake? Tap <em>Undo</em> in the
-            confirmation message, or use the small <em>Remove</em> link on the gig&apos;s row in{" "}
-            <em>My Gigs</em>.
+            <strong>Already-Logged Protection &amp; Instant Undo:</strong> If you try to log a show
+            you already have (or the same artist on the same day), the app prompts you first to
+            prevent accidental duplicates. Made a mistake? Tap <em>Undo</em> in the toast
+            notification right after logging, or click the small <em>Remove</em> link directly on
+            the gig&apos;s row in <em>My Gigs</em>.
           </li>
           <li>
-            <strong>Personal Gig Diary:</strong> Add your own memories (standing spots, who you went
-            with, highlights) in the <em>My notes</em> box on each gig&apos;s page.
+            <strong>Personal Gig Diary &amp; Memories:</strong> Add personal concert memories (who
+            you went with, standing spots, favourite encore moment, ticket details) in the{" "}
+            <em>My notes</em> editor on each gig&apos;s page.
           </li>
           <li>
-            <strong>Future Gigs & "I'M GOING":</strong> Concerts in the future automatically display{" "}
-            <em>+ I'M GOING</em> instead of <em>✓ I WAS THERE</em>. In <em>My Gigs</em>, use the
-            links under the heading to switch between <em>All</em>, <em>Attended</em>, or{" "}
-            <em>Upcoming</em>.
+            <strong>Future Gigs &amp; &ldquo;I&apos;M GOING&rdquo;:</strong> Shows with a future
+            date automatically show <em>+ I&apos;M GOING</em> instead of <em>✓ I WAS THERE</em>. In{" "}
+            <em>My Gigs</em>, use the sub-filters under the heading to toggle between <em>All</em>,{" "}
+            <em>Attended</em>, or <em>Upcoming</em>.
           </li>
           <li>
-            <strong>Support Acts on the Bill:</strong> When logging a show, the app automatically
-            checks for other artists who performed at the same venue that night and prompts you to
-            select any support bands you watched.
+            <strong>Support Act Prompts:</strong> When logging a show from search, the app
+            automatically checks for other performers who played at the venue that night and prompts
+            you to select any support bands you watched.
           </li>
           <li>
-            <strong>Automatic Concert Scrobbles:</strong> All songs performed at the gig are
-            sequenced chronologically and added into your listening history with source{" "}
-            <code>setlistfm</code>, so they appear in your reports and charts.
+            <strong>Automatic Concert Scrobbles:</strong> All songs from your logged gigs are
+            sequenced chronologically and added to your listening library with source{" "}
+            <code>setlistfm</code>, seamlessly appearing in your scrobble charts, top tracks, and
+            listening reports.
           </li>
           <li>
-            <strong>Live Music Statistics:</strong> <em>Artists Seen</em> ranks artists by times
-            seen (then most recently seen), with a proportional bar so the gaps are obvious at a
-            glance; tied artists share a rank. Tap an artist to list every gig you saw them at.{" "}
-            <em>Songs Heard</em> counts every live performance and has a sidebar to narrow the table
-            to one year or one artist; tap a song to see which gigs you heard it at. <em>Venues</em>{" "}
-            ranks venues by nights visited; tap one to see every act you saw there.
+            <strong>Setlist.fm-Style Music Statistics:</strong>
+            <ul style={{ marginTop: "0.4rem" }}>
+              <li>
+                <em>Artists Seen:</em> Ranks artists by times seen, then most recently seen, with a
+                light-blue proportional bar and tie-aware ranking (tied counts share a rank number).
+                Tap an artist to expand every gig you saw them at.
+              </li>
+              <li>
+                <em>Songs Heard:</em> Counts every live song heard in concert. Features a sidebar to
+                filter by year or artist, and expands to show which gigs you heard that track at.
+              </li>
+              <li>
+                <em>Venues:</em> Ranks venues by nights visited (counting one visit per night even
+                if support acts had slight venue spelling differences). Tap a venue to expand every
+                act you saw there.
+              </li>
+            </ul>
           </li>
           <li>
-            <strong>Setlist.fm Account Import & Export:</strong> Have an existing Setlist.fm profile
-            (or want to selectively import gigs from a friend or family member's account)? Click{" "}
-            <em>Import / Export</em> to enter their username or paste their full profile link (e.g.{" "}
-            <code>https://www.setlist.fm/user/crispylettuce</code>), preview all attended gigs, tick
-            the specific shows you attended, and import them with 1 click. You can also download
-            your entire gig collection as JSON or CSV, and use <em>Import from a File</em> to load
-            one of those files back in (for example, to restore a backup). Gigs you&apos;ve already
-            logged are skipped. Big imports that reach the daily Setlist.fm limit pause and carry on
-            automatically after midnight UTC.
+            <strong>Setlist.fm Account Import, File Import &amp; Export:</strong>
+            <ul style={{ marginTop: "0.4rem" }}>
+              <li>
+                <em>Profile Import:</em> Enter your Setlist.fm username or profile URL (e.g.{" "}
+                <code>https://www.setlist.fm/user/crispylettuce</code>) under{" "}
+                <em>Import / Export</em>. You can preview all shows, tick specific gigs, and import
+                them in bulk. Imports are optimized to use ~1 request per 20 gigs. If an import hits
+                Setlist.fm&apos;s daily rate limit, it pauses gracefully and resumes automatically
+                after midnight UTC; you can track progress, cancel anytime, and receive a
+                notification when finished.
+              </li>
+              <li>
+                <em>File Import &amp; Backup:</em> Download your full gig history as JSON or CSV
+                anytime. Use <em>Import from a File</em> to restore your data or migrate between
+                accounts; existing gigs are skipped, and file imports that run out of quota
+                automatically fetch missing songs later.
+              </li>
+            </ul>
           </li>
         </ul>
       </article>
