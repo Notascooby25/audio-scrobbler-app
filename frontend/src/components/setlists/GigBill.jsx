@@ -16,7 +16,8 @@ export default function GigBill({ concertId, token }) {
   useEffect(() => {
     let isMounted = true;
     fetchGigBill({ token, concertId })
-      .then((data) => isMounted && setBill(data))
+      // Anything unexpected just hides the box rather than breaking the gig page
+      .then((data) => isMounted && setBill(Array.isArray(data?.acts) ? data : null))
       .catch(() => isMounted && setBill(null))
       .finally(() => isMounted && setIsLoading(false));
     return () => {
