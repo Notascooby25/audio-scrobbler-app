@@ -17,6 +17,8 @@ vi.mock("../../api/setlists", async (importOriginal) => {
     ...actual,
     previewSetlistsImport: vi.fn(),
     importSetlistsFromFile: vi.fn(),
+    fetchImportJob: vi.fn().mockResolvedValue({ job: null }),
+    cancelImportJob: vi.fn().mockResolvedValue({ job: null }),
     fetchSetlistDetail: vi.fn(),
     updateConcertNotes: vi.fn().mockResolvedValue({ id: 10, notes: "Updated note" }),
   };
@@ -289,6 +291,32 @@ describe("SetlistsStats and Modals", () => {
       content,
     });
     expect(onFileImported).toHaveBeenCalled();
+  });
+
+  it("shows a paused import that will resume, and lets you cancel it", async () => {
+    setlistsApi.fetchImportJob.mockResolvedValueOnce({
+      job: {
+        id: 3,
+        kind: "profile",
+        status: "paused",
+        imported_count: 212,
+        total: 480,
+        resume_after: "2026-10-30T00:05:00",
+      },
+    });
+    render(
+      <ImportExportModal isOpen={true} onClose={vi.fn()} onImport={vi.fn()} token="test-token" />
+    );
+
+    expect(
+      await screen.findByText(/paused at the daily Setlist\.fm limit \(212 of 480 gigs imported\)/)
+    ).toHaveTextContent("It'll carry on automatically after midnight UTC.");
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() =>
+      expect(setlistsApi.cancelImportJob).toHaveBeenCalledWith({ token: "test-token" })
+    );
+    await waitFor(() => expect(screen.queryByText(/paused at the daily/)).not.toBeInTheDocument());
   });
 
   it("rejects files that aren't CSV or JSON before uploading", async () => {

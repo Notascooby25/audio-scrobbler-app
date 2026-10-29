@@ -6019,6 +6019,14 @@ button.sfm-close:hover:not(:disabled) {
   margin-top: 12px;
 }
 
+.sfm-paused-job {
+  background: var(--color-warning-soft);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+}
+
 .sfm-file-result {
   font-size: 13px;
   margin-top: 12px;

@@ -1,11 +1,27 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  cancelImportJob,
   cleanSetlistUsername,
+  fetchImportJob,
   importSetlistsFromFile,
   previewSetlistsImport,
 } from "../../api/setlists";
 
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
+
+const JOB_LABELS = {
+  profile: "Setlist.fm import",
+  selected: "Setlist.fm import",
+  file_songs: "Fetching songs for imported gigs",
+};
+
+function pausedJobText(job) {
+  const progress =
+    job.kind === "file_songs"
+      ? `${job.imported_count} of ${job.total} gigs done`
+      : `${job.imported_count}${job.total ? ` of ${job.total}` : ""} gigs imported`;
+  return `${JOB_LABELS[job.kind] || "Import"} paused at the daily Setlist.fm limit (${progress}). It'll carry on automatically after midnight UTC.`;
+}
 
 function readFileText(file) {
   return new Promise((resolve, reject) => {
@@ -43,8 +59,28 @@ export default function ImportExportModal({
   const [isFileImporting, setIsFileImporting] = useState(false);
   const [fileError, setFileError] = useState("");
   const [fileResult, setFileResult] = useState(null);
+  const [pausedJob, setPausedJob] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen || !token) return undefined;
+    let isMounted = true;
+    fetchImportJob({ token })
+      .then((data) => isMounted && setPausedJob(data?.job || null))
+      .catch(() => isMounted && setPausedJob(null));
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, token, fileResult]);
 
   if (!isOpen) return null;
+
+  const handleCancelJob = async () => {
+    try {
+      await cancelImportJob({ token });
+    } finally {
+      setPausedJob(null);
+    }
+  };
 
   const handleFetchPreview = async (pageToFetch = 1) => {
     const raw = username.trim();
@@ -176,6 +212,15 @@ export default function ImportExportModal({
             &times;
           </button>
         </div>
+
+        {pausedJob && (
+          <p className="sfm-paused-job" role="status">
+            {pausedJobText(pausedJob)}{" "}
+            <button type="button" className="sfm-link is-muted" onClick={handleCancelJob}>
+              Cancel
+            </button>
+          </p>
+        )}
 
         <section className="sfm-modal-section">
           <h4>Import from Setlist.fm Profile</h4>
@@ -340,8 +385,10 @@ export default function ImportExportModal({
                 <p className="sfm-gig-meta">
                   {fileResult.without_songs} gig{fileResult.without_songs === 1 ? "" : "s"} imported
                   without songs
-                  {fileResult.quota_reached ? " (Setlist.fm daily limit reached)" : ""}. Open a gig
-                  and use Refresh from Setlist.fm to add them later.
+                  {fileResult.quota_reached ? " (Setlist.fm daily limit reached)" : ""}.{" "}
+                  {fileResult.resumes_automatically
+                    ? "Their songs will be added automatically after midnight UTC."
+                    : "Open a gig and use Refresh from Setlist.fm to add them later."}
                 </p>
               )}
               {fileResult.invalid.length > 0 && (
