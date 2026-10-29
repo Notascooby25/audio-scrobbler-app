@@ -168,6 +168,13 @@ export async function fetchAttendances({ token, limit = 50, offset = 0 }) {
   return parseResponse(response);
 }
 
+export async function fetchAttendance({ token, concertId }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/attendances/${concertId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
 export async function deleteAttendance({ token, concertId, includeSupportActs = true }) {
   const params = new URLSearchParams({ include_support_acts: includeSupportActs });
   const response = await fetch(`${API_BASE_URL}/setlists/${concertId}?${params.toString()}`, {

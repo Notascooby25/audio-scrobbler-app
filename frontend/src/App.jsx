@@ -10,6 +10,7 @@ import ReportsPage from "./pages/ReportsPage";
 import SettingsPage from "./pages/SettingsPage";
 import ChangelogPage from "./pages/ChangelogPage";
 import SetlistsPage from "./components/setlists/SetlistsPage";
+import SetlistGigPage from "./components/setlists/SetlistGigPage";
 import { fetchUserSettings } from "./api";
 import { readSession } from "./session";
 
@@ -37,6 +38,8 @@ export default function App() {
           <Route path="/overview" element={<OverviewPage />} />
           <Route path="/library" element={<LibraryPage />} />
           <Route path="/setlists" element={<SetlistsPage />} />
+          {/* Not under /setlists/: that prefix is proxied to the API by nginx and Vite */}
+          <Route path="/gigs/:concertId" element={<SetlistGigPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/:userId" element={<ProfilePage />} />

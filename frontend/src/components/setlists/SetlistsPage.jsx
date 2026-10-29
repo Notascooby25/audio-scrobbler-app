@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { readSession } from "../../session";
 import {
   searchSetlists,
   fetchVenueSupportActs,
   logConcertAttendance,
   fetchAttendances,
-  deleteAttendance,
-  refreshConcertSetlist,
   fetchArtistsSeenLeaderboard,
   fetchSongsHeardLeaderboard,
   fetchVenuesVisitedLeaderboard,
@@ -21,9 +19,9 @@ import MyGigsTimeline from "./MyGigsTimeline";
 import ArtistsSeenLeaderboard from "./ArtistsSeenLeaderboard";
 import SongsHeardLeaderboard from "./SongsHeardLeaderboard";
 import VenuesLeaderboard from "./VenuesLeaderboard";
-import DeleteGigConfirmModal from "./DeleteGigConfirmModal";
 import ImportExportModal from "./ImportExportModal";
 import ManualConcertModal from "./ManualConcertModal";
+import SetlistAttribution from "./SetlistAttribution";
 import { isFutureDate } from "./SetlistDateBadge";
 
 const TABS = [
@@ -43,6 +41,8 @@ export default function SetlistsPage() {
   const tabParam = searchParams.get("tab");
   const activeTab = TAB_IDS.includes(tabParam) ? tabParam : "gigs";
   const setActiveTab = (tab) => setSearchParams(tab === "gigs" ? {} : { tab });
+  const navigate = useNavigate();
+  const openGig = (concertId) => navigate(`/gigs/${concertId}`);
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
@@ -63,13 +63,6 @@ export default function SetlistsPage() {
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [isLogging, setIsLogging] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-
-  // Delete modal state
-  const [gigToDelete, setGigToDelete] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  // Refresh setlist state
-  const [isRefreshingId, setIsRefreshingId] = useState(null);
 
   // Import/Export modal state
   const [isImportExportOpen, setIsImportExportOpen] = useState(false);
@@ -217,36 +210,6 @@ export default function SetlistsPage() {
     }
   };
 
-  const handleRefreshSetlist = async (gig) => {
-    if (!token || !gig) return;
-    setIsRefreshingId(gig.id);
-    try {
-      await refreshConcertSetlist({ token, concertId: gig.id });
-      showToast(`Setlist for ${gig.artist_name} refreshed!`);
-      loadData();
-    } catch (err) {
-      alert(`Error refreshing setlist: ${err.message}`);
-    } finally {
-      setIsRefreshingId(null);
-    }
-  };
-
-  const handleDeleteConfirm = async (gigOrId, includeSupportActs = true) => {
-    if (!token) return;
-    const concertId = typeof gigOrId === "object" ? gigOrId.id : gigOrId;
-    setIsDeleting(true);
-    try {
-      const res = await deleteAttendance({ token, concertId, includeSupportActs });
-      setGigToDelete(null);
-      showToast(`Gig removed (${res?.deleted_count || 1} acts purged from scrobbles).`);
-      loadData();
-    } catch (err) {
-      alert(`Error deleting gig: ${err.message}`);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
   const handleImportSubmit = async (username, setlistIds = null) => {
     if (!token) return;
     setIsImporting(true);
@@ -268,16 +231,6 @@ export default function SetlistsPage() {
     } finally {
       setIsImporting(false);
     }
-  };
-
-  const handleNotesSaved = (concertId, newNotes) => {
-    setMyGigs((prev) => prev.map((g) => (g.id === concertId ? { ...g, notes: newNotes } : g)));
-    setArtistsLeaderboard((prev) =>
-      prev.map((artist) => ({
-        ...artist,
-        gigs: (artist.gigs || []).map((g) => (g.id === concertId ? { ...g, notes: newNotes } : g)),
-      }))
-    );
   };
 
   const handleManualSaved = (newGig) => {
@@ -504,14 +457,7 @@ export default function SetlistsPage() {
             {isLoadingData ? (
               <div className="sfm-empty">Loading your gigs...</div>
             ) : (
-              <MyGigsTimeline
-                gigs={myGigs}
-                token={token}
-                onRefreshSetlist={handleRefreshSetlist}
-                onDeleteGig={handleDeleteConfirm}
-                onNotesSaved={handleNotesSaved}
-                isRefreshingId={isRefreshingId}
-              />
+              <MyGigsTimeline gigs={myGigs} onOpenGig={openGig} />
             )}
           </div>
         )}
@@ -521,7 +467,7 @@ export default function SetlistsPage() {
             {isLoadingData ? (
               <div className="sfm-empty">Loading artists seen...</div>
             ) : (
-              <ArtistsSeenLeaderboard artists={artistsLeaderboard} />
+              <ArtistsSeenLeaderboard artists={artistsLeaderboard} onOpenGig={openGig} />
             )}
           </div>
         )}
@@ -531,7 +477,7 @@ export default function SetlistsPage() {
             {isLoadingData ? (
               <div className="sfm-empty">Loading songs heard live...</div>
             ) : (
-              <SongsHeardLeaderboard songs={songsLeaderboard} />
+              <SongsHeardLeaderboard songs={songsLeaderboard} onOpenGig={openGig} />
             )}
           </div>
         )}
@@ -541,24 +487,13 @@ export default function SetlistsPage() {
             {isLoadingData ? (
               <div className="sfm-empty">Loading venues leaderboard...</div>
             ) : (
-              <VenuesLeaderboard venues={venuesLeaderboard} />
+              <VenuesLeaderboard venues={venuesLeaderboard} onOpenGig={openGig} />
             )}
           </div>
         )}
       </section>
 
-      {/* Setlist.fm Attribution */}
-      <footer className="sfm-attribution">
-        Concert and setlist data provided by{" "}
-        <a href="https://www.setlist.fm" target="_blank" rel="noopener noreferrer">
-          setlist.fm
-        </a>{" "}
-        under their{" "}
-        <a href="https://www.setlist.fm/help/terms" target="_blank" rel="noopener noreferrer">
-          Terms of Service
-        </a>
-        .
-      </footer>
+      <SetlistAttribution />
 
       {/* Support Acts Prompt Modal */}
       <SupportActsPromptModal
@@ -568,15 +503,6 @@ export default function SetlistsPage() {
         supportActs={supportActs}
         onConfirm={handleConfirmAttendance}
         isSubmitting={isLogging}
-      />
-
-      {/* Delete Confirmation Modal */}
-      <DeleteGigConfirmModal
-        isOpen={!!gigToDelete}
-        onClose={() => setGigToDelete(null)}
-        gig={gigToDelete}
-        onConfirm={handleDeleteConfirm}
-        isDeleting={isDeleting}
       />
 
       {/* Import / Export Modal */}

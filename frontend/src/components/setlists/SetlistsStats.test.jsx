@@ -109,9 +109,8 @@ describe("SetlistsStats and Modals", () => {
     expect(onConfirm).toHaveBeenCalledWith(10, true);
   });
 
-  it("renders MyGigsTimeline and handles refresh setlist", () => {
-    const onRefresh = vi.fn();
-    const onDelete = vi.fn();
+  it("renders MyGigsTimeline rows that open the gig and filter by upcoming", () => {
+    const onOpenGig = vi.fn();
     const gigs = [
       {
         id: 1,
@@ -119,37 +118,36 @@ describe("SetlistsStats and Modals", () => {
         venue_name: "Apollo",
         city: "Manchester",
         country: "United Kingdom",
-        event_date: "2026-11-15T20:00:00",
+        event_date: "2020-11-15T20:00:00",
         song_count: 2,
-        raw_data: { sets: { set: [{ song: [{ name: "Grounds for Divorce" }] }] } },
+      },
+      {
+        id: 2,
+        artist_name: "Shed Seven",
+        venue_name: "O2 Academy",
+        city: "Birmingham",
+        country: "United Kingdom",
+        event_date: "2099-11-14T20:00:00",
+        song_count: 0,
       },
     ];
 
     render(
       <MemoryRouter>
-        <MyGigsTimeline
-          gigs={gigs}
-          onRefreshSetlist={onRefresh}
-          onDeleteGig={onDelete}
-          isRefreshingId={null}
-        />
+        <MyGigsTimeline gigs={gigs} onOpenGig={onOpenGig} />
       </MemoryRouter>
     );
 
-    expect(screen.getByRole("button", { name: "Elbow" })).toBeInTheDocument();
-    expect(screen.getByText(/Apollo/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "All Gigs (2)" })).toBeInTheDocument();
+    expect(screen.getByText("Apollo, Manchester, United Kingdom")).toBeInTheDocument();
+    expect(screen.getByText("Upcoming")).toBeInTheDocument();
 
-    const refreshBtn = screen.getByRole("button", { name: /^refresh$/i });
-    fireEvent.click(refreshBtn);
-    expect(onRefresh).toHaveBeenCalledWith(gigs[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Elbow" }));
+    expect(onOpenGig).toHaveBeenCalledWith(1);
 
-    const deleteBtn = screen.getByRole("button", { name: /delete/i });
-    fireEvent.click(deleteBtn);
-    expect(screen.getByText(/Remove this concert from your gigs\?/i)).toBeInTheDocument();
-
-    const confirmBtn = screen.getByRole("button", { name: /confirm delete/i });
-    fireEvent.click(confirmBtn);
-    expect(onDelete).toHaveBeenCalledWith(gigs[0], true);
+    fireEvent.click(screen.getByRole("button", { name: "Upcoming (1)" }));
+    expect(screen.getByRole("heading", { name: "Upcoming Shows (1)" })).toBeInTheDocument();
+    expect(screen.queryByText("Elbow")).not.toBeInTheDocument();
   });
 
   it("renders ImportExportModal and handles selective gig preview and import", async () => {

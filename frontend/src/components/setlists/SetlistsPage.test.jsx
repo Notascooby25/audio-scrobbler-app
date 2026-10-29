@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import SetlistsPage from "./SetlistsPage";
 import * as setlistsApi from "../../api/setlists";
 
@@ -325,57 +325,34 @@ describe("SetlistsPage", () => {
     });
   });
 
-  it("supports inline delete confirmation directly on the gig card in My Gigs", async () => {
+  it("opens a gig's setlist page from My Gigs", async () => {
     setlistsApi.fetchAttendances.mockResolvedValueOnce([
       {
-        id: 42,
-        setlist_id: "psb_brixton_2024",
+        id: 77,
+        setlist_id: "psb_brixton",
         artist_name: "Public Service Broadcasting",
         venue_name: "Brixton Academy",
         city: "London",
         country: "United Kingdom",
-        event_date: "2024-05-10",
-        song_count: 14,
-        notes: "Front row center",
-        raw_data: { sets: { set: [] } },
+        event_date: "2025-05-10T20:00:00",
+        song_count: 12,
       },
     ]);
 
     render(
-      <MemoryRouter>
-        <SetlistsPage />
+      <MemoryRouter initialEntries={["/setlists"]}>
+        <Routes>
+          <Route path="/setlists" element={<SetlistsPage />} />
+          <Route path="/gigs/:concertId" element={<div>Gig page for concert</div>} />
+        </Routes>
       </MemoryRouter>
     );
 
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "Public Service Broadcasting" })
-      ).toBeInTheDocument();
-      expect(screen.getByText(/Brixton Academy/i)).toBeInTheDocument();
-    });
-
-    // Click "Delete" button on the gig card
-    const deleteBtn = screen.getByRole("button", { name: /^delete$/i });
-    fireEvent.click(deleteBtn);
-
-    // Inline confirmation appears on the card
-    expect(screen.getByText(/Remove this concert from your gigs\?/i)).toBeInTheDocument();
-    expect(
-      screen.getByLabelText(/also delete logged support acts for this night/i)
-    ).toBeInTheDocument();
-
-    // Click "Confirm Delete"
-    const confirmDeleteBtn = screen.getByRole("button", { name: /confirm delete/i });
-    fireEvent.click(confirmDeleteBtn);
-
-    await waitFor(() => {
-      expect(setlistsApi.deleteAttendance).toHaveBeenCalledWith(
-        expect.objectContaining({
-          concertId: 42,
-          includeSupportActs: true,
-        })
-      );
-    });
+    expect(await screen.findByText(/Brixton Academy, London/i)).toBeInTheDocument();
+    // No per-row Refresh/Delete buttons any more; those live on the gig page
+    expect(screen.queryByRole("button", { name: /^delete$/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Public Service Broadcasting" }));
+    expect(await screen.findByText("Gig page for concert")).toBeInTheDocument();
   });
 
   it("handles direct Setlist.fm URL or ID search in GigSearchBar", async () => {
