@@ -9,6 +9,7 @@ from sqlalchemy import delete, func
 from sqlalchemy.orm import Session
 
 from ..models import AttendedConcert, ListeningEvent
+from .setlist_artwork_service import existing_gig_artwork, local_live_artwork
 from .setlist_service import SetlistService
 from .setlist_stats_service import _venue_key
 
@@ -317,6 +318,10 @@ class SetlistAttendanceService:
         songs: list[str],
         start_time: datetime,
     ) -> None:
+        # Keep artwork the old scrobbles had, then fill gaps from the user's own plays
+        kept = existing_gig_artwork(self.db, user_id, setlist_id)
+        local_tracks, artist_image = local_live_artwork(self.db, user_id, artist_name) if songs else ({}, None)
+
         # First delete existing scrobbles for this setlist to ensure clean replacement
         self.db.execute(
             delete(ListeningEvent).where(
@@ -328,12 +333,15 @@ class SetlistAttendanceService:
 
         for idx, song_title in enumerate(songs):
             played_at = start_time + timedelta(seconds=idx * 210)
+            kept_art, kept_artist_art = kept.get(song_title.lower(), (None, None))
             event = ListeningEvent(
                 user_id=user_id,
                 track_id=f"setlistfm:{setlist_id}:{idx}",
                 track_name=song_title,
                 artist_name=artist_name,
                 album_name=f"Live at {venue_name}" if venue_name else None,
+                artwork_url=kept_art if kept_art is not None else local_tracks.get(song_title.lower()),
+                artist_artwork_url=kept_artist_art if kept_artist_art is not None else artist_image,
                 played_at=played_at,
                 duration_ms=210000,
                 source="setlistfm",

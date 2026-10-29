@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import func
+from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
 from ..models import BlockedItem, ListeningEvent
@@ -118,8 +118,10 @@ def clear_artwork(
     if entity_type == "track" and secondary:
         query = query.filter(func.lower(ListeningEvent.artist_name) == secondary.strip().lower())
     
+    # Gig scrobbles get "" so the background artwork lookup doesn't fill them back in
+    cleared = case((ListeningEvent.source == "setlistfm", ""), else_=None)
     updated = query.update(
-        {ListeningEvent.artwork_url: None, ListeningEvent.artist_artwork_url: None},
+        {ListeningEvent.artwork_url: cleared, ListeningEvent.artist_artwork_url: cleared},
         synchronize_session=False
     )
     db.commit()
