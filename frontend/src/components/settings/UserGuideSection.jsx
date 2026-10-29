@@ -269,22 +269,24 @@ export default function UserGuideSection() {
         <ul>
           <li>
             <strong>Find & Log a Gig:</strong> Head to the <em>Set Lists</em> tab and tap{" "}
-            <em>+ Log a Gig</em>. Search by artist name with optional filters for country, venue, or
-            year. Click <strong>✓ I WAS THERE</strong> to log past shows, or{" "}
-            <strong>+ I'M GOING</strong> for future concerts.
+            <em>+ Log a Gig</em>. Search by artist name with optional filters for country, venue,
+            month, or year. Results group into <em>Upcoming Shows</em> and <em>Past Shows</em> with
+            a <em>View More Shows (+20)</em> button for long tours. Click{" "}
+            <strong>✓ I WAS THERE</strong> to log past shows, or <strong>+ I'M GOING</strong> for
+            future concerts.
           </li>
           <li>
-            <strong>View Songs & Setlist Details:</strong> Tap on any concert title or the{" "}
-            <em>View Songs &rarr;</em> link to open the full setlist modal. See songs divided by
-            Main Set and Encores with continuous numbering, guest performers, cover artist tags,
-            tape intro callouts, and set times. You can also copy the formatted setlist directly to
-            your clipboard.
+            <strong>View Songs & Setlist Details (In-Place):</strong> Tap on any concert title or
+            the <em>View Songs &rarr;</em> link to expand the setlist drawer right inside the card
+            where pressed. See songs divided by Main Set and Encores with continuous numbering,
+            guest performers, cover artist tags, tape intro callouts, and set times. You can also
+            copy the formatted setlist directly to your clipboard.
           </li>
           <li>
-            <strong>Personal Gig Diary & Memories:</strong> Add your own notes to any logged
-            concert! In the setlist viewer or timeline, write memories (standing spots, who you went
-            with, highlights). Notes display directly on your timeline cards with a quick edit
-            button.
+            <strong>Personal Gig Diary & Inline Actions:</strong> Add your own memories (standing
+            spots, who you went with, highlights) directly in the expanded card drawer with quick
+            editing and saving. Deleting a concert opens an inline confirmation bar right on that
+            card with support acts options, avoiding unexpected page jumps.
           </li>
           <li>
             <strong>Future Gigs & "I'M GOING":</strong> Concerts in the future automatically display{" "}

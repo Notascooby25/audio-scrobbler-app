@@ -9,6 +9,8 @@ vi.mock("../../api/setlists", () => ({
   fetchVenueSupportActs: vi.fn(),
   logConcertAttendance: vi.fn(),
   fetchAttendances: vi.fn().mockResolvedValue([]),
+  deleteAttendance: vi.fn().mockResolvedValue({ deleted_count: 1 }),
+  refreshConcertSetlist: vi.fn().mockResolvedValue({}),
   fetchArtistsSeenLeaderboard: vi.fn().mockResolvedValue([]),
   fetchSongsHeardLeaderboard: vi.fn().mockResolvedValue([]),
   fetchVenuesVisitedLeaderboard: vi.fn().mockResolvedValue([]),
@@ -157,6 +159,208 @@ describe("SetlistsPage", () => {
     await waitFor(() => {
       expect(screen.getByText(/No concerts found matching/i)).toBeInTheDocument();
       expect(screen.getByText(/Unknown Band/i)).toBeInTheDocument();
+    });
+  });
+
+  it("passes month filter to searchSetlists API", async () => {
+    setlistsApi.searchSetlists.mockResolvedValueOnce({ total: 0, setlist: [] });
+
+    render(
+      <MemoryRouter>
+        <SetlistsPage />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /\+ log a gig/i }));
+
+    const artistInput = screen.getByPlaceholderText(/search artist/i);
+    fireEvent.change(artistInput, { target: { value: "Public Service Broadcasting" } });
+
+    // Select Month November (value "11")
+    const monthSelect = screen.getByRole("combobox", { name: /month/i });
+    fireEvent.change(monthSelect, { target: { value: "11" } });
+
+    const searchBtn = screen.getByRole("button", { name: /^search$/i });
+    fireEvent.click(searchBtn);
+
+    await waitFor(() => {
+      expect(setlistsApi.searchSetlists).toHaveBeenCalledWith(
+        expect.objectContaining({
+          artistName: "Public Service Broadcasting",
+          month: 11,
+          p: 1,
+        })
+      );
+    });
+  });
+
+  it("groups search results into Upcoming Shows and Past Shows with View More Shows pagination", async () => {
+    setlistsApi.searchSetlists.mockResolvedValueOnce({
+      total: 25,
+      setlist: [
+        {
+          id: "psb_future_1",
+          artist: { name: "Public Service Broadcasting" },
+          venue: { name: "Alexandra Palace", city: { name: "London" } },
+          eventDate: "15-11-2026",
+          sets: { set: [] },
+        },
+        {
+          id: "psb_past_1",
+          artist: { name: "Public Service Broadcasting" },
+          venue: { name: "Brixton Academy", city: { name: "London" } },
+          eventDate: "10-10-2023",
+          sets: { set: [{ song: [{ name: "Spitfire" }] }] },
+        },
+      ],
+    });
+
+    render(
+      <MemoryRouter>
+        <SetlistsPage />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /\+ log a gig/i }));
+
+    const artistInput = screen.getByPlaceholderText(/search artist/i);
+    fireEvent.change(artistInput, { target: { value: "Public Service Broadcasting" } });
+    fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/upcoming shows/i)).toBeInTheDocument();
+      expect(screen.getByText(/past shows/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /view more shows \(\+20\)/i })).toBeInTheDocument();
+    });
+
+    // Test clicking pagination "View More Shows (+20)"
+    setlistsApi.searchSetlists.mockResolvedValueOnce({
+      total: 25,
+      setlist: [
+        {
+          id: "psb_past_2",
+          artist: { name: "Public Service Broadcasting" },
+          venue: { name: "Roundhouse", city: { name: "London" } },
+          eventDate: "12-10-2023",
+          sets: { set: [{ song: [{ name: "Gagarin" }] }] },
+        },
+      ],
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /view more shows \(\+20\)/i }));
+
+    await waitFor(() => {
+      expect(setlistsApi.searchSetlists).toHaveBeenCalledWith(
+        expect.objectContaining({
+          artistName: "Public Service Broadcasting",
+          p: 2,
+        })
+      );
+      expect(screen.getByText(/Public Service Broadcasting at Roundhouse/i)).toBeInTheDocument();
+    });
+  });
+
+  it("renders in-place songs accordion when View Songs is clicked on a card", async () => {
+    setlistsApi.searchSetlists.mockResolvedValueOnce({
+      total: 1,
+      setlist: [
+        {
+          id: "psb_gig_1",
+          artist: { name: "Public Service Broadcasting" },
+          venue: { name: "Alexandra Palace", city: { name: "London" } },
+          eventDate: "10-10-2023",
+          sets: {
+            set: [
+              {
+                name: "Main Set",
+                song: [{ name: "Spitfire" }, { name: "Theme from PSB" }],
+              },
+            ],
+          },
+        },
+      ],
+    });
+
+    render(
+      <MemoryRouter>
+        <SetlistsPage />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /\+ log a gig/i }));
+    fireEvent.change(screen.getByPlaceholderText(/search artist/i), {
+      target: { value: "Public Service Broadcasting" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Public Service Broadcasting at Alexandra Palace/i)
+      ).toBeInTheDocument();
+    });
+
+    // Click "View Songs →"
+    const viewSongsBtn = screen.getByRole("button", { name: /view songs →/i });
+    fireEvent.click(viewSongsBtn);
+
+    // Accordion should expand inline showing the song list and copy button
+    await waitFor(() => {
+      expect(screen.getByText("Spitfire")).toBeInTheDocument();
+      expect(screen.getByText("Theme from PSB")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /copy setlist/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /▲ hide songs/i })).toBeInTheDocument();
+    });
+  });
+
+  it("supports inline delete confirmation directly on the gig card in My Gigs", async () => {
+    setlistsApi.fetchAttendances.mockResolvedValueOnce([
+      {
+        id: 42,
+        setlist_id: "psb_brixton_2024",
+        artist_name: "Public Service Broadcasting",
+        venue_name: "Brixton Academy",
+        city: "London",
+        country: "United Kingdom",
+        event_date: "2024-05-10",
+        song_count: 14,
+        notes: "Front row center",
+        raw_data: { sets: { set: [] } },
+      },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <SetlistsPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Public Service Broadcasting at Brixton Academy/i)
+      ).toBeInTheDocument();
+    });
+
+    // Click "Delete" button on the gig card
+    const deleteBtn = screen.getByRole("button", { name: /^delete$/i });
+    fireEvent.click(deleteBtn);
+
+    // Inline confirmation appears on the card
+    expect(screen.getByText(/Remove this concert from your gigs\?/i)).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(/also delete logged support acts for this night/i)
+    ).toBeInTheDocument();
+
+    // Click "Confirm Delete"
+    const confirmDeleteBtn = screen.getByRole("button", { name: /confirm delete/i });
+    fireEvent.click(confirmDeleteBtn);
+
+    await waitFor(() => {
+      expect(setlistsApi.deleteAttendance).toHaveBeenCalledWith(
+        expect.objectContaining({
+          concertId: 42,
+          includeSupportActs: true,
+        })
+      );
     });
   });
 });

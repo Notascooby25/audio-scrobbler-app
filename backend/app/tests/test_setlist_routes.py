@@ -83,6 +83,10 @@ def test_setlist_routes_crud():
         assert search_res.status_code == 200
         assert search_res.json()["total"] == 1
 
+        search_month_res = client.get("/setlists/search?artist_name=Public+Service+Broadcasting&month=11")
+        assert search_month_res.status_code == 200
+        assert mock_svc.search_setlists.call_args[1]["month"] == 11
+
         # 2. Log attendance
         attend_res = client.post("/setlists/attend", json={"setlist_id": "show_123", "support_setlist_ids": []})
         assert attend_res.status_code == 201

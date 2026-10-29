@@ -23,6 +23,7 @@ import VenuesLeaderboard from "./VenuesLeaderboard";
 import DeleteGigConfirmModal from "./DeleteGigConfirmModal";
 import ImportExportModal from "./ImportExportModal";
 import SetlistDetailModal from "./SetlistDetailModal";
+import { isFutureDate } from "./SetlistDateBadge";
 
 export default function SetlistsPage() {
   const session = readSession();
@@ -35,6 +36,12 @@ export default function SetlistsPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [lastSearchQuery, setLastSearchQuery] = useState("");
   const [apiConfigured, setApiConfigured] = useState(null);
+
+  // Search pagination state
+  const [lastSearchParams, setLastSearchParams] = useState(null);
+  const [searchPage, setSearchPage] = useState(1);
+  const [totalSearchResults, setTotalSearchResults] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Support act prompt state
   const [selectedMainSetlist, setSelectedMainSetlist] = useState(null);
@@ -112,16 +119,42 @@ export default function SetlistsPage() {
     setIsSearching(true);
     setSearchError("");
     setHasSearched(true);
-    const queryDesc = [params.artistName, params.venueName, params.year].filter(Boolean).join(" ");
+    setLastSearchParams(params);
+    setSearchPage(1);
+    const monthLabel = params.month ? `month ${params.month}` : null;
+    const queryDesc = [params.artistName, params.venueName, monthLabel, params.year]
+      .filter(Boolean)
+      .join(" ");
     setLastSearchQuery(queryDesc || "your search query");
     try {
-      const data = await searchSetlists({ token, ...params });
+      const data = await searchSetlists({ token, ...params, p: 1 });
       setSearchResults(data?.setlist || []);
+      setTotalSearchResults(data?.total || 0);
     } catch (err) {
       setSearchError(err.message || "Error searching setlists.");
       setSearchResults([]);
+      setTotalSearchResults(0);
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  const handleLoadMore = async () => {
+    if (!token || !lastSearchParams || isLoadingMore) return;
+    setIsLoadingMore(true);
+    const nextPage = searchPage + 1;
+    try {
+      const data = await searchSetlists({ token, ...lastSearchParams, p: nextPage });
+      const newItems = data?.setlist || [];
+      setSearchResults((prev) => [...prev, ...newItems]);
+      setSearchPage(nextPage);
+      if (typeof data?.total === "number") {
+        setTotalSearchResults(data.total);
+      }
+    } catch (err) {
+      alert(`Error loading more shows: ${err.message}`);
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
@@ -186,8 +219,9 @@ export default function SetlistsPage() {
     }
   };
 
-  const handleDeleteConfirm = async (concertId, includeSupportActs) => {
+  const handleDeleteConfirm = async (gigOrId, includeSupportActs = true) => {
     if (!token) return;
+    const concertId = typeof gigOrId === "object" ? gigOrId.id : gigOrId;
     setIsDeleting(true);
     try {
       const res = await deleteAttendance({ token, concertId, includeSupportActs });
@@ -369,19 +403,83 @@ export default function SetlistsPage() {
           )}
 
           {!isSearching && searchResults.length > 0 && (
-            <div>
-              <h2 className="text-sm font-semibold text-muted uppercase tracking-wider mb-3">
-                Found {searchResults.length} Results
-              </h2>
-              {searchResults.map((setlist) => (
-                <GigCard
-                  key={setlist.id}
-                  setlist={setlist}
-                  onLogAttendance={handleOpenAttendanceModal}
-                  onViewSetlist={handleOpenSetlistDetail}
-                  isLogging={isLogging}
-                />
-              ))}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between text-xs text-muted uppercase tracking-wider">
+                <span>Found {totalSearchResults || searchResults.length} Results</span>
+                <span>
+                  Showing {searchResults.length} of {totalSearchResults || searchResults.length}
+                </span>
+              </div>
+
+              {/* Upcoming Shows Group */}
+              {searchResults.some((s) => isFutureDate(s.eventDate)) && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3 pb-1 border-b border-border">
+                    <h2 className="text-sm font-bold text-ink uppercase tracking-wider">
+                      Upcoming Shows
+                    </h2>
+                    <span className="badge text-[11px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                      {searchResults.filter((s) => isFutureDate(s.eventDate)).length}
+                    </span>
+                  </div>
+                  <div>
+                    {searchResults
+                      .filter((s) => isFutureDate(s.eventDate))
+                      .map((setlist) => (
+                        <GigCard
+                          key={setlist.id}
+                          setlist={setlist}
+                          token={token}
+                          onLogAttendance={handleOpenAttendanceModal}
+                          isLogging={isLogging}
+                        />
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Past Shows Group */}
+              {searchResults.some((s) => !isFutureDate(s.eventDate)) && (
+                <div>
+                  {searchResults.some((s) => isFutureDate(s.eventDate)) && (
+                    <div className="flex items-center gap-2 mb-3 pb-1 border-b border-border">
+                      <h2 className="text-sm font-bold text-ink uppercase tracking-wider">
+                        Past Shows
+                      </h2>
+                      <span className="badge text-[11px] font-bold px-2 py-0.5 rounded bg-surface-hover text-muted border border-border">
+                        {searchResults.filter((s) => !isFutureDate(s.eventDate)).length}
+                      </span>
+                    </div>
+                  )}
+                  <div>
+                    {searchResults
+                      .filter((s) => !isFutureDate(s.eventDate))
+                      .map((setlist) => (
+                        <GigCard
+                          key={setlist.id}
+                          setlist={setlist}
+                          token={token}
+                          onLogAttendance={handleOpenAttendanceModal}
+                          isLogging={isLogging}
+                        />
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Pagination Button: View More Shows */}
+              {searchResults.length < totalSearchResults && (
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    className="btn btn-secondary px-5 py-2 text-xs font-bold"
+                    onClick={handleLoadMore}
+                    disabled={isLoadingMore}
+                  >
+                    {isLoadingMore ? "Loading more shows..." : "View More Shows (+20)"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -410,9 +508,10 @@ export default function SetlistsPage() {
           ) : (
             <MyGigsTimeline
               gigs={myGigs}
+              token={token}
               onRefreshSetlist={handleRefreshSetlist}
-              onDeleteGig={(gig) => setGigToDelete(gig)}
-              onOpenSetlist={handleOpenSetlistDetail}
+              onDeleteGig={handleDeleteConfirm}
+              onNotesSaved={handleNotesSaved}
               isRefreshingId={isRefreshingId}
             />
           )}

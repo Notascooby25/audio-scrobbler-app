@@ -1,5 +1,15 @@
 export const CHANGELOG = [
   {
+    version: "0.17.0",
+    date: "2026-10-29",
+    changes: [
+      "In-Place Gig Card Actions: 'View Songs' and 'Delete' now expand and confirm directly inline on the concert card where pressed, keeping your scroll position steady on mobile and desktop without jumping to detached top-level modals.",
+      "Inline Setlist & Notes Drawer: seamlessly expand structured setlists with encores, tape tags, copy to clipboard, and personal concert memories editor directly inside your timeline cards.",
+      "Month Filter for Concert Searches: added Month selector (01 - January through 12 - December) in search filters and backend search endpoint to easily pinpoint upcoming tour dates.",
+      "Upcoming Shows & Search Pagination: search results now group into 'Upcoming Shows' and 'Past Shows' matching Setlist.fm layout, with 'View More Shows (+20)' pagination to browse through extensive tours.",
+    ],
+  },
+  {
     version: "0.16.0",
     date: "2026-10-29",
     changes: [

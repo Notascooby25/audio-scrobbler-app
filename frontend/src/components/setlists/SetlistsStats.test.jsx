@@ -134,7 +134,11 @@ describe("SetlistsStats and Modals", () => {
 
     const deleteBtn = screen.getByRole("button", { name: /delete/i });
     fireEvent.click(deleteBtn);
-    expect(onDelete).toHaveBeenCalledWith(gigs[0]);
+    expect(screen.getByText(/Remove this concert from your gigs\?/i)).toBeInTheDocument();
+
+    const confirmBtn = screen.getByRole("button", { name: /confirm delete/i });
+    fireEvent.click(confirmBtn);
+    expect(onDelete).toHaveBeenCalledWith(gigs[0], true);
   });
 
   it("renders ImportExportModal and handles selective gig preview and import", async () => {

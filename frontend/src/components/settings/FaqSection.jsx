@@ -252,10 +252,10 @@ const FAQ_DATA = [
     answer: (
       <p>
         <strong>Yes!</strong> Click on any concert headline or tap <em>View Songs &rarr;</em> to
-        open the Setlist Song Detail modal. You will see songs divided into main sets and encores,
-        complete with continuous song numbering, guest features, cover artist notes, and tape intro
-        tags. You can also click <em>Copy Setlist</em> to copy a formatted setlist text to your
-        clipboard.
+        expand the setlist drawer right inside the card where pressed. You will see songs divided
+        into main sets and encores, complete with continuous song numbering, guest features, cover
+        artist notes, and tape intro tags. You can also click <em>Copy Setlist</em> to copy a
+        formatted setlist text to your clipboard.
       </p>
     ),
   },

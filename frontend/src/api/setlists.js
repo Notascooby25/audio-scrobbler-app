@@ -56,11 +56,20 @@ export async function fetchSetlistStatus({ token }) {
   return parseResponse(response);
 }
 
-export async function searchSetlists({ token, artistName, countryCode, year, venueName, p = 1 }) {
+export async function searchSetlists({
+  token,
+  artistName,
+  countryCode,
+  year,
+  month,
+  venueName,
+  p = 1,
+}) {
   const params = new URLSearchParams();
   if (artistName) params.set("artist_name", artistName);
   if (countryCode) params.set("country_code", countryCode);
   if (year) params.set("year", year);
+  if (month) params.set("month", month);
   if (venueName) params.set("venue_name", venueName);
   if (p) params.set("p", p);
 

@@ -57,6 +57,24 @@ def sanitize_setlist_username(raw: str) -> str:
     return cleaned
 
 
+def _matches_month(event_date_str: str | None, target_month: int) -> bool:
+    if not event_date_str:
+        return False
+    parts = event_date_str.split("-")
+    if len(parts) == 3:
+        if len(parts[0]) <= 2 and len(parts[2]) == 4:
+            try:
+                return int(parts[1]) == target_month
+            except ValueError:
+                pass
+        elif len(parts[0]) == 4:
+            try:
+                return int(parts[1]) == target_month
+            except ValueError:
+                pass
+    return False
+
+
 class SetlistService:
     def __init__(self, db: Session, api_key: str | None = None) -> None:
         self.db = db
@@ -175,6 +193,7 @@ class SetlistService:
         artist_name: str | None = None,
         country_code: str | None = None,
         year: int | None = None,
+        month: int | None = None,
         venue_name: str | None = None,
         p: int = 1,
     ) -> dict[str, Any]:
@@ -182,6 +201,7 @@ class SetlistService:
             f"artist:{artist_name or ''}",
             f"country:{country_code or ''}",
             f"year:{year or ''}",
+            f"month:{month or ''}",
             f"venue:{venue_name or ''}",
             f"p:{p}",
         ]
@@ -209,6 +229,12 @@ class SetlistService:
         data = self.search_setlists_raw(params=params)
         if not data:
             return {"total": 0, "setlist": []}
+
+        if month:
+            raw_list = data.get("setlist", []) if isinstance(data, dict) else []
+            filtered_list = [s for s in raw_list if isinstance(s, dict) and _matches_month(s.get("eventDate"), month)]
+            data = dict(data)
+            data["setlist"] = filtered_list
 
         new_cache = SetlistCache(
             cache_key=cache_key,

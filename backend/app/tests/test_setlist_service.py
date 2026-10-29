@@ -164,3 +164,33 @@ def test_get_user_attended_multi_casing_fallback(db_session: Session):
         assert mock_req.call_count == 2
         assert mock_req.call_args_list[0][0][0] == "/user/crispylettuce/attended"
         assert mock_req.call_args_list[1][0][0] == "/user/Crispylettuce/attended"
+
+
+def test_search_setlists_month_filter(db_session: Session):
+    service = SetlistService(db=db_session, api_key="test_key")
+    raw_results = {
+        "total": 3,
+        "page": 1,
+        "itemsPerPage": 20,
+        "setlist": [
+            {"id": "show_nov_3", "artist": {"name": "The Snuts"}, "eventDate": "03-11-2026"},
+            {"id": "show_nov_4", "artist": {"name": "The Snuts"}, "eventDate": "04-11-2026"},
+            {"id": "show_oct_30", "artist": {"name": "The Snuts"}, "eventDate": "30-10-2026"},
+        ],
+    }
+
+    with patch.object(service, "search_setlists_raw", return_value=raw_results):
+        # Filter by November (11)
+        res_nov = service.search_setlists(artist_name="The Snuts", month=11)
+        assert len(res_nov["setlist"]) == 2
+        assert res_nov["setlist"][0]["id"] == "show_nov_3"
+        assert res_nov["setlist"][1]["id"] == "show_nov_4"
+
+        # Filter by October (10)
+        res_oct = service.search_setlists(artist_name="The Snuts", month=10)
+        assert len(res_oct["setlist"]) == 1
+        assert res_oct["setlist"][0]["id"] == "show_oct_30"
+
+        # Filter by December (12) -> empty
+        res_dec = service.search_setlists(artist_name="The Snuts", month=12)
+        assert len(res_dec["setlist"]) == 0

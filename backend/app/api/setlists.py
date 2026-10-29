@@ -48,6 +48,7 @@ def search_setlists(
     artist_name: str | None = Query(None),
     country_code: str | None = Query(None),
     year: int | None = Query(None),
+    month: int | None = Query(None, ge=1, le=12),
     venue_name: str | None = Query(None),
     p: int = Query(1, ge=1),
     db: Session = Depends(get_db),
@@ -59,6 +60,7 @@ def search_setlists(
             artist_name=artist_name,
             country_code=country_code,
             year=year,
+            month=month,
             venue_name=venue_name,
             p=p,
         )
