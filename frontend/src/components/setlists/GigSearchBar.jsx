@@ -39,11 +39,19 @@ export default function GigSearchBar({ onSearch, isLoading }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!artistName.trim() && !venueName.trim()) return;
+    const trimmedArtist = artistName.trim();
+    const trimmedVenue = venueName.trim();
+    if (!trimmedArtist && !trimmedVenue) return;
+
+    // Check if user entered a Setlist.fm URL or direct setlist ID in the artist box
+    const isSetlistUrlOrId =
+      trimmedArtist.includes("setlist.fm") || /^[0-9a-fA-F]{7,10}$/.test(trimmedArtist);
+
     onSearch({
-      artistName: artistName.trim(),
+      artistName: isSetlistUrlOrId ? undefined : trimmedArtist,
+      setlistUrlOrId: isSetlistUrlOrId ? trimmedArtist : undefined,
       countryCode,
-      venueName: venueName.trim(),
+      venueName: trimmedVenue,
       month: month ? parseInt(month, 10) : undefined,
       year: year ? parseInt(year, 10) : undefined,
     });
@@ -63,7 +71,7 @@ export default function GigSearchBar({ onSearch, isLoading }) {
           <input
             type="text"
             className="input-field w-full"
-            placeholder="Search artist (e.g. Foo Fighters)"
+            placeholder="Search artist or paste Setlist.fm link / ID"
             aria-label="Artist / Tour"
             value={artistName}
             onChange={(e) => setArtistName(e.target.value)}
@@ -115,7 +123,7 @@ export default function GigSearchBar({ onSearch, isLoading }) {
           <input
             type="number"
             className="input-field w-full"
-            placeholder="Year (e.g. 2026)"
+            placeholder="Year (optional, e.g. 2024)"
             aria-label="Year"
             value={year}
             onChange={(e) => setYear(e.target.value)}

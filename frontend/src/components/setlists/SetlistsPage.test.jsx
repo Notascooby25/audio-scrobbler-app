@@ -8,6 +8,7 @@ vi.mock("../../api/setlists", () => ({
   searchSetlists: vi.fn(),
   fetchVenueSupportActs: vi.fn(),
   logConcertAttendance: vi.fn(),
+  logManualConcert: vi.fn(),
   fetchAttendances: vi.fn().mockResolvedValue([]),
   deleteAttendance: vi.fn().mockResolvedValue({ deleted_count: 1 }),
   refreshConcertSetlist: vi.fn().mockResolvedValue({}),
@@ -359,6 +360,113 @@ describe("SetlistsPage", () => {
         expect.objectContaining({
           concertId: 42,
           includeSupportActs: true,
+        })
+      );
+    });
+  });
+
+  it("handles direct Setlist.fm URL or ID search in GigSearchBar", async () => {
+    setlistsApi.searchSetlists.mockResolvedValueOnce({
+      total: 1,
+      setlist: [
+        {
+          id: "334a28f1",
+          artist: { name: "Shed Seven" },
+          venue: {
+            name: "O2 Academy Birmingham",
+            city: { name: "Birmingham", country: { name: "United Kingdom" } },
+          },
+          eventDate: "14-11-2026",
+          sets: { set: [] },
+        },
+      ],
+    });
+
+    render(
+      <MemoryRouter>
+        <SetlistsPage />
+      </MemoryRouter>
+    );
+
+    // Switch to Log a Gig
+    fireEvent.click(screen.getByRole("button", { name: /\+ log a gig/i }));
+
+    const artistInput = screen.getByPlaceholderText(/search artist or paste setlist\.fm link/i);
+    fireEvent.change(artistInput, {
+      target: {
+        value: "https://www.setlist.fm/show/2026-11-14/o2-academy-birmingham-england-334a28f1.html",
+      },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
+
+    await waitFor(() => {
+      expect(setlistsApi.searchSetlists).toHaveBeenCalledWith(
+        expect.objectContaining({
+          setlistUrlOrId:
+            "https://www.setlist.fm/show/2026-11-14/o2-academy-birmingham-england-334a28f1.html",
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/O2 Academy Birmingham/i)).toBeInTheDocument();
+    });
+  });
+
+  it("opens manual concert modal and logs an upcoming gig", async () => {
+    setlistsApi.logManualConcert.mockResolvedValueOnce({
+      id: 99,
+      setlist_id: "manual-abc123",
+      artist_name: "Shed Seven",
+      venue_name: "O2 Academy Birmingham",
+      city: "Birmingham",
+      country: "United Kingdom",
+      event_date: "2026-11-14T00:00:00",
+      notes: "Balcony seats booked",
+      song_count: 0,
+    });
+
+    render(
+      <MemoryRouter>
+        <SetlistsPage />
+      </MemoryRouter>
+    );
+
+    // Switch to Log a Gig
+    fireEvent.click(screen.getByRole("button", { name: /\+ log a gig/i }));
+
+    // Click "+ Add Upcoming Show Manually"
+    const addManualBtn = screen.getByRole("button", { name: /\+ add upcoming show manually/i });
+    fireEvent.click(addManualBtn);
+
+    expect(screen.getByText(/Log Upcoming or Custom Gig/i)).toBeInTheDocument();
+
+    // Fill in required fields
+    fireEvent.change(screen.getByPlaceholderText(/e\.g\. Shed Seven/i), {
+      target: { value: "Shed Seven" },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/e\.g\. O2 Academy Birmingham/i), {
+      target: { value: "O2 Academy Birmingham" },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/e\.g\. Birmingham/i), {
+      target: { value: "Birmingham" },
+    });
+    fireEvent.change(screen.getByLabelText(/event date/i), {
+      target: { value: "2026-11-14" },
+    });
+
+    // Submit modal
+    const saveBtn = screen.getByRole("button", { name: /log concert/i });
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(setlistsApi.logManualConcert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          artistName: "Shed Seven",
+          venueName: "O2 Academy Birmingham",
+          city: "Birmingham",
+          eventDate: "2026-11-14",
         })
       );
     });

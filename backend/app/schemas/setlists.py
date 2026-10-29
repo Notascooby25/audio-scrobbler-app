@@ -16,6 +16,16 @@ class UpdateConcertNotesRequest(BaseModel):
     notes: str | None = Field(None, max_length=2000)
 
 
+class LogManualConcertRequest(BaseModel):
+    artist_name: str = Field(..., min_length=1, max_length=255)
+    venue_name: str = Field(..., min_length=1, max_length=255)
+    city: str = Field(..., min_length=1, max_length=128)
+    country: str = Field(..., min_length=1, max_length=128)
+    event_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    notes: str | None = Field(None, max_length=2000)
+    setlist_url: str | None = Field(None, max_length=500)
+
+
 class AttendedConcertResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

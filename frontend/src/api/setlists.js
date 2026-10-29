@@ -63,9 +63,11 @@ export async function searchSetlists({
   year,
   month,
   venueName,
+  setlistUrlOrId,
   p = 1,
 }) {
   const params = new URLSearchParams();
+  if (setlistUrlOrId) params.set("setlist_url_or_id", setlistUrlOrId);
   if (artistName) params.set("artist_name", artistName);
   if (countryCode) params.set("country_code", countryCode);
   if (year) params.set("year", year);
@@ -75,6 +77,35 @@ export async function searchSetlists({
 
   const response = await fetch(`${API_BASE_URL}/setlists/search?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function logManualConcert({
+  token,
+  artistName,
+  venueName,
+  city,
+  country = "United Kingdom",
+  eventDate,
+  notes = null,
+  setlistUrl = null,
+}) {
+  const response = await fetch(`${API_BASE_URL}/setlists/manual`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      artist_name: artistName,
+      venue_name: venueName,
+      city,
+      country,
+      event_date: eventDate,
+      ...(notes !== null ? { notes } : {}),
+      ...(setlistUrl ? { setlist_url: setlistUrl } : {}),
+    }),
   });
   return parseResponse(response);
 }

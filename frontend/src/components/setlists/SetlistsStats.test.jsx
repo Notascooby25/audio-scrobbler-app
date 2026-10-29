@@ -306,4 +306,62 @@ describe("SetlistsStats and Modals", () => {
     expect(screen.getByRole("button", { name: /✓ i was there/i })).toBeInTheDocument();
     expect(screen.getByText(/Hit Song/i)).toBeInTheDocument();
   });
+
+  it("supports in-place setlist drawer and inline delete confirmation in ArtistsSeenLeaderboard", async () => {
+    const onDeleteGig = vi.fn().mockResolvedValue(true);
+    const artists = [
+      {
+        artist_name: "Shed Seven",
+        count: 1,
+        gigs: [
+          {
+            id: 42,
+            date: "14 Nov 2026",
+            venue: "O2 Academy Birmingham",
+            city: "Birmingham",
+            country: "United Kingdom",
+            is_support: false,
+            song_count: 3,
+            raw_data: {
+              id: "shed_42",
+              sets: { set: [{ song: [{ name: "Chasing Rainbows" }] }] },
+            },
+          },
+        ],
+      },
+    ];
+
+    render(
+      <ArtistsSeenLeaderboard artists={artists} token="test_token" onDeleteGig={onDeleteGig} />
+    );
+
+    // Expand artist accordion
+    fireEvent.click(screen.getByText("Shed Seven"));
+    expect(screen.getByText(/O2 Academy Birmingham/i)).toBeInTheDocument();
+
+    // Expand in-place tracklist drawer
+    const viewSongsBtn = screen.getByRole("button", { name: /view songs & notes/i });
+    fireEvent.click(viewSongsBtn);
+    expect(screen.getByText(/Chasing Rainbows/i)).toBeInTheDocument();
+
+    // Click inline Delete button
+    const deleteBtn = screen.getByRole("button", { name: /^delete$/i });
+    fireEvent.click(deleteBtn);
+
+    // Inline confirmation banner appears right here
+    expect(screen.getByText(/Remove this concert from your gigs\?/i)).toBeInTheDocument();
+    const supportCheckbox = screen.getByLabelText(
+      /also delete logged support acts for this night/i
+    );
+    expect(supportCheckbox).toBeChecked();
+
+    // Confirm delete
+    const confirmBtn = screen.getByRole("button", { name: /confirm delete/i });
+    fireEvent.click(confirmBtn);
+
+    expect(onDeleteGig).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 42, artist_name: "Shed Seven" }),
+      true
+    );
+  });
 });

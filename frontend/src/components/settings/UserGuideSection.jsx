@@ -270,23 +270,30 @@ export default function UserGuideSection() {
           <li>
             <strong>Find & Log a Gig:</strong> Head to the <em>Set Lists</em> tab and tap{" "}
             <em>+ Log a Gig</em>. Search by artist name with optional filters for country, venue,
-            month, or year. Results group into <em>Upcoming Shows</em> and <em>Past Shows</em> with
-            a <em>View More Shows (+20)</em> button for long tours. Click{" "}
+            month, or year. You can also paste direct Setlist.fm show/setlist links (e.g.{" "}
+            <code>https://www.setlist.fm/show/...</code>) or 8-character setlist IDs into the search
+            box to load any concert immediately. If an upcoming tour date isn't listed on Setlist.fm
+            yet, tap <strong>+ Add Upcoming Show Manually</strong> to save it to your timeline with
+            countdowns and notes. Results group into <em>Upcoming Shows</em> and <em>Past Shows</em>{" "}
+            with a <em>View More Shows (+20)</em> button for long tours. Click{" "}
             <strong>✓ I WAS THERE</strong> to log past shows, or <strong>+ I'M GOING</strong> for
             future concerts.
           </li>
           <li>
-            <strong>View Songs & Setlist Details (In-Place):</strong> Tap on any concert title or
-            the <em>View Songs &rarr;</em> link to expand the setlist drawer right inside the card
-            where pressed. See songs divided by Main Set and Encores with continuous numbering,
-            guest performers, cover artist tags, tape intro callouts, and set times. You can also
-            copy the formatted setlist directly to your clipboard.
+            <strong>View Songs & Setlist Details (In-Place):</strong> On both <em>My Gigs</em> and{" "}
+            <em>Artists Seen</em>, tap on any concert title or the{" "}
+            <em>View Songs & Notes &rarr;</em> link to expand the setlist drawer right inside the
+            row where pressed without jumping around the page. See songs divided by Main Set and
+            Encores with continuous numbering, guest performers, cover artist tags, tape intro
+            callouts, and set times. You can also copy the formatted setlist directly to your
+            clipboard.
           </li>
           <li>
-            <strong>Personal Gig Diary & Inline Actions:</strong> Add your own memories (standing
-            spots, who you went with, highlights) directly in the expanded card drawer with quick
-            editing and saving. Deleting a concert opens an inline confirmation bar right on that
-            card with support acts options, avoiding unexpected page jumps.
+            <strong>Personal Gig Diary & Inline Delete Confirmation:</strong> Add your own memories
+            (standing spots, who you went with, highlights) directly in the expanded card drawer
+            with quick editing and saving. Deleting a concert opens an inline confirmation bar right
+            on that row with support acts options, avoiding unexpected page jumps or detached
+            dialogs.
           </li>
           <li>
             <strong>Future Gigs & "I'M GOING":</strong> Concerts in the future automatically display{" "}
@@ -307,7 +314,8 @@ export default function UserGuideSection() {
           <li>
             <strong>Live Music Leaderboards:</strong> Switch between <em>Artists Seen</em> (ranked
             by total gigs with proportional bars and expandable accordions showing every show you
-            attended), <em>Songs Heard</em> (live play counts), and <em>Venues Visited</em>.
+            attended, with in-place setlist drawers and inline delete actions), <em>Songs Heard</em>{" "}
+            (live play counts), and <em>Venues Visited</em>.
           </li>
           <li>
             <strong>Setlist.fm Account Import & Export:</strong> Have an existing Setlist.fm profile

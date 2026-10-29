@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import time
 from datetime import datetime, timedelta
 from typing import Any
@@ -73,6 +74,27 @@ def _matches_month(event_date_str: str | None, target_month: int) -> bool:
             except ValueError:
                 pass
     return False
+
+
+def extract_setlist_id(raw: str | None) -> str | None:
+    """Extract a Setlist.fm setlist/show ID from a full URL or direct ID.
+
+    Examples:
+    - https://www.setlist.fm/setlist/artist/2026/venue-334a28f1.html -> 334a28f1
+    - https://www.setlist.fm/show/2026-11-14/venue-334a28f1.html -> 334a28f1
+    - 334a28f1 -> 334a28f1
+    """
+    if not raw:
+        return None
+    val = raw.strip()
+    if not val:
+        return None
+    match = re.search(r"([0-9a-fA-F]{7,8})(?:\.html)?(?:$|[?#])", val)
+    if match:
+        return match.group(1).lower()
+    if re.fullmatch(r"[0-9a-fA-F]{7,10}", val):
+        return val.lower()
+    return None
 
 
 class SetlistService:
@@ -195,9 +217,32 @@ class SetlistService:
         year: int | None = None,
         month: int | None = None,
         venue_name: str | None = None,
+        setlist_url_or_id: str | None = None,
         p: int = 1,
     ) -> dict[str, Any]:
+        # 1. Check for direct Setlist.fm URL or Setlist ID in query
+        direct_id = extract_setlist_id(setlist_url_or_id)
+        if not direct_id and artist_name:
+            trimmed_artist = artist_name.strip()
+            if "setlist.fm" in trimmed_artist or (re.fullmatch(r"[0-9a-fA-F]{7,8}", trimmed_artist) and not venue_name):
+                direct_id = extract_setlist_id(trimmed_artist)
+
+        if direct_id:
+            try:
+                single_setlist = self.get_setlist(direct_id)
+                if single_setlist and isinstance(single_setlist, dict) and single_setlist.get("id"):
+                    return {
+                        "type": "setlists",
+                        "itemsPerPage": 20,
+                        "page": 1,
+                        "total": 1,
+                        "setlist": [single_setlist],
+                    }
+            except Exception as e:
+                logger.warning("Failed to direct-fetch setlist ID %s: %s", direct_id, e)
+
         query_parts = [
+            f"url_or_id:{setlist_url_or_id or ''}",
             f"artist:{artist_name or ''}",
             f"country:{country_code or ''}",
             f"year:{year or ''}",
@@ -233,8 +278,23 @@ class SetlistService:
         if month:
             raw_list = data.get("setlist", []) if isinstance(data, dict) else []
             filtered_list = [s for s in raw_list if isinstance(s, dict) and _matches_month(s.get("eventDate"), month)]
+            total_raw = int(data.get("total", 0)) if isinstance(data, dict) else 0
+            curr_p = p
+            max_pages_to_scan = 3
+            while len(filtered_list) < 10 and (curr_p * 20 < total_raw) and (curr_p - p < max_pages_to_scan):
+                curr_p += 1
+                next_params = dict(params)
+                next_params["p"] = curr_p
+                next_data = self.search_setlists_raw(params=next_params)
+                next_setlists = next_data.get("setlist", []) if isinstance(next_data, dict) else []
+                if not next_setlists:
+                    break
+                filtered_list.extend(
+                    [s for s in next_setlists if isinstance(s, dict) and _matches_month(s.get("eventDate"), month)]
+                )
             data = dict(data)
             data["setlist"] = filtered_list
+            data["total"] = len(filtered_list)
 
         new_cache = SetlistCache(
             cache_key=cache_key,

@@ -211,3 +211,27 @@ def test_setlist_status_and_missing_api_key():
         mock_svc.get_user_attended.side_effect = SetlistUserNotFoundError("User not found.")
         preview_res = client.get("/setlists/import/preview?username=nonexistent")
         assert preview_res.status_code == 404
+
+
+def test_log_manual_concert_route():
+    payload = {
+        "artist_name": "Shed Seven",
+        "venue_name": "O2 Academy Birmingham",
+        "city": "Birmingham",
+        "country": "United Kingdom",
+        "event_date": "2026-11-14",
+        "notes": "Balcony tickets booked!",
+    }
+    res = client.post("/setlists/manual", json=payload)
+    assert res.status_code == 201
+    data = res.json()
+    assert data["artist_name"] == "Shed Seven"
+    assert data["venue_name"] == "O2 Academy Birmingham"
+    assert data["city"] == "Birmingham"
+    assert data["notes"] == "Balcony tickets booked!"
+    assert data["setlist_id"].startswith("manual-")
+
+    # Verify it shows in attendances
+    gigs_res = client.get("/setlists/attendances")
+    assert gigs_res.status_code == 200
+    assert any(g["artist_name"] == "Shed Seven" for g in gigs_res.json())

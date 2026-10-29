@@ -13,6 +13,7 @@ from ..schemas.setlists import (
     AttendedConcertResponse,
     DeleteConcertResponse,
     LogAttendanceRequest,
+    LogManualConcertRequest,
     SetlistImportRequest,
     SetlistPreviewItem,
     SetlistPreviewResponse,
@@ -50,6 +51,7 @@ def search_setlists(
     year: int | None = Query(None),
     month: int | None = Query(None, ge=1, le=12),
     venue_name: str | None = Query(None),
+    setlist_url_or_id: str | None = Query(None),
     p: int = Query(1, ge=1),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -62,6 +64,7 @@ def search_setlists(
             year=year,
             month=month,
             venue_name=venue_name,
+            setlist_url_or_id=setlist_url_or_id,
             p=p,
         )
     except SetlistApiKeyMissingError as exc:
@@ -122,6 +125,30 @@ def attend_concert(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except SetlistRateLimitError as exc:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
+
+
+@router.post("/manual", response_model=AttendedConcertResponse, status_code=status.HTTP_201_CREATED)
+def log_manual_concert(
+    payload: LogManualConcertRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> AttendedConcertResponse:
+    setlist_svc = SetlistService(db=db)
+    attendance_svc = SetlistAttendanceService(db=db, setlist_service=setlist_svc)
+    try:
+        concert = attendance_svc.log_manual_concert(
+            user_id=current_user.id,
+            artist_name=payload.artist_name,
+            venue_name=payload.venue_name,
+            city=payload.city,
+            country=payload.country,
+            event_date_str=payload.event_date,
+            notes=payload.notes,
+            setlist_url=payload.setlist_url,
+        )
+        return AttendedConcertResponse.model_validate(concert)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
 @router.patch("/{concert_id}/notes", response_model=AttendedConcertResponse)

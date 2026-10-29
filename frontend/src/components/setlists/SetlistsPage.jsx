@@ -22,7 +22,7 @@ import SongsHeardLeaderboard from "./SongsHeardLeaderboard";
 import VenuesLeaderboard from "./VenuesLeaderboard";
 import DeleteGigConfirmModal from "./DeleteGigConfirmModal";
 import ImportExportModal from "./ImportExportModal";
-import SetlistDetailModal from "./SetlistDetailModal";
+import ManualConcertModal from "./ManualConcertModal";
 import { isFutureDate } from "./SetlistDateBadge";
 
 export default function SetlistsPage() {
@@ -32,6 +32,7 @@ export default function SetlistsPage() {
   const [activeTab, setActiveTab] = useState("gigs"); // 'gigs' | 'artists' | 'songs' | 'venues' | 'log'
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
   const [lastSearchQuery, setLastSearchQuery] = useState("");
@@ -49,9 +50,6 @@ export default function SetlistsPage() {
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [isLogging, setIsLogging] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-
-  // Detail modal state
-  const [selectedSetlistForDetail, setSelectedSetlistForDetail] = useState(null);
 
   // Delete modal state
   const [gigToDelete, setGigToDelete] = useState(null);
@@ -258,21 +256,20 @@ export default function SetlistsPage() {
     }
   };
 
-  const handleOpenSetlistDetail = (item) => {
-    if (!item) return;
-    const setlistId = item.setlist_id || item.id;
-    const loggedId = typeof item.id === "number" ? item.id : null;
-    const initial = item.raw_data
-      ? { ...item.raw_data, notes: item.notes, logged_concert_id: loggedId }
-      : { ...item, logged_concert_id: loggedId };
-    setSelectedSetlistForDetail({
-      setlistId,
-      initialData: initial,
-    });
-  };
-
   const handleNotesSaved = (concertId, newNotes) => {
     setMyGigs((prev) => prev.map((g) => (g.id === concertId ? { ...g, notes: newNotes } : g)));
+    setArtistsLeaderboard((prev) =>
+      prev.map((artist) => ({
+        ...artist,
+        gigs: (artist.gigs || []).map((g) => (g.id === concertId ? { ...g, notes: newNotes } : g)),
+      }))
+    );
+  };
+
+  const handleManualSaved = (newGig) => {
+    showToast(`Logged "${newGig?.artist_name || "Upcoming gig"}"!`);
+    loadData();
+    setActiveTab("gigs");
   };
 
   return (
@@ -296,10 +293,10 @@ export default function SetlistsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 max-w-full overflow-x-auto pb-1 scrollbar-none">
           {/* Segmented Tabs */}
           <div
-            className="inline-flex rounded-lg p-1 bg-surface-hover"
+            className="inline-flex rounded-lg p-1 bg-surface-hover shrink-0 whitespace-nowrap"
             style={{ border: "0.5px solid var(--color-border)" }}
             role="tablist"
           >
@@ -353,7 +350,7 @@ export default function SetlistsPage() {
           {/* Import / Export Trigger */}
           <button
             type="button"
-            className="btn btn-secondary text-xs px-2.5 py-1.5"
+            className="btn btn-secondary text-xs px-2.5 py-1.5 shrink-0 whitespace-nowrap"
             onClick={() => setIsImportExportOpen(true)}
             title="Import from Setlist.fm or Export your gigs"
           >
@@ -392,6 +389,19 @@ export default function SetlistsPage() {
       {/* Main Tab Content */}
       {activeTab === "log" && (
         <div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+            <span className="text-xs text-muted">
+              Search Setlist.fm or paste direct show link / ID:
+            </span>
+            <button
+              type="button"
+              className="text-xs text-primary hover:underline font-bold cursor-pointer bg-transparent border-0 p-0 text-left sm:text-right"
+              onClick={() => setIsManualModalOpen(true)}
+            >
+              + Add Upcoming Show Manually
+            </button>
+          </div>
+
           <GigSearchBar onSearch={handleSearch} isLoading={isSearching} />
 
           {searchError && (
@@ -484,17 +494,41 @@ export default function SetlistsPage() {
           )}
 
           {!isSearching && searchResults.length === 0 && !searchError && (
-            <div className="card p-8 text-center text-muted text-sm">
+            <div className="card p-8 text-center text-muted text-sm space-y-3">
               {hasSearched ? (
-                <span>
-                  No concerts found matching &quot;<strong>{lastSearchQuery}</strong>&quot;. Try
-                  checking the artist spelling, clearing the venue or year filter (the tour may have
-                  taken place in a different year), or selecting &quot;All Countries&quot;.
-                </span>
+                <>
+                  <p>
+                    No concerts found matching &quot;<strong>{lastSearchQuery}</strong>&quot;. Try
+                    checking the artist spelling, clearing the venue or year filter (the tour may
+                    have taken place in a different year), or selecting &quot;All Countries&quot;.
+                  </p>
+                  <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-primary text-xs px-3 py-1.5 font-bold"
+                      onClick={() => setIsManualModalOpen(true)}
+                    >
+                      + Add Upcoming / Custom Show Manually
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-muted">
+                    Upcoming tour dates not yet on Setlist.fm? You can paste their direct Setlist.fm
+                    show link into the search bar, or add them manually above.
+                  </p>
+                </>
               ) : (
-                <span>
-                  Search for an artist or venue above to find your concert and log attendance.
-                </span>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
+                  <span>
+                    Search for an artist or venue above to find your concert and log attendance.
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-secondary text-xs px-3 py-1.5 shrink-0"
+                    onClick={() => setIsManualModalOpen(true)}
+                  >
+                    + Add Show Manually
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -525,7 +559,11 @@ export default function SetlistsPage() {
           ) : (
             <ArtistsSeenLeaderboard
               artists={artistsLeaderboard}
-              onOpenSetlist={handleOpenSetlistDetail}
+              token={token}
+              onRefreshSetlist={handleRefreshSetlist}
+              onDeleteGig={handleDeleteConfirm}
+              onNotesSaved={handleNotesSaved}
+              isRefreshingId={isRefreshingId}
             />
           )}
         </div>
@@ -605,21 +643,13 @@ export default function SetlistsPage() {
         token={token}
       />
 
-      {/* Setlist Detail Modal */}
-      {selectedSetlistForDetail && (
-        <SetlistDetailModal
-          setlistId={selectedSetlistForDetail.setlistId}
-          initialData={selectedSetlistForDetail.initialData}
-          token={token}
-          onClose={() => setSelectedSetlistForDetail(null)}
-          onLogAttendance={(setlist) => {
-            setSelectedSetlistForDetail(null);
-            handleOpenAttendanceModal(setlist);
-          }}
-          isLogging={isLogging}
-          onNotesSaved={handleNotesSaved}
-        />
-      )}
+      {/* Manual Upcoming / Custom Concert Modal */}
+      <ManualConcertModal
+        isOpen={isManualModalOpen}
+        onClose={() => setIsManualModalOpen(false)}
+        onSaved={handleManualSaved}
+        token={token}
+      />
     </div>
   );
 }

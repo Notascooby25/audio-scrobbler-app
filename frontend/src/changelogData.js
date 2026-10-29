@@ -1,5 +1,16 @@
 export const CHANGELOG = [
   {
+    version: "0.18.0",
+    date: "2026-10-29",
+    changes: [
+      "In-Place Actions on Artists Seen Tab: expanding an artist in the Artists Seen leaderboard now lets you view songs & notes in-place and delete gigs with an inline double-confirmation banner directly where pressed.",
+      "Direct Setlist.fm Link & Show ID Lookup: paste full Setlist.fm URLs (like /show/... or /setlist/...) or 8-character setlist IDs directly into the search bar to load upcoming tour dates or specific concerts instantly.",
+      "Manual Upcoming & Custom Gig Logger: add upcoming concerts or tour dates not yet cataloged on Setlist.fm directly into your live timeline with Artist, Venue, Date, and personal notes.",
+      "Multi-Page Month Search Scanning: searches filtered by Month now scan across multiple pages on Setlist.fm to prevent false empty states on active tour calendars.",
+      "Mobile Navigation Bar Polish: redesigned sub-navigation tabs into a sleek, horizontally scrollable segmented pill bar with touch momentum, preventing uneven multi-line wrapping on mobile screens.",
+    ],
+  },
+  {
     version: "0.17.0",
     date: "2026-10-29",
     changes: [

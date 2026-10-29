@@ -284,6 +284,20 @@ const FAQ_DATA = [
       </p>
     ),
   },
+  {
+    id: "setlists-upcoming-missing",
+    category: "Set Lists & Gigs",
+    question: "What if an upcoming gig isn't appearing in search on Setlist.fm?",
+    answer: (
+      <p>
+        Setlist.fm's general search API only indexes past concerts. To log an upcoming show, you can
+        paste its direct Setlist.fm show/setlist link (e.g.{" "}
+        <code>https://www.setlist.fm/show/...</code>) or 8-character setlist ID directly into the
+        search bar, or tap <strong>+ Add Upcoming Show Manually</strong> in the Log a Gig tab to
+        enter the artist, venue, city, and date.
+      </p>
+    ),
+  },
 ];
 
 export default function FaqSection() {

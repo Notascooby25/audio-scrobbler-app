@@ -14,6 +14,7 @@ from backend.app.services.setlist_service import (
     SetlistApiKeyMissingError,
     SetlistRateLimitError,
     SetlistService,
+    extract_setlist_id,
     sanitize_setlist_username,
 )
 
@@ -194,3 +195,42 @@ def test_search_setlists_month_filter(db_session: Session):
         # Filter by December (12) -> empty
         res_dec = service.search_setlists(artist_name="The Snuts", month=12)
         assert len(res_dec["setlist"]) == 0
+
+
+def test_extract_setlist_id():
+    assert (
+        extract_setlist_id(
+            "https://www.setlist.fm/setlist/public-service-broadcasting/2026/alexandra-palace-london-england-334a28f1.html"
+        )
+        == "334a28f1"
+    )
+    assert (
+        extract_setlist_id("https://www.setlist.fm/show/2026-11-14/o2-academy-birmingham-england-334a28f1.html")
+        == "334a28f1"
+    )
+    assert extract_setlist_id("334a28f1") == "334a28f1"
+    assert extract_setlist_id("3bd69926") == "3bd69926"
+    assert (
+        extract_setlist_id("https://www.setlist.fm/setlist/artist/year/venue-334a28f1.html?foo=bar#top") == "334a28f1"
+    )
+    assert extract_setlist_id("Not a setlist") is None
+    assert extract_setlist_id("") is None
+
+
+def test_search_setlists_direct_url_or_id(db_session: Session):
+    service = SetlistService(db=db_session, api_key="test_key")
+    single_show = {"id": "334a28f1", "artist": {"name": "Shed Seven"}, "eventDate": "14-11-2026"}
+
+    with patch.object(service, "get_setlist", return_value=single_show) as mock_get:
+        # 1. Via setlist_url_or_id
+        res = service.search_setlists(setlist_url_or_id="334a28f1")
+        assert res["total"] == 1
+        assert res["setlist"][0]["id"] == "334a28f1"
+        mock_get.assert_called_with("334a28f1")
+
+        # 2. Via artist_name containing full Setlist.fm URL
+        res2 = service.search_setlists(
+            artist_name="https://www.setlist.fm/show/2026-11-14/o2-academy-birmingham-england-334a28f1.html"
+        )
+        assert res2["total"] == 1
+        assert res2["setlist"][0]["id"] == "334a28f1"

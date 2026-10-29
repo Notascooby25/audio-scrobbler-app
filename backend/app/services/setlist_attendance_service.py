@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -307,6 +308,62 @@ class SetlistAttendanceService:
             raise ValueError(f"Concert {concert_id} not found.")
 
         concert.notes = notes.strip() if notes and notes.strip() else None
+        self.db.commit()
+        self.db.refresh(concert)
+        return concert
+
+    def log_manual_concert(
+        self,
+        user_id: int,
+        artist_name: str,
+        venue_name: str,
+        city: str,
+        country: str,
+        event_date_str: str,
+        notes: str | None = None,
+        setlist_url: str | None = None,
+    ) -> AttendedConcert:
+        try:
+            event_dt = datetime.strptime(event_date_str, "%Y-%m-%d")
+        except ValueError:
+            event_dt = parse_event_date(event_date_str)
+
+        setlist_id = f"manual-{uuid.uuid4().hex[:12]}"
+        clean_artist = artist_name.strip()
+        clean_venue = venue_name.strip()
+        clean_city = city.strip()
+        clean_country = country.strip()
+        clean_notes = notes.strip() if notes and notes.strip() else None
+        clean_url = setlist_url.strip() if setlist_url and setlist_url.strip() else None
+
+        raw_data = {
+            "id": setlist_id,
+            "eventDate": event_dt.strftime("%d-%m-%Y"),
+            "artist": {"name": clean_artist},
+            "venue": {
+                "name": clean_venue,
+                "city": {"name": clean_city, "country": {"name": clean_country}},
+            },
+            "sets": {"set": []},
+            "url": clean_url or "",
+            "is_manual": True,
+        }
+
+        concert = AttendedConcert(
+            user_id=user_id,
+            setlist_id=setlist_id,
+            artist_name=clean_artist,
+            venue_name=clean_venue,
+            city=clean_city,
+            country=clean_country,
+            event_date=event_dt,
+            setlist_url=clean_url,
+            is_support_act=False,
+            raw_data=raw_data,
+            song_count=0,
+            notes=clean_notes,
+        )
+        self.db.add(concert)
         self.db.commit()
         self.db.refresh(concert)
         return concert
