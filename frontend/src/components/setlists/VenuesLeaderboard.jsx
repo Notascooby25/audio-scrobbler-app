@@ -67,7 +67,9 @@ export default function VenuesLeaderboard({ venues = [] }) {
                     {showRank ? `${rank}.` : ""}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="font-bold text-sm text-ink truncate">{v.venue_name}</div>
+                    <div className="font-semibold text-sm text-primary hover:underline cursor-pointer truncate">
+                      {v.venue_name}
+                    </div>
                     <div className="text-xs text-muted truncate">
                       {v.city}
                       {v.country ? `, ${v.country}` : ""}

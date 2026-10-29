@@ -284,123 +284,64 @@ export default function SetlistsPage() {
         </div>
       )}
 
-      {/* Header and Sub-navigation Tabs */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-border">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Set Lists</h1>
-          <p className="text-sm text-muted">
-            Track your concert attendances, live song history, and artist stats
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 max-w-full overflow-x-auto pb-1 scrollbar-none">
-          {/* Setlist.fm-style Segmented Sub-navigation Tabs */}
-          <div className="flex items-center gap-1 shrink-0 whitespace-nowrap" role="tablist">
-            <button
-              type="button"
-              className={`px-3.5 py-1.5 rounded-t text-xs font-bold transition-colors cursor-pointer ${
-                activeTab === "gigs"
-                  ? "bg-surface text-ink border-t-2 border-primary border-x border-border shadow-none"
-                  : "text-muted hover:text-ink hover:bg-surface-hover border-b border-transparent"
-              }`}
-              style={
-                activeTab === "gigs"
-                  ? {
-                      borderTopColor: "var(--color-primary, #0066FF)",
-                      borderBottom: "1px solid var(--color-surface)",
-                    }
-                  : {}
-              }
-              onClick={() => setActiveTab("gigs")}
-            >
-              My Gigs
-            </button>
-            <button
-              type="button"
-              className={`px-3.5 py-1.5 rounded-t text-xs font-bold transition-colors cursor-pointer ${
-                activeTab === "artists"
-                  ? "bg-surface text-ink border-t-2 border-primary border-x border-border shadow-none"
-                  : "text-muted hover:text-ink hover:bg-surface-hover border-b border-transparent"
-              }`}
-              style={
-                activeTab === "artists"
-                  ? {
-                      borderTopColor: "var(--color-primary, #0066FF)",
-                      borderBottom: "1px solid var(--color-surface)",
-                    }
-                  : {}
-              }
-              onClick={() => setActiveTab("artists")}
-            >
-              Artists Seen
-            </button>
-            <button
-              type="button"
-              className={`px-3.5 py-1.5 rounded-t text-xs font-bold transition-colors cursor-pointer ${
-                activeTab === "songs"
-                  ? "bg-surface text-ink border-t-2 border-primary border-x border-border shadow-none"
-                  : "text-muted hover:text-ink hover:bg-surface-hover border-b border-transparent"
-              }`}
-              style={
-                activeTab === "songs"
-                  ? {
-                      borderTopColor: "var(--color-primary, #0066FF)",
-                      borderBottom: "1px solid var(--color-surface)",
-                    }
-                  : {}
-              }
-              onClick={() => setActiveTab("songs")}
-            >
-              Songs Heard
-            </button>
-            <button
-              type="button"
-              className={`px-3.5 py-1.5 rounded-t text-xs font-bold transition-colors cursor-pointer ${
-                activeTab === "venues"
-                  ? "bg-surface text-ink border-t-2 border-primary border-x border-border shadow-none"
-                  : "text-muted hover:text-ink hover:bg-surface-hover border-b border-transparent"
-              }`}
-              style={
-                activeTab === "venues"
-                  ? {
-                      borderTopColor: "var(--color-primary, #0066FF)",
-                      borderBottom: "1px solid var(--color-surface)",
-                    }
-                  : {}
-              }
-              onClick={() => setActiveTab("venues")}
-            >
-              Venues
-            </button>
-            <button
-              type="button"
-              className={`px-3.5 py-1.5 rounded-t text-xs font-bold transition-colors cursor-pointer ${
-                activeTab === "log"
-                  ? "bg-surface text-ink border-t-2 border-primary border-x border-border shadow-none"
-                  : "text-muted hover:text-ink hover:bg-surface-hover border-b border-transparent"
-              }`}
-              style={
-                activeTab === "log"
-                  ? {
-                      borderTopColor: "var(--color-primary, #0066FF)",
-                      borderBottom: "1px solid var(--color-surface)",
-                    }
-                  : {}
-              }
-              onClick={() => setActiveTab("log")}
-            >
-              + Log a Gig
-            </button>
+      {/* Header and Setlist.fm-style Navigation Tabs */}
+      <div className="mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Set Lists</h1>
+            <p className="text-sm text-muted">
+              Track your concert attendances, live song history, and artist stats
+            </p>
           </div>
-
-          {/* Import / Export Trigger */}
           <button
             type="button"
-            className="btn btn-secondary text-xs px-2.5 py-1.5 shrink-0 whitespace-nowrap"
+            className="btn btn-secondary text-xs px-3 py-1.5 shrink-0 self-start sm:self-auto"
             onClick={() => setIsImportExportOpen(true)}
             title="Import from Setlist.fm or Export your gigs"
           >
             Import / Export
+          </button>
+        </div>
+
+        {/* Full-width Setlist.fm Tab Strip */}
+        <div
+          className="flex items-end gap-1 border-b border-border overflow-x-auto pb-0 scrollbar-none"
+          role="tablist"
+        >
+          <button
+            type="button"
+            className={`setlist-tab-btn ${activeTab === "gigs" ? "active" : ""}`}
+            onClick={() => setActiveTab("gigs")}
+          >
+            My Gigs
+          </button>
+          <button
+            type="button"
+            className={`setlist-tab-btn ${activeTab === "artists" ? "active" : ""}`}
+            onClick={() => setActiveTab("artists")}
+          >
+            Artists Seen
+          </button>
+          <button
+            type="button"
+            className={`setlist-tab-btn ${activeTab === "songs" ? "active" : ""}`}
+            onClick={() => setActiveTab("songs")}
+          >
+            Songs Heard
+          </button>
+          <button
+            type="button"
+            className={`setlist-tab-btn ${activeTab === "venues" ? "active" : ""}`}
+            onClick={() => setActiveTab("venues")}
+          >
+            Venues
+          </button>
+          <button
+            type="button"
+            className={`setlist-tab-btn ${activeTab === "log" ? "active" : ""}`}
+            onClick={() => setActiveTab("log")}
+          >
+            + Log a Gig
           </button>
         </div>
       </div>

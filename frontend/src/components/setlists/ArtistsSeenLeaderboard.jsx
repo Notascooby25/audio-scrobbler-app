@@ -112,7 +112,7 @@ export default function ArtistsSeenLeaderboard({
                     </span>
                     <button
                       type="button"
-                      className="font-bold text-sm text-ink hover:underline text-left truncate cursor-pointer bg-transparent border-0 p-0"
+                      className="btn-text-link font-semibold text-sm text-left truncate"
                     >
                       {item.artist_name}
                     </button>
@@ -171,7 +171,7 @@ export default function ArtistsSeenLeaderboard({
                               <div className="min-w-0 flex-1">
                                 <button
                                   type="button"
-                                  className="font-bold text-ink hover:underline hover:text-primary transition-colors text-left truncate cursor-pointer bg-transparent border-0 p-0 block text-xs"
+                                  className="btn-text-link font-semibold text-xs text-left truncate block"
                                   onClick={() => toggleGigExpand(g.id)}
                                   title="Click to view songs played & notes in-place"
                                 >

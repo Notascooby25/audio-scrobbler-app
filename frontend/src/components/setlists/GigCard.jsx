@@ -53,7 +53,7 @@ export default function GigCard({ setlist, token, onLogAttendance, onViewSetlist
             <div className="flex flex-wrap items-center gap-2 mb-0.5">
               <button
                 type="button"
-                className="font-bold text-base text-ink hover:text-primary transition-colors text-left truncate cursor-pointer bg-transparent border-0 p-0"
+                className="btn-text-link font-semibold text-base text-left truncate"
                 onClick={toggleExpand}
                 title="Click to view songs played inline"
               >

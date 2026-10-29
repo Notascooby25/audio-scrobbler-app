@@ -1,5 +1,15 @@
 export const CHANGELOG = [
   {
+    version: "0.19.1",
+    date: "2026-10-29",
+    changes: [
+      "Authentic Setlist.fm Visual Redesign: eliminated heavy global button backgrounds so artist names, gig titles, and songs render as clean text links without blue pill boxes.",
+      "Setlist.fm Tab Strip Layout: sub-navigation tabs now span the full width as clean underlined text links with a solid tab on the active selection, matching Setlist.fm's Concert Statistics / Song Statistics / Attendance Statistics layout.",
+      "Attended Shows Row Structure: My Gigs timeline now displays the stacked date badge (Month / Day / Year) with a vertical divider, blue artist text link, and clean subtitle without bulky action buttons.",
+      "Proportional Frequency Bars: aligned proportional progress bars and numbers to match the desktop layout from Setlist.fm.",
+    ],
+  },
+  {
     version: "0.19.0",
     date: "2026-10-29",
     changes: [

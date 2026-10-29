@@ -49,38 +49,47 @@ export default function MyGigsTimeline({
   };
 
   return (
-    <div className="space-y-4">
-      {/* Sub-Filters */}
-      <div className="flex items-center justify-between gap-2 border-b border-border pb-2">
-        <div className="flex items-center gap-1.5">
+    <div className="space-y-3">
+      {/* Setlist.fm Sub-Filters Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-border">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight text-ink">
+            {filter === "past"
+              ? `Attended Shows (${pastGigs.length})`
+              : filter === "future"
+                ? `Upcoming Shows (${futureGigs.length})`
+                : `All Gigs (${gigs.length})`}
+          </h2>
+        </div>
+        <div className="flex items-center gap-3 text-xs">
           <button
             type="button"
-            className={`px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
-              filter === "all"
-                ? "bg-surface-hover text-ink font-bold border border-border"
-                : "text-muted hover:text-ink bg-transparent border-0"
+            className={`btn-plain-text text-xs ${
+              filter === "all" ? "text-ink font-bold !no-underline" : "text-primary hover:underline"
             }`}
             onClick={() => setFilter("all")}
           >
             All Gigs ({gigs.length})
           </button>
+          <span className="text-muted">·</span>
           <button
             type="button"
-            className={`px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+            className={`btn-plain-text text-xs ${
               filter === "past"
-                ? "bg-surface-hover text-ink font-bold border border-border"
-                : "text-muted hover:text-ink bg-transparent border-0"
+                ? "text-ink font-bold !no-underline"
+                : "text-primary hover:underline"
             }`}
             onClick={() => setFilter("past")}
           >
             Attended ({pastGigs.length})
           </button>
+          <span className="text-muted">·</span>
           <button
             type="button"
-            className={`px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+            className={`btn-plain-text text-xs ${
               filter === "future"
-                ? "bg-primary/10 text-primary font-bold border border-primary/20"
-                : "text-muted hover:text-ink bg-transparent border-0"
+                ? "text-ink font-bold !no-underline"
+                : "text-primary hover:underline"
             }`}
             onClick={() => setFilter("future")}
           >
@@ -94,7 +103,10 @@ export default function MyGigsTimeline({
           No {filter === "future" ? "upcoming" : "attended"} gigs found.
         </div>
       ) : (
-        <div className="space-y-3">
+        <div
+          className="rounded border border-border overflow-hidden bg-surface divide-y divide-border"
+          style={{ border: "0.5px solid var(--color-border)" }}
+        >
           {filteredGigs.map((gig) => {
             const isRefreshing = isRefreshingId === gig.id;
             const isFuture = isFutureDate(gig.event_date);
@@ -104,46 +116,51 @@ export default function MyGigsTimeline({
             return (
               <div
                 key={gig.id}
-                className={`card p-4 transition-colors hover:border-border-subtle ${
+                className={`p-3 sm:p-3.5 transition-colors hover:bg-surface-hover ${
                   isFuture ? "border-l-4" : ""
                 }`}
                 style={{
-                  border: "0.5px solid var(--color-border)",
                   borderLeft: isFuture ? "4px solid var(--color-primary, #0066FF)" : undefined,
                 }}
               >
-                {/* Main Card Row */}
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                  <div className="flex items-start md:items-center gap-3.5 min-w-0 flex-1">
-                    {/* Date Badge */}
-                    <SetlistDateBadge date={gig.event_date} />
+                {/* Main Row: Stacked Date Badge + Thin Vertical Divider + Clean Concert Info */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                    {/* Setlist.fm Stacked Date */}
+                    <SetlistDateBadge date={gig.event_date} size="sm" />
 
-                    {/* Gig Info */}
+                    {/* Subtle vertical hairline divider */}
+                    <div
+                      className="w-[1px] h-10 bg-border shrink-0 hidden sm:block"
+                      style={{ backgroundColor: "var(--color-border)" }}
+                    />
+
+                    {/* Concert Info */}
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {/* Clean text link for artist (no blue pill box) */}
                         <button
                           type="button"
-                          className="font-bold text-base text-ink hover:text-primary transition-colors text-left truncate cursor-pointer bg-transparent border-0 p-0"
+                          className="btn-text-link font-semibold text-sm text-left truncate"
                           onClick={() => toggleExpand(gig.id)}
                           title="Click to view songs played & notes inline"
                         >
-                          {gig.artist_name} at {gig.venue_name}
+                          {gig.artist_name}
                         </button>
                         {gig.is_support_act && (
-                          <span className="text-[10px] text-primary font-semibold px-2 py-0.5 rounded bg-surface-hover border border-border">
-                            Support Act
-                          </span>
+                          <span className="text-[10px] text-muted font-normal">(Support Act)</span>
                         )}
                         {isFuture && (
-                          <span className="badge font-bold px-2 py-0.5 rounded text-[10px] bg-primary/10 text-primary border border-primary/20">
-                            Upcoming • I&apos;m Going
+                          <span className="text-[11px] text-primary font-medium">
+                            • Upcoming • I&apos;m Going
                           </span>
                         )}
                       </div>
 
-                      <div className="text-xs text-muted mb-1 truncate">
-                        {gig.city}
-                        {gig.country ? `, ${gig.country}` : ""}
+                      <div className="text-xs text-muted mt-0.5 truncate">
+                        <span>{gig.venue_name}</span>
+                        {gig.city && <span>, {gig.city}</span>}
+                        {gig.country && <span>, {gig.country}</span>}
                         {gig.song_count > 0 && <span> &bull; {gig.song_count} songs</span>}
                         {gig.tour_name && (
                           <span>
@@ -155,32 +172,29 @@ export default function MyGigsTimeline({
 
                       {/* Personal Notes Snippet if present and not expanded */}
                       {!isExpanded && gig.notes && (
-                        <div className="mt-1.5 p-2 rounded bg-surface-hover border border-border text-xs text-ink/90 flex items-start gap-1.5 italic">
-                          <span className="not-italic shrink-0">📝</span>
-                          <span className="line-clamp-2 leading-relaxed">
-                            &ldquo;{gig.notes}&rdquo;
-                          </span>
+                        <div className="mt-1 text-xs text-ink/80 italic line-clamp-1">
+                          &ldquo;{gig.notes}&rdquo;
                         </div>
                       )}
 
-                      {/* Expand / Collapse trigger */}
+                      {/* Expand / Collapse trigger as plain text link */}
                       <div className="mt-1 flex items-center gap-3 text-xs">
                         <button
                           type="button"
-                          className="text-primary hover:underline font-semibold cursor-pointer bg-transparent border-0 p-0 text-xs"
+                          className="btn-text-link text-xs font-normal"
                           onClick={() => toggleExpand(gig.id)}
                         >
-                          {isExpanded ? "▲ Hide Songs & Notes" : "View Songs & Notes \u2192"}
+                          {isExpanded ? "▲ Hide Songs & Notes" : "View Songs & Notes →"}
                         </button>
                       </div>
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
+                  <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
                     <button
                       type="button"
-                      className="btn btn-secondary text-xs px-2.5 py-1"
+                      className="btn btn-secondary text-xs px-2 py-1 font-normal"
                       onClick={() => onRefreshSetlist(gig)}
                       disabled={isRefreshing}
                       title="Refresh setlist tracks from Setlist.fm"
@@ -189,7 +203,7 @@ export default function MyGigsTimeline({
                     </button>
                     <button
                       type="button"
-                      className={`btn text-xs px-2.5 py-1 text-danger hover:bg-danger-soft transition-colors ${
+                      className={`btn text-xs px-2 py-1 text-danger hover:bg-danger-soft transition-colors font-normal ${
                         isConfirmingDelete ? "bg-danger-soft font-bold" : ""
                       }`}
                       style={{ border: "0.5px solid var(--color-border)" }}
@@ -203,7 +217,7 @@ export default function MyGigsTimeline({
                   </div>
                 </div>
 
-                {/* Inline Delete Confirmation Bar - appears right here at the button pressed */}
+                {/* Inline Delete Confirmation Bar */}
                 {isConfirmingDelete && (
                   <div
                     className="mt-3 pt-3 border-t border-border bg-danger-soft/40 p-3 rounded text-xs space-y-2 animate-fadeIn"
@@ -215,7 +229,7 @@ export default function MyGigsTimeline({
                       </span>
                       <button
                         type="button"
-                        className="text-muted hover:text-ink text-xs cursor-pointer bg-transparent border-0"
+                        className="btn-plain-text text-xs"
                         onClick={() => setConfirmDeleteId(null)}
                       >
                         &times;
@@ -245,8 +259,7 @@ export default function MyGigsTimeline({
                       </button>
                       <button
                         type="button"
-                        className="btn text-xs px-3.5 py-1 font-bold text-white bg-danger hover:bg-danger/90"
-                        style={{ backgroundColor: "var(--color-danger, #ef4444)" }}
+                        className="btn text-xs px-2.5 py-1 text-white bg-danger hover:bg-danger-hover font-bold transition-colors"
                         onClick={() => handleConfirmDelete(gig)}
                         disabled={isDeletingId === gig.id}
                       >
@@ -256,18 +269,20 @@ export default function MyGigsTimeline({
                   </div>
                 )}
 
-                {/* In-Place Setlist & Notes Drawer - expands right inside the card */}
+                {/* Inline Setlist & Notes Drawer */}
                 {isExpanded && (
-                  <SetlistTracklistDrawer
-                    setlistId={gig.setlist_id}
-                    initialData={gig.raw_data}
-                    token={token}
-                    loggedConcertId={gig.id}
-                    initialNotes={gig.notes || ""}
-                    showNotesEditor={true}
-                    onNotesSaved={onNotesSaved}
-                    onCollapse={() => setExpandedGigId(null)}
-                  />
+                  <div className="mt-3 pt-2.5 border-t border-border">
+                    <SetlistTracklistDrawer
+                      setlistId={gig.setlist_id}
+                      initialData={gig.raw_data}
+                      token={token}
+                      loggedConcertId={gig.id}
+                      initialNotes={gig.notes || ""}
+                      showNotesEditor={true}
+                      onNotesSaved={onNotesSaved}
+                      onCollapse={() => setExpandedGigId(null)}
+                    />
+                  </div>
                 )}
               </div>
             );

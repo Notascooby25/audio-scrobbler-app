@@ -67,7 +67,9 @@ export default function SongsHeardLeaderboard({ songs = [] }) {
                     {showRank ? `${rank}.` : ""}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="font-bold text-sm text-ink truncate">{song.track_name}</div>
+                    <div className="font-semibold text-sm text-primary hover:underline cursor-pointer truncate">
+                      {song.track_name}
+                    </div>
                     <div className="text-xs text-muted truncate">{song.artist_name}</div>
                   </div>
                 </div>

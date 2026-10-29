@@ -126,7 +126,8 @@ describe("SetlistsStats and Modals", () => {
       />
     );
 
-    expect(screen.getByText("Elbow at Apollo")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Elbow" })).toBeInTheDocument();
+    expect(screen.getByText(/Apollo/i)).toBeInTheDocument();
 
     const refreshBtn = screen.getByRole("button", { name: /^refresh$/i });
     fireEvent.click(refreshBtn);

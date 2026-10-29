@@ -337,8 +337,9 @@ describe("SetlistsPage", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Public Service Broadcasting at Brixton Academy/i)
+        screen.getByRole("button", { name: "Public Service Broadcasting" })
       ).toBeInTheDocument();
+      expect(screen.getByText(/Brixton Academy/i)).toBeInTheDocument();
     });
 
     // Click "Delete" button on the gig card
