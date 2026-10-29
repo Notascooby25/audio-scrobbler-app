@@ -241,7 +241,9 @@ const FAQ_DATA = [
         <code>crispylettuce</code> or <code>https://www.setlist.fm/user/crispylettuce</code>), and
         click Preview Gigs. You can review the full concert list and tick checkboxes for only the
         gigs you actually attended before importing, or use Select All / Deselect All. The app will
-        import only the selected concerts while safely honoring Setlist.fm's daily rate limits.
+        import only the selected concerts while safely honoring Setlist.fm's daily rate limits. If a
+        big import reaches the daily limit, it pauses and carries on automatically after midnight
+        UTC; you&apos;ll get a notification when it&apos;s done.
       </p>
     ),
   },
@@ -256,6 +258,19 @@ const FAQ_DATA = [
         restore a backup or move gigs between accounts. JSON files bring their songs with them; CSV
         files look the songs up on Setlist.fm from each gig&apos;s link. Gigs you&apos;ve already
         logged are skipped, and any rows that can&apos;t be read are listed by line number.
+      </p>
+    ),
+  },
+  {
+    id: "setlists-daily-limit",
+    category: "Set Lists & Gigs",
+    question: 'What does "daily Setlist.fm limit reached" mean?',
+    answer: (
+      <p>
+        Setlist.fm allows the app around 1,400 requests a day, shared by everyone using it, and the
+        count resets at midnight UTC. The app reuses what it has already downloaded, so normal use
+        rarely gets close. If an import does reach the limit, it pauses and finishes itself after
+        the reset. You can see or cancel a paused import in <strong>Import / Export</strong>.
       </p>
     ),
   },

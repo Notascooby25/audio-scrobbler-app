@@ -339,7 +339,8 @@ export default function UserGuideSection() {
             the specific shows you attended, and import them with 1 click. You can also download
             your entire gig collection as JSON or CSV, and use <em>Import from a File</em> to load
             one of those files back in (for example, to restore a backup). Gigs you&apos;ve already
-            logged are skipped.
+            logged are skipped. Big imports that reach the daily Setlist.fm limit pause and carry on
+            automatically after midnight UTC.
           </li>
         </ul>
       </article>
