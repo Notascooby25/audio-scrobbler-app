@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -142,3 +143,54 @@ def test_setlist_import_worker_pauses_on_quota_limit(db_session: Session):
     gig = db_session.query(AttendedConcert).filter_by(user_id=1, setlist_id="show_1").first()
     assert gig is not None
     assert gig.artist_name == "Embrace"
+
+
+def test_sync_user_setlist_history_selective(db_session: Session):
+    mock_service = MagicMock()
+    mock_service.get_setlist.side_effect = lambda sid: {
+        "show_sel_1": {
+            "id": "show_sel_1",
+            "artist": {"name": "Fontaines D.C."},
+            "venue": {"name": "Brixton Academy", "city": {"name": "London", "country": {"name": "United Kingdom"}}},
+            "eventDate": "20-11-2024",
+            "sets": {"set": [{"song": [{"name": "Starburster"}]}]},
+        },
+        "show_sel_2": {
+            "id": "show_sel_2",
+            "artist": {"name": "IDLES"},
+            "venue": {"name": "Alexandra Palace", "city": {"name": "London", "country": {"name": "United Kingdom"}}},
+            "eventDate": "29-11-2024",
+            "sets": {"set": [{"song": [{"name": "Colossus"}]}]},
+        },
+    }[sid]
+
+    # Pre-insert show_sel_1 to test deduplication skipping
+    db_session.add(
+        AttendedConcert(
+            user_id=1,
+            setlist_id="show_sel_1",
+            artist_name="Fontaines D.C.",
+            venue_name="Brixton Academy",
+            city="London",
+            country="United Kingdom",
+            event_date=datetime(2024, 11, 20),
+            song_count=1,
+        )
+    )
+    db_session.commit()
+
+    result = sync_user_setlist_history(
+        user_id=1,
+        setlist_username="crispylettuce",
+        db=db_session,
+        setlist_service=mock_service,
+        selected_setlist_ids=["show_sel_1", "show_sel_2"],
+    )
+
+    assert result["status"] == "completed"
+    assert result["total_found"] == 2
+    assert result["imported_count"] == 1  # show_sel_1 was skipped, show_sel_2 was imported
+
+    gigs = db_session.query(AttendedConcert).filter_by(user_id=1).all()
+    assert len(gigs) == 2
+    assert {g.artist_name for g in gigs} == {"Fontaines D.C.", "IDLES"}

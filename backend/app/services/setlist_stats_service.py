@@ -8,7 +8,7 @@ from typing import Any
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
-from backend.app.models import AttendedConcert, ListeningEvent
+from ..models import AttendedConcert, ListeningEvent
 
 
 def _sanitize_csv_cell(val: object) -> object:

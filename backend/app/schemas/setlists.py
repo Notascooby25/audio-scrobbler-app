@@ -64,5 +64,27 @@ class VenueLeaderboardItem(BaseModel):
     count: int
 
 
+class SetlistPreviewItem(BaseModel):
+    setlist_id: str
+    artist_name: str
+    venue_name: str
+    city: str
+    country: str
+    event_date: str
+    tour_name: str | None = None
+    setlist_url: str | None = None
+    song_count: int = 0
+    already_logged: bool = False
+
+
+class SetlistPreviewResponse(BaseModel):
+    items: list[SetlistPreviewItem]
+    page: int
+    items_per_page: int
+    total: int
+    total_pages: int
+
+
 class SetlistImportRequest(BaseModel):
     username: str = Field(..., min_length=1, max_length=128)
+    setlist_ids: list[str] | None = None

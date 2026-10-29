@@ -9,7 +9,7 @@ from typing import Any
 import httpx
 from sqlalchemy.orm import Session
 
-from backend.app.models import SetlistApiUsage, SetlistCache
+from ..models import SetlistApiUsage, SetlistCache
 
 logger = logging.getLogger(__name__)
 

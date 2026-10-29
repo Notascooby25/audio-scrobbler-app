@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -127,3 +127,49 @@ def test_setlist_routes_crud():
         empty_gigs = client.get("/api/setlists/attendances")
         assert empty_gigs.status_code == 200
         assert len(empty_gigs.json()) == 0
+
+
+def test_import_preview_and_selective_import():
+    mock_setlist_data = {
+        "id": "show_preview_1",
+        "artist": {"name": "Foo Fighters"},
+        "venue": {"name": "London Stadium", "city": {"name": "London", "country": {"name": "United Kingdom"}}},
+        "eventDate": "27-06-2024",
+        "tour": {"name": "Everything or Nothing at All"},
+        "url": "https://setlist.fm/ff1",
+        "sets": {"set": [{"song": [{"name": "All My Life"}, {"name": "Everlong"}]}]},
+    }
+    with (
+        patch("backend.app.api.setlists.SetlistService") as MockServiceCls,
+        patch("backend.app.api.setlists.sync_user_setlist_history") as mock_sync,
+    ):
+        mock_svc = MockServiceCls.return_value
+        mock_svc.get_user_attended.return_value = {
+            "total": 1,
+            "itemsPerPage": 20,
+            "setlist": [mock_setlist_data],
+        }
+        mock_sync.return_value = {"status": "completed", "imported_count": 1, "total_found": 1}
+
+        # 1. Preview
+        preview_res = client.get("/api/setlists/import/preview?username=crispylettuce&page=1")
+        assert preview_res.status_code == 200
+        preview_json = preview_res.json()
+        assert preview_json["total"] == 1
+        assert preview_json["items"][0]["setlist_id"] == "show_preview_1"
+        assert preview_json["items"][0]["artist_name"] == "Foo Fighters"
+        assert preview_json["items"][0]["already_logged"] is False
+
+        # 2. Selective Import
+        import_res = client.post(
+            "/api/setlists/import",
+            json={"username": "crispylettuce", "setlist_ids": ["show_preview_1"]},
+        )
+        assert import_res.status_code == 200
+        assert import_res.json()["imported_count"] == 1
+        mock_sync.assert_called_once_with(
+            user_id=42,
+            setlist_username="crispylettuce",
+            db=ANY,
+            selected_setlist_ids=["show_preview_1"],
+        )

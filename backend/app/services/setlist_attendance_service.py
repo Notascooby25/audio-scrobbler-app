@@ -7,8 +7,8 @@ from typing import Any
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
-from backend.app.models import AttendedConcert, ListeningEvent
-from backend.app.services.setlist_service import SetlistService
+from ..models import AttendedConcert, ListeningEvent
+from .setlist_service import SetlistService
 
 logger = logging.getLogger(__name__)
 

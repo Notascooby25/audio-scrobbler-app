@@ -7,20 +7,22 @@ from sqlalchemy.orm import Session
 
 from ..api.deps import get_current_user
 from ..db import get_db
-from ..models import User
+from ..models import AttendedConcert, User
 from ..schemas.setlists import (
     ArtistLeaderboardItem,
     AttendedConcertResponse,
     DeleteConcertResponse,
     LogAttendanceRequest,
     SetlistImportRequest,
+    SetlistPreviewItem,
+    SetlistPreviewResponse,
     SongLeaderboardItem,
     VenueLeaderboardItem,
 )
 from ..services.setlist_attendance_service import SetlistAttendanceService
 from ..services.setlist_service import SetlistRateLimitError, SetlistService
+from ..services.setlist_import_service import sync_user_setlist_history
 from ..services.setlist_stats_service import SetlistStatsService
-from worker.setlist_import import sync_user_setlist_history
 
 router = APIRouter(prefix="/api/setlists", tags=["setlists"])
 
@@ -184,6 +186,87 @@ def export_gigs(
     )
 
 
+@router.get("/import/preview", response_model=SetlistPreviewResponse)
+def preview_user_setlists(
+    username: str = Query(..., min_length=1, max_length=100),
+    page: int = Query(1, ge=1),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> SetlistPreviewResponse:
+    service = SetlistService(db=db)
+    try:
+        data = service.get_user_attended(username=username.strip(), p=page)
+    except SetlistRateLimitError as exc:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to fetch setlists for {username}: {exc}",
+        ) from exc
+
+    setlists = data.get("setlist", []) if isinstance(data, dict) else []
+    total = int(data.get("total", 0)) if isinstance(data, dict) else 0
+    items_per_page = int(data.get("itemsPerPage", 20)) if isinstance(data, dict) else 20
+    total_pages = (total + items_per_page - 1) // items_per_page if items_per_page > 0 else 1
+
+    setlist_ids = [s.get("id") for s in setlists if isinstance(s, dict) and s.get("id")]
+    logged_ids = set()
+    if setlist_ids:
+        rows = (
+            db.query(AttendedConcert.setlist_id)
+            .filter(AttendedConcert.user_id == current_user.id, AttendedConcert.setlist_id.in_(setlist_ids))
+            .all()
+        )
+        logged_ids = {r[0] for r in rows}
+
+    items: list[SetlistPreviewItem] = []
+    for s in setlists:
+        if not isinstance(s, dict) or not s.get("id"):
+            continue
+        sid = s["id"]
+        artist = s.get("artist", {}).get("name", "Unknown Artist")
+        venue_obj = s.get("venue", {}) if isinstance(s.get("venue"), dict) else {}
+        venue_name = venue_obj.get("name", "Unknown Venue")
+        city_obj = venue_obj.get("city", {}) if isinstance(venue_obj.get("city"), dict) else {}
+        city = city_obj.get("name", "")
+        country = city_obj.get("country", {}).get("name", "") if isinstance(city_obj.get("country"), dict) else ""
+        tour_name = s.get("tour", {}).get("name") if isinstance(s.get("tour"), dict) else None
+        event_date = s.get("eventDate", "")
+        setlist_url = s.get("url")
+
+        sets = s.get("sets", {}).get("set", []) if isinstance(s.get("sets"), dict) else []
+        song_count = 0
+        if isinstance(sets, list):
+            for subset in sets:
+                if isinstance(subset, dict):
+                    songs = subset.get("song", [])
+                    if isinstance(songs, list):
+                        song_count += len(songs)
+
+        items.append(
+            SetlistPreviewItem(
+                setlist_id=sid,
+                artist_name=artist,
+                venue_name=venue_name,
+                city=city,
+                country=country,
+                event_date=event_date,
+                tour_name=tour_name,
+                setlist_url=setlist_url,
+                song_count=song_count,
+                already_logged=sid in logged_ids,
+            )
+        )
+
+    return SetlistPreviewResponse(
+        items=items,
+        page=page,
+        items_per_page=items_per_page,
+        total=total,
+        total_pages=total_pages,
+    )
+
+
 @router.get("/{setlist_id}")
 def get_setlist_details(
     setlist_id: str,
@@ -210,4 +293,5 @@ def import_setlists_from_profile(
         user_id=current_user.id,
         setlist_username=payload.username.strip(),
         db=db,
+        selected_setlist_ids=payload.setlist_ids,
     )
