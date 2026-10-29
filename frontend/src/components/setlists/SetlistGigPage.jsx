@@ -9,6 +9,7 @@ import {
   updateConcertNotes,
 } from "../../api/setlists";
 import DeleteGigConfirmModal from "./DeleteGigConfirmModal";
+import EditGigModal from "./EditGigModal";
 import GigBill from "./GigBill";
 import SetlistAttribution from "./SetlistAttribution";
 import SetlistDateBadge, { isFutureDate, parseDateParts } from "./SetlistDateBadge";
@@ -108,6 +109,7 @@ export default function SetlistGigPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
 
   // Arriving from inside the app, Back returns to the exact list state (tab, page,
@@ -256,6 +258,9 @@ export default function SetlistGigPage() {
             Copy setlist
           </button>
         )}
+        <button type="button" className="sfm-link" onClick={() => setIsEditOpen(true)}>
+          Edit details
+        </button>
         <button type="button" className="sfm-link is-danger" onClick={() => setIsDeleteOpen(true)}>
           Delete gig
         </button>
@@ -288,11 +293,29 @@ export default function SetlistGigPage() {
             token={token}
             onSaved={(notes) => setGig((prev) => ({ ...prev, notes }))}
           />
-          <GigBill key={`bill-${gig.id}`} concertId={gig.id} token={token} />
+          {/* Re-keyed on the details so the bill reloads after an edit */}
+          <GigBill
+            key={`bill-${gig.id}-${gig.event_date}-${gig.venue_name}`}
+            concertId={gig.id}
+            token={token}
+          />
         </div>
       </div>
 
       <SetlistAttribution />
+
+      {isEditOpen && (
+        <EditGigModal
+          gig={gig}
+          token={token}
+          onClose={() => setIsEditOpen(false)}
+          onSaved={(updated) => {
+            setGig(updated);
+            setIsEditOpen(false);
+            setActionMessage("Gig details saved.");
+          }}
+        />
+      )}
 
       <DeleteGigConfirmModal
         isOpen={isDeleteOpen}

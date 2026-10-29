@@ -1,7 +1,16 @@
 import { parseDateParts } from "./SetlistDateBadge";
 
-/** Asks before logging a gig that matches one already logged. `info` is the 409 detail. */
-export default function AlreadyLoggedModal({ info, onCancel, onConfirm, isSubmitting }) {
+/**
+ * Asks before logging a gig that matches one already logged. `info` is the 409 detail.
+ * `isEdit` words it for saving changes to an existing gig instead.
+ */
+export default function AlreadyLoggedModal({
+  info,
+  onCancel,
+  onConfirm,
+  isSubmitting,
+  isEdit = false,
+}) {
   if (!info) return null;
 
   const { existing, same_show: sameShow } = info;
@@ -28,13 +37,15 @@ export default function AlreadyLoggedModal({ info, onCancel, onConfirm, isSubmit
         </div>
         <p id="already-logged-desc" className="modal-description">
           You&apos;ve already logged <strong>{existing.artist_name}</strong> at{" "}
-          <strong>{venue}</strong> on <strong>{date}</strong>. Are you sure you want to log it
-          again?
+          <strong>{venue}</strong> on <strong>{date}</strong>.{" "}
+          {isEdit ? "Save your changes anyway?" : "Are you sure you want to log it again?"}
         </p>
         <p className="sfm-gig-meta">
-          {sameShow
-            ? "This is the same Setlist.fm show, so logging it again refreshes its songs instead of adding a second copy."
-            : "Logging it again adds a second gig for this artist on this date."}
+          {isEdit
+            ? "Saving keeps both gigs for this artist on this date."
+            : sameShow
+              ? "This is the same Setlist.fm show, so logging it again refreshes its songs instead of adding a second copy."
+              : "Logging it again adds a second gig for this artist on this date."}
         </p>
         <div className="modal-actions">
           <button
@@ -51,7 +62,7 @@ export default function AlreadyLoggedModal({ info, onCancel, onConfirm, isSubmit
             onClick={onConfirm}
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Saving..." : "Log again"}
+            {isSubmitting ? "Saving..." : isEdit ? "Save anyway" : "Log again"}
           </button>
         </div>
       </div>

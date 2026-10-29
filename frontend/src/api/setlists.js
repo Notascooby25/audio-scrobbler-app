@@ -152,6 +152,36 @@ export async function logConcertAttendance({
   return parseResponse(response);
 }
 
+export async function updateConcert({
+  token,
+  concertId,
+  artistName,
+  venueName,
+  city = "",
+  country = "",
+  eventDate,
+  tourName = null,
+  allowDuplicate = false,
+}) {
+  const response = await fetch(`${API_BASE_URL}/setlists/${concertId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      artist_name: artistName,
+      venue_name: venueName,
+      city,
+      country,
+      event_date: eventDate,
+      tour_name: tourName,
+      allow_duplicate: allowDuplicate,
+    }),
+  });
+  return parseResponse(response);
+}
+
 export async function updateConcertNotes({ token, concertId, notes }) {
   const response = await fetch(`${API_BASE_URL}/setlists/${concertId}/notes`, {
     method: "PATCH",
