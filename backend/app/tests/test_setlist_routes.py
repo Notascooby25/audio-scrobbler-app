@@ -386,3 +386,35 @@ def test_import_file_route_imports_for_the_current_user_only():
 
     assert client.post("/setlists/import/file", json={"format": "json", "content": "{bad"}).status_code == 400
     assert client.post("/setlists/import/file", json={"format": "xml", "content": "<a/>"}).status_code == 422
+
+
+def test_gig_bill_route_is_owner_only():
+    db = TestingSession()
+    mine = AttendedConcert(
+        user_id=42,
+        setlist_id="manual-bill1",
+        artist_name="Shed Seven",
+        venue_name="O2 Academy",
+        city="Birmingham",
+        country="United Kingdom",
+        event_date=datetime(2026, 11, 14, 20),
+    )
+    theirs = AttendedConcert(
+        user_id=7,
+        setlist_id="manual-bill2",
+        artist_name="Doves",
+        venue_name="O2 Academy",
+        city="Birmingham",
+        country="United Kingdom",
+        event_date=datetime(2026, 11, 14, 20),
+    )
+    db.add_all([mine, theirs])
+    db.commit()
+    mine_id, theirs_id = mine.id, theirs.id
+    db.close()
+
+    res = client.get(f"/setlists/attendances/{mine_id}/bill")
+    assert res.status_code == 200
+    # Another user's gig that night is never listed
+    assert res.json() == {"acts": [], "complete": True, "capped": False}
+    assert client.get(f"/setlists/attendances/{theirs_id}/bill").status_code == 404

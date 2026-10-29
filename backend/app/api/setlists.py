@@ -14,6 +14,7 @@ from ..schemas.setlists import (
     DeleteConcertResponse,
     FileImportRequest,
     FileImportResponse,
+    GigBillResponse,
     LogAttendanceRequest,
     LogManualConcertRequest,
     SetlistImportRequest,
@@ -274,6 +275,19 @@ def get_attendance(
     if gig is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gig not found.")
     return gig
+
+
+@router.get("/attendances/{concert_id}/bill", response_model=GigBillResponse)
+def get_attendance_bill(
+    concert_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    stats_svc = SetlistStatsService(db=db)
+    gig = stats_svc.get_gig(user_id=current_user.id, concert_id=concert_id)
+    if gig is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gig not found.")
+    return stats_svc.get_gig_bill(user_id=current_user.id, gig=gig, setlist_service=SetlistService(db=db))
 
 
 @router.get("/stats/artists", response_model=list[ArtistLeaderboardItem])

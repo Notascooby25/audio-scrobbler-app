@@ -4,6 +4,7 @@ import csv
 import io
 import json
 from datetime import datetime
+from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy import create_engine
@@ -11,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.db import Base
 from backend.app.models import AttendedConcert, ListeningEvent
+from backend.app.services.setlist_service import SetlistRateLimitError
 from backend.app.services.setlist_stats_service import SetlistStatsService
 
 
@@ -302,3 +304,72 @@ def test_venue_visits_merge_spelling_variants_on_the_same_night(db_session: Sess
     assert birmingham["venue_name"] == "O2 Academy"
     assert len(birmingham["gigs"]) == 3
     assert by_city["Leeds"]["count"] == 1
+
+
+def _headliner_with_venue(setlist_id: str = "hl_1") -> AttendedConcert:
+    gig = _concert(setlist_id, "Foo Fighters", "Anfield", datetime(2026, 6, 27, 20))
+    gig.city = "Liverpool"
+    gig.raw_data = {"id": setlist_id, "venue": {"id": "venue_anfield", "name": "Anfield"}}
+    return gig
+
+
+def test_gig_bill_marks_which_acts_were_logged(db_session: Session):
+    headliner = _headliner_with_venue()
+    support = _concert("sp_1", "Royel Otis", "Anfield", datetime(2026, 6, 27, 19), is_support_act=True)
+    support.city = "Liverpool"
+    support.parent_setlist_id = "hl_1"
+    db_session.add_all([headliner, support])
+    db_session.commit()
+    setlist_service = MagicMock()
+    setlist_service.get_venue_date_setlists.return_value = [
+        {"id": "sp_2", "artist": {"name": "Die Spitz"}},
+        {"id": "sp_1", "artist": {"name": "Royel Otis"}},
+    ]
+
+    bill = SetlistStatsService(db=db_session).get_gig_bill(1, headliner, setlist_service)
+
+    setlist_service.get_venue_date_setlists.assert_called_once_with(
+        venue_id="venue_anfield", event_date_str="27-06-2026", exclude_setlist_id="hl_1"
+    )
+    assert bill["complete"] is True
+    assert [(a["artist_name"], a["logged"], a["role"]) for a in bill["acts"]] == [
+        ("Royel Otis", True, "support"),
+        ("Die Spitz", False, None),
+    ]
+    assert bill["acts"][0]["concert_id"] == support.id
+
+    # From the support act's page, the headliner is labelled and listed first
+    setlist_service.get_venue_date_setlists.return_value = [{"id": "hl_1", "artist": {"name": "Foo Fighters"}}]
+    support.raw_data = {"venue": {"id": "venue_anfield"}}
+    bill = SetlistStatsService(db=db_session).get_gig_bill(1, support, setlist_service)
+    assert [(a["artist_name"], a["role"]) for a in bill["acts"]] == [("Foo Fighters", "headliner")]
+
+
+def test_gig_bill_falls_back_to_logged_acts_when_setlist_fm_is_unavailable(db_session: Session):
+    headliner = _headliner_with_venue()
+    other = _concert("sp_1", "Royel Otis", "anfield ", datetime(2026, 6, 27, 19), is_support_act=True)
+    other.city = "Liverpool"
+    db_session.add_all([headliner, other])
+    db_session.commit()
+    setlist_service = MagicMock()
+    setlist_service.get_venue_date_setlists.side_effect = SetlistRateLimitError("quota")
+
+    bill = SetlistStatsService(db=db_session).get_gig_bill(1, headliner, setlist_service)
+
+    assert bill["complete"] is False
+    assert [a["artist_name"] for a in bill["acts"]] == ["Royel Otis"]
+
+
+def test_gig_bill_for_manual_gig_uses_only_logged_acts(db_session: Session):
+    manual = _concert("manual-aaa", "Shed Seven", "O2 Academy", datetime(2026, 11, 14, 20))
+    other_night = _concert("x", "The Clause", "O2 Academy", datetime(2026, 11, 15, 20))
+    other_user = _concert("y", "Doves", "O2 Academy", datetime(2026, 11, 14, 20))
+    other_user.user_id = 2
+    db_session.add_all([manual, other_night, other_user])
+    db_session.commit()
+    setlist_service = MagicMock()
+
+    bill = SetlistStatsService(db=db_session).get_gig_bill(1, manual, setlist_service)
+
+    setlist_service.get_venue_date_setlists.assert_not_called()
+    assert bill == {"acts": [], "complete": True, "capped": False}

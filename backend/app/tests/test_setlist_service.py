@@ -234,3 +234,22 @@ def test_search_setlists_direct_url_or_id(db_session: Session):
         )
         assert res2["total"] == 1
         assert res2["setlist"][0]["id"] == "334a28f1"
+
+
+def test_venue_date_lookup_is_cached_and_empty_results_expire_quickly(db_session: Session):
+    service = SetlistService(db=db_session, api_key="dummy_key")
+    bill = {"setlist": [{"id": "sp_1", "artist": {"name": "Royel Otis"}}]}
+
+    with patch.object(service, "search_setlists_raw", return_value=bill) as mock_search:
+        service.get_venue_date_setlists(venue_id="v1", event_date_str="27-06-2026")
+        again = service.get_venue_date_setlists(venue_id="v1", event_date_str="27-06-2026", exclude_setlist_id="x")
+    assert mock_search.call_count == 1
+    assert [s["id"] for s in again] == ["sp_1"]
+    found = db_session.get(SetlistCache, "venue-date:v1:27-06-2026")
+    assert found.expires_at > datetime.utcnow() + timedelta(days=6)
+
+    with patch.object(service, "search_setlists_raw", return_value={}):
+        assert service.get_venue_date_setlists(venue_id="v2", event_date_str="01-01-2027") == []
+    empty = db_session.get(SetlistCache, "venue-date:v2:01-01-2027")
+    # Never cache an empty answer for long (Setlist.fm may index the show later)
+    assert empty.expires_at < datetime.utcnow() + timedelta(hours=2)
