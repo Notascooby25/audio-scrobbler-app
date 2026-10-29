@@ -1,16 +1,18 @@
 from __future__ import annotations
 
+import json
 import os
-from datetime import datetime
-from unittest.mock import MagicMock
+from datetime import datetime, timedelta
+from unittest.mock import MagicMock, patch
 
 import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 from backend.app.db import Base
-from backend.app.models import ListeningEvent
+from backend.app.models import ArtworkCache, ListeningEvent, User
 from backend.app.services import blocks_service
+from backend.app.services import setlist_artwork_service as artwork
 from backend.app.services.setlist_attendance_service import SetlistAttendanceService
 
 ART = "https://img.example/everlong.jpg"
@@ -139,3 +141,149 @@ def test_clear_artwork_marks_gig_scrobbles_so_they_are_not_refilled(db_session: 
 
     by_source = {e.source: e.artwork_url for e in db_session.query(ListeningEvent).filter_by(user_id=1)}
     assert by_source == {"spotify": None, "setlistfm": ""}
+
+
+# --- Background lookup -------------------------------------------------------------
+
+DEEZER_ART = "https://deezer.example/cover.jpg"
+ITUNES_ART = "https://itunes.example/600x600bb.jpg"
+PHOTO = "https://deezer.example/artist.jpg"
+
+
+def _add_user(db: Session, user_id: int, active: bool = True) -> None:
+    db.add(
+        User(
+            id=user_id,
+            spotify_user_id=f"sp{user_id}",
+            username=f"user{user_id}",
+            display_name=f"User {user_id}",
+            refresh_token_cipher="c",
+            is_active=active,
+        )
+    )
+    db.commit()
+
+
+def _log(db: Session, user_id: int, songs: list[str], setlist_id: str = "gig1") -> None:
+    data = {**_gig(songs), "id": setlist_id}
+    _service(db, data).log_concert_attendance(user_id=user_id, setlist_id=setlist_id)
+
+
+@pytest.fixture
+def lookups():
+    """Fake outside lookups: Everlong is on Deezer, Times Like These only on iTunes."""
+    with (
+        patch.object(artwork, "deezer_search", side_effect=lambda a, t, timeout: {"t": t} if t == "Everlong" else None),
+        patch.object(artwork, "deezer_artwork", return_value=DEEZER_ART),
+        patch.object(
+            artwork, "itunes_artwork", side_effect=lambda a, t: ITUNES_ART if t == "Times Like These" else None
+        ),
+        patch.object(artwork, "deezer_artist_picture", return_value=PHOTO) as photo,
+    ):
+        yield photo
+
+
+def _backfill(db: Session, **kwargs) -> dict[str, int]:
+    return artwork.backfill_live_artwork(db, pause_seconds=0, **kwargs)
+
+
+def test_backfill_tries_deezer_then_itunes_then_the_artist_photo(db_session: Session, lookups):
+    _add_user(db_session, 1)
+    _log(db_session, 1, ["Everlong", "Times Like These", "Intro"])
+
+    counts = _backfill(db_session)
+
+    assert {k: v[0] for k, v in _gig_art(db_session).items()} == {
+        "Everlong": DEEZER_ART,
+        "Times Like These": ITUNES_ART,
+        "Intro": PHOTO,
+    }
+    assert counts["updated"] == 3
+    # Nothing left to do on the next run
+    assert _backfill(db_session)["checked"] == 0
+
+
+def test_backfill_uses_your_own_plays_before_looking_anything_up(db_session: Session, lookups):
+    _add_user(db_session, 1)
+    _log(db_session, 1, ["Everlong"])  # logged before the Spotify play existed
+    _spotify_play(db_session, 1, "Everlong", artwork_url=ART)
+
+    counts = _backfill(db_session)
+
+    assert _gig_art(db_session)["Everlong"][0] == ART
+    assert counts["lookups"] == 0
+
+
+def test_cached_answers_are_shared_without_new_lookups(db_session: Session, lookups):
+    _add_user(db_session, 1)
+    _add_user(db_session, 2)
+    _log(db_session, 1, ["Everlong"])
+    _backfill(db_session)
+    _log(db_session, 2, ["Everlong"])
+
+    with patch.object(artwork, "_lookup_track_artwork") as track_lookup:
+        counts = _backfill(db_session)
+
+    track_lookup.assert_not_called()
+    assert counts["lookups"] == 0
+    assert _gig_art(db_session, user_id=2)["Everlong"][0] == DEEZER_ART
+
+
+def test_misses_are_retried_only_after_a_while(db_session: Session, lookups):
+    _add_user(db_session, 1)
+    _log(db_session, 1, ["Unknown Song"])
+    lookups.return_value = None
+
+    first = _backfill(db_session)
+    assert (first["missed"], first["lookups"]) == (1, 2)  # track, then artist photo
+    assert _backfill(db_session)["lookups"] == 0
+
+    for entry in db_session.query(ArtworkCache):
+        entry.cached_at = datetime.utcnow() - artwork.MISS_RETRY_AFTER - timedelta(minutes=1)
+    db_session.commit()
+    assert _backfill(db_session)["lookups"] == 2
+
+
+def test_backfill_respects_the_per_run_budget(db_session: Session, lookups):
+    _add_user(db_session, 1)
+    _log(db_session, 1, ["Everlong", "Times Like These", "Intro"])
+
+    first = _backfill(db_session, max_lookups=1)
+
+    assert first["lookups"] == 1
+    assert sum(1 for art, _ in _gig_art(db_session).values() if art) == 1
+    _backfill(db_session)
+    assert all(art for art, _ in _gig_art(db_session).values())
+
+
+def test_backfill_skips_inactive_users_and_cleared_artwork(db_session: Session, lookups):
+    _add_user(db_session, 1, active=False)
+    _add_user(db_session, 2)
+    _log(db_session, 1, ["Everlong"])
+    _log(db_session, 2, ["Everlong"])
+    db_session.query(ListeningEvent).filter_by(user_id=2).update({"artwork_url": ""})
+    db_session.commit()
+
+    assert _backfill(db_session)["checked"] == 0
+    assert _gig_art(db_session, 1)["Everlong"][0] is None
+    assert _gig_art(db_session, 2)["Everlong"][0] == ""
+
+
+def test_deezer_artist_picture_checks_the_name_and_skips_placeholders():
+    def deezer(payload):
+        resp = MagicMock()
+        resp.__enter__.return_value.read.return_value = json.dumps(payload).encode()
+        return resp
+
+    hit = {
+        "data": [
+            {"name": "Foo Fighterz", "picture_big": "https://x/a.jpg"},
+            {"name": "Foo Fighters", "picture_big": PHOTO},
+        ]
+    }
+    with patch.object(artwork.urllib.request, "urlopen", return_value=deezer(hit)):
+        assert artwork.deezer_artist_picture("Foo Fighters") == PHOTO
+
+    placeholder = {"data": [{"name": "Foo Fighters", "picture_big": "https://cdn/images/artist//500x500.jpg"}]}
+    with patch.object(artwork.urllib.request, "urlopen", return_value=deezer(placeholder)):
+        assert artwork.deezer_artist_picture("Foo Fighters") is None

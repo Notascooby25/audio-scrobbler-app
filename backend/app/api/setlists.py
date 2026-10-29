@@ -27,6 +27,7 @@ from ..schemas.setlists import (
     UpdateConcertNotesRequest,
     VenueLeaderboardItem,
 )
+from ..services.setlist_artwork_service import backfill_live_artwork
 from ..services.setlist_attendance_service import DuplicateGigError, SetlistAttendanceService
 from ..services.setlist_service import (
     SetlistApiAuthError,
@@ -530,6 +531,15 @@ def resume_paused_imports(
 ) -> dict[str, int]:
     """Called by the worker: carries on Setlist.fm imports paused at the daily quota."""
     return import_jobs.resume_due_jobs(db)
+
+
+@router.post("/internal/backfill-artwork")
+def backfill_gig_artwork(
+    db: Session = Depends(get_db),
+    _: None = Depends(require_worker_token),
+) -> dict[str, int]:
+    """Called by the worker: looks up artwork for gig scrobbles that have none."""
+    return backfill_live_artwork(db)
 
 
 @router.post("/import")

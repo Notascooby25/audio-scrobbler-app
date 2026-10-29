@@ -558,3 +558,13 @@ def test_resume_imports_route_requires_the_worker_token():
         )
     assert res.status_code == 200
     mock_resume.assert_called_once()
+
+
+def test_backfill_artwork_route_requires_the_worker_token():
+    assert client.post("/setlists/internal/backfill-artwork").status_code == 401
+    with patch("backend.app.api.setlists.backfill_live_artwork", return_value={"updated": 0}) as mock_backfill:
+        res = client.post(
+            "/setlists/internal/backfill-artwork", headers={"X-Worker-Token": settings.worker_ingestion_token}
+        )
+    assert res.status_code == 200
+    mock_backfill.assert_called_once()
