@@ -3,6 +3,8 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
+from collections import Counter
 from datetime import datetime
 from typing import Any
 
@@ -38,6 +40,19 @@ def _event_setlist_id(play_id: str | None, raw_metadata: dict[str, object] | Non
     if play_id and play_id.startswith("setlistfm_") and "_" in play_id[len("setlistfm_") :]:
         return play_id[len("setlistfm_") :].rsplit("_", 1)[0]
     return None
+
+
+def _venue_key(venue_name: str | None, city: str | None) -> tuple[str, str]:
+    """Spelling-insensitive venue identity: "O2 Academy " and "o2  academy" are one venue.
+
+    Country is left out because manual gigs and Setlist.fm can name it differently
+    (e.g. "England" vs "United Kingdom") for the same building.
+    """
+
+    def norm(value: str | None) -> str:
+        return re.sub(r"\s+", " ", (value or "").strip()).casefold()
+
+    return norm(venue_name), norm(city)
 
 
 def _sanitize_csv_cell(val: object) -> object:
@@ -174,14 +189,18 @@ class SetlistStatsService:
             .all()
         )
 
-        gigs_by_venue: dict[tuple[str, str, str], list[AttendedConcert]] = {}
+        gigs_by_venue: dict[tuple[str, str], list[AttendedConcert]] = {}
         for c in concerts:
-            gigs_by_venue.setdefault((c.venue_name, c.city, c.country), []).append(c)
+            gigs_by_venue.setdefault(_venue_key(c.venue_name, c.city), []).append(c)
 
         results = []
-        for (venue_name, city, country), venue_gigs in gigs_by_venue.items():
-            # Count unique dates so support acts on the same night aren't extra visits
+        for venue_gigs in gigs_by_venue.values():
+            # One visit per night: a headliner and its support acts on the same date count once
             visit_count = len({c.event_date.date() if c.event_date else None for c in venue_gigs})
+            # Show the spelling used most often (ties go to the most recent gig)
+            venue_name, city, country = Counter((c.venue_name, c.city, c.country) for c in venue_gigs).most_common(1)[
+                0
+            ][0]
             results.append(
                 {
                     "venue_name": venue_name,

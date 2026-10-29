@@ -280,3 +280,25 @@ def test_export_attended_gigs_json_and_csv(db_session: Session):
     assert sec_row["artist_name"] == "'=HYPERLINK()"
     assert sec_row["venue_name"] == "'+DangerousVenue"
     assert sec_row["tour_name"] == "'@FormulaTour"
+
+
+def test_venue_visits_merge_spelling_variants_on_the_same_night(db_session: Session):
+    headliner = _concert("h1", "Shed Seven", "O2 Academy", datetime(2026, 11, 14, 20))
+    support = _concert("s1", "The Clause", "o2  academy ", datetime(2026, 11, 14, 19), is_support_act=True)
+    # Manual entries default to "United Kingdom" even where Setlist.fm says "England"
+    support.country = "England"
+    earlier = _concert("h2", "Shed Seven", "O2 Academy", datetime(2025, 4, 4, 20))
+    elsewhere = _concert("h3", "Shed Seven", "O2 Academy", datetime(2025, 4, 5, 20))
+    elsewhere.city = "Leeds"
+    db_session.add_all([headliner, support, earlier, elsewhere])
+    db_session.commit()
+
+    venues = SetlistStatsService(db=db_session).get_venues_visited_leaderboard(user_id=1)
+
+    by_city = {v["city"]: v for v in venues}
+    assert set(by_city) == {"Birmingham", "Leeds"}
+    birmingham = by_city["Birmingham"]
+    assert birmingham["count"] == 2  # 14 Nov 2026 (headliner + support) and 4 Apr 2025
+    assert birmingham["venue_name"] == "O2 Academy"
+    assert len(birmingham["gigs"]) == 3
+    assert by_city["Leeds"]["count"] == 1
