@@ -11,6 +11,7 @@ import {
   fetchSongsHeardLeaderboard,
   fetchVenuesVisitedLeaderboard,
   importSetlistHistory,
+  fetchSetlistStatus,
 } from "../../api/setlists";
 import GigSearchBar from "./GigSearchBar";
 import GigCard from "./GigCard";
@@ -30,6 +31,9 @@ export default function SetlistsPage() {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const [hasSearched, setHasSearched] = useState(false);
+  const [lastSearchQuery, setLastSearchQuery] = useState("");
+  const [apiConfigured, setApiConfigured] = useState(null);
 
   // Support act prompt state
   const [selectedMainSetlist, setSelectedMainSetlist] = useState(null);
@@ -89,15 +93,29 @@ export default function SetlistsPage() {
     loadData();
   }, [activeTab, token]);
 
+  useEffect(() => {
+    if (token) {
+      fetchSetlistStatus({ token })
+        .then((res) => {
+          setApiConfigured(res?.configured ?? true);
+        })
+        .catch(() => {});
+    }
+  }, [token]);
+
   const handleSearch = async (params) => {
     if (!token) return;
     setIsSearching(true);
     setSearchError("");
+    setHasSearched(true);
+    const queryDesc = [params.artistName, params.venueName, params.year].filter(Boolean).join(" ");
+    setLastSearchQuery(queryDesc || "your search query");
     try {
       const data = await searchSetlists({ token, ...params });
       setSearchResults(data?.setlist || []);
     } catch (err) {
       setSearchError(err.message || "Error searching setlists.");
+      setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
@@ -289,6 +307,33 @@ export default function SetlistsPage() {
         </div>
       </div>
 
+      {/* Setlist.fm API Key Unconfigured Warning */}
+      {apiConfigured === false && (
+        <div
+          className="p-4 mb-6 rounded text-sm flex items-start gap-3"
+          style={{
+            border: "0.5px solid var(--color-danger, #ef4444)",
+            backgroundColor: "rgba(239, 68, 68, 0.1)",
+            color: "var(--color-ink, #ffffff)",
+          }}
+          data-testid="unconfigured-warning"
+        >
+          <span className="text-lg leading-none">⚠️</span>
+          <div>
+            <strong>Setlist.fm API key is not detected by the server.</strong>
+            <p className="mt-1 text-xs text-muted">
+              Concert searches and Setlist.fm imports require <code>SETLIST_FM_API_KEY</code>. If
+              you added it to your <code>.env.production</code> on the NUC, make sure to reload it
+              with:
+              <br />
+              <code className="text-xs bg-black/40 px-1 py-0.5 rounded mt-1 inline-block">
+                docker compose --env-file .env.production -f docker-compose.prod.yml up -d
+              </code>
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Main Tab Content */}
       {activeTab === "log" && (
         <div>
@@ -320,7 +365,17 @@ export default function SetlistsPage() {
 
           {!isSearching && searchResults.length === 0 && !searchError && (
             <div className="card p-8 text-center text-muted text-sm">
-              Search for an artist or venue above to find your concert and log attendance.
+              {hasSearched ? (
+                <span>
+                  No concerts found matching &quot;<strong>{lastSearchQuery}</strong>&quot;. Try
+                  checking the artist spelling, clearing the venue/year filter, or selecting
+                  &quot;All Countries&quot;.
+                </span>
+              ) : (
+                <span>
+                  Search for an artist or venue above to find your concert and log attendance.
+                </span>
+              )}
             </div>
           )}
         </div>

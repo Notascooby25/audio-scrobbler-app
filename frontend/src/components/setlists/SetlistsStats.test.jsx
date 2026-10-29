@@ -5,9 +5,13 @@ import DeleteGigConfirmModal from "./DeleteGigConfirmModal";
 import ImportExportModal from "./ImportExportModal";
 import MyGigsTimeline from "./MyGigsTimeline";
 
-vi.mock("../../api/setlists", () => ({
-  previewSetlistsImport: vi.fn(),
-}));
+vi.mock("../../api/setlists", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    previewSetlistsImport: vi.fn(),
+  };
+});
 
 describe("SetlistsStats and Modals", () => {
   afterEach(() => {

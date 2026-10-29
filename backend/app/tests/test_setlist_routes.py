@@ -11,6 +11,7 @@ from backend.app.api.deps import get_current_user
 from backend.app.db import Base, get_db
 from backend.app.main import app
 from backend.app.models import AttendedConcert, ListeningEvent, User
+from backend.app.services.setlist_service import SetlistApiKeyMissingError, SetlistUserNotFoundError
 
 engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
 TestingSession = sessionmaker(bind=engine)
@@ -173,3 +174,24 @@ def test_import_preview_and_selective_import():
             db=ANY,
             selected_setlist_ids=["show_preview_1"],
         )
+
+
+def test_setlist_status_and_missing_api_key():
+    with patch("backend.app.api.setlists.SetlistService") as MockServiceCls:
+        mock_svc = MockServiceCls.return_value
+        mock_svc.get_status.return_value = {"configured": False, "daily_quota": 1400, "daily_count": 0}
+
+        status_res = client.get("/setlists/status")
+        assert status_res.status_code == 200
+        assert status_res.json()["configured"] is False
+
+        # Missing key raises 503
+        mock_svc.search_setlists.side_effect = SetlistApiKeyMissingError("Setlist.fm API key is not configured.")
+        search_res = client.get("/setlists/search?artist_name=Foo+Fighters")
+        assert search_res.status_code == 503
+        assert "not configured" in search_res.json()["detail"]
+
+        # User not found raises 404
+        mock_svc.get_user_attended.side_effect = SetlistUserNotFoundError("User not found.")
+        preview_res = client.get("/setlists/import/preview?username=nonexistent")
+        assert preview_res.status_code == 404

@@ -290,9 +290,10 @@ export default function UserGuideSection() {
           <li>
             <strong>Setlist.fm Account Import & Export:</strong> Have an existing Setlist.fm profile
             (or want to selectively import gigs from a friend or family member's account)? Click{" "}
-            <em>Import / Export</em> to enter the username, preview all attended gigs, tick the
-            specific shows you attended, and import them with 1 click. You can also download your
-            entire gig collection as JSON or CSV.
+            <em>Import / Export</em> to enter their username or paste their full profile link (e.g.{" "}
+            <code>https://www.setlist.fm/user/crispylettuce</code>), preview all attended gigs, tick
+            the specific shows you attended, and import them with 1 click. You can also download
+            your entire gig collection as JSON or CSV.
           </li>
         </ul>
       </article>

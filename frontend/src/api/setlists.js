@@ -1,5 +1,21 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
+export function cleanSetlistUsername(input) {
+  if (!input) return "";
+  let cleaned = input.trim();
+  if (cleaned.includes("setlist.fm/user/")) {
+    cleaned = cleaned.split("setlist.fm/user/").pop();
+  } else if (cleaned.includes("setlist.fm/concerts/")) {
+    cleaned = cleaned.split("setlist.fm/concerts/").pop();
+  }
+  cleaned = cleaned
+    .replace(/^\/+|\/+$/g, "")
+    .split("/")[0]
+    .split("?")[0]
+    .trim();
+  return cleaned.toLowerCase();
+}
+
 async function parseResponse(response) {
   if (!response.ok) {
     let detail = "";
@@ -10,7 +26,9 @@ async function parseResponse(response) {
       detail = await response.text().catch(() => "");
     }
     const message = detail
-      ? `HTTP ${response.status}: ${detail}`
+      ? detail.startsWith("HTTP")
+        ? detail
+        : `HTTP ${response.status}: ${detail}`
       : `Request failed with HTTP ${response.status}`;
     const error = new Error(message);
     error.status = response.status;
@@ -27,6 +45,13 @@ async function parseResponse(response) {
     }
   }
   return response.json();
+}
+
+export async function fetchSetlistStatus({ token }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/status`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
 }
 
 export async function searchSetlists({ token, artistName, countryCode, year, venueName, p = 1 }) {
@@ -115,7 +140,8 @@ export async function fetchVenuesVisitedLeaderboard({ token }) {
 }
 
 export async function previewSetlistsImport({ token, username, page = 1 }) {
-  const params = new URLSearchParams({ username, page });
+  const cleanedUsername = cleanSetlistUsername(username);
+  const params = new URLSearchParams({ username: cleanedUsername, page });
   const response = await fetch(`${API_BASE_URL}/setlists/import/preview?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -123,6 +149,7 @@ export async function previewSetlistsImport({ token, username, page = 1 }) {
 }
 
 export async function importSetlistHistory({ token, username, setlistIds = null }) {
+  const cleanedUsername = cleanSetlistUsername(username);
   const response = await fetch(`${API_BASE_URL}/setlists/import`, {
     method: "POST",
     headers: {
@@ -130,7 +157,7 @@ export async function importSetlistHistory({ token, username, setlistIds = null 
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
-      username,
+      username: cleanedUsername,
       ...(setlistIds ? { setlist_ids: setlistIds } : {}),
     }),
   });

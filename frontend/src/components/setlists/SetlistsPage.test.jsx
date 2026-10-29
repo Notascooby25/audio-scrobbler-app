@@ -12,6 +12,9 @@ vi.mock("../../api/setlists", () => ({
   fetchArtistsSeenLeaderboard: vi.fn().mockResolvedValue([]),
   fetchSongsHeardLeaderboard: vi.fn().mockResolvedValue([]),
   fetchVenuesVisitedLeaderboard: vi.fn().mockResolvedValue([]),
+  fetchSetlistStatus: vi
+    .fn()
+    .mockResolvedValue({ configured: true, daily_quota: 1400, daily_count: 0 }),
 }));
 
 vi.mock("../../session", () => ({
@@ -114,5 +117,46 @@ describe("SetlistsPage", () => {
     const termsLink = screen.getByRole("link", { name: "Terms of Service" });
     expect(termsLink).toBeInTheDocument();
     expect(termsLink).toHaveAttribute("href", "https://www.setlist.fm/help/terms");
+  });
+
+  it("renders warning banner when Setlist.fm API key is not configured", async () => {
+    setlistsApi.fetchSetlistStatus.mockResolvedValueOnce({
+      configured: false,
+      daily_quota: 1400,
+      daily_count: 0,
+    });
+    render(
+      <MemoryRouter>
+        <SetlistsPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("unconfigured-warning")).toBeInTheDocument();
+      expect(screen.getByText(/Setlist.fm API key is not detected/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows explicit empty state feedback when concert search yields 0 matches", async () => {
+    setlistsApi.searchSetlists.mockResolvedValueOnce({ total: 0, setlist: [] });
+
+    render(
+      <MemoryRouter>
+        <SetlistsPage />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /\+ log a gig/i }));
+
+    const searchInput = screen.getByPlaceholderText(/search artist/i);
+    fireEvent.change(searchInput, { target: { value: "Unknown Band" } });
+
+    const searchBtn = screen.getByRole("button", { name: /^search$/i });
+    fireEvent.click(searchBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/No concerts found matching/i)).toBeInTheDocument();
+      expect(screen.getByText(/Unknown Band/i)).toBeInTheDocument();
+    });
   });
 });

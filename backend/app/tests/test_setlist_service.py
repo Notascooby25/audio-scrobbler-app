@@ -9,7 +9,13 @@ from sqlalchemy.orm import Session
 
 from backend.app.db import Base
 from backend.app.models import SetlistApiUsage, SetlistCache
-from backend.app.services.setlist_service import SetlistRateLimitError, SetlistService
+from backend.app.services.setlist_service import (
+    SetlistApiAuthError,
+    SetlistApiKeyMissingError,
+    SetlistRateLimitError,
+    SetlistService,
+    sanitize_setlist_username,
+)
 
 
 @pytest.fixture
@@ -113,3 +119,28 @@ def test_support_acts_festival_capping(db_session: Session):
         assert len(support_acts) <= 10
         # Excluded main setlist should not be in results
         assert all(act["id"] != "act_0" for act in support_acts)
+
+
+def test_missing_api_key_raises_error(db_session: Session):
+    service = SetlistService(db=db_session, api_key="")
+    with pytest.raises(SetlistApiKeyMissingError, match="Setlist.fm API key is not configured"):
+        service._request("/search/setlists")
+
+
+def test_api_key_auth_rejection_raises_error(db_session: Session):
+    service = SetlistService(db=db_session, api_key="invalid_key")
+    with patch("httpx.get") as mock_get:
+        mock_resp = MagicMock()
+        mock_resp.status_code = 403
+        mock_get.return_value = mock_resp
+        with pytest.raises(SetlistApiAuthError, match="Setlist.fm API key was rejected"):
+            service._request("/search/setlists")
+
+
+def test_sanitize_setlist_username():
+    assert sanitize_setlist_username("crispylettuce") == "crispylettuce"
+    assert sanitize_setlist_username("Crispylettuce") == "crispylettuce"
+    assert sanitize_setlist_username("https://www.setlist.fm/user/crispylettuce") == "crispylettuce"
+    assert sanitize_setlist_username("https://www.setlist.fm/user/crispylettuce/") == "crispylettuce"
+    assert sanitize_setlist_username("https://www.setlist.fm/concerts/crispylettuce") == "crispylettuce"
+    assert sanitize_setlist_username("  CRISPYLETTUCE/  ") == "crispylettuce"

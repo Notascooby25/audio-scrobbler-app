@@ -20,11 +20,26 @@ from ..schemas.setlists import (
     VenueLeaderboardItem,
 )
 from ..services.setlist_attendance_service import SetlistAttendanceService
-from ..services.setlist_service import SetlistRateLimitError, SetlistService
+from ..services.setlist_service import (
+    SetlistApiAuthError,
+    SetlistApiKeyMissingError,
+    SetlistRateLimitError,
+    SetlistService,
+    SetlistUserNotFoundError,
+)
 from ..services.setlist_import_service import sync_user_setlist_history
 from ..services.setlist_stats_service import SetlistStatsService
 
 router = APIRouter(prefix="/setlists", tags=["setlists"])
+
+
+@router.get("/status")
+def get_setlist_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    service = SetlistService(db=db)
+    return service.get_status()
 
 
 @router.get("/search")
@@ -46,6 +61,10 @@ def search_setlists(
             venue_name=venue_name,
             p=p,
         )
+    except SetlistApiKeyMissingError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    except SetlistApiAuthError as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
     except SetlistRateLimitError as exc:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
 
@@ -196,6 +215,12 @@ def preview_user_setlists(
     service = SetlistService(db=db)
     try:
         data = service.get_user_attended(username=username.strip(), p=page)
+    except SetlistApiKeyMissingError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    except SetlistApiAuthError as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
+    except SetlistUserNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except SetlistRateLimitError as exc:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
     except Exception as exc:
@@ -279,6 +304,10 @@ def get_setlist_details(
         if not data:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Setlist {setlist_id} not found.")
         return data
+    except SetlistApiKeyMissingError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    except SetlistApiAuthError as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
     except SetlistRateLimitError as exc:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
 
@@ -289,9 +318,18 @@ def import_setlists_from_profile(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
-    return sync_user_setlist_history(
-        user_id=current_user.id,
-        setlist_username=payload.username.strip(),
-        db=db,
-        selected_setlist_ids=payload.setlist_ids,
-    )
+    try:
+        return sync_user_setlist_history(
+            user_id=current_user.id,
+            setlist_username=payload.username.strip(),
+            db=db,
+            selected_setlist_ids=payload.setlist_ids,
+        )
+    except SetlistApiKeyMissingError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    except SetlistApiAuthError as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
+    except SetlistUserNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except SetlistRateLimitError as exc:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc

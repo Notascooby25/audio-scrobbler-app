@@ -1,5 +1,15 @@
 export const CHANGELOG = [
   {
+    version: "0.15.3",
+    date: "2026-10-29",
+    changes: [
+      "Added Setlist.fm server diagnostics endpoint and warning banner if SETLIST_FM_API_KEY is missing or unconfigured in the production environment.",
+      "Added URL parsing and username sanitization to accept full Setlist.fm user profile links (e.g. setlist.fm/user/username) as well as raw usernames.",
+      "Fixed silent empty response handling from Setlist.fm API, returning explicit error feedback for missing keys, 401/403 authorization failures, and 404 users.",
+      "Added explicit empty-state feedback when concert search queries return 0 results with guidance to check spelling or broaden filters.",
+    ],
+  },
+  {
     version: "0.15.2",
     date: "2026-10-29",
     changes: [

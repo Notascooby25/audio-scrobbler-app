@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { previewSetlistsImport } from "../../api/setlists";
+import { cleanSetlistUsername, previewSetlistsImport } from "../../api/setlists";
 
 export default function ImportExportModal({ isOpen, onClose, onImport, isImporting, token }) {
   const [username, setUsername] = useState("");
@@ -12,17 +12,23 @@ export default function ImportExportModal({ isOpen, onClose, onImport, isImporti
   if (!isOpen) return null;
 
   const handleFetchPreview = async (pageToFetch = 1) => {
-    if (!username.trim() || !token) return;
+    const raw = username.trim();
+    if (!raw || !token) return;
+    const cleaned = cleanSetlistUsername(raw);
     setIsFetchingPreview(true);
     setPreviewError("");
     try {
       const data = await previewSetlistsImport({
         token,
-        username: username.trim(),
+        username: cleaned,
         page: pageToFetch,
       });
       setPreviewData(data);
       setCurrentPage(pageToFetch);
+
+      if (data.total === 0) {
+        setPreviewError(`No attended concerts found on Setlist.fm for "${cleaned}".`);
+      }
 
       // Pre-select non-logged gigs on first fetch
       if (pageToFetch === 1 && selectedIds.size === 0) {
@@ -68,11 +74,11 @@ export default function ImportExportModal({ isOpen, onClose, onImport, isImporti
 
   const handleImportSelected = () => {
     if (selectedIds.size === 0) return;
-    onImport(username.trim(), Array.from(selectedIds));
+    onImport(cleanSetlistUsername(username), Array.from(selectedIds));
   };
 
   const handleImportAll = () => {
-    onImport(username.trim(), null);
+    onImport(cleanSetlistUsername(username), null);
   };
 
   const handleExport = (format) => {
@@ -119,13 +125,15 @@ export default function ImportExportModal({ isOpen, onClose, onImport, isImporti
         <div>
           <h4 className="font-semibold text-sm mb-1">Import from Setlist.fm Profile</h4>
           <p className="text-xs text-muted mb-3">
-            Enter a Setlist.fm username to preview shows and select the exact concerts you attended:
+            Enter a Setlist.fm username (or profile URL) to preview shows and select the exact
+            concerts you attended:
           </p>
           <div className="flex gap-2 mb-3">
             <input
               type="text"
               className="input-field flex-1 text-sm"
-              placeholder="Setlist.fm username (e.g. crispylettuce)"
+              placeholder="Setlist.fm username or URL (e.g. crispylettuce)"
+              aria-label="Setlist.fm username or URL"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               disabled={isImporting || isFetchingPreview}

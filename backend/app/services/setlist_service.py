@@ -22,10 +22,45 @@ class SetlistRateLimitError(Exception):
     """Raised when the daily or per-second rate limit is exceeded."""
 
 
+class SetlistApiKeyMissingError(Exception):
+    """Raised when SETLIST_FM_API_KEY is not configured."""
+
+
+class SetlistApiAuthError(Exception):
+    """Raised when Setlist.fm rejects the API key with 401 or 403."""
+
+
+class SetlistUserNotFoundError(Exception):
+    """Raised when a Setlist.fm user is not found or has no public concerts."""
+
+
+def sanitize_setlist_username(raw: str) -> str:
+    """Extract and normalize a Setlist.fm username from a username or full profile URL."""
+    if not raw:
+        return ""
+    cleaned = raw.strip()
+    if "setlist.fm/user/" in cleaned:
+        cleaned = cleaned.split("setlist.fm/user/")[-1]
+    elif "setlist.fm/concerts/" in cleaned:
+        cleaned = cleaned.split("setlist.fm/concerts/")[-1]
+    cleaned = cleaned.strip("/").split("/")[0].split("?")[0].strip()
+    return cleaned.lower()
+
+
 class SetlistService:
     def __init__(self, db: Session, api_key: str | None = None) -> None:
         self.db = db
-        self.api_key = api_key or os.getenv("SETLIST_FM_API_KEY", "")
+        self.api_key = (api_key or os.getenv("SETLIST_FM_API_KEY", "")).strip("'\" \r\n")
+
+    def get_status(self) -> dict[str, Any]:
+        today_str = datetime.utcnow().strftime("%Y-%m-%d")
+        usage = self.db.query(SetlistApiUsage).filter_by(id=1).first()
+        daily_count = usage.daily_count if usage and usage.daily_date == today_str else 0
+        return {
+            "configured": bool(self.api_key),
+            "daily_quota": MAX_DAILY_CALLS,
+            "daily_count": daily_count,
+        }
 
     def _acquire_rate_limit(self) -> None:
         today_str = datetime.utcnow().strftime("%Y-%m-%d")
@@ -65,8 +100,9 @@ class SetlistService:
 
     def _request(self, endpoint: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         if not self.api_key:
-            logger.warning("SETLIST_FM_API_KEY is not set.")
-            return {}
+            raise SetlistApiKeyMissingError(
+                "Setlist.fm API key is not configured. Please set SETLIST_FM_API_KEY in your environment."
+            )
 
         self._acquire_rate_limit()
 
@@ -80,7 +116,14 @@ class SetlistService:
         try:
             resp = httpx.get(url, headers=headers, params=params, timeout=15.0)
             if resp.status_code == 404:
+                if endpoint.startswith("/user/"):
+                    raise SetlistUserNotFoundError("User not found or has no public attended concerts on Setlist.fm.")
                 return {}
+            if resp.status_code in (401, 403):
+                raise SetlistApiAuthError(
+                    f"Setlist.fm API key was rejected ({resp.status_code} Forbidden/Unauthorized). "
+                    "Please verify your SETLIST_FM_API_KEY in your server configuration."
+                )
             if resp.status_code == 429:
                 raise SetlistRateLimitError("Setlist.fm returned HTTP 429: Too Many Requests.")
             resp.raise_for_status()
@@ -152,14 +195,16 @@ class SetlistService:
             params["venueName"] = venue_name
 
         data = self.search_setlists_raw(params=params)
-        if data:
-            new_cache = SetlistCache(
-                cache_key=cache_key,
-                response_json=data,
-                expires_at=now + timedelta(days=1),
-            )
-            self.db.merge(new_cache)
-            self.db.commit()
+        if not data:
+            return {"total": 0, "setlist": []}
+
+        new_cache = SetlistCache(
+            cache_key=cache_key,
+            response_json=data,
+            expires_at=now + timedelta(days=1),
+        )
+        self.db.merge(new_cache)
+        self.db.commit()
         return data
 
     def get_venue_date_setlists(
@@ -190,4 +235,7 @@ class SetlistService:
         return results
 
     def get_user_attended(self, username: str, p: int = 1) -> dict[str, Any]:
-        return self._request(f"/user/{username}/attended", params={"p": p})
+        cleaned_username = sanitize_setlist_username(username)
+        if not cleaned_username:
+            raise SetlistUserNotFoundError("Invalid Setlist.fm username.")
+        return self._request(f"/user/{cleaned_username}/attended", params={"p": p})

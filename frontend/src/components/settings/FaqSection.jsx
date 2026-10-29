@@ -237,10 +237,11 @@ const FAQ_DATA = [
     answer: (
       <p>
         <strong>Yes!</strong> Click the <strong>Import / Export</strong> button in the Set Lists
-        tab, enter the Setlist.fm username (e.g. <code>crispylettuce</code>), and click Preview
-        Gigs. You can review the full concert list and tick checkboxes for only the gigs you
-        actually attended before importing, or use Select All / Deselect All. The app will import
-        only the selected concerts while safely honoring Setlist.fm's daily rate limits.
+        tab, enter their Setlist.fm username or paste their full profile link (e.g.{" "}
+        <code>crispylettuce</code> or <code>https://www.setlist.fm/user/crispylettuce</code>), and
+        click Preview Gigs. You can review the full concert list and tick checkboxes for only the
+        gigs you actually attended before importing, or use Select All / Deselect All. The app will
+        import only the selected concerts while safely honoring Setlist.fm's daily rate limits.
       </p>
     ),
   },

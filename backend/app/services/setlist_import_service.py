@@ -7,7 +7,13 @@ from sqlalchemy.orm import Session
 
 from ..models import AttendedConcert
 from .setlist_attendance_service import SetlistAttendanceService
-from .setlist_service import SetlistRateLimitError, SetlistService
+from .setlist_service import (
+    SetlistApiAuthError,
+    SetlistApiKeyMissingError,
+    SetlistRateLimitError,
+    SetlistService,
+    SetlistUserNotFoundError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +71,8 @@ def sync_user_setlist_history(
     while True:
         try:
             data = svc.get_user_attended(username=setlist_username, p=page)
+        except (SetlistApiKeyMissingError, SetlistApiAuthError, SetlistUserNotFoundError):
+            raise
         except SetlistRateLimitError as exc:
             logger.warning("Setlist.fm rate limit quota reached during import: %s", exc)
             return {
