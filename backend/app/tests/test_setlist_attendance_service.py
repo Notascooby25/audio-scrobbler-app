@@ -117,6 +117,8 @@ def test_log_attendance_with_empty_setlist_and_refresh(db_session: Session):
 
     refreshed = service.refresh_concert_setlist(user_id=1, concert_id=concert.id)
     assert refreshed.song_count == 2
+    # Refresh must ask Setlist.fm, not a cached copy from before the update
+    mock_setlist_service.get_setlist.assert_called_with("empty_show_1", force_refresh=True)
 
     events_after = db_session.query(ListeningEvent).filter_by(user_id=1, source="setlistfm").all()
     assert len(events_after) == 2

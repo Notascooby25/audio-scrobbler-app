@@ -253,3 +253,48 @@ def test_venue_date_lookup_is_cached_and_empty_results_expire_quickly(db_session
     empty = db_session.get(SetlistCache, "venue-date:v2:01-01-2027")
     # Never cache an empty answer for long (Setlist.fm may index the show later)
     assert empty.expires_at < datetime.utcnow() + timedelta(hours=2)
+
+
+def _fake_response(payload: dict, status_code: int = 200) -> MagicMock:
+    response = MagicMock()
+    response.status_code = status_code
+    response.json.return_value = payload
+    response.text = "ok"
+    response.raise_for_status.return_value = None
+    return response
+
+
+def _full_setlist(setlist_id: str, song: str = "Eleanor") -> dict:
+    return {"id": setlist_id, "artist": {"name": "Red Rum Club"}, "sets": {"set": [{"song": [{"name": song}]}]}}
+
+
+def test_attended_page_setlists_are_reused_instead_of_fetched_again(db_session: Session):
+    service = SetlistService(db=db_session, api_key="dummy_key")
+    page = {
+        "total": 3,
+        "setlist": [
+            _full_setlist("aa11bb22"),
+            _full_setlist("cc33dd44"),
+            {"id": "ee55ff66", "sets": {"set": []}},
+        ],
+    }
+
+    with patch("time.sleep"), patch("httpx.get", return_value=_fake_response(page)) as mock_get:
+        service.get_user_attended("andy202", p=1)
+        assert service.get_setlist("aa11bb22")["sets"]["set"][0]["song"][0]["name"] == "Eleanor"
+        assert service.get_setlist("cc33dd44")["id"] == "cc33dd44"
+    # One call for the page; both full setlists came from the cache
+    assert mock_get.call_count == 1
+    # A setlist with no songs yet isn't cached, so it's fetched fresh when needed
+    assert db_session.get(SetlistCache, "setlist:ee55ff66") is None
+
+
+def test_force_refresh_skips_the_cache_and_stores_the_new_copy(db_session: Session):
+    service = SetlistService(db=db_session, api_key="dummy_key")
+    service.remember_setlists([_full_setlist("aa11bb22", song="Old Name")])
+
+    with patch("time.sleep"), patch("httpx.get", return_value=_fake_response(_full_setlist("aa11bb22", "Fixed Name"))):
+        assert service.get_setlist("aa11bb22")["sets"]["set"][0]["song"][0]["name"] == "Old Name"
+        fresh = service.get_setlist("aa11bb22", force_refresh=True)
+    assert fresh["sets"]["set"][0]["song"][0]["name"] == "Fixed Name"
+    assert service.get_setlist("aa11bb22")["sets"]["set"][0]["song"][0]["name"] == "Fixed Name"
