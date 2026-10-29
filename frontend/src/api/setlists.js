@@ -192,7 +192,7 @@ export async function fetchArtistsSeenLeaderboard({ token }) {
   return parseResponse(response);
 }
 
-export async function fetchSongsHeardLeaderboard({ token, limit = 100 }) {
+export async function fetchSongsHeardLeaderboard({ token, limit = 1000 }) {
   const response = await fetch(`${API_BASE_URL}/setlists/stats/songs?limit=${limit}`, {
     headers: { Authorization: `Bearer ${token}` },
   });

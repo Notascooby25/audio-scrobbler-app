@@ -8,6 +8,8 @@ import MyGigsTimeline from "./MyGigsTimeline";
 import SetlistDetailModal from "./SetlistDetailModal";
 import GigCard from "./GigCard";
 import RankedBarList from "./RankedBarList";
+import SongsHeardLeaderboard from "./SongsHeardLeaderboard";
+import VenuesLeaderboard from "./VenuesLeaderboard";
 
 vi.mock("../../api/setlists", async (importOriginal) => {
   const actual = await importOriginal();
@@ -388,5 +390,118 @@ describe("SetlistsStats and Modals", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /previous page/i }));
     expect(screen.getByText("Artist 1")).toBeInTheDocument();
+  });
+
+  const lotteryGig = (id, venue, iso) => ({
+    id,
+    setlist_id: `tlw_${id}`,
+    artist_name: "The Lottery Winners",
+    venue_name: venue,
+    city: "Birmingham",
+    country: "United Kingdom",
+    event_date: iso,
+    date: "",
+  });
+  const songs = [
+    {
+      track_name: "Burning House",
+      artist_name: "The Lottery Winners",
+      count: 2,
+      gigs: [
+        lotteryGig(1, "Victorious Festival", "2026-08-29T20:00:00"),
+        lotteryGig(2, "HMV Empire", "2025-11-25T20:00:00"),
+      ],
+    },
+    {
+      track_name: "Always Like This",
+      artist_name: "Bombay Bicycle Club",
+      count: 1,
+      gigs: [
+        {
+          id: 3,
+          setlist_id: "bbc_3",
+          artist_name: "Bombay Bicycle Club",
+          venue_name: "Cambridge Corn Exchange",
+          city: "Cambridge",
+          country: "United Kingdom",
+          event_date: "2024-02-10T20:00:00",
+          date: "",
+        },
+      ],
+    },
+  ];
+
+  it("filters Songs Heard by artist and year from the sidebar", () => {
+    render(
+      <MemoryRouter>
+        <SongsHeardLeaderboard songs={songs} />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole("heading", { name: "Total songs" })).toBeInTheDocument();
+    const allLink = screen.getByRole("button", { name: "All setlist songs" });
+    expect(allLink.parentElement).toHaveTextContent("All setlist songs (3)");
+
+    fireEvent.click(screen.getByRole("button", { name: "Bombay Bicycle Club" }));
+    expect(
+      screen.getByRole("heading", { name: "Songs at Bombay Bicycle Club concerts" })
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Burning House")).not.toBeInTheDocument();
+    expect(screen.getByText("Always Like This")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "All setlist songs" }));
+    fireEvent.click(screen.getByRole("button", { name: "2025" }));
+    expect(screen.getByRole("heading", { name: "Songs heard in 2025" })).toBeInTheDocument();
+    expect(screen.getByText("Burning House")).toBeInTheDocument();
+    expect(screen.queryByText("Always Like This")).not.toBeInTheDocument();
+    // Only the 2025 gig counts towards the bar
+    expect(document.querySelector(".sfm-bar")).toHaveTextContent("1");
+  });
+
+  it("expands a song to the gigs it was heard at and opens one", () => {
+    const onOpenGig = vi.fn();
+    render(
+      <MemoryRouter>
+        <SongsHeardLeaderboard songs={songs} onOpenGig={onOpenGig} />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Burning House" }));
+    expect(screen.getByRole("button", { name: "Burning House" })).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    );
+    fireEvent.click(screen.getByRole("button", { name: /HMV Empire, Birmingham/i }));
+    expect(onOpenGig).toHaveBeenCalledWith(2);
+  });
+
+  it("expands a venue to every act seen there", () => {
+    const venues = [
+      {
+        venue_name: "Anfield",
+        city: "Liverpool",
+        country: "United Kingdom",
+        count: 1,
+        gigs: [
+          { ...lotteryGig(8, "Anfield", "2026-06-27T20:00:00"), artist_name: "Foo Fighters" },
+          {
+            ...lotteryGig(9, "Anfield", "2026-06-27T19:00:00"),
+            artist_name: "Royel Otis",
+            is_support: true,
+          },
+        ],
+      },
+    ];
+    render(
+      <MemoryRouter>
+        <VenuesLeaderboard venues={venues} />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText("Liverpool, United Kingdom")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Anfield" }));
+    expect(screen.getByText("Foo Fighters")).toBeInTheDocument();
+    expect(screen.getByText("Royel Otis")).toBeInTheDocument();
+    expect(screen.getByText("Support")).toBeInTheDocument();
   });
 });

@@ -1,142 +1,160 @@
 import { useState } from "react";
-import { computeTieRanks, getPaginationRange } from "./setlistUiUtils";
+import { useSearchParams } from "react-router-dom";
+import GigRows from "./GigRows";
+import RankedBarList from "./RankedBarList";
+import { parseDateParts } from "./SetlistDateBadge";
 
-export default function SongsHeardLeaderboard({ songs = [] }) {
-  const [pageSize, setPageSize] = useState(15);
-  const [currentPage, setCurrentPage] = useState(1);
+const sortName = (name) => name.replace(/^the\s+/i, "").toLowerCase();
 
-  if (songs.length === 0) {
-    return <div className="card p-8 text-center text-muted">No songs heard live recorded yet.</div>;
-  }
+function gigYear(gig) {
+  return parseDateParts(gig.event_date || gig.date).year;
+}
 
-  const maxCount = Math.max(...songs.map((s) => s.count || 1), 1);
-  const totalPages = Math.ceil(songs.length / pageSize);
+export default function SongsHeardLeaderboard({ songs = [], onOpenGig = null }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [showFilters, setShowFilters] = useState(false);
+  const year = searchParams.get("year");
+  const artist = searchParams.get("artist");
 
-  // Tie-aware ranking across full dataset
-  const rankedSongs = computeTieRanks(songs, "count");
-  const paginatedRanked = rankedSongs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const setFilter = (changes) => {
+    const params = new URLSearchParams(searchParams);
+    Object.entries(changes).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    });
+    params.delete("page");
+    params.delete("open");
+    setSearchParams(params, { replace: true });
+    setShowFilters(false);
+  };
 
-  const paginationPages = getPaginationRange(currentPage, totalPages);
+  // Sidebar counts are concerts, as on setlist.fm
+  const allGigs = new Map();
+  songs.forEach((song) => (song.gigs || []).forEach((gig) => allGigs.set(gig.id, gig)));
+  const yearCounts = {};
+  const artistCounts = {};
+  allGigs.forEach((gig) => {
+    const y = gigYear(gig);
+    yearCounts[y] = (yearCounts[y] || 0) + 1;
+    artistCounts[gig.artist_name] = (artistCounts[gig.artist_name] || 0) + 1;
+  });
+  const years = Object.keys(yearCounts).sort((a, b) => b.localeCompare(a));
+  const artists = Object.keys(artistCounts).sort((a, b) => sortName(a).localeCompare(sortName(b)));
+
+  // With a year filter the count becomes the number of that year's gigs featuring the song
+  const filtered = songs
+    .filter((song) => !artist || song.artist_name === artist)
+    .map((song) => {
+      if (!year) return song;
+      const gigs = (song.gigs || []).filter((gig) => gigYear(gig) === year);
+      return { ...song, gigs, count: gigs.length };
+    })
+    .filter((song) => song.count > 0)
+    .sort((a, b) => b.count - a.count);
+
+  const items = filtered.map((song) => ({
+    key: `${song.track_name}|${song.artist_name}`,
+    label: song.track_name,
+    sub: artist ? null : song.artist_name,
+    count: song.count,
+    detail:
+      song.gigs && song.gigs.length > 0 ? (
+        <GigRows
+          rows={song.gigs.map((gig) => ({
+            key: gig.id,
+            date: gig.event_date || gig.date,
+            title: [gig.venue_name, gig.city].filter(Boolean).join(", "),
+            meta: gig.artist_name,
+            onOpen: onOpenGig ? () => onOpenGig(gig.id) : null,
+          }))}
+        />
+      ) : null,
+  }));
+
+  const heading = artist
+    ? `Songs at ${artist} concerts${year ? ` in ${year}` : ""}`
+    : year
+      ? `Songs heard in ${year}`
+      : "Total songs";
+
+  const filterLink = (label, count, isCurrent, onClick) => (
+    <li key={label}>
+      <button
+        type="button"
+        className={`sfm-link ${isCurrent ? "is-current" : ""}`}
+        aria-pressed={isCurrent}
+        onClick={onClick}
+      >
+        {label}
+      </button>{" "}
+      ({count})
+    </li>
+  );
 
   return (
-    <div className="space-y-3">
-      {/* Setlist.fm Header & Page Size Selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-border">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight text-ink">Songs Heard Live</h2>
-          <p className="text-xs text-muted">Ranked by total times witnessed live in concert.</p>
+    <div className="sfm-split">
+      <aside className="sfm-sidebar" aria-label="Filter songs">
+        <button
+          type="button"
+          className="sfm-link sfm-sidebar-toggle"
+          aria-expanded={showFilters}
+          onClick={() => setShowFilters((v) => !v)}
+        >
+          {showFilters ? "Hide filters" : "Filter by year or artist"}
+          {(year || artist) && ` (${[artist, year].filter(Boolean).join(", ")})`}
+        </button>
+        <div className={`sfm-sidebar-body ${showFilters ? "is-open" : ""}`}>
+          <div className="sfm-sidebar-group">
+            <h3>All Concerts</h3>
+            <ul>
+              {filterLink("All setlist songs", allGigs.size, !year && !artist, () =>
+                setFilter({ year: null, artist: null })
+              )}
+            </ul>
+          </div>
+          {years.length > 0 && (
+            <div className="sfm-sidebar-group">
+              <h3>Years on Concerts</h3>
+              <ul>
+                {years.map((y) =>
+                  filterLink(y, yearCounts[y], year === y, () =>
+                    setFilter({ year: year === y ? null : y })
+                  )
+                )}
+              </ul>
+            </div>
+          )}
+          {artists.length > 0 && (
+            <div className="sfm-sidebar-group">
+              <h3>Artists</h3>
+              <ul>
+                {artists.map((a) =>
+                  filterLink(a, artistCounts[a], artist === a, () =>
+                    setFilter({ artist: artist === a ? null : a })
+                  )
+                )}
+              </ul>
+            </div>
+          )}
         </div>
-        <div className="flex items-center gap-2 text-xs shrink-0">
-          <label htmlFor="songs-per-page" className="text-muted shrink-0">
-            Songs shown per page:
-          </label>
-          <select
-            id="songs-per-page"
-            className="input-field text-xs py-1 px-2 rounded bg-surface border border-border"
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-          >
-            <option value={10}>10</option>
-            <option value={15}>15</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-          </select>
+      </aside>
+
+      <div className="sfm-split-main">
+        <div className="sfm-section-head">
+          <h2>{heading}</h2>
+          <p className="sfm-section-desc">
+            This table lists how often a song was performed. Multiple performances from the same
+            setlist are also counted towards the total.
+          </p>
         </div>
+        <RankedBarList
+          items={items}
+          noun="songs"
+          idPrefix="songs"
+          headings={["Song", "Song Performances"]}
+          emptyText="No songs heard live recorded yet."
+        />
       </div>
-
-      {/* Striped Dense Table */}
-      <div
-        className="rounded border border-border overflow-hidden bg-surface"
-        style={{ border: "0.5px solid var(--color-border)" }}
-      >
-        <div className="divide-y divide-border">
-          {paginatedRanked.map(({ item: song, rank, showRank }) => {
-            const barWidthPercent = Math.max(12, Math.round((song.count / maxCount) * 100));
-
-            return (
-              <div
-                key={`${song.track_name}-${song.artist_name}`}
-                className="flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-surface-hover transition-colors"
-              >
-                {/* Left: Tie-aware Rank & Song Title / Artist */}
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <span className="text-xs font-bold text-muted w-7 text-right shrink-0">
-                    {showRank ? `${rank}.` : ""}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-sm text-primary hover:underline cursor-pointer truncate">
-                      {song.track_name}
-                    </div>
-                    <div className="text-xs text-muted truncate">{song.artist_name}</div>
-                  </div>
-                </div>
-
-                {/* Right: Inner-left bar count */}
-                <div className="flex items-center gap-2 shrink-0 w-32 sm:w-44 justify-end">
-                  <div className="w-full bg-surface-hover rounded h-5 flex items-center justify-start overflow-hidden">
-                    <div
-                      className="bg-primary text-white text-[11px] font-bold h-full rounded flex items-center justify-start pl-2 transition-all duration-300"
-                      style={{ width: `${barWidthPercent}%` }}
-                    >
-                      {song.count}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Numbered Pagination with Ellipsis */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-1.5 pt-2">
-          <button
-            type="button"
-            className="btn btn-secondary text-xs px-2.5 py-1 disabled:opacity-40"
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            title="Previous page"
-          >
-            &lsaquo;
-          </button>
-          {paginationPages.map((pg, pIdx) => {
-            if (pg === "...") {
-              return (
-                <span key={`ellipsis-${pIdx}`} className="text-xs px-1 text-muted">
-                  &hellip;
-                </span>
-              );
-            }
-            return (
-              <button
-                key={pg}
-                type="button"
-                className={`text-xs px-2.5 py-1 rounded font-semibold cursor-pointer transition-colors ${
-                  currentPage === pg
-                    ? "bg-primary text-white"
-                    : "bg-surface hover:bg-surface-hover text-ink border border-border"
-                }`}
-                onClick={() => setCurrentPage(pg)}
-              >
-                {pg}
-              </button>
-            );
-          })}
-          <button
-            type="button"
-            className="btn btn-secondary text-xs px-2.5 py-1 disabled:opacity-40"
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            title="Next page"
-          >
-            &rsaquo;
-          </button>
-        </div>
-      )}
     </div>
   );
 }

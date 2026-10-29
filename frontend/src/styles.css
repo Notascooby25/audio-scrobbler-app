@@ -5689,6 +5689,37 @@ button.sfm-page-btn:disabled:not(.active) {
   padding: 0 10px;
 }
 
+/* Songs: filter sidebar + table */
+.sfm-split {
+  display: grid;
+  gap: 32px;
+  grid-template-columns: 220px minmax(0, 1fr);
+}
+
+.sfm-split-main {
+  min-width: 0;
+}
+
+.sfm-sidebar h3 {
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.sfm-sidebar-group + .sfm-sidebar-group {
+  margin-top: 28px;
+}
+
+.sfm-sidebar ul {
+  line-height: 1.8;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+button.sfm-sidebar-toggle {
+  display: none;
+}
+
 /* Toast + API warning */
 .sfm-toast {
   background: var(--color-success);
@@ -5764,6 +5795,24 @@ button.sfm-page-btn:disabled:not(.active) {
 
   .sfm-row-detail {
     padding-left: 12px;
+  }
+
+  .sfm-split {
+    gap: 16px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  button.sfm-sidebar-toggle {
+    display: inline;
+  }
+
+  .sfm-sidebar-body {
+    display: none;
+    margin-top: 12px;
+  }
+
+  .sfm-sidebar-body.is-open {
+    display: block;
   }
 
   .sfm-gig {
