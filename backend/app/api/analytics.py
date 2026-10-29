@@ -5,7 +5,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from ..api.deps import get_current_user
+from ..api.deps import get_current_user, resolve_viewable_user_id
 from ..db import get_db
 from ..models import User
 from ..queries.analytics_queries import (
@@ -33,7 +33,6 @@ from ..schemas.analytics import (
     StatsResponse,
     TimelineResponse,
 )
-from ..services import social_service
 from ..services.analytics_service import (
     get_library_entities,
     get_library_scrobbles,
@@ -158,7 +157,7 @@ def recent_scrobbles(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ScrobbleListResponse:
-    target_user_id = _resolve_viewable_user_id(db, current_user, user_id)
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
     return get_recent_scrobbles(db, target_user_id, limit, offset)
 
 
@@ -176,7 +175,7 @@ def user_charts(
     if range not in CHART_RANGES:
         raise HTTPException(status_code=400, detail=f"Unsupported range: {range!r}")
 
-    target_user_id = _resolve_viewable_user_id(db, current_user, user_id)
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
     return get_user_charts(db, target_user_id, entity, range, limit)
 
 
@@ -186,17 +185,6 @@ def stats_summary(
     current_user: User = Depends(get_current_user),
 ) -> StatsResponse:
     return get_stats_summary(db, current_user.id)
-
-
-def _resolve_viewable_user_id(db: Session, current_user: User, user_id: int | None) -> int:
-    if user_id is None:
-        return current_user.id
-    target = social_service.get_active_user(db, user_id)
-    if target is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    if not social_service.can_view_details(db, current_user.id, user_id):
-        raise HTTPException(status_code=403, detail="This data is only visible to the owner or their followers")
-    return user_id
 
 
 def _resolve_optional_range(
@@ -284,7 +272,7 @@ def library_scrobbles(
         raise HTTPException(status_code=400, detail="Unsupported filter entity")
     if (filter_entity is None) != (filter_name is None):
         raise HTTPException(status_code=400, detail="filter_entity and filter_name must be provided together")
-    target_user_id = _resolve_viewable_user_id(db, current_user, user_id)
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
     period_start, period_end = _resolve_optional_range(range, start_date, end_date)
     kwargs = {"start": period_start, "end": period_end} if period_start is not None else {}
     if filter_entity is None:
@@ -315,7 +303,7 @@ def library_entities(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> LibraryResponse | TimelineResponse:
-    target_user_id = _resolve_viewable_user_id(db, current_user, user_id)
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
     if entity == "timeline":
         return get_scrobbles_timeline(db, target_user_id)
     if entity not in CHART_ENTITIES:
@@ -337,7 +325,7 @@ def reports_summary(
 ) -> ReportSummaryResponse:
     if range not in DATE_RANGE_PRESETS:
         raise HTTPException(status_code=400, detail=f"Unsupported range: {range!r}")
-    target_user_id = _resolve_viewable_user_id(db, current_user, user_id)
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
     try:
         return get_report_summary(db, target_user_id, range, start_date, end_date, compare_to_previous)
     except ValueError as exc:
@@ -355,7 +343,7 @@ def reports_charts(
 ) -> ReportChartsResponse:
     if range not in DATE_RANGE_PRESETS:
         raise HTTPException(status_code=400, detail=f"Unsupported range: {range!r}")
-    target_user_id = _resolve_viewable_user_id(db, current_user, user_id)
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
     try:
         return get_report_charts(db, target_user_id, range, start_date, end_date)
     except ValueError as exc:
@@ -393,7 +381,7 @@ def reports_entities(
         raise HTTPException(status_code=404, detail="Report collection not found")
     if range not in DATE_RANGE_PRESETS:
         raise HTTPException(status_code=400, detail=f"Unsupported range: {range!r}")
-    target_user_id = _resolve_viewable_user_id(db, current_user, user_id)
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
     try:
         period_start, period_end, _previous_start, _previous_end, _granularity = resolve_date_range(
             range, start_date, end_date
