@@ -197,3 +197,17 @@ def test_removing_a_companion_and_deleting_the_gig_withdraw_invites():
 def test_friend_list_is_limited_per_request():
     assert _invite([]).status_code == 422
     assert _invite(list(range(100, 121))).status_code == 422
+
+
+def test_removing_and_re_adding_someone_does_not_repeat_the_notification():
+    gig_id = _gig_id(ANDY)
+    for _ in range(3):
+        _invite([SAM])
+        client.delete(f"/setlists/attendances/{gig_id}/companions/{SAM}")
+    _invite([SAM])
+
+    db = TestingSession()
+    assert db.query(Notification).filter_by(user_id=SAM).count() == 1
+    db.close()
+    act_as(SAM)
+    assert len(client.get("/setlists/invites").json()) == 1

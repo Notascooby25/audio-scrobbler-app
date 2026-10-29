@@ -97,16 +97,11 @@ def add_companions(db: Session, owner: User, concert_id: int, friend_ids: list[i
                 friend_concert_id=own_copy.id if own_copy else None,
             )
         )
-        if own_copy is None:
-            db.add(
-                Notification(
-                    user_id=fid,
-                    title="Were you at this gig?",
-                    message=f"{owner.display_name} says you were at {_gig_label(gig)}. "
-                    "Add it to your gigs from Set Lists.",
-                    type="general",
-                )
-            )
+        message = f"{owner.display_name} says you were at {_gig_label(gig)}. Add it to your gigs from Set Lists."
+        # Removing and re-adding someone mustn't pile up the same unread notification
+        already_told = db.query(Notification).filter_by(user_id=fid, message=message, is_read=False).first()
+        if own_copy is None and already_told is None:
+            db.add(Notification(user_id=fid, title="Were you at this gig?", message=message, type="general"))
     db.commit()
     return list_companions(db, owner.id, gig.id)
 
