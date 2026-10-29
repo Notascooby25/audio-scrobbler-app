@@ -5797,6 +5797,32 @@ button.sfm-back {
   font-weight: 500;
 }
 
+.sfm-invites {
+  margin-bottom: 16px;
+}
+
+.sfm-picker {
+  margin-top: 8px;
+}
+
+.sfm-picker-filter {
+  font: inherit;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.sfm-picker-list {
+  list-style: none;
+  margin: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.sfm-picker-list li {
+  padding: 4px 0;
+}
+
 .sfm-notes-text {
   margin: 0;
   white-space: pre-line;

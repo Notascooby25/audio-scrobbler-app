@@ -19,6 +19,7 @@ import DeleteGigConfirmModal from "./DeleteGigConfirmModal";
 import GigSearchBar from "./GigSearchBar";
 import GigCard from "./GigCard";
 import SupportActsPromptModal from "./SupportActsPromptModal";
+import GigInvites from "./GigInvites";
 import MyGigsTimeline from "./MyGigsTimeline";
 import ArtistsSeenLeaderboard from "./ArtistsSeenLeaderboard";
 import SongsHeardLeaderboard from "./SongsHeardLeaderboard";
@@ -477,6 +478,7 @@ export default function SetlistsPage() {
 
         {activeTab === "gigs" && (
           <div>
+            <GigInvites token={token} onAdded={() => loadData()} />
             {isLoadingData ? (
               <div className="sfm-empty">Loading your gigs...</div>
             ) : (

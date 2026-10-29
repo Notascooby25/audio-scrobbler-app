@@ -11,6 +11,9 @@ vi.mock("../../api/setlists", () => ({
   deleteAttendance: vi.fn().mockResolvedValue({ deleted_count: 1 }),
   updateConcertNotes: vi.fn().mockResolvedValue({}),
   updateConcert: vi.fn(),
+  fetchGigCompanions: vi.fn().mockResolvedValue({ companions: [], following: [] }),
+  addGigCompanions: vi.fn(),
+  removeGigCompanion: vi.fn().mockResolvedValue(null),
   fetchGigBill: vi.fn().mockResolvedValue({ acts: [], complete: true, capped: false }),
   logBillAct: vi.fn(),
   alreadyLoggedInfo: (err) =>
@@ -191,6 +194,61 @@ describe("SetlistGigPage", () => {
       expect(setlistsApi.updateConcert).toHaveBeenLastCalledWith(
         expect.objectContaining({ allowDuplicate: true })
       )
+    );
+  });
+
+  it("adds people you follow to the gig, with ones who logged it first", async () => {
+    setlistsApi.fetchAttendance.mockResolvedValueOnce(gig);
+    setlistsApi.fetchGigCompanions.mockResolvedValueOnce({
+      companions: [{ user_id: 3, username: "jo", display_name: "Jo", status: "added" }],
+      following: [
+        { user_id: 2, username: "sam", display_name: "Sam", logged_it: false },
+        { user_id: 4, username: "kit", display_name: "Kit", logged_it: true },
+      ],
+    });
+    setlistsApi.addGigCompanions.mockResolvedValueOnce({
+      companions: [
+        { user_id: 3, username: "jo", display_name: "Jo", status: "added" },
+        { user_id: 2, username: "sam", display_name: "Sam", status: "pending" },
+      ],
+      following: [{ user_id: 4, username: "kit", display_name: "Kit", logged_it: true }],
+    });
+    renderGigPage();
+
+    const section = (await screen.findByRole("heading", { name: "Went with" })).closest("section");
+    expect(within(section).getByText("✓ Added it")).toBeInTheDocument();
+    fireEvent.click(within(section).getByRole("button", { name: "+ Add people" }));
+    expect(within(section).getByText("Logged this gig")).toBeInTheDocument();
+    fireEvent.click(within(section).getByLabelText("Sam"));
+    fireEvent.click(within(section).getByRole("button", { name: "Add (1)" }));
+
+    await waitFor(() =>
+      expect(setlistsApi.addGigCompanions).toHaveBeenCalledWith({
+        token: "test-token",
+        concertId: 12,
+        friendIds: [2],
+      })
+    );
+    expect(await within(section).findByText("Invited")).toBeInTheDocument();
+    fireEvent.click(within(section).getByRole("button", { name: "Remove Sam" }));
+    await waitFor(() =>
+      expect(setlistsApi.removeGigCompanion).toHaveBeenCalledWith({
+        token: "test-token",
+        concertId: 12,
+        friendId: 2,
+      })
+    );
+    expect(within(section).queryByText("Invited")).not.toBeInTheDocument();
+  });
+
+  it("hides Went with if it can't load", async () => {
+    setlistsApi.fetchAttendance.mockResolvedValueOnce(gig);
+    setlistsApi.fetchGigCompanions.mockRejectedValueOnce(new Error("boom"));
+    renderGigPage();
+
+    expect(await screen.findByText("Bombay Bicycle Club Setlist")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByRole("heading", { name: "Went with" })).not.toBeInTheDocument()
     );
   });
 

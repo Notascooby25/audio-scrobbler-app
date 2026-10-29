@@ -39,6 +39,7 @@ async function parseResponse(response) {
     error.detail = detail;
     throw error;
   }
+  if (response.status === 204) return null;
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("application/json")) {
     const text = await response.text().catch(() => "");
@@ -323,5 +324,47 @@ export async function importSetlistHistory({ token, username, setlistIds = null 
       ...(setlistIds ? { setlist_ids: setlistIds } : {}),
     }),
   });
+  return parseResponse(response);
+}
+
+export async function fetchGigCompanions({ token, concertId }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/attendances/${concertId}/companions`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function addGigCompanions({ token, concertId, friendIds }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/attendances/${concertId}/companions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ friend_ids: friendIds }),
+  });
+  return parseResponse(response);
+}
+
+export async function removeGigCompanion({ token, concertId, friendId }) {
+  const response = await fetch(
+    `${API_BASE_URL}/setlists/attendances/${concertId}/companions/${friendId}`,
+    { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
+  );
+  return parseResponse(response);
+}
+
+export async function fetchGigInvites({ token }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/invites`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function answerGigInvite({ token, inviteId, add }) {
+  const response = await fetch(
+    `${API_BASE_URL}/setlists/invites/${inviteId}/${add ? "add" : "dismiss"}`,
+    { method: "POST", headers: { Authorization: `Bearer ${token}` } }
+  );
   return parseResponse(response);
 }

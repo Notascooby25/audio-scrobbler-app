@@ -18,6 +18,8 @@ vi.mock("../../api/setlists", () => ({
   fetchSetlistStatus: vi
     .fn()
     .mockResolvedValue({ configured: true, daily_quota: 1400, daily_count: 0 }),
+  fetchGigInvites: vi.fn().mockResolvedValue([]),
+  answerGigInvite: vi.fn().mockResolvedValue(null),
   alreadyLoggedInfo: (err) =>
     err?.status === 409 && err?.detail?.code === "already_logged" ? err.detail : null,
 }));
@@ -65,6 +67,48 @@ describe("SetlistsPage", () => {
     // Switch to Log a Gig tab
     fireEvent.click(screen.getByRole("button", { name: /\+ log a gig/i }));
     expect(screen.getByPlaceholderText(/search artist/i)).toBeInTheDocument();
+  });
+
+  it("shows gig invites on My Gigs and adds one", async () => {
+    setlistsApi.fetchGigInvites.mockResolvedValueOnce([
+      {
+        id: 7,
+        from_user: { user_id: 1, username: "andy", display_name: "Andy" },
+        artist_name: "Doves",
+        venue_name: "Rock City",
+        city: "Nottingham",
+        country: "UK",
+        event_date: "2025-05-01T00:00:00",
+        tour_name: null,
+        song_count: 14,
+        support_acts: ["Support Band"],
+      },
+    ]);
+    render(
+      <MemoryRouter>
+        <SetlistsPage />
+      </MemoryRouter>
+    );
+
+    const invites = await screen.findByRole("region", { name: "Gig invites" });
+    expect(invites).toHaveTextContent(
+      "Andy says you were at Doves, Rock City, Nottingham on 1 May 2025 (with Support Band)"
+    );
+    const loadsBefore = setlistsApi.fetchAttendances.mock.calls.length;
+    fireEvent.click(within(invites).getByRole("button", { name: "Add to my gigs" }));
+
+    await waitFor(() =>
+      expect(setlistsApi.answerGigInvite).toHaveBeenCalledWith({
+        token: "test-token",
+        inviteId: 7,
+        add: true,
+      })
+    );
+    expect(await screen.findByText("Added Doves to your gigs.")).toBeInTheDocument();
+    // My Gigs reloads so the new gig appears
+    await waitFor(() =>
+      expect(setlistsApi.fetchAttendances.mock.calls.length).toBeGreaterThan(loadsBefore)
+    );
   });
 
   it("opens the tab named in the ?tab= query string", async () => {

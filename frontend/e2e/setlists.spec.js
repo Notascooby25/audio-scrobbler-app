@@ -84,4 +84,39 @@ test.describe('set lists', () => {
     await expect(page).toHaveURL(/\/setlists$/)
     await expect(page.getByRole('heading', { name: 'All Gigs (1)' })).toBeVisible()
   })
+  test('an invite from someone you follow adds the gig to My Gigs', async ({ page }) => {
+    let added = false
+    // Registered after the catch-all, so these win
+    await page.route('**/setlists/invites', (route) =>
+      route.fulfill({
+        json: added
+          ? []
+          : [
+              {
+                id: 3,
+                from_user: { user_id: 1, username: 'andy', display_name: 'Andy' },
+                artist_name: 'Doves',
+                venue_name: 'Rock City',
+                city: 'Nottingham',
+                country: 'UK',
+                event_date: '2025-05-01T00:00:00',
+                tour_name: null,
+                song_count: 2,
+                support_acts: [],
+              },
+            ],
+      })
+    )
+    await page.route('**/setlists/invites/3/add', (route) => {
+      added = true
+      return route.fulfill({ json: { ...gig, id: 8, artist_name: 'Doves' } })
+    })
+
+    await page.goto('/setlists')
+    const invites = page.getByRole('region', { name: 'Gig invites' })
+    await expect(invites).toContainText('Andy says you were at Doves, Rock City, Nottingham on 1 May 2025')
+    await invites.getByRole('button', { name: 'Add to my gigs' }).click()
+    await expect(page.getByText('Added Doves to your gigs.')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Add to my gigs' })).toHaveCount(0)
+  })
 })

@@ -10,6 +10,7 @@ import {
 } from "../../api/setlists";
 import DeleteGigConfirmModal from "./DeleteGigConfirmModal";
 import EditGigModal from "./EditGigModal";
+import GigCompanions from "./GigCompanions";
 import GigBill from "./GigBill";
 import SetlistAttribution from "./SetlistAttribution";
 import SetlistDateBadge, { isFutureDate, parseDateParts } from "./SetlistDateBadge";
@@ -299,6 +300,7 @@ export default function SetlistGigPage() {
             concertId={gig.id}
             token={token}
           />
+          <GigCompanions key={`with-${gig.id}`} concertId={gig.id} token={token} />
         </div>
       </div>
 
