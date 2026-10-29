@@ -20,11 +20,9 @@ describe("HeaderNav", () => {
       </MemoryRouter>
     );
 
-    ["Overview", "Library", "Set Lists", "Reports", "Profile", "Following", "Connect"].forEach(
-      (label) => {
-        expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
-      }
-    );
+    ["Overview", "Library", "Reports", "Set Lists", "Profile", "Connect"].forEach((label) => {
+      expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
+    });
   });
 
   it("marks the active page link based on the current route", () => {

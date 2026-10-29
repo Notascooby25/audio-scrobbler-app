@@ -1,128 +1,200 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import ProfilePage from './ProfilePage'
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import ProfilePage from "./ProfilePage";
 
-vi.mock('../api', () => ({
+vi.mock("../api", () => ({
   fetchUserProfile: vi.fn(),
   followUser: vi.fn(),
   unfollowUser: vi.fn(),
-  requestSpotifyAuthorization: vi.fn().mockResolvedValue({ authorization_url: 'https://accounts.spotify.com/authorize' }),
+  requestSpotifyAuthorization: vi
+    .fn()
+    .mockResolvedValue({ authorization_url: "https://accounts.spotify.com/authorize" }),
   redirectToAuthorization: vi.fn(),
   fetchSpotifyStatus: vi.fn().mockResolvedValue({ rate_limited: false, retry_after: null }),
-}))
+  fetchNowPlaying: vi.fn().mockResolvedValue(null),
+}));
 
-import { fetchSpotifyStatus, fetchUserProfile, followUser, redirectToAuthorization } from '../api'
+import { fetchSpotifyStatus, fetchUserProfile, followUser, redirectToAuthorization } from "../api";
 
 function renderProfile(routeUserId) {
-  const path = routeUserId ? `/profile/${routeUserId}` : '/profile'
+  const path = routeUserId ? `/profile/${routeUserId}` : "/profile";
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/profile/:userId" element={<ProfilePage />} />
       </Routes>
-    </MemoryRouter>,
-  )
+    </MemoryRouter>
+  );
 }
 
-describe('ProfilePage', () => {
+describe("ProfilePage", () => {
   afterEach(() => {
-    cleanup()
-  })
+    cleanup();
+  });
 
   beforeEach(() => {
-    localStorage.clear()
-    vi.clearAllMocks()
-  })
+    localStorage.clear();
+    vi.clearAllMocks();
+  });
 
-  it('shows a connect prompt when there is no saved session', () => {
-    renderProfile()
-    expect(screen.getByText('Sign in from the dashboard, or connect Spotify to create your profile.')).toBeInTheDocument()
-  })
+  it("shows a connect prompt when there is no saved session", () => {
+    renderProfile();
+    expect(
+      screen.getByText("Sign in from the dashboard, or connect Spotify to create your profile.")
+    ).toBeInTheDocument();
+  });
 
-  it('starts Spotify authorization from the connect button', async () => {
-    renderProfile()
-    fireEvent.click(screen.getByRole('button', { name: 'Connect Spotify' }))
-    await waitFor(() => expect(redirectToAuthorization).toHaveBeenCalledWith('https://accounts.spotify.com/authorize'))
-  })
+  it("starts Spotify authorization from the connect button", async () => {
+    renderProfile();
+    fireEvent.click(screen.getByRole("button", { name: "Connect Spotify" }));
+    await waitFor(() =>
+      expect(redirectToAuthorization).toHaveBeenCalledWith("https://accounts.spotify.com/authorize")
+    );
+  });
 
-  it('disables the Connect button while Spotify is rate-limited', async () => {
-    fetchSpotifyStatus.mockResolvedValueOnce({ rate_limited: true, retry_after: '2026-09-17T20:00:00Z' })
-    renderProfile()
+  it("disables the Connect button while Spotify is rate-limited", async () => {
+    fetchSpotifyStatus.mockResolvedValueOnce({
+      rate_limited: true,
+      retry_after: "2026-09-17T20:00:00Z",
+    });
+    renderProfile();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Connect Spotify' })).toBeDisabled())
-    expect(screen.getByText(/Spotify is rate-limiting this app/)).toBeInTheDocument()
-  })
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Connect Spotify" })).toBeDisabled()
+    );
+    expect(screen.getByText(/Spotify is rate-limiting this app/)).toBeInTheDocument();
+  });
 
-  it('hides the last scrobble from non-followers', async () => {
-    localStorage.setItem('audio-scrobbler-session', JSON.stringify({ userId: 1, accessToken: 'demo-token' }))
+  it("hides the last scrobble from non-followers", async () => {
+    localStorage.setItem(
+      "audio-scrobbler-session",
+      JSON.stringify({ userId: 1, accessToken: "demo-token" })
+    );
     fetchUserProfile.mockResolvedValue({
       id: 2,
-      username: 'music-fan',
-      display_name: 'Music Fan',
+      username: "music-fan",
+      display_name: "Music Fan",
       follower_count: 0,
       following_count: 0,
       is_self: false,
       is_following: false,
       can_view_details: false,
       last_scrobble: null,
-    })
+    });
 
-    renderProfile(2)
+    renderProfile(2);
 
-    await waitFor(() => expect(screen.getByText('@music-fan')).toBeInTheDocument())
-    expect(screen.getByText('Follow this user to see their last scrobbled track.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Follow' })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'View Library' })).not.toBeInTheDocument()
-  })
+    await waitFor(() => expect(screen.getByText("@music-fan")).toBeInTheDocument());
+    expect(
+      screen.getByText("Follow this user to see their last scrobbled track.")
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Follow" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "View Library" })).not.toBeInTheDocument();
+  });
 
-  it('reveals the last scrobble to followers', async () => {
-    localStorage.setItem('audio-scrobbler-session', JSON.stringify({ userId: 1, accessToken: 'demo-token' }))
+  it("reveals the last scrobble to followers", async () => {
+    localStorage.setItem(
+      "audio-scrobbler-session",
+      JSON.stringify({ userId: 1, accessToken: "demo-token" })
+    );
     fetchUserProfile.mockResolvedValue({
       id: 2,
-      username: 'music-fan',
-      display_name: 'Music Fan',
+      username: "music-fan",
+      display_name: "Music Fan",
       follower_count: 3,
       following_count: 1,
       is_self: false,
       is_following: true,
       can_view_details: true,
-      last_scrobble: { track_name: 'Slow Show', artist_name: 'The National', album_name: 'Trouble Will Find Me', source: 'spotify', played_at: '2026-01-15T12:30:00' },
-    })
+      last_scrobble: {
+        track_name: "Slow Show",
+        artist_name: "The National",
+        album_name: "Trouble Will Find Me",
+        source: "spotify",
+        played_at: "2026-01-15T12:30:00",
+      },
+    });
 
-    renderProfile(2)
+    renderProfile(2);
 
-    await waitFor(() => expect(screen.getByText('Slow Show', { exact: false })).toBeInTheDocument())
-    expect(screen.getByRole('button', { name: 'Unfollow' })).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getByText("Slow Show", { exact: false })).toBeInTheDocument()
+    );
+    expect(screen.getByRole("button", { name: "Unfollow" })).toBeInTheDocument();
 
-    expect(screen.getByRole('link', { name: 'View Library' })).toHaveAttribute('href', '/library?userId=2')
-    expect(screen.getByRole('link', { name: 'View Last 7 Days' })).toHaveAttribute('href', '/reports?userId=2&range=last.week')
-    expect(screen.getByRole('link', { name: 'View Last Month' })).toHaveAttribute('href', '/reports?userId=2&range=last.month')
-    expect(screen.getByRole('link', { name: 'View Last Year' })).toHaveAttribute('href', '/reports?userId=2&range=last.year')
-  })
+    expect(screen.getByRole("link", { name: "View Library" })).toHaveAttribute(
+      "href",
+      "/library?userId=2"
+    );
+    expect(screen.getByRole("link", { name: "View Last 7 Days" })).toHaveAttribute(
+      "href",
+      "/reports?userId=2&range=last.week"
+    );
+    expect(screen.getByRole("link", { name: "View Last Month" })).toHaveAttribute(
+      "href",
+      "/reports?userId=2&range=last.month"
+    );
+    expect(screen.getByRole("link", { name: "View Last Year" })).toHaveAttribute(
+      "href",
+      "/reports?userId=2&range=last.year"
+    );
+  });
 
-  it('toggles follow state when the follow button is clicked', async () => {
-    localStorage.setItem('audio-scrobbler-session', JSON.stringify({ userId: 1, accessToken: 'demo-token' }))
+  it("toggles follow state when the follow button is clicked", async () => {
+    localStorage.setItem(
+      "audio-scrobbler-session",
+      JSON.stringify({ userId: 1, accessToken: "demo-token" })
+    );
     fetchUserProfile.mockResolvedValue({
       id: 2,
-      username: 'music-fan',
-      display_name: 'Music Fan',
+      username: "music-fan",
+      display_name: "Music Fan",
       follower_count: 0,
       following_count: 0,
       is_self: false,
       is_following: false,
       can_view_details: false,
       last_scrobble: null,
-    })
-    followUser.mockResolvedValue({ following: true, follower_count: 1 })
+    });
+    followUser.mockResolvedValue({ following: true, follower_count: 1 });
 
-    renderProfile(2)
+    renderProfile(2);
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Follow' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Follow' }))
+    await waitFor(() => expect(screen.getByRole("button", { name: "Follow" })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Follow" }));
 
-    await waitFor(() => expect(followUser).toHaveBeenCalledWith({ token: 'demo-token', userId: 2 }))
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Unfollow' })).toBeInTheDocument())
-  })
-})
+    await waitFor(() =>
+      expect(followUser).toHaveBeenCalledWith({ token: "demo-token", userId: 2 })
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Unfollow" })).toBeInTheDocument()
+    );
+  });
+
+  it("renders Settings and Following buttons when viewing own profile", async () => {
+    localStorage.setItem(
+      "audio-scrobbler-session",
+      JSON.stringify({ userId: 1, accessToken: "demo-token" })
+    );
+    fetchUserProfile.mockResolvedValue({
+      id: 1,
+      username: "test-user",
+      display_name: "Test User",
+      follower_count: 5,
+      following_count: 3,
+      is_self: true,
+      is_following: false,
+      can_view_details: true,
+      last_scrobble: null,
+    });
+
+    renderProfile(1);
+
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("href", "/settings")
+    );
+    expect(screen.getByRole("link", { name: "Following" })).toHaveAttribute("href", "/following");
+  });
+});

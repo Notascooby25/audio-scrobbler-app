@@ -6,10 +6,9 @@ import { fetchUnreadNotificationCount } from "../api";
 const NAV_LINKS = [
   { to: "/overview", label: "Overview" },
   { to: "/library", label: "Library" },
-  { to: "/setlists", label: "Set Lists" },
   { to: "/reports", label: "Reports" },
+  { to: "/setlists", label: "Set Lists" },
   { to: "/profile", label: "Profile" },
-  { to: "/following", label: "Following" },
   { to: "/connect", label: "Connect" },
 ];
 
