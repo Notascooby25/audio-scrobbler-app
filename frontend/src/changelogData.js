@@ -1,5 +1,18 @@
 export const CHANGELOG = [
   {
+    version: "0.20.0",
+    date: "2026-10-29",
+    changes: [
+      "Fixed the Set Lists layout: the previous redesign used styling the app doesn't load, so rows stacked vertically and the bars were invisible. Every Set Lists page and dialog is now properly styled on desktop and mobile.",
+      "Setlist.fm-style statistics: Artists, Songs and Venues show rank (shared on ties), name and a light-blue proportional bar, and each row expands in place.",
+      "Songs Heard sidebar: filter the table to one year or one artist, and expand any song to see the gigs you heard it at.",
+      "Venues now expand to show every act you've seen at each venue.",
+      "Gig setlist pages: tap any gig to open its own page with the date, venue, tour, numbered songs and your notes. Refresh, Copy and Delete live here, and Back returns you to the exact list you came from.",
+      "Cleaner navigation: folder-style tabs with plain text links for + Log a Gig and Import / Export, and no more blue pill buttons on titles or rows.",
+      "Artists Seen is now sorted by times seen, then most recently seen, matching the page description.",
+    ],
+  },
+  {
     version: "0.19.1",
     date: "2026-10-29",
     changes: [
