@@ -27,7 +27,17 @@ export function parseDateParts(rawDate) {
     };
   }
 
-  // 2. Date object or standard parseable ISO string
+  // 2. "dd Mon yyyy" (stats API, e.g. "26 Sep 2026"); parsed by hand because Safari rejects it
+  const named =
+    typeof rawDate === "string" && rawDate.trim().match(/^(\d{1,2}) ([A-Za-z]{3}) (\d{4})$/);
+  if (named) {
+    const month = named[2].toUpperCase();
+    if (MONTH_NAMES.includes(month)) {
+      return { day: named[1].padStart(2, "0"), month, year: named[3] };
+    }
+  }
+
+  // 3. Date object or standard parseable ISO string
   const parsed = new Date(rawDate);
   if (!isNaN(parsed.getTime())) {
     return {

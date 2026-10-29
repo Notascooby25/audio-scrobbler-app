@@ -80,7 +80,8 @@ export default function SetlistsPage() {
   const [artistsLeaderboard, setArtistsLeaderboard] = useState([]);
   const [songsLeaderboard, setSongsLeaderboard] = useState([]);
   const [venuesLeaderboard, setVenuesLeaderboard] = useState([]);
-  const [isLoadingData, setIsLoadingData] = useState(false);
+  // Start in the loading state so empty-state text doesn't flash before the first fetch
+  const [isLoadingData, setIsLoadingData] = useState(Boolean(token));
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -520,14 +521,7 @@ export default function SetlistsPage() {
             {isLoadingData ? (
               <div className="sfm-empty">Loading artists seen...</div>
             ) : (
-              <ArtistsSeenLeaderboard
-                artists={artistsLeaderboard}
-                token={token}
-                onRefreshSetlist={handleRefreshSetlist}
-                onDeleteGig={handleDeleteConfirm}
-                onNotesSaved={handleNotesSaved}
-                isRefreshingId={isRefreshingId}
-              />
+              <ArtistsSeenLeaderboard artists={artistsLeaderboard} />
             )}
           </div>
         )}

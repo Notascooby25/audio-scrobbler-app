@@ -5477,6 +5477,10 @@ button.sfm-link.is-current {
 }
 
 /* Ranked tables with proportional bars */
+.sfm-table-wrap {
+  margin-top: 16px;
+}
+
 .sfm-table {
   border-top: 1px solid var(--color-border);
 }

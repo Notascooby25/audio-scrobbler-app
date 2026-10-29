@@ -7,6 +7,7 @@ import ImportExportModal from "./ImportExportModal";
 import MyGigsTimeline from "./MyGigsTimeline";
 import SetlistDetailModal from "./SetlistDetailModal";
 import GigCard from "./GigCard";
+import RankedBarList from "./RankedBarList";
 
 vi.mock("../../api/setlists", async (importOriginal) => {
   const actual = await importOriginal();
@@ -52,7 +53,11 @@ describe("SetlistsStats and Modals", () => {
       },
     ];
 
-    render(<ArtistsSeenLeaderboard artists={artists} />);
+    render(
+      <MemoryRouter>
+        <ArtistsSeenLeaderboard artists={artists} />
+      </MemoryRouter>
+    );
 
     expect(screen.getByText("Public Service Broadcasting")).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
@@ -311,8 +316,8 @@ describe("SetlistsStats and Modals", () => {
     expect(screen.getByText(/Hit Song/i)).toBeInTheDocument();
   });
 
-  it("supports in-place setlist drawer and inline delete confirmation in ArtistsSeenLeaderboard", async () => {
-    const onDeleteGig = vi.fn().mockResolvedValue(true);
+  it("opens a gig from an expanded artist row", () => {
+    const onOpenGig = vi.fn();
     const artists = [
       {
         artist_name: "Shed Seven",
@@ -320,52 +325,68 @@ describe("SetlistsStats and Modals", () => {
         gigs: [
           {
             id: 42,
+            setlist_id: "shed_42",
             date: "14 Nov 2026",
             venue: "O2 Academy Birmingham",
             city: "Birmingham",
             country: "United Kingdom",
             is_support: false,
             song_count: 3,
-            raw_data: {
-              id: "shed_42",
-              sets: { set: [{ song: [{ name: "Chasing Rainbows" }] }] },
-            },
           },
         ],
       },
     ];
 
     render(
-      <ArtistsSeenLeaderboard artists={artists} token="test_token" onDeleteGig={onDeleteGig} />
+      <MemoryRouter>
+        <ArtistsSeenLeaderboard artists={artists} onOpenGig={onOpenGig} />
+      </MemoryRouter>
     );
 
-    // Expand artist accordion
     fireEvent.click(screen.getByText("Shed Seven"));
-    expect(screen.getByText(/O2 Academy Birmingham/i)).toBeInTheDocument();
+    expect(screen.getByLabelText("14 NOV 2026")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /O2 Academy Birmingham, Birmingham/i }));
+    expect(onOpenGig).toHaveBeenCalledWith(42);
+  });
 
-    // Expand in-place tracklist drawer
-    const viewSongsBtn = screen.getByRole("button", { name: /view songs & notes/i });
-    fireEvent.click(viewSongsBtn);
-    expect(screen.getByText(/Chasing Rainbows/i)).toBeInTheDocument();
+  it("shows tie-aware ranks and proportional bars in RankedBarList", () => {
+    const items = [
+      { key: "a", label: "The Lottery Winners", count: 4 },
+      { key: "b", label: "Red Rum Club", count: 1 },
+      { key: "c", label: "The Black Keys", count: 1 },
+      { key: "d", label: "Doves", count: 2 },
+    ].sort((x, y) => y.count - x.count);
 
-    // Click inline Delete button
-    const deleteBtn = screen.getByRole("button", { name: /^delete$/i });
-    fireEvent.click(deleteBtn);
-
-    // Inline confirmation banner appears right here
-    expect(screen.getByText(/Remove this concert from your gigs\?/i)).toBeInTheDocument();
-    const supportCheckbox = screen.getByLabelText(
-      /also delete logged support acts for this night/i
+    const { container } = render(
+      <MemoryRouter>
+        <RankedBarList items={items} noun="artists" />
+      </MemoryRouter>
     );
-    expect(supportCheckbox).toBeChecked();
 
-    // Confirm delete
-    const confirmBtn = screen.getByRole("button", { name: /confirm delete/i });
-    fireEvent.click(confirmBtn);
+    const ranks = [...container.querySelectorAll(".sfm-rank")].map((el) => el.textContent);
+    expect(ranks).toEqual(["1", "2", "3", ""]);
+    const widths = [...container.querySelectorAll(".sfm-bar")].map((el) => el.style.width);
+    expect(widths).toEqual(["100%", "50%", "25%", "25%"]);
+  });
 
-    expect(onDeleteGig).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 42, artist_name: "Shed Seven" }),
-      true
+  it("paginates RankedBarList from the page query string", () => {
+    const items = Array.from({ length: 12 }, (_, i) => ({
+      key: `artist-${i}`,
+      label: `Artist ${i + 1}`,
+      count: 12 - i,
+    }));
+
+    render(
+      <MemoryRouter initialEntries={["/setlists?tab=artists&size=10&page=2"]}>
+        <RankedBarList items={items} noun="artists" />
+      </MemoryRouter>
     );
+
+    expect(screen.queryByText("Artist 1")).not.toBeInTheDocument();
+    expect(screen.getByText("Artist 11")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "2" })).toHaveAttribute("aria-current", "page");
+
+    fireEvent.click(screen.getByRole("button", { name: /previous page/i }));
+    expect(screen.getByText("Artist 1")).toBeInTheDocument();
   });
 });
