@@ -105,14 +105,25 @@ export async function fetchVenuesVisitedLeaderboard({ token }) {
   return parseResponse(response);
 }
 
-export async function importSetlistHistory({ token, username }) {
+export async function previewSetlistsImport({ token, username, page = 1 }) {
+  const params = new URLSearchParams({ username, page });
+  const response = await fetch(`${API_BASE_URL}/api/setlists/import/preview?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function importSetlistHistory({ token, username, setlistIds = null }) {
   const response = await fetch(`${API_BASE_URL}/api/setlists/import`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ username }),
+    body: JSON.stringify({
+      username,
+      ...(setlistIds ? { setlist_ids: setlistIds } : {}),
+    }),
   });
   return parseResponse(response);
 }

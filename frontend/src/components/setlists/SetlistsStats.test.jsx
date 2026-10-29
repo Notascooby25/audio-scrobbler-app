@@ -2,7 +2,12 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import ArtistsSeenLeaderboard from "./ArtistsSeenLeaderboard";
 import DeleteGigConfirmModal from "./DeleteGigConfirmModal";
+import ImportExportModal from "./ImportExportModal";
 import MyGigsTimeline from "./MyGigsTimeline";
+
+vi.mock("../../api/setlists", () => ({
+  previewSetlistsImport: vi.fn(),
+}));
 
 describe("SetlistsStats and Modals", () => {
   afterEach(() => {
@@ -122,5 +127,65 @@ describe("SetlistsStats and Modals", () => {
     const deleteBtn = screen.getByRole("button", { name: /delete/i });
     fireEvent.click(deleteBtn);
     expect(onDelete).toHaveBeenCalledWith(gigs[0]);
+  });
+
+  it("renders ImportExportModal and handles selective gig preview and import", async () => {
+    const onImport = vi.fn();
+    const onClose = vi.fn();
+
+    const { previewSetlistsImport } = await import("../../api/setlists");
+    vi.mocked(previewSetlistsImport).mockResolvedValueOnce({
+      total: 2,
+      page: 1,
+      total_pages: 1,
+      items: [
+        {
+          setlist_id: "show_1",
+          artist_name: "Foo Fighters",
+          venue_name: "London Stadium",
+          city: "London",
+          country: "United Kingdom",
+          event_date: "27-06-2024",
+          song_count: 20,
+          already_logged: false,
+        },
+        {
+          setlist_id: "show_2",
+          artist_name: "Green Day",
+          venue_name: "Wembley Stadium",
+          city: "London",
+          country: "United Kingdom",
+          event_date: "29-06-2024",
+          song_count: 30,
+          already_logged: true,
+        },
+      ],
+    });
+
+    render(
+      <ImportExportModal
+        isOpen={true}
+        onClose={onClose}
+        onImport={onImport}
+        isImporting={false}
+        token="test-token"
+      />
+    );
+
+    const input = screen.getByPlaceholderText(/Setlist\.fm username/i);
+    fireEvent.change(input, { target: { value: "crispylettuce" } });
+
+    const fetchBtn = screen.getByRole("button", { name: /fetch gigs/i });
+    fireEvent.click(fetchBtn);
+
+    expect(await screen.findByText("Foo Fighters")).toBeInTheDocument();
+    expect(screen.getByText("Green Day")).toBeInTheDocument();
+    expect(screen.getByText("Added")).toBeInTheDocument();
+
+    // Foo Fighters should be pre-selected (1 selected)
+    const importSelectedBtn = screen.getByRole("button", { name: /import selected \(1\)/i });
+    fireEvent.click(importSelectedBtn);
+
+    expect(onImport).toHaveBeenCalledWith("crispylettuce", ["show_1"]);
   });
 });

@@ -179,11 +179,11 @@ export default function SetlistsPage() {
     }
   };
 
-  const handleImportSubmit = async (username) => {
+  const handleImportSubmit = async (username, setlistIds = null) => {
     if (!token) return;
     setIsImporting(true);
     try {
-      const res = await importSetlistHistory({ token, username });
+      const res = await importSetlistHistory({ token, username, setlistIds });
       setIsImportExportOpen(false);
       if (res?.status === "completed") {
         showToast(`Imported ${res?.imported_count || 0} concerts from Setlist.fm!`);
