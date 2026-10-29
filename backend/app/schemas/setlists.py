@@ -109,6 +109,10 @@ class GigBillAct(BaseModel):
     song_count: int | None = None
 
 
+class LogBillActRequest(BaseModel):
+    setlist_id: str = Field(..., min_length=1, max_length=64)
+
+
 class GigBillResponse(BaseModel):
     acts: list[GigBillAct]
     # False when Setlist.fm couldn't be checked, so only logged acts are listed
