@@ -41,7 +41,9 @@ test.describe('date filtering', () => {
     const compareCheckbox = page.getByLabel('Compare to previous period')
     await expect(compareCheckbox).not.toBeChecked()
 
-    await compareCheckbox.check()
+    // The checkbox is visually hidden inside a styled toggle; click what the user sees
+    await page.getByText('Compare previous period', { exact: true }).click()
     await expect(compareCheckbox).toBeChecked()
+    await expect(page.getByText('Comparing previous period', { exact: true })).toBeVisible()
   })
 })
