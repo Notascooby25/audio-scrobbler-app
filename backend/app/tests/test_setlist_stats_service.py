@@ -373,3 +373,16 @@ def test_gig_bill_for_manual_gig_uses_only_logged_acts(db_session: Session):
 
     setlist_service.get_venue_date_setlists.assert_not_called()
     assert bill == {"acts": [], "complete": True, "capped": False}
+
+
+def test_gig_bill_skips_lookup_for_odd_venue_ids_from_imported_data(db_session: Session):
+    gig = _headliner_with_venue()
+    gig.raw_data = {"venue": {"id": "x" * 300 + "/../user"}}
+    db_session.add(gig)
+    db_session.commit()
+    setlist_service = MagicMock()
+
+    bill = SetlistStatsService(db=db_session).get_gig_bill(1, gig, setlist_service)
+
+    setlist_service.get_venue_date_setlists.assert_not_called()
+    assert bill["complete"] is False

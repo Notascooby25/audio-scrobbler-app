@@ -110,7 +110,8 @@ class GigBillAct(BaseModel):
 
 
 class LogBillActRequest(BaseModel):
-    setlist_id: str = Field(..., min_length=1, max_length=64)
+    # Setlist.fm ids are short alphanumerics; anything else never reaches the API path
+    setlist_id: str = Field(..., min_length=1, max_length=32, pattern=r"^[0-9A-Za-z_-]+$")
 
 
 class GigBillResponse(BaseModel):

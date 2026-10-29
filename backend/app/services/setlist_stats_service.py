@@ -16,6 +16,7 @@ from ..models import AttendedConcert, ListeningEvent
 from .setlist_service import SetlistApiAuthError, SetlistApiKeyMissingError, SetlistRateLimitError
 
 BILL_LIMIT = 10
+_SETLIST_FM_ID = re.compile(r"[0-9A-Za-z_-]{1,32}")
 
 
 def _display_date(value: datetime | None) -> str:
@@ -148,10 +149,12 @@ class SetlistStatsService:
         capped = False
         raw = gig.raw_data if isinstance(gig.raw_data, dict) else {}
         venue_id = raw.get("venue", {}).get("id") if isinstance(raw.get("venue"), dict) else None
+        # Stored data can come from an imported file, so only look up real-looking venue ids
+        venue_id = str(venue_id) if venue_id is not None and _SETLIST_FM_ID.fullmatch(str(venue_id)) else None
         if venue_id and night and not gig.setlist_id.startswith("manual-"):
             try:
                 listed = setlist_service.get_venue_date_setlists(
-                    venue_id=str(venue_id),
+                    venue_id=venue_id,
                     event_date_str=night.strftime("%d-%m-%Y"),
                     exclude_setlist_id=gig.setlist_id,
                 )

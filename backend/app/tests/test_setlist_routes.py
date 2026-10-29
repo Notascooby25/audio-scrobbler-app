@@ -492,5 +492,7 @@ def test_log_bill_act_is_owner_only():
     theirs = _add_gig(7, "hl_theirs", "Doves")
     with patch("backend.app.api.setlists.SetlistService") as MockServiceCls:
         MockServiceCls.return_value.get_setlist.return_value = _bill_setlist("sp_x", "Someone")
-        res = client.post(f"/setlists/attendances/{theirs}/bill", json={"setlist_id": "sp_x"})
+        res = client.post(f"/setlists/attendances/{theirs}/bill", json={"setlist_id": "spx"})
     assert res.status_code == 404
+    mine = _add_gig(42, "hl_mine", "Elbow")
+    assert client.post(f"/setlists/attendances/{mine}/bill", json={"setlist_id": "../user/x"}).status_code == 422
