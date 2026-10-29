@@ -139,8 +139,28 @@ def test_api_key_auth_rejection_raises_error(db_session: Session):
 
 def test_sanitize_setlist_username():
     assert sanitize_setlist_username("crispylettuce") == "crispylettuce"
-    assert sanitize_setlist_username("Crispylettuce") == "crispylettuce"
+    assert sanitize_setlist_username("Crispylettuce") == "Crispylettuce"
     assert sanitize_setlist_username("https://www.setlist.fm/user/crispylettuce") == "crispylettuce"
-    assert sanitize_setlist_username("https://www.setlist.fm/user/crispylettuce/") == "crispylettuce"
+    assert sanitize_setlist_username("https://www.setlist.fm/user/Crispylettuce/") == "Crispylettuce"
+    assert sanitize_setlist_username("https://www.setlist.fm/attended/crispylettuce") == "crispylettuce"
+    assert sanitize_setlist_username("https://www.setlist.fm/attended/Crispylettuce/") == "Crispylettuce"
     assert sanitize_setlist_username("https://www.setlist.fm/concerts/crispylettuce") == "crispylettuce"
-    assert sanitize_setlist_username("  CRISPYLETTUCE/  ") == "crispylettuce"
+    assert sanitize_setlist_username("  CRISPYLETTUCE/  ") == "CRISPYLETTUCE"
+
+
+def test_get_user_attended_multi_casing_fallback(db_session: Session):
+    service = SetlistService(db=db_session, api_key="test_key")
+
+    with patch.object(service, "_request") as mock_req:
+        # First call with lowercase returns empty, second call with Capitalized returns results
+        mock_req.side_effect = [
+            {"total": 0, "setlist": []},
+            {"total": 5, "setlist": [{"id": "show_1"}]},
+        ]
+
+        data = service.get_user_attended("crispylettuce")
+        assert data["total"] == 5
+        assert len(data["setlist"]) == 1
+        assert mock_req.call_count == 2
+        assert mock_req.call_args_list[0][0][0] == "/user/crispylettuce/attended"
+        assert mock_req.call_args_list[1][0][0] == "/user/Crispylettuce/attended"

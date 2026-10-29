@@ -1,5 +1,15 @@
 export const CHANGELOG = [
   {
+    version: "0.15.4",
+    date: "2026-10-29",
+    changes: [
+      "Fixed Setlist.fm username casing resolution: preserves exact casing and transparently queries candidate casing variations (raw, Capitalized, lowercase) to accommodate Setlist.fm API case-sensitivity.",
+      "Added support for Setlist.fm '/attended/' URL paths in profile link input.",
+      "Added diagnostic request and response logging for Setlist.fm HTTP calls in container logs.",
+      "Refined concert search empty-state messaging to suggest checking earlier tour years if results are not found.",
+    ],
+  },
+  {
     version: "0.15.3",
     date: "2026-10-29",
     changes: [

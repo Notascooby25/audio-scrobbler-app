@@ -368,8 +368,8 @@ export default function SetlistsPage() {
               {hasSearched ? (
                 <span>
                   No concerts found matching &quot;<strong>{lastSearchQuery}</strong>&quot;. Try
-                  checking the artist spelling, clearing the venue/year filter, or selecting
-                  &quot;All Countries&quot;.
+                  checking the artist spelling, clearing the venue or year filter (the tour may have
+                  taken place in a different year), or selecting &quot;All Countries&quot;.
                 </span>
               ) : (
                 <span>

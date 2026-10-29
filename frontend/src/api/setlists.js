@@ -5,6 +5,8 @@ export function cleanSetlistUsername(input) {
   let cleaned = input.trim();
   if (cleaned.includes("setlist.fm/user/")) {
     cleaned = cleaned.split("setlist.fm/user/").pop();
+  } else if (cleaned.includes("setlist.fm/attended/")) {
+    cleaned = cleaned.split("setlist.fm/attended/").pop();
   } else if (cleaned.includes("setlist.fm/concerts/")) {
     cleaned = cleaned.split("setlist.fm/concerts/").pop();
   }
@@ -13,7 +15,7 @@ export function cleanSetlistUsername(input) {
     .split("/")[0]
     .split("?")[0]
     .trim();
-  return cleaned.toLowerCase();
+  return cleaned;
 }
 
 async function parseResponse(response) {

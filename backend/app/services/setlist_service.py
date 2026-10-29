@@ -5,6 +5,7 @@ import os
 import time
 from datetime import datetime, timedelta
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 from sqlalchemy.orm import Session
@@ -35,16 +36,25 @@ class SetlistUserNotFoundError(Exception):
 
 
 def sanitize_setlist_username(raw: str) -> str:
-    """Extract and normalize a Setlist.fm username from a username or full profile URL."""
+    """Extract and normalize a Setlist.fm username from a username or full profile URL.
+
+    Preserves exact casing because Setlist.fm's REST API is case-sensitive on usernames.
+    Supports /user/<username>, /attended/<username>, and /concerts/<username> URLs.
+    """
     if not raw:
         return ""
     cleaned = raw.strip()
-    if "setlist.fm/user/" in cleaned:
-        cleaned = cleaned.split("setlist.fm/user/")[-1]
-    elif "setlist.fm/concerts/" in cleaned:
-        cleaned = cleaned.split("setlist.fm/concerts/")[-1]
+    if "setlist.fm" in cleaned:
+        if not cleaned.startswith(("http://", "https://")):
+            cleaned = "https://" + cleaned
+        parsed = urlparse(cleaned)
+        parts = [p for p in parsed.path.split("/") if p]
+        if len(parts) >= 2 and parts[0] in ("user", "attended", "concerts"):
+            return parts[1]
+        elif len(parts) == 1:
+            return parts[0]
     cleaned = cleaned.strip("/").split("/")[0].split("?")[0].strip()
-    return cleaned.lower()
+    return cleaned
 
 
 class SetlistService:
@@ -114,7 +124,9 @@ class SetlistService:
         url = f"{SETLIST_FM_BASE_URL}{endpoint}"
 
         try:
+            logger.info("Setlist.fm API request: GET %s (params=%s)", url, params)
             resp = httpx.get(url, headers=headers, params=params, timeout=15.0)
+            logger.info("Setlist.fm API response [%s] for %s: %s", resp.status_code, url, resp.text[:250])
             if resp.status_code == 404:
                 if endpoint.startswith("/user/"):
                     raise SetlistUserNotFoundError("User not found or has no public attended concerts on Setlist.fm.")
@@ -238,4 +250,37 @@ class SetlistService:
         cleaned_username = sanitize_setlist_username(username)
         if not cleaned_username:
             raise SetlistUserNotFoundError("Invalid Setlist.fm username.")
-        return self._request(f"/user/{cleaned_username}/attended", params={"p": p})
+
+        # Candidate casings: exact as provided, Capitalized, and lowercase.
+        # Setlist.fm's REST API is case-sensitive on usernames.
+        casings: list[str] = []
+        for c in [
+            cleaned_username,
+            cleaned_username.capitalize(),
+            cleaned_username.lower(),
+        ]:
+            if c and c not in casings:
+                casings.append(c)
+
+        last_data: dict[str, Any] | None = None
+        last_exc: Exception | None = None
+
+        for candidate in casings:
+            try:
+                data = self._request(f"/user/{candidate}/attended", params={"p": p})
+                total = int(data.get("total", 0)) if isinstance(data, dict) else 0
+                setlists = data.get("setlist", []) if isinstance(data, dict) else []
+                if total > 0 or len(setlists) > 0:
+                    logger.info("Setlist.fm found %s shows with username casing '%s'", total, candidate)
+                    return data
+                if last_data is None:
+                    last_data = data
+            except SetlistUserNotFoundError as exc:
+                last_exc = exc
+                continue
+
+        if last_data is not None:
+            return last_data
+        if last_exc:
+            raise last_exc
+        return {"total": 0, "setlist": []}
