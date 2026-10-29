@@ -57,30 +57,29 @@ export default function GigSearchBar({ onSearch, isLoading }) {
     });
   };
 
+  const field = (label, control) => (
+    <label>
+      {label}
+      {control}
+    </label>
+  );
+
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="card p-4 mb-4"
-      style={{ border: "0.5px solid var(--color-border)" }}
-    >
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-3">
-        <div>
-          <label className="block text-xs uppercase tracking-wide text-muted mb-1">
-            Artist / Tour
-          </label>
+    <form onSubmit={handleSubmit} className="sfm-search">
+      <div className="sfm-form-grid">
+        {field(
+          "Artist / Tour",
           <input
             type="text"
-            className="input-field w-full"
             placeholder="Search artist or paste Setlist.fm link / ID"
             aria-label="Artist / Tour"
             value={artistName}
             onChange={(e) => setArtistName(e.target.value)}
           />
-        </div>
-        <div>
-          <label className="block text-xs uppercase tracking-wide text-muted mb-1">Country</label>
+        )}
+        {field(
+          "Country",
           <select
-            className="input-field w-full"
             aria-label="Country"
             value={countryCode}
             onChange={(e) => setCountryCode(e.target.value)}
@@ -91,53 +90,42 @@ export default function GigSearchBar({ onSearch, isLoading }) {
               </option>
             ))}
           </select>
-        </div>
-        <div>
-          <label className="block text-xs uppercase tracking-wide text-muted mb-1">Venue</label>
+        )}
+        {field(
+          "Venue",
           <input
             type="text"
-            className="input-field w-full"
             placeholder="Filter venue (e.g. Anfield)"
             aria-label="Venue"
             value={venueName}
             onChange={(e) => setVenueName(e.target.value)}
           />
-        </div>
-        <div>
-          <label className="block text-xs uppercase tracking-wide text-muted mb-1">Month</label>
-          <select
-            className="input-field w-full"
-            aria-label="Month"
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-          >
+        )}
+        {field(
+          "Month",
+          <select aria-label="Month" value={month} onChange={(e) => setMonth(e.target.value)}>
             {MONTHS.map((m) => (
               <option key={m.value} value={m.value}>
                 {m.label}
               </option>
             ))}
           </select>
-        </div>
-        <div>
-          <label className="block text-xs uppercase tracking-wide text-muted mb-1">Year</label>
+        )}
+        {field(
+          "Year",
           <input
             type="number"
-            className="input-field w-full"
-            placeholder="Year (optional, e.g. 2024)"
+            placeholder="e.g. 2024"
             aria-label="Year"
             value={year}
             onChange={(e) => setYear(e.target.value)}
             min="1950"
             max="2030"
           />
-        </div>
+        )}
       </div>
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={isLoading || (!artistName.trim() && !venueName.trim())}
-        >
+      <div className="sfm-form-actions">
+        <button type="submit" disabled={isLoading || (!artistName.trim() && !venueName.trim())}>
           {isLoading ? "Searching..." : "Search"}
         </button>
       </div>

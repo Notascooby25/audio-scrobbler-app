@@ -273,7 +273,7 @@ describe("SetlistsPage", () => {
     });
   });
 
-  it("renders in-place songs accordion when View Songs is clicked on a card", async () => {
+  it("expands a search result's songs in place", async () => {
     setlistsApi.searchSetlists.mockResolvedValueOnce({
       total: 1,
       setlist: [
@@ -312,16 +312,16 @@ describe("SetlistsPage", () => {
       ).toBeInTheDocument();
     });
 
-    // Click "View Songs →"
-    const viewSongsBtn = screen.getByRole("button", { name: /view songs →/i });
-    fireEvent.click(viewSongsBtn);
+    // The result title expands the songs inline
+    fireEvent.click(
+      screen.getByRole("button", { name: /Public Service Broadcasting at Alexandra Palace/i })
+    );
 
-    // Accordion should expand inline showing the song list and copy button
     await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Main Set" })).toBeInTheDocument();
       expect(screen.getByText("Spitfire")).toBeInTheDocument();
       expect(screen.getByText("Theme from PSB")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /copy setlist/i })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /▲ hide songs/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /hide songs/i })).toBeInTheDocument();
     });
   });
 

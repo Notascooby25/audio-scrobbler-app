@@ -306,100 +306,72 @@ export default function SetlistsPage() {
         {/* Main Tab Content */}
         {activeTab === "log" && (
           <div>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-              <span className="text-xs text-muted">
-                Search Setlist.fm or paste direct show link / ID:
-              </span>
-              <button
-                type="button"
-                className="text-xs text-primary hover:underline font-bold cursor-pointer bg-transparent border-0 p-0 text-left sm:text-right"
-                onClick={() => setIsManualModalOpen(true)}
-              >
-                + Add Upcoming Show Manually
-              </button>
+            <div className="sfm-section-head">
+              <h2>Log a Gig</h2>
+              <div className="sfm-search-hint">
+                <p className="sfm-section-desc">
+                  Search Setlist.fm, or paste a show&apos;s Setlist.fm link or ID.
+                </p>
+                <button
+                  type="button"
+                  className="sfm-link"
+                  onClick={() => setIsManualModalOpen(true)}
+                >
+                  + Add Upcoming Show Manually
+                </button>
+              </div>
             </div>
 
             <GigSearchBar onSearch={handleSearch} isLoading={isSearching} />
 
             {searchError && (
-              <div className="card p-4 mb-4 text-danger bg-danger-soft text-sm">{searchError}</div>
+              <p className="sfm-error" role="alert">
+                {searchError}
+              </p>
             )}
 
-            {isSearching && (
-              <div className="text-center py-10 text-muted text-sm">Searching Setlist.fm...</div>
-            )}
+            {isSearching && <p className="sfm-empty">Searching Setlist.fm...</p>}
 
             {!isSearching && searchResults.length > 0 && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between text-xs text-muted uppercase tracking-wider">
-                  <span>Found {totalSearchResults || searchResults.length} Results</span>
+              <div>
+                <div className="sfm-results-head">
+                  <span>Found {totalSearchResults || searchResults.length} results</span>
                   <span>
                     Showing {searchResults.length} of {totalSearchResults || searchResults.length}
                   </span>
                 </div>
 
-                {/* Upcoming Shows Group */}
-                {searchResults.some((s) => isFutureDate(s.eventDate)) && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-3 pb-1 border-b border-border">
-                      <h2 className="text-sm font-bold text-ink uppercase tracking-wider">
-                        Upcoming Shows
-                      </h2>
-                      <span className="badge text-[11px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-                        {searchResults.filter((s) => isFutureDate(s.eventDate)).length}
-                      </span>
-                    </div>
-                    <div>
-                      {searchResults
-                        .filter((s) => isFutureDate(s.eventDate))
-                        .map((setlist) => (
+                {[
+                  ["Upcoming Shows", searchResults.filter((s) => isFutureDate(s.eventDate))],
+                  ["Past Shows", searchResults.filter((s) => !isFutureDate(s.eventDate))],
+                ]
+                  .filter(([, group]) => group.length > 0)
+                  .map(([title, group], _idx, groups) => (
+                    <div key={title} className="sfm-results-group">
+                      {/* Only label the groups when results span both */}
+                      {(groups.length > 1 || title === "Upcoming Shows") && (
+                        <h3>
+                          {title} ({group.length})
+                        </h3>
+                      )}
+                      <div className="sfm-gig-list">
+                        {group.map((setlist) => (
                           <GigCard
                             key={setlist.id}
                             setlist={setlist}
-                            token={token}
                             onLogAttendance={handleOpenAttendanceModal}
                             isLogging={isLogging}
                           />
                         ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Past Shows Group */}
-                {searchResults.some((s) => !isFutureDate(s.eventDate)) && (
-                  <div>
-                    {searchResults.some((s) => isFutureDate(s.eventDate)) && (
-                      <div className="flex items-center gap-2 mb-3 pb-1 border-b border-border">
-                        <h2 className="text-sm font-bold text-ink uppercase tracking-wider">
-                          Past Shows
-                        </h2>
-                        <span className="badge text-[11px] font-bold px-2 py-0.5 rounded bg-surface-hover text-muted border border-border">
-                          {searchResults.filter((s) => !isFutureDate(s.eventDate)).length}
-                        </span>
                       </div>
-                    )}
-                    <div>
-                      {searchResults
-                        .filter((s) => !isFutureDate(s.eventDate))
-                        .map((setlist) => (
-                          <GigCard
-                            key={setlist.id}
-                            setlist={setlist}
-                            token={token}
-                            onLogAttendance={handleOpenAttendanceModal}
-                            isLogging={isLogging}
-                          />
-                        ))}
                     </div>
-                  </div>
-                )}
+                  ))}
 
-                {/* Pagination Button: View More Shows */}
                 {searchResults.length < totalSearchResults && (
-                  <div className="text-center pt-2">
+                  <div className="sfm-load-more">
                     <button
                       type="button"
-                      className="btn btn-secondary px-5 py-2 text-xs font-bold"
+                      className="sfm-action"
                       onClick={handleLoadMore}
                       disabled={isLoadingMore}
                     >
@@ -411,7 +383,7 @@ export default function SetlistsPage() {
             )}
 
             {!isSearching && searchResults.length === 0 && !searchError && (
-              <div className="card p-8 text-center text-muted text-sm space-y-3">
+              <div className="sfm-empty">
                 {hasSearched ? (
                   <>
                     <p>
@@ -419,33 +391,20 @@ export default function SetlistsPage() {
                       checking the artist spelling, clearing the venue or year filter (the tour may
                       have taken place in a different year), or selecting &quot;All Countries&quot;.
                     </p>
-                    <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+                    <p>
+                      Upcoming tour dates not yet on Setlist.fm? Paste the show&apos;s Setlist.fm
+                      link above, or{" "}
                       <button
                         type="button"
-                        className="btn btn-primary text-xs px-3 py-1.5 font-bold"
+                        className="sfm-link"
                         onClick={() => setIsManualModalOpen(true)}
                       >
                         + Add Upcoming / Custom Show Manually
                       </button>
-                    </div>
-                    <p className="text-[11px] text-muted">
-                      Upcoming tour dates not yet on Setlist.fm? You can paste their direct
-                      Setlist.fm show link into the search bar, or add them manually above.
                     </p>
                   </>
                 ) : (
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
-                    <span>
-                      Search for an artist or venue above to find your concert and log attendance.
-                    </span>
-                    <button
-                      type="button"
-                      className="btn btn-secondary text-xs px-3 py-1.5 shrink-0"
-                      onClick={() => setIsManualModalOpen(true)}
-                    >
-                      + Add Show Manually
-                    </button>
-                  </div>
+                  <p>Search for an artist or venue above to find your concert and log it.</p>
                 )}
               </div>
             )}

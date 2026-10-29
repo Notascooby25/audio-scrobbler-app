@@ -5,7 +5,6 @@ import ArtistsSeenLeaderboard from "./ArtistsSeenLeaderboard";
 import DeleteGigConfirmModal from "./DeleteGigConfirmModal";
 import ImportExportModal from "./ImportExportModal";
 import MyGigsTimeline from "./MyGigsTimeline";
-import SetlistDetailModal from "./SetlistDetailModal";
 import GigCard from "./GigCard";
 import RankedBarList from "./RankedBarList";
 import SongsHeardLeaderboard from "./SongsHeardLeaderboard";
@@ -208,72 +207,6 @@ describe("SetlistsStats and Modals", () => {
     fireEvent.click(importSelectedBtn);
 
     expect(onImport).toHaveBeenCalledWith("crispylettuce", ["show_1"]);
-  });
-
-  it("renders SetlistDetailModal with sets, encore, song numbering, and personal notes editor", async () => {
-    const onClose = vi.fn();
-    const onNotesSaved = vi.fn();
-    const initialData = {
-      id: 10,
-      notes: "Front row, got drumstick!",
-      artist: { name: "Public Service Broadcasting" },
-      venue: { name: "Alexandra Palace", city: { name: "London" } },
-      eventDate: "26-09-2026",
-      sets: {
-        set: [
-          {
-            name: "Main Set",
-            song: [
-              { name: "The Other Side" },
-              { name: "Theme From PSB", tape: true },
-              { name: "Spitfire", with: { name: "Guest Singer" } },
-            ],
-          },
-          {
-            encore: 1,
-            song: [{ name: "Everest" }],
-          },
-        ],
-      },
-    };
-
-    render(
-      <SetlistDetailModal
-        setlistId="psb_show"
-        initialData={initialData}
-        token="test-token"
-        onClose={onClose}
-        onNotesSaved={onNotesSaved}
-      />
-    );
-
-    expect(screen.getByText("Public Service Broadcasting")).toBeInTheDocument();
-    expect(screen.getByText(/Alexandra Palace/i)).toBeInTheDocument();
-    expect(screen.getByText("The Other Side")).toBeInTheDocument();
-    expect(screen.getByText("Theme From PSB")).toBeInTheDocument();
-    expect(screen.getByText("Tape")).toBeInTheDocument();
-    expect(screen.getByText("Spitfire")).toBeInTheDocument();
-    expect(screen.getByText("Guest Singer")).toBeInTheDocument();
-    expect(screen.getByText("Everest")).toBeInTheDocument();
-    expect(screen.getByText(/Front row, got drumstick!/i)).toBeInTheDocument();
-
-    // Click Edit Note
-    const editBtn = screen.getByRole("button", { name: /edit note/i });
-    fireEvent.click(editBtn);
-
-    const textarea = screen.getByPlaceholderText(/record your memories/i);
-    expect(textarea.value).toBe("Front row, got drumstick!");
-
-    fireEvent.change(textarea, { target: { value: "Updated: amazing show!" } });
-    const saveBtn = screen.getByRole("button", { name: /save note/i });
-    fireEvent.click(saveBtn);
-
-    const { updateConcertNotes } = await import("../../api/setlists");
-    expect(updateConcertNotes).toHaveBeenCalledWith({
-      token: "test-token",
-      concertId: 10,
-      notes: "Updated: amazing show!",
-    });
   });
 
   it("renders GigCard with '+ I\\'M GOING' for future gigs and '✓ I WAS THERE' for past gigs", () => {

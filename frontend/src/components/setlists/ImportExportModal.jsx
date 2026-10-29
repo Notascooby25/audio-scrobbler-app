@@ -99,39 +99,29 @@ export default function ImportExportModal({ isOpen, onClose, onImport, isImporti
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
-      style={{ backdropFilter: "blur(2px)" }}
-    >
+    <div className="modal-backdrop">
       <div
-        className="card w-full max-w-2xl p-6 space-y-6 max-h-[90vh] overflow-y-auto"
-        style={{
-          border: "0.5px solid var(--color-border)",
-          backgroundColor: "var(--color-surface)",
-        }}
+        className="modal-dialog sfm-modal sfm-modal-wide"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="import-export-title"
       >
-        <div className="flex justify-between items-center pb-2 border-b border-border">
-          <h3 className="text-lg font-bold">Import & Export Set Lists</h3>
-          <button
-            type="button"
-            className="text-muted hover:text-ink text-xl font-bold cursor-pointer"
-            onClick={onClose}
-          >
+        <div className="sfm-modal-head">
+          <h3 id="import-export-title">Import & Export Set Lists</h3>
+          <button type="button" className="sfm-close" onClick={onClose} aria-label="Close">
             &times;
           </button>
         </div>
 
-        {/* 1. Historical Setlist.fm Import */}
-        <div>
-          <h4 className="font-semibold text-sm mb-1">Import from Setlist.fm Profile</h4>
-          <p className="text-xs text-muted mb-3">
+        <section className="sfm-modal-section">
+          <h4>Import from Setlist.fm Profile</h4>
+          <p>
             Enter a Setlist.fm username (or profile URL) to preview shows and select the exact
             concerts you attended:
           </p>
-          <div className="flex gap-2 mb-3">
+          <div className="sfm-inline-form">
             <input
               type="text"
-              className="input-field flex-1 text-sm"
               placeholder="Setlist.fm username or URL (e.g. crispylettuce)"
               aria-label="Setlist.fm username or URL"
               value={username}
@@ -140,7 +130,6 @@ export default function ImportExportModal({ isOpen, onClose, onImport, isImporti
             />
             <button
               type="button"
-              className="btn btn-primary text-xs"
               onClick={() => handleFetchPreview(1)}
               disabled={isImporting || isFetchingPreview || !username.trim()}
             >
@@ -149,107 +138,75 @@ export default function ImportExportModal({ isOpen, onClose, onImport, isImporti
           </div>
 
           {previewError && (
-            <div className="notice notice-error text-xs mb-3" role="alert">
+            <p className="sfm-error" role="alert">
               {previewError}
-            </div>
+            </p>
           )}
 
-          {/* Interactive Gig Preview List */}
           {previewData && (
-            <div
-              className="p-3 rounded mb-3 space-y-3"
-              style={{
-                border: "0.5px solid var(--color-border)",
-                backgroundColor: "var(--color-canvas, #f9fafb)",
-              }}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                <span className="font-medium text-muted">
+            <div>
+              <div className="sfm-preview-bar">
+                <span className="sfm-gig-meta">
                   Found {previewData.total} shows (Page {previewData.page} of{" "}
                   {previewData.total_pages})
                 </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="text-xs text-primary underline cursor-pointer bg-transparent border-0 p-0"
-                    onClick={handleSelectAll}
-                  >
+                <div>
+                  <button type="button" className="sfm-link" onClick={handleSelectAll}>
                     Select All
                   </button>
-                  <span className="text-muted">|</span>
-                  <button
-                    type="button"
-                    className="text-xs text-muted underline cursor-pointer bg-transparent border-0 p-0"
-                    onClick={handleDeselectAll}
-                  >
+                  <button type="button" className="sfm-link is-muted" onClick={handleDeselectAll}>
                     Deselect All
                   </button>
-                  <span className="font-semibold ml-2">{selectedIds.size} selected</span>
+                  <strong>{selectedIds.size} selected</strong>
                 </div>
               </div>
 
-              {/* Scrollable List */}
-              <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+              <div className="sfm-check-list">
                 {previewData.items.map((item) => (
                   <label
                     key={item.setlist_id}
-                    className={`flex items-start gap-3 p-2.5 rounded text-xs transition-colors cursor-pointer ${
-                      item.already_logged
-                        ? "opacity-60 bg-surface-hover cursor-not-allowed"
-                        : "bg-surface hover:bg-surface-hover"
-                    }`}
-                    style={{ border: "0.5px solid var(--color-border)" }}
+                    className={`sfm-check-row ${item.already_logged ? "is-disabled" : ""}`}
                   >
                     <input
                       type="checkbox"
-                      className="mt-0.5 rounded cursor-pointer"
                       checked={selectedIds.has(item.setlist_id)}
                       disabled={item.already_logged || isImporting}
                       onChange={() => handleToggleGig(item.setlist_id)}
                     />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-bold text-ink truncate">{item.artist_name}</span>
-                        <span className="text-muted shrink-0 text-[11px]">{item.event_date}</span>
-                      </div>
-                      <div className="text-muted text-[11px] truncate">
+                    <span className="sfm-check-body">
+                      <span className="sfm-check-title">
+                        <strong>{item.artist_name}</strong>
+                        <span className="sfm-sub">{item.event_date}</span>
+                      </span>
+                      <span className="sfm-sub">
                         {item.venue_name}
                         {item.city ? `, ${item.city}` : ""}
                         {item.tour_name ? ` • ${item.tour_name}` : ""}
-                      </div>
-                    </div>
-                    <div className="shrink-0 flex items-center gap-1.5">
-                      {item.already_logged ? (
-                        <span className="badge text-[10px] bg-surface-hover text-muted px-1.5 py-0.5 rounded">
-                          Added
-                        </span>
-                      ) : (
-                        <span className="badge text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">
-                          {item.song_count} songs
-                        </span>
-                      )}
-                    </div>
+                      </span>
+                    </span>
+                    <span className={`sfm-tag ${item.already_logged ? "is-muted" : ""}`}>
+                      {item.already_logged ? "Added" : `${item.song_count} songs`}
+                    </span>
                   </label>
                 ))}
               </div>
 
-              {/* Pagination Controls */}
               {previewData.total_pages > 1 && (
-                <div className="flex justify-between items-center pt-2 border-t border-border text-xs">
+                <div className="sfm-preview-bar">
                   <button
                     type="button"
-                    className="btn btn-secondary text-xs px-2 py-1"
+                    className="sfm-link"
                     disabled={currentPage <= 1 || isFetchingPreview}
                     onClick={() => handleFetchPreview(currentPage - 1)}
                   >
                     &larr; Prev Page
                   </button>
-                  <span className="text-muted">
+                  <span className="sfm-gig-meta">
                     Page {currentPage} of {previewData.total_pages}
                   </span>
                   <button
                     type="button"
-                    className="btn btn-secondary text-xs px-2 py-1"
+                    className="sfm-link"
                     disabled={currentPage >= previewData.total_pages || isFetchingPreview}
                     onClick={() => handleFetchPreview(currentPage + 1)}
                   >
@@ -258,11 +215,10 @@ export default function ImportExportModal({ isOpen, onClose, onImport, isImporti
                 </div>
               )}
 
-              {/* Import Action Buttons */}
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border">
+              <div className="sfm-form-actions">
                 <button
                   type="button"
-                  className="btn btn-secondary text-xs"
+                  className="sfm-action"
                   onClick={handleImportAll}
                   disabled={isImporting}
                 >
@@ -270,7 +226,6 @@ export default function ImportExportModal({ isOpen, onClose, onImport, isImporti
                 </button>
                 <button
                   type="button"
-                  className="btn btn-primary text-xs font-semibold px-4 py-2"
                   disabled={selectedIds.size === 0 || isImporting}
                   onClick={handleImportSelected}
                 >
@@ -279,34 +234,23 @@ export default function ImportExportModal({ isOpen, onClose, onImport, isImporti
               </div>
             </div>
           )}
-        </div>
+        </section>
 
-        {/* 2. Data Export */}
-        <div className="pt-2 border-t border-border">
-          <h4 className="font-semibold text-sm mb-1">Export Attended Gigs</h4>
-          <p className="text-xs text-muted mb-3">
-            Download a portable backup of all your attended concerts and tracklists:
-          </p>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              className="btn btn-secondary text-xs"
-              onClick={() => handleExport("json")}
-            >
+        <section className="sfm-modal-section">
+          <h4>Export Attended Gigs</h4>
+          <p>Download a portable backup of all your attended concerts and tracklists:</p>
+          <div className="sfm-gig-actions">
+            <button type="button" className="sfm-action" onClick={() => handleExport("json")}>
               Download JSON
             </button>
-            <button
-              type="button"
-              className="btn btn-secondary text-xs"
-              onClick={() => handleExport("csv")}
-            >
+            <button type="button" className="sfm-action" onClick={() => handleExport("csv")}>
               Download CSV
             </button>
           </div>
-        </div>
+        </section>
 
-        <div className="flex justify-end pt-2">
-          <button type="button" className="btn btn-secondary text-xs" onClick={onClose}>
+        <div className="modal-actions">
+          <button type="button" className="modal-cancel-button" onClick={onClose}>
             Close
           </button>
         </div>

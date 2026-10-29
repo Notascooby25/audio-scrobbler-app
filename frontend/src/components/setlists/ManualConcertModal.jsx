@@ -47,147 +47,113 @@ export default function ManualConcertModal({ isOpen, onClose, onSaved, token }) 
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
-      style={{ backdropFilter: "blur(2px)" }}
-    >
+    <div className="modal-backdrop">
       <div
-        className="card w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto"
-        style={{
-          border: "0.5px solid var(--color-border)",
-          backgroundColor: "var(--color-surface)",
-        }}
+        className="modal-dialog sfm-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="manual-gig-title"
       >
-        <div className="flex justify-between items-center pb-2 border-b border-border">
+        <div className="sfm-modal-head">
           <div>
-            <h3 className="text-base font-bold text-ink">Log Upcoming or Custom Gig</h3>
-            <p className="text-xs text-muted">
-              Add upcoming tour dates or gigs not yet indexed by Setlist.fm
-            </p>
+            <h3 id="manual-gig-title">Log Upcoming or Custom Gig</h3>
+            <p>Add upcoming tour dates or gigs not yet indexed by Setlist.fm</p>
           </div>
-          <button
-            type="button"
-            className="text-muted hover:text-ink text-xl font-bold cursor-pointer bg-transparent border-0"
-            onClick={onClose}
-          >
+          <button type="button" className="sfm-close" onClick={onClose} aria-label="Close">
             &times;
           </button>
         </div>
 
-        {error && <div className="card p-3 text-danger bg-danger-soft text-xs">{error}</div>}
+        {error && (
+          <p className="sfm-error" role="alert">
+            {error}
+          </p>
+        )}
 
-        <form onSubmit={handleSubmit} className="space-y-3 text-xs">
-          <div>
-            <label className="block uppercase tracking-wider text-muted font-bold mb-1">
+        <form onSubmit={handleSubmit}>
+          <div className="sfm-form-grid">
+            <label>
               Artist Name *
-            </label>
-            <input
-              type="text"
-              required
-              className="input-field w-full text-xs"
-              placeholder="e.g. Shed Seven"
-              value={artistName}
-              onChange={(e) => setArtistName(e.target.value)}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block uppercase tracking-wider text-muted font-bold mb-1">
-                Venue *
-              </label>
               <input
                 type="text"
                 required
-                className="input-field w-full text-xs"
+                placeholder="e.g. Shed Seven"
+                value={artistName}
+                onChange={(e) => setArtistName(e.target.value)}
+              />
+            </label>
+            <label>
+              Venue *
+              <input
+                type="text"
+                required
                 placeholder="e.g. O2 Academy Birmingham"
                 value={venueName}
                 onChange={(e) => setVenueName(e.target.value)}
               />
-            </div>
-            <div>
-              <label className="block uppercase tracking-wider text-muted font-bold mb-1">
-                City *
-              </label>
+            </label>
+            <label>
+              City *
               <input
                 type="text"
                 required
-                className="input-field w-full text-xs"
                 placeholder="e.g. Birmingham"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
               />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block uppercase tracking-wider text-muted font-bold mb-1">
-                Country
-              </label>
+            </label>
+            <label>
+              Country
               <input
                 type="text"
-                className="input-field w-full text-xs"
                 placeholder="e.g. United Kingdom"
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
               />
-            </div>
-            <div>
-              <label className="block uppercase tracking-wider text-muted font-bold mb-1">
-                Date *
-              </label>
+            </label>
+            <label>
+              Date *
               <input
                 type="date"
                 required
                 aria-label="Event Date"
-                className="input-field w-full text-xs"
                 value={eventDate}
                 onChange={(e) => setEventDate(e.target.value)}
               />
-            </div>
+            </label>
           </div>
 
-          <div>
-            <label className="block uppercase tracking-wider text-muted font-bold mb-1">
-              Gig Notes (optional)
-            </label>
+          <label className="sfm-field">
+            Gig Notes (optional)
             <textarea
-              className="input-field w-full text-xs h-20 resize-none"
+              rows={3}
               placeholder="e.g. Tickets booked, going with friends, balcony row B..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               maxLength={2000}
             />
-          </div>
+          </label>
 
-          <div>
-            <label className="block uppercase tracking-wider text-muted font-bold mb-1">
-              Setlist.fm Link or Tour URL (optional)
-            </label>
+          <label className="sfm-field">
+            Setlist.fm Link or Tour URL (optional)
             <input
               type="url"
-              className="input-field w-full text-xs"
               placeholder="https://www.setlist.fm/..."
               value={setlistUrl}
               onChange={(e) => setSetlistUrl(e.target.value)}
             />
-          </div>
+          </label>
 
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+          <div className="modal-actions">
             <button
               type="button"
-              className="btn btn-secondary text-xs px-3 py-1.5"
+              className="modal-cancel-button"
               onClick={onClose}
               disabled={isSubmitting}
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              className="btn btn-primary text-xs px-4 py-1.5 font-bold"
-              disabled={isSubmitting}
-            >
+            <button type="submit" className="modal-confirm-button" disabled={isSubmitting}>
               {isSubmitting ? "Saving..." : "Log Concert"}
             </button>
           </div>
