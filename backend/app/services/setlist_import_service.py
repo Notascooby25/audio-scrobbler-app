@@ -24,7 +24,15 @@ def sync_user_setlist_history(
     db: Session,
     setlist_service: SetlistService | None = None,
     selected_setlist_ids: list[str] | None = None,
+    start_page: int = 1,
+    max_gigs: int | None = None,
 ) -> dict[str, Any]:
+    """Imports a user's attended Setlist.fm shows (all pages, or just the selected ids).
+
+    When it stops early - the daily quota ran out ("paused_rate_limit") or `max_gigs`
+    were logged in this run ("paused_budget") - the result says where to carry on:
+    `resume_page` for a profile import, `remaining_ids` for a selective one.
+    """
     svc = setlist_service or SetlistService(db=db)
     attendance_svc = SetlistAttendanceService(db=db, setlist_service=svc)
 
@@ -33,12 +41,19 @@ def sync_user_setlist_history(
     if selected_setlist_ids is not None:
         total_found = len(selected_setlist_ids)
         logger.info("Starting selective Setlist.fm import for user %s: %s shows selected", user_id, total_found)
-        for setlist_id in selected_setlist_ids:
+        for idx, setlist_id in enumerate(selected_setlist_ids):
             if not setlist_id:
                 continue
             existing = db.query(AttendedConcert).filter_by(user_id=user_id, setlist_id=setlist_id).first()
             if existing:
                 continue
+            if max_gigs is not None and imported_count >= max_gigs:
+                return {
+                    "status": "paused_budget",
+                    "imported_count": imported_count,
+                    "total_found": total_found,
+                    "remaining_ids": selected_setlist_ids[idx:],
+                }
             try:
                 attendance_svc.log_concert_attendance(
                     user_id=user_id,
@@ -53,6 +68,7 @@ def sync_user_setlist_history(
                     "imported_count": imported_count,
                     "total_found": total_found,
                     "message": str(exc),
+                    "remaining_ids": selected_setlist_ids[idx:],
                 }
             except Exception as exc:
                 logger.warning("Skipping setlist %s due to error: %s", setlist_id, exc)
@@ -63,7 +79,7 @@ def sync_user_setlist_history(
             "total_found": total_found,
         }
 
-    page = 1
+    page = start_page
     total_found = 0
 
     logger.info("Starting historical Setlist.fm import for user %s (username: %s)", user_id, setlist_username)
@@ -80,6 +96,7 @@ def sync_user_setlist_history(
                 "imported_count": imported_count,
                 "total_found": total_found,
                 "message": str(exc),
+                "resume_page": page,
             }
         except Exception as exc:
             logger.error("Unexpected error fetching attended setlists: %s", exc)
@@ -108,6 +125,14 @@ def sync_user_setlist_history(
             existing = db.query(AttendedConcert).filter_by(user_id=user_id, setlist_id=setlist_id).first()
             if existing:
                 continue
+            # Resuming re-reads this page (from the cache) and skips gigs already logged
+            if max_gigs is not None and imported_count >= max_gigs:
+                return {
+                    "status": "paused_budget",
+                    "imported_count": imported_count,
+                    "total_found": total_found,
+                    "resume_page": page,
+                }
 
             try:
                 attendance_svc.log_concert_attendance(
@@ -123,6 +148,7 @@ def sync_user_setlist_history(
                     "imported_count": imported_count,
                     "total_found": total_found,
                     "message": str(exc),
+                    "resume_page": page,
                 }
             except Exception as exc:
                 logger.warning("Skipping setlist %s due to error: %s", setlist_id, exc)

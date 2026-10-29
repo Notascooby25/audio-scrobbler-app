@@ -146,6 +146,8 @@ def import_gigs_from_file(user_id: int, file_format: str, content: str, db: Sess
     imported = 0
     skipped_existing = 0
     without_songs = 0
+    # Gigs saved without songs because the quota ran out; their songs are fetched later
+    awaiting_songs_ids: list[int] = []
     quota_reached = False
     invalid: list[dict[str, Any]] = []
 
@@ -197,6 +199,9 @@ def import_gigs_from_file(user_id: int, file_format: str, content: str, db: Sess
             notes=row.notes,
         )
         db.add(concert)
+        if not songs and not is_manual and quota_reached:
+            db.flush()
+            awaiting_songs_ids.append(concert.id)
         if songs:
             day = datetime.combine(row.event_date.date(), datetime.min.time())
             attendance._create_scrobbles_for_setlist(
@@ -216,6 +221,7 @@ def import_gigs_from_file(user_id: int, file_format: str, content: str, db: Sess
         "skipped_existing": skipped_existing,
         "without_songs": without_songs,
         "quota_reached": quota_reached,
+        "awaiting_songs_ids": awaiting_songs_ids,
         "invalid": invalid[:50],
         "invalid_count": len(invalid),
     }

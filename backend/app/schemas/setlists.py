@@ -100,6 +100,19 @@ class VenueLeaderboardItem(BaseModel):
     gigs: list[ConcertRefItem] = Field(default_factory=list)
 
 
+class SetlistImportJobItem(BaseModel):
+    id: int
+    kind: Literal["profile", "selected", "file_songs"]
+    status: str
+    imported_count: int
+    total: int
+    resume_after: str
+
+
+class SetlistImportJobResponse(BaseModel):
+    job: SetlistImportJobItem | None = None
+
+
 class GigBillAct(BaseModel):
     setlist_id: str
     artist_name: str
@@ -137,6 +150,8 @@ class FileImportResponse(BaseModel):
     skipped_existing: int
     without_songs: int
     quota_reached: bool
+    # True when gigs saved without songs will get them automatically after the quota resets
+    resumes_automatically: bool = False
     invalid: list[FileImportInvalidRow]
     invalid_count: int
 
