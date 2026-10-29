@@ -185,6 +185,34 @@ Organized into a 3-card Data Sources Hub with an accessible `<h1>` heading ("Con
 | Recent ingestion feed | `GET /analytics/recent-scrobbles` |
 | Developer bypass tools | Development only (`import.meta.env.DEV`), stripped from production builds |
 
+## 8a. Set Lists: `/setlists` and gig pages `/gigs/:id`
+
+Setlist.fm-style concert diary. Styled with plain `sfm-*` classes in `styles.css`
+(Tailwind is **not** installed). Gig pages live at `/gigs/:id`, not under
+`/setlists/`, because nginx and Vite proxy `/setlists/*` to the API. List state
+(tab, page, size, open row, filters) is kept in the URL so Back restores it.
+
+| Section | Component | Endpoint |
+|---|---|---|
+| Tabs: My Gigs, Artists Seen, Songs Heard, Venues; + Log a Gig, Import / Export | `SetlistsPage` | |
+| Gig invites ("Were you there?"; Add to my gigs / Dismiss) at the top of My Gigs | `GigInvites` | `GET /setlists/invites`, `POST /setlists/invites/{id}/add\|dismiss` |
+| My Gigs (All / Attended / Upcoming, paged 10/15/25/50, Remove) | `MyGigsTimeline`, `GigRows` | `GET /setlists/attendances` |
+| Artists, Songs (year/artist sidebar), Venues: ranked bars, expandable rows | `RankedBarList`, `*Leaderboard` | `GET /setlists/stats/{artists\|songs\|venues}` |
+| Log a gig (search, support act prompt, already-logged prompt), manual gig | `GigSearchBar`, `SupportActsPromptModal`, `AlreadyLoggedModal`, `ManualConcertModal` | `GET /setlists/search`, `POST /setlists/attend`, `POST /setlists/manual` |
+| Import / Export (profile, selected, CSV/JSON file; paused-job notice) | `ImportExportModal` | `POST /setlists/import`, `POST /setlists/import/file`, `GET\|DELETE /setlists/import/job`, `GET /setlists/export` |
+| Gig page: header, numbered songs, Refresh / Copy / Edit details / Delete | `SetlistGigPage`, `SetlistSongs`, `EditGigModal`, `DeleteGigConfirmModal` | `GET /setlists/attendances/{id}`, `POST /setlists/{id}/refresh`, `PATCH /setlists/{id}`, `DELETE /setlists/{id}` |
+| My notes | `NotesEditor` (in `SetlistGigPage`) | `PATCH /setlists/{id}/notes` |
+| On the bill (other acts that night, + I was there) | `GigBill` | `GET\|POST /setlists/attendances/{id}/bill` |
+| Went with (people you follow; invited / added; + Add people) | `GigCompanions` | `GET\|POST /setlists/attendances/{id}/companions`, `DELETE .../companions/{friend_id}` |
+| Setlist.fm attribution (required by its terms) at the bottom | `SetlistAttribution` | |
+
+- Editing a gig moves its scrobbles and support acts; Refresh only updates songs.
+- Went with: you can only add people you follow; nothing is written to their
+  account until they choose Add. Invites never include the owner's notes.
+- Gig scrobbles (source `setlistfm`) reuse artwork from the user's own plays;
+  the worker's `setlist-artwork-backfill` job fills the rest. Artwork the user
+  cleared is stored as `""` and not refilled.
+
 ---
 
 ## 9. Ideas from the original spec, not built

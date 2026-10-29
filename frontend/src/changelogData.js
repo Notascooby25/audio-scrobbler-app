@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.24.0",
+    date: "2026-10-29",
+    changes: [
+      "Edit a gig: logged the wrong date, artist or venue? Tap Edit details on the gig's page. The songs you heard move with it, and so do any support acts you logged that night. Refresh from Setlist.fm keeps your corrections and only updates the songs.",
+      "Went with: add the people you follow to a gig from its page. They're asked first: a Were you there? box on their My Gigs lets them add it (songs and support acts included) or dismiss it. People who already logged the show are shown first and just linked.",
+      "Artwork for gig songs: songs you've streamed reuse their artwork straight away, and the rest is filled in quietly in the background from Deezer or iTunes, or the artist's photo for things like intros and covers. Refreshing a gig keeps its artwork, and artwork you clear stays cleared.",
+    ],
+  },
+  {
     version: "0.23.0",
     date: "2026-10-29",
     changes: [

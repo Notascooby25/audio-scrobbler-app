@@ -168,7 +168,8 @@ const FAQ_DATA = [
         If some tracks in your library are missing artwork (common with older YouTube files or rare
         singles), go to <strong>Settings → Data</strong> and click{" "}
         <strong>"Backfill Missing Artwork"</strong>. The app will automatically search Apple Music
-        and Deezer to fetch high-resolution covers.
+        and Deezer to fetch high-resolution covers. Songs from gigs you&apos;ve logged get their
+        artwork automatically in the background, so you don&apos;t need to do anything for those.
       </p>
     ),
   },
@@ -285,6 +286,33 @@ const FAQ_DATA = [
         night (up to 10), plus any you&apos;ve logged yourself. A tick means you&apos;ve already
         logged them; tap <em>+ I was there</em> to add one. Upcoming gigs usually have nobody listed
         until after the show.
+      </p>
+    ),
+  },
+  {
+    id: "setlists-edit-gig",
+    category: "Set Lists & Gigs",
+    question: "I logged a gig with the wrong date or venue. Can I fix it?",
+    answer: (
+      <p>
+        <strong>Yes.</strong> Open the gig and tap <em>Edit details</em>. You can change the artist,
+        venue, city, country, date and tour. The songs you heard move to the corrected night, and
+        support acts you logged with it move too. <em>Refresh from Setlist.fm</em> keeps your
+        corrections and only updates the song list.
+      </p>
+    ),
+  },
+  {
+    id: "setlists-went-with",
+    category: "Set Lists & Gigs",
+    question: "Can I add the friends I went to a gig with?",
+    answer: (
+      <p>
+        <strong>Yes, if you follow them.</strong> On the gig&apos;s page, tap <em>+ Add people</em>{" "}
+        under <em>Went with</em>. Each person gets a notification and a <em>Were you there?</em> box
+        on their My Gigs. The gig is only added to their account if they choose{" "}
+        <em>Add to my gigs</em>, and your notes are never shared. Anyone who already logged the show
+        is simply linked.
       </p>
     ),
   },
