@@ -294,53 +294,99 @@ export default function SetlistsPage() {
         </div>
 
         <div className="flex items-center gap-2 max-w-full overflow-x-auto pb-1 scrollbar-none">
-          {/* Segmented Tabs */}
-          <div
-            className="inline-flex rounded-lg p-1 bg-surface-hover shrink-0 whitespace-nowrap"
-            style={{ border: "0.5px solid var(--color-border)" }}
-            role="tablist"
-          >
+          {/* Setlist.fm-style Segmented Sub-navigation Tabs */}
+          <div className="flex items-center gap-1 shrink-0 whitespace-nowrap" role="tablist">
             <button
               type="button"
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-                activeTab === "gigs" ? "bg-primary text-white" : "text-muted hover:text-ink"
+              className={`px-3.5 py-1.5 rounded-t text-xs font-bold transition-colors cursor-pointer ${
+                activeTab === "gigs"
+                  ? "bg-surface text-ink border-t-2 border-primary border-x border-border shadow-none"
+                  : "text-muted hover:text-ink hover:bg-surface-hover border-b border-transparent"
               }`}
+              style={
+                activeTab === "gigs"
+                  ? {
+                      borderTopColor: "var(--color-primary, #0066FF)",
+                      borderBottom: "1px solid var(--color-surface)",
+                    }
+                  : {}
+              }
               onClick={() => setActiveTab("gigs")}
             >
               My Gigs
             </button>
             <button
               type="button"
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-                activeTab === "artists" ? "bg-primary text-white" : "text-muted hover:text-ink"
+              className={`px-3.5 py-1.5 rounded-t text-xs font-bold transition-colors cursor-pointer ${
+                activeTab === "artists"
+                  ? "bg-surface text-ink border-t-2 border-primary border-x border-border shadow-none"
+                  : "text-muted hover:text-ink hover:bg-surface-hover border-b border-transparent"
               }`}
+              style={
+                activeTab === "artists"
+                  ? {
+                      borderTopColor: "var(--color-primary, #0066FF)",
+                      borderBottom: "1px solid var(--color-surface)",
+                    }
+                  : {}
+              }
               onClick={() => setActiveTab("artists")}
             >
               Artists Seen
             </button>
             <button
               type="button"
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-                activeTab === "songs" ? "bg-primary text-white" : "text-muted hover:text-ink"
+              className={`px-3.5 py-1.5 rounded-t text-xs font-bold transition-colors cursor-pointer ${
+                activeTab === "songs"
+                  ? "bg-surface text-ink border-t-2 border-primary border-x border-border shadow-none"
+                  : "text-muted hover:text-ink hover:bg-surface-hover border-b border-transparent"
               }`}
+              style={
+                activeTab === "songs"
+                  ? {
+                      borderTopColor: "var(--color-primary, #0066FF)",
+                      borderBottom: "1px solid var(--color-surface)",
+                    }
+                  : {}
+              }
               onClick={() => setActiveTab("songs")}
             >
               Songs Heard
             </button>
             <button
               type="button"
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-                activeTab === "venues" ? "bg-primary text-white" : "text-muted hover:text-ink"
+              className={`px-3.5 py-1.5 rounded-t text-xs font-bold transition-colors cursor-pointer ${
+                activeTab === "venues"
+                  ? "bg-surface text-ink border-t-2 border-primary border-x border-border shadow-none"
+                  : "text-muted hover:text-ink hover:bg-surface-hover border-b border-transparent"
               }`}
+              style={
+                activeTab === "venues"
+                  ? {
+                      borderTopColor: "var(--color-primary, #0066FF)",
+                      borderBottom: "1px solid var(--color-surface)",
+                    }
+                  : {}
+              }
               onClick={() => setActiveTab("venues")}
             >
               Venues
             </button>
             <button
               type="button"
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-                activeTab === "log" ? "bg-primary text-white" : "text-muted hover:text-ink"
+              className={`px-3.5 py-1.5 rounded-t text-xs font-bold transition-colors cursor-pointer ${
+                activeTab === "log"
+                  ? "bg-surface text-ink border-t-2 border-primary border-x border-border shadow-none"
+                  : "text-muted hover:text-ink hover:bg-surface-hover border-b border-transparent"
               }`}
+              style={
+                activeTab === "log"
+                  ? {
+                      borderTopColor: "var(--color-primary, #0066FF)",
+                      borderBottom: "1px solid var(--color-surface)",
+                    }
+                  : {}
+              }
               onClick={() => setActiveTab("log")}
             >
               + Log a Gig

@@ -35,8 +35,13 @@ export default function GigCard({ setlist, token, onLogAttendance, onViewSetlist
 
   return (
     <div
-      className="card p-4 mb-3 transition-colors hover:border-border-subtle"
-      style={{ border: "0.5px solid var(--color-border)" }}
+      className={`card p-4 mb-3 transition-colors hover:border-border-subtle ${
+        isFuture ? "border-l-4" : ""
+      }`}
+      style={{
+        border: "0.5px solid var(--color-border)",
+        borderLeft: isFuture ? "4px solid var(--color-primary, #0066FF)" : undefined,
+      }}
     >
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-start md:items-center gap-3.5 min-w-0 flex-1">

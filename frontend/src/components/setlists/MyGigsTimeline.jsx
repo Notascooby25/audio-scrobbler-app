@@ -104,8 +104,13 @@ export default function MyGigsTimeline({
             return (
               <div
                 key={gig.id}
-                className="card p-4 transition-colors hover:border-border-subtle"
-                style={{ border: "0.5px solid var(--color-border)" }}
+                className={`card p-4 transition-colors hover:border-border-subtle ${
+                  isFuture ? "border-l-4" : ""
+                }`}
+                style={{
+                  border: "0.5px solid var(--color-border)",
+                  borderLeft: isFuture ? "4px solid var(--color-primary, #0066FF)" : undefined,
+                }}
               >
                 {/* Main Card Row */}
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

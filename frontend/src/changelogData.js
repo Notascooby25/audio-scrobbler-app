@@ -1,5 +1,17 @@
 export const CHANGELOG = [
   {
+    version: "0.19.0",
+    date: "2026-10-29",
+    changes: [
+      "Setlist.fm Dense Table Redesign: transformed Artists Seen, Songs Heard, and Venues into compact, striped data tables matching Setlist.fm layout and density.",
+      "Tie-Aware Ranking: items sharing identical attendance counts share the same rank number, displayed only on the first item with subsequent ties blanked out (1, –, 3, –, 5).",
+      "Left-Aligned Frequency Bars: proportional frequency bars now render count values inside on the left with clean hairline borders.",
+      "Numbered Ellipsis Pagination: browse leaderboard pages using compact numeric pagination with ellipsis jumping (‹ 1 2 3 … 14 ›) and items-per-page selectors.",
+      "Setlist Tracklist & Set Times Redesign: setlist detail drawers now feature blue date pills, artist/venue headings, Set Times information cards, slanted section banners, and continuous track numbering with grey annotations for guests and covers.",
+      "Upcoming Gig Left-Accent Rails: future concerts and tour dates in My Gigs and search results now display a solid left primary accent rail.",
+    ],
+  },
+  {
     version: "0.18.0",
     date: "2026-10-29",
     changes: [

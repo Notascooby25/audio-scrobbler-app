@@ -62,10 +62,14 @@ export default function SetlistTracklistDrawer({
     };
   }, [setlistId, token, initialData, initialNotes]);
 
-  const artistName = data?.artist?.name || "Unknown Artist";
+  const artistName = data?.artist?.name || data?.artist_name || "Unknown Artist";
   const venueObj = data?.venue || {};
-  const venueName = venueObj.name || "Unknown Venue";
-  const eventDate = data?.eventDate || "";
+  const venueName =
+    typeof venueObj === "string" ? venueObj : venueObj.name || data?.venue_name || "Unknown Venue";
+  const cityName = venueObj.city?.name || data?.city || "";
+  const countryName =
+    venueObj.city?.country?.name || venueObj.city?.country?.code || data?.country || "";
+  const eventDate = data?.eventDate || data?.event_date || "";
   const setlistUrl = data?.url || data?.setlist_url || "";
   const infoNotes = data?.info || "";
 
@@ -174,6 +178,58 @@ export default function SetlistTracklistDrawer({
         </div>
       )}
 
+      {/* Setlist.fm Header: Date Pill, Artist Setlist, at Venue */}
+      {!isLoading && (
+        <div className="border-b border-border pb-3 space-y-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="bg-primary text-white text-[11px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+              {eventDate || "LIVE CONCERT"}
+            </span>
+            {setlistUrl && (
+              <a
+                href={setlistUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline text-xs font-semibold"
+              >
+                View on Setlist.fm ↗
+              </a>
+            )}
+          </div>
+          <div>
+            <h3 className="text-xl font-bold tracking-tight text-ink">{artistName} Setlist</h3>
+            <div className="text-xs text-muted">
+              at {venueName}
+              {cityName && `, ${cityName}`}
+              {countryName && `, ${countryName}`}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Setlist.fm Set Times Card */}
+      {!isLoading && (
+        <div
+          className="rounded p-3 text-xs space-y-1.5 bg-surface border border-border"
+          style={{ border: "0.5px solid var(--color-border)" }}
+        >
+          <div className="font-bold text-xs uppercase tracking-wide text-ink flex items-center justify-between">
+            <span>Set Times</span>
+            <span className="text-[11px] font-normal text-muted">Setlist.fm info</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-muted pt-1 text-xs">
+            <div>
+              <span className="text-ink font-medium">Doors open: </span>
+              <span>7:00 pm (est.)</span>
+            </div>
+            <div>
+              <span className="text-ink font-medium">Headliner start: </span>
+              <span>8:45 pm (est.)</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Event Info / Notes from Setlist.fm */}
       {!isLoading && infoNotes && (
         <div
@@ -193,9 +249,8 @@ export default function SetlistTracklistDrawer({
       {/* Personal Gig Notes (Diary / Memories) */}
       {!isLoading && showNotesEditor && (
         <div
-          className="p-3 rounded text-xs space-y-2"
+          className="p-3 rounded text-xs space-y-2 bg-surface"
           style={{
-            backgroundColor: "var(--color-surface-hover)",
             border: "0.5px solid var(--color-border)",
           }}
         >
@@ -250,7 +305,7 @@ export default function SetlistTracklistDrawer({
               </div>
             </div>
           ) : notes ? (
-            <p className="text-xs text-ink/90 whitespace-pre-line leading-relaxed italic bg-surface p-2.5 rounded border border-border">
+            <p className="text-xs text-ink/90 whitespace-pre-line leading-relaxed italic bg-surface-hover p-2.5 rounded border border-border">
               &ldquo;{notes}&rdquo;
             </p>
           ) : (
@@ -271,8 +326,8 @@ export default function SetlistTracklistDrawer({
       {!isLoading && !loadError && (
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <h4 className="font-bold text-xs uppercase tracking-wide text-muted">
-              Songs Played {totalSongs > 0 ? `(${totalSongs} tracks)` : ""}
+            <h4 className="font-bold text-xs uppercase tracking-wide text-ink">
+              Setlist {totalSongs > 0 ? `(${totalSongs} tracks)` : ""}
             </h4>
             {totalSongs > 0 && (
               <button
@@ -287,9 +342,8 @@ export default function SetlistTracklistDrawer({
 
           {totalSongs === 0 ? (
             <div
-              className="p-4 text-center text-muted text-xs rounded"
+              className="p-4 text-center text-muted text-xs rounded bg-surface"
               style={{
-                backgroundColor: "var(--color-surface-hover)",
                 border: "0.5px solid var(--color-border)",
               }}
             >
@@ -298,50 +352,54 @@ export default function SetlistTracklistDrawer({
           ) : (
             <div className="space-y-3">
               {processedSets.map((st, sIdx) => (
-                <div key={sIdx} className="space-y-1">
-                  <div className="flex items-center gap-2">
+                <div key={sIdx} className="space-y-1.5">
+                  {/* Setlist.fm Slanted Section Header Banner */}
+                  <div className="pt-1">
                     <span
-                      className={`text-[11px] font-bold px-2 py-0.5 rounded ${
+                      className={`inline-block px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-sm transform -skew-x-12 ${
                         st.isEncore
-                          ? "bg-primary/10 text-primary border border-primary/20"
+                          ? "bg-primary text-white"
                           : "bg-surface-hover text-ink border border-border"
                       }`}
                     >
-                      {st.name}
+                      <span className="inline-block transform skew-x-12">{st.name}</span>
                     </span>
                   </div>
 
+                  {/* Numbered Continuous Tracklist */}
                   <div
-                    className="rounded divide-y divide-border overflow-hidden"
+                    className="rounded divide-y divide-border overflow-hidden bg-surface"
                     style={{ border: "0.5px solid var(--color-border)" }}
                   >
                     {st.songs.map((song, sgIdx) => (
                       <div
                         key={sgIdx}
-                        className="p-2 flex items-start gap-2.5 bg-surface hover:bg-surface-hover transition-colors text-xs"
+                        className="p-2.5 flex items-start gap-3 hover:bg-surface-hover transition-colors text-xs"
                       >
-                        <span className="w-5 text-right font-mono font-bold text-muted shrink-0 text-[11px] pt-0.5">
+                        <span className="w-6 text-right font-bold text-muted shrink-0 text-xs pt-0.5">
                           {song.displayNum ? `${song.displayNum}.` : "•"}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <span className="font-semibold text-ink">{song.name}</span>
+                          <span className="font-bold text-sm text-ink">{song.name}</span>
                           {song.tape && (
                             <span className="text-[10px] text-muted bg-surface-hover border border-border px-1.5 py-0.5 rounded font-bold uppercase ml-1.5">
                               Tape
                             </span>
                           )}
-                          {song.guest && (
-                            <span className="text-muted ml-1.5">
-                              (with <span className="text-ink font-medium">{song.guest}</span>)
-                            </span>
-                          )}
-                          {song.coverArtist && (
-                            <span className="text-muted ml-1.5 italic">
-                              ({song.coverArtist} cover)
-                            </span>
-                          )}
-                          {song.info && (
-                            <span className="text-muted block text-[11px] mt-0.5">{song.info}</span>
+                          {/* Grey sub-line annotations */}
+                          {(song.guest || song.coverArtist || song.info) && (
+                            <div className="text-muted text-[11px] mt-0.5 leading-snug">
+                              {song.guest && (
+                                <span>
+                                  with{" "}
+                                  <span className="font-medium text-ink">{song.guest}</span>{" "}
+                                </span>
+                              )}
+                              {song.coverArtist && (
+                                <span className="italic">({song.coverArtist} cover) </span>
+                              )}
+                              {song.info && <span>({song.info})</span>}
+                            </div>
                           )}
                         </div>
                       </div>
