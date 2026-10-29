@@ -1,5 +1,15 @@
 export const CHANGELOG = [
   {
+    version: "0.15.1",
+    date: "2026-10-29",
+    changes: [
+      "Added selective Setlist.fm concert import: preview attended gigs from any username with interactive checkboxes, 'Select All' / 'Deselect All' toggles, and total selection counters.",
+      "Optimized desktop top navigation by placing 'Set Lists' directly into the primary menu and moving 'Following' alongside 'Settings' in the Profile section.",
+      "Wired SETLIST_FM_API_KEY into Docker Compose and production compose files with documented .env.example guidelines.",
+      "Fixed Docker container startup packaging in CI smoke tests by aligning service import paths.",
+    ],
+  },
+  {
     version: "0.15.0",
     date: "2026-10-28",
     changes: [

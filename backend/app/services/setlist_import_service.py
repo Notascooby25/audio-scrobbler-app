@@ -26,9 +26,7 @@ def sync_user_setlist_history(
 
     if selected_setlist_ids is not None:
         total_found = len(selected_setlist_ids)
-        logger.info(
-            "Starting selective Setlist.fm import for user %s: %s shows selected", user_id, total_found
-        )
+        logger.info("Starting selective Setlist.fm import for user %s: %s shows selected", user_id, total_found)
         for setlist_id in selected_setlist_ids:
             if not setlist_id:
                 continue

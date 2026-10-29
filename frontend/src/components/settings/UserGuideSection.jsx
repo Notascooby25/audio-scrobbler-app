@@ -112,8 +112,8 @@ export default function UserGuideSection() {
           <strong>How to copy tracks you listened to together:</strong>
           <ol className="guide-steps" style={{ marginTop: "0.5rem" }}>
             <li>
-              Go to <strong>Following</strong> in the top menu and find your friend's profile (or
-              search for their username under "Discover Users").
+              Go to <strong>Profile → Following</strong> and find your friend's profile (or search
+              for their username under "Discover Users").
             </li>
             <li>
               On their Profile page, click the <strong>Copy Scrobbles</strong> button.
@@ -288,10 +288,11 @@ export default function UserGuideSection() {
             <em>Songs Heard</em> (live play counts), and <em>Venues Visited</em>.
           </li>
           <li>
-            <strong>Setlist.fm Account Import & Export:</strong> Have an existing Setlist.fm
-            profile? Click <em>Import / Export</em>
-            to enter your username and import your entire concert history, or download your gig
-            collection as JSON or CSV.
+            <strong>Setlist.fm Account Import & Export:</strong> Have an existing Setlist.fm profile
+            (or want to selectively import gigs from a friend or family member's account)? Click{" "}
+            <em>Import / Export</em> to enter the username, preview all attended gigs, tick the
+            specific shows you attended, and import them with 1 click. You can also download your
+            entire gig collection as JSON or CSV.
           </li>
         </ul>
       </article>

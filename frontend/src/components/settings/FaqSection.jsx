@@ -72,7 +72,7 @@ const FAQ_DATA = [
         </p>
         <ol style={{ paddingLeft: "1.25rem", margin: "0.5rem 0" }}>
           <li>
-            Go to <strong>Following</strong> and open your friend's profile.
+            Go to <strong>Profile → Following</strong> and open your friend's profile.
           </li>
           <li>
             Click the <strong>Copy Scrobbles</strong> button at the top of their profile.
@@ -233,13 +233,14 @@ const FAQ_DATA = [
   {
     id: "setlists-import-export",
     category: "Set Lists & Gigs",
-    question: "Can I import my past attended gigs from my Setlist.fm profile?",
+    question: "Can I import past attended gigs from my Setlist.fm profile (or a friend's profile)?",
     answer: (
       <p>
         <strong>Yes!</strong> Click the <strong>Import / Export</strong> button in the Set Lists
-        tab, enter your Setlist.fm username (e.g. <code>crispylettuce</code>), and click Import. The
-        app will page through all your past attended concerts, caching the gigs and backfilling the
-        live songs into your scrobble library while safely honoring Setlist.fm's daily rate limits.
+        tab, enter the Setlist.fm username (e.g. <code>crispylettuce</code>), and click Preview
+        Gigs. You can review the full concert list and tick checkboxes for only the gigs you
+        actually attended before importing, or use Select All / Deselect All. The app will import
+        only the selected concerts while safely honoring Setlist.fm's daily rate limits.
       </p>
     ),
   },
