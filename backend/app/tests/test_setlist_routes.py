@@ -10,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.app.api.deps import get_current_user
+from backend.app.config import settings
 from backend.app.db import Base, get_db
 from backend.app.main import app
 from backend.app.models import AttendedConcert, ListeningEvent, SetlistImportJob, User
@@ -546,3 +547,14 @@ def test_file_import_over_quota_queues_the_missing_songs():
     assert "awaiting_songs_ids" not in res.json()
     job = client.get("/setlists/import/job").json()["job"]
     assert (job["kind"], job["total"]) == ("file_songs", 1)
+
+
+def test_resume_imports_route_requires_the_worker_token():
+    assert client.post("/setlists/internal/resume-imports").status_code == 401
+    assert client.post("/setlists/internal/resume-imports", headers={"X-Worker-Token": "wrong"}).status_code == 401
+    with patch("backend.app.api.setlists.import_jobs.resume_due_jobs", return_value={"processed": 0}) as mock_resume:
+        res = client.post(
+            "/setlists/internal/resume-imports", headers={"X-Worker-Token": settings.worker_ingestion_token}
+        )
+    assert res.status_code == 200
+    mock_resume.assert_called_once()

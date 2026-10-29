@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from backend.app.db import Base
 from backend.app.models import AttendedConcert, ListeningEvent
 from backend.app.services.setlist_service import SetlistRateLimitError
-from worker.setlist_import import sync_user_setlist_history
+from backend.app.services.setlist_import_service import sync_user_setlist_history
 
 
 @pytest.fixture

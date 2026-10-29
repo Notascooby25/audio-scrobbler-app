@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from ..api.deps import get_current_user
+from ..api.ingestion import require_worker_token
 from ..db import get_db
 from ..models import AttendedConcert, User
 from ..schemas.setlists import (
@@ -520,6 +521,15 @@ def cancel_import_job(
     if not import_jobs.cancel_open_job(db, current_user.id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No paused import.")
     return {"job": None}
+
+
+@router.post("/internal/resume-imports")
+def resume_paused_imports(
+    db: Session = Depends(get_db),
+    _: None = Depends(require_worker_token),
+) -> dict[str, int]:
+    """Called by the worker: carries on Setlist.fm imports paused at the daily quota."""
+    return import_jobs.resume_due_jobs(db)
 
 
 @router.post("/import")

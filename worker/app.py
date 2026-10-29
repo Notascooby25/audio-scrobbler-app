@@ -67,6 +67,8 @@ genre_cache_batch_size = int(os.environ.get("WORKER_GENRE_CACHE_BATCH_SIZE", "50
 file_import_enabled = os.getenv("WORKER_FILE_IMPORT_ENABLED", "false").lower() == "true"
 file_import_dir = os.getenv("WORKER_IMPORT_DIR", "/data/imports")
 file_import_interval_minutes = int(os.getenv("WORKER_FILE_IMPORT_INTERVAL_MINUTES", "10"))
+# How often to check for Setlist.fm imports paused at the daily quota (resumed after midnight UTC)
+setlist_resume_interval_minutes = int(os.getenv("WORKER_SETLIST_RESUME_INTERVAL_MINUTES", "30"))
 max_attempts = 3
 last_spotify_sync_at: str | None = None
 last_spotify_sync_users = 0
@@ -79,6 +81,9 @@ last_liked_tracks_sync_events = 0
 last_file_import_at: str | None = None
 last_file_import_processed = 0
 last_file_import_failed = 0
+last_setlist_resume_at: str | None = None
+last_setlist_resume_processed = 0
+last_setlist_resume_failed = 0
 
 last_genre_cache_sync_at = "never"
 last_genre_cache_sync_processed = 0
@@ -306,6 +311,32 @@ def run_file_import() -> None:
     )
 
 
+def run_setlist_import_resume() -> None:
+    global last_setlist_resume_at, last_setlist_resume_processed, last_setlist_resume_failed
+    try:
+        response = requests.post(
+            f"{backend_url}/setlists/internal/resume-imports",
+            headers={"X-Worker-Token": worker_token},
+            timeout=600,
+        )
+        response.raise_for_status()
+        counts = response.json()
+    except requests.RequestException as exc:
+        logger.warning("Setlist import resume failed: %s", exc)
+        return
+    last_setlist_resume_at = datetime.now(timezone.utc).isoformat()
+    last_setlist_resume_processed = int(counts.get("processed", 0))
+    last_setlist_resume_failed = int(counts.get("failed", 0))
+    if last_setlist_resume_processed:
+        logger.info(
+            "Setlist import resume: %s jobs processed, %s finished, %s re-paused, %s failed",
+            last_setlist_resume_processed,
+            counts.get("finished", 0),
+            counts.get("repaused", 0),
+            last_setlist_resume_failed,
+        )
+
+
 @app.get("/health")
 def health_check() -> dict[str, str]:
     blocked_until = spotify_rate_limit_blocked_until()
@@ -328,6 +359,9 @@ def health_check() -> dict[str, str]:
         "last_file_import_at": last_file_import_at or "never",
         "last_file_import_processed": str(last_file_import_processed),
         "last_file_import_failed": str(last_file_import_failed),
+        "last_setlist_resume_at": last_setlist_resume_at or "never",
+        "last_setlist_resume_processed": str(last_setlist_resume_processed),
+        "last_setlist_resume_failed": str(last_setlist_resume_failed),
 
         "last_genre_cache_sync_at": last_genre_cache_sync_at,
         "last_genre_cache_sync_processed": str(last_genre_cache_sync_processed),
@@ -384,6 +418,9 @@ def metrics() -> str:
         "# HELP audio_scrobbler_worker_file_import_failed Files failed in the last file import run.",
         "# TYPE audio_scrobbler_worker_file_import_failed gauge",
         f"audio_scrobbler_worker_file_import_failed {last_file_import_failed}",
+        "# HELP audio_scrobbler_worker_setlist_resume_processed Paused Setlist.fm imports processed in the last run.",
+        "# TYPE audio_scrobbler_worker_setlist_resume_processed gauge",
+        f"audio_scrobbler_worker_setlist_resume_processed {last_setlist_resume_processed}",
         "",
     ])
 
@@ -440,6 +477,13 @@ def start_scheduler() -> None:
         scheduler.add_job(run_liked_tracks_ingestion, "interval", minutes=liked_tracks_interval_minutes, id="liked-tracks-ingestion")
     if file_import_enabled:
         scheduler.add_job(run_file_import, "interval", minutes=file_import_interval_minutes, id="file-import")
+    scheduler.add_job(
+        run_setlist_import_resume,
+        "interval",
+        minutes=setlist_resume_interval_minutes,
+        id="setlist-import-resume",
+        replace_existing=True,
+    )
 
 
 @app.on_event("shutdown")
