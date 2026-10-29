@@ -246,6 +246,33 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "setlists-import-file",
+    category: "Set Lists & Gigs",
+    question: "Can I import gigs from a CSV or JSON file?",
+    answer: (
+      <p>
+        <strong>Yes.</strong> In <strong>Import / Export</strong>, choose a .csv or .json file under{" "}
+        <em>Import from a File</em>. It reads the same files the Export buttons create, so you can
+        restore a backup or move gigs between accounts. JSON files bring their songs with them; CSV
+        files look the songs up on Setlist.fm from each gig&apos;s link. Gigs you&apos;ve already
+        logged are skipped, and any rows that can&apos;t be read are listed by line number.
+      </p>
+    ),
+  },
+  {
+    id: "setlists-duplicates",
+    category: "Set Lists & Gigs",
+    question: "What happens if I log a gig I've already logged, or log one by mistake?",
+    answer: (
+      <p>
+        You&apos;ll see a <strong>Gig already logged</strong> message asking if you&apos;re sure.
+        Logging the same Setlist.fm show again just refreshes its songs; it never adds a second
+        copy. To undo a mistake, tap <em>Undo</em> in the confirmation straight after logging, or
+        use the small <em>Remove</em> link on the gig in My Gigs.
+      </p>
+    ),
+  },
+  {
     id: "setlists-view-songs",
     category: "Set Lists & Gigs",
     question: "Can I view the songs played at a gig, see encores, or copy the setlist?",

@@ -1,5 +1,15 @@
 export const CHANGELOG = [
   {
+    version: "0.21.0",
+    date: "2026-10-29",
+    changes: [
+      "Import from a file: Import / Export can now read back a CSV or JSON file made with Export. Gigs you've already logged are skipped, and any rows that can't be read are listed by line.",
+      "Gig already logged: logging a show you already have (or the same artist on the same day) now asks before logging it again.",
+      "Undo and Remove: after logging a gig, tap Undo in the confirmation to take it back, and each My Gigs row has a small Remove link for mistakes.",
+      "Venues count one visit per night, even when a support act was saved with a slightly different venue spelling or country.",
+    ],
+  },
+  {
     version: "0.20.0",
     date: "2026-10-29",
     changes: [
