@@ -10,12 +10,15 @@ from ..api.ingestion import require_worker_token
 from ..db import get_db
 from ..models import AttendedConcert, User
 from ..schemas.setlists import (
+    AddCompanionsRequest,
     ArtistLeaderboardItem,
     AttendedConcertResponse,
     DeleteConcertResponse,
     FileImportRequest,
     FileImportResponse,
     GigBillResponse,
+    GigCompanionsResponse,
+    GigInviteItem,
     SetlistImportJobResponse,
     LogBillActRequest,
     LogAttendanceRequest,
@@ -38,6 +41,7 @@ from ..services.setlist_service import (
     SetlistUserNotFoundError,
 )
 from ..services.setlist_file_import_service import FileImportError, import_gigs_from_file
+from ..services import setlist_companion_service as companions
 from ..services import setlist_import_job_service as import_jobs
 from ..services.setlist_import_service import sync_user_setlist_history
 from ..services.setlist_stats_service import SetlistStatsService
@@ -348,6 +352,83 @@ def log_attendance_bill_act(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except SetlistRateLimitError as exc:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
+
+
+@router.get("/attendances/{concert_id}/companions", response_model=GigCompanionsResponse)
+def get_gig_companions(
+    concert_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    try:
+        return companions.list_companions(db, current_user.id, concert_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gig not found.") from exc
+
+
+@router.post("/attendances/{concert_id}/companions", response_model=GigCompanionsResponse)
+def add_gig_companions(
+    concert_id: int,
+    payload: AddCompanionsRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    try:
+        return companions.add_companions(db, current_user, concert_id, payload.friend_ids)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gig not found.") from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+
+
+@router.delete("/attendances/{concert_id}/companions/{friend_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_gig_companion(
+    concert_id: int,
+    friend_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Response:
+    try:
+        removed = companions.remove_companion(db, current_user.id, concert_id, friend_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gig not found.") from exc
+    if not removed:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="They aren't on this gig.")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/invites", response_model=list[GigInviteItem])
+def get_gig_invites(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[dict[str, Any]]:
+    return companions.list_invites(db, current_user.id)
+
+
+@router.post("/invites/{invite_id}/add", response_model=AttendedConcertResponse)
+def add_invited_gig(
+    invite_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> AttendedConcertResponse:
+    try:
+        gig = companions.add_invited_gig(db, current_user, invite_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return AttendedConcertResponse.model_validate(gig)
+
+
+@router.post("/invites/{invite_id}/dismiss", status_code=status.HTTP_204_NO_CONTENT)
+def dismiss_gig_invite(
+    invite_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Response:
+    try:
+        companions.dismiss_invite(db, current_user.id, invite_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/stats/artists", response_model=list[ArtistLeaderboardItem])

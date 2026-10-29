@@ -8,7 +8,7 @@ from typing import Any
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from ..models import AttendedConcert, ListeningEvent
+from ..models import AttendedConcert, GigCompanion, ListeningEvent
 from .setlist_artwork_service import existing_gig_artwork, local_live_artwork
 from .setlist_service import SetlistService
 from .setlist_stats_service import _venue_key
@@ -385,7 +385,19 @@ class SetlistAttendanceService:
                 )
             )
 
-        # 2. Delete attended concert records
+        # 2. Withdraw invites to these gigs (gigs friends already added stay theirs)
+        removed_ids = [
+            gig_id
+            for (gig_id,) in self.db.query(AttendedConcert.id).filter(
+                AttendedConcert.user_id == user_id, AttendedConcert.setlist_id.in_(setlist_ids_to_remove)
+            )
+        ]
+        if removed_ids:
+            self.db.query(GigCompanion).filter(GigCompanion.concert_id.in_(removed_ids)).delete(
+                synchronize_session=False
+            )
+
+        # 3. Delete attended concert records
         deleted_count = (
             self.db.query(AttendedConcert)
             .filter(

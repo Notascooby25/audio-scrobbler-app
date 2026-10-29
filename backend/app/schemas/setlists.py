@@ -39,6 +39,42 @@ class UpdateConcertRequest(BaseModel):
     allow_duplicate: bool = False
 
 
+class AddCompanionsRequest(BaseModel):
+    friend_ids: list[int] = Field(..., min_length=1, max_length=20)
+
+
+class CompanionPerson(BaseModel):
+    user_id: int
+    username: str
+    display_name: str
+
+
+class GigCompanionItem(CompanionPerson):
+    status: str
+
+
+class FollowedPersonItem(CompanionPerson):
+    logged_it: bool
+
+
+class GigCompanionsResponse(BaseModel):
+    companions: list[GigCompanionItem]
+    following: list[FollowedPersonItem]
+
+
+class GigInviteItem(BaseModel):
+    id: int
+    from_user: CompanionPerson
+    artist_name: str
+    venue_name: str
+    city: str
+    country: str
+    event_date: str
+    tour_name: str | None = None
+    song_count: int
+    support_acts: list[str] = Field(default_factory=list)
+
+
 class AttendedConcertResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
