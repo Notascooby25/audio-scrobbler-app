@@ -1,5 +1,16 @@
 export const CHANGELOG = [
   {
+    version: "0.16.0",
+    date: "2026-10-29",
+    changes: [
+      "Added Setlist Song Detail Modal: click any concert title or 'View Songs' to see the full setlist broken down into main sets and encores with continuous song numbering, guest features, cover artist notes, and tape intro tags.",
+      "Added Setlist Copy to Clipboard: copy nicely formatted concert tracklists with one click.",
+      "Added Personal Gig Notes & Diary: record memories (standing spots, ticket info, favorite encore moments) directly on your gigs with inline editing and timeline display.",
+      "Added Future Gig & 'I'M GOING' support: concerts occurring in the future automatically display '+ I'M GOING' and an 'Upcoming' badge, with timeline sub-filter tabs ('All Gigs', 'Attended', 'Upcoming').",
+      "Redesigned Set Lists visual styling inspired by Setlist.fm: stacked calendar date badges (Month, Day, Year) and proportional count bars on Artists Seen, Songs Heard, and Venues leaderboards adhering strictly to Flat-By-Default design rules.",
+    ],
+  },
+  {
     version: "0.15.4",
     date: "2026-10-29",
     changes: [

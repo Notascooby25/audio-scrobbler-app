@@ -119,7 +119,19 @@ def test_setlist_routes_crud():
         assert export_csv.status_code == 200
         assert "Alexandra Palace" in export_csv.text
 
-        # 6. Delete gig
+        # 6. Patch gig notes
+        notes_res = client.patch(f"/setlists/{concert_id}/notes", json={"notes": "Stood near sound desk, brilliant!"})
+        assert notes_res.status_code == 200
+        assert notes_res.json()["notes"] == "Stood near sound desk, brilliant!"
+
+        # 7. Get setlist detail (logged)
+        detail_res = client.get("/setlists/setlist/show_123")
+        assert detail_res.status_code == 200
+        assert detail_res.json()["already_logged"] is True
+        assert detail_res.json()["notes"] == "Stood near sound desk, brilliant!"
+        assert detail_res.json()["artist"]["name"] == "Public Service Broadcasting"
+
+        # 8. Delete gig
         del_res = client.delete(f"/setlists/{concert_id}?include_support_acts=true")
         assert del_res.status_code == 200
         assert del_res.json()["deleted_count"] == 1

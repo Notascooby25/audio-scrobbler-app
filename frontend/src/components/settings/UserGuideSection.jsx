@@ -270,7 +270,27 @@ export default function UserGuideSection() {
           <li>
             <strong>Find & Log a Gig:</strong> Head to the <em>Set Lists</em> tab and tap{" "}
             <em>+ Log a Gig</em>. Search by artist name with optional filters for country, venue, or
-            year. Click <strong>I WAS THERE</strong> to log attendance.
+            year. Click <strong>✓ I WAS THERE</strong> to log past shows, or{" "}
+            <strong>+ I'M GOING</strong> for future concerts.
+          </li>
+          <li>
+            <strong>View Songs & Setlist Details:</strong> Tap on any concert title or the{" "}
+            <em>View Songs &rarr;</em> link to open the full setlist modal. See songs divided by
+            Main Set and Encores with continuous numbering, guest performers, cover artist tags,
+            tape intro callouts, and set times. You can also copy the formatted setlist directly to
+            your clipboard.
+          </li>
+          <li>
+            <strong>Personal Gig Diary & Memories:</strong> Add your own notes to any logged
+            concert! In the setlist viewer or timeline, write memories (standing spots, who you went
+            with, highlights). Notes display directly on your timeline cards with a quick edit
+            button.
+          </li>
+          <li>
+            <strong>Future Gigs & "I'M GOING":</strong> Concerts in the future automatically display{" "}
+            <em>+ I'M GOING</em> instead of <em>✓ I WAS THERE</em>. In <em>My Gigs</em>, use the
+            sub-filter buttons to switch between <em>All Gigs</em>, <em>Attended</em>, or{" "}
+            <em>Upcoming</em>.
           </li>
           <li>
             <strong>Support Acts on the Bill:</strong> When logging a show, the app automatically
@@ -284,8 +304,8 @@ export default function UserGuideSection() {
           </li>
           <li>
             <strong>Live Music Leaderboards:</strong> Switch between <em>Artists Seen</em> (ranked
-            by total gigs with expandable accordions showing every show you attended),{" "}
-            <em>Songs Heard</em> (live play counts), and <em>Venues Visited</em>.
+            by total gigs with proportional bars and expandable accordions showing every show you
+            attended), <em>Songs Heard</em> (live play counts), and <em>Venues Visited</em>.
           </li>
           <li>
             <strong>Setlist.fm Account Import & Export:</strong> Have an existing Setlist.fm profile

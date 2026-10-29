@@ -80,7 +80,12 @@ export async function fetchVenueSupportActs({ token, venueId, eventDate, exclude
   return parseResponse(response);
 }
 
-export async function logConcertAttendance({ token, setlistId, supportSetlistIds = [] }) {
+export async function logConcertAttendance({
+  token,
+  setlistId,
+  supportSetlistIds = [],
+  notes = null,
+}) {
   const response = await fetch(`${API_BASE_URL}/setlists/attend`, {
     method: "POST",
     headers: {
@@ -90,7 +95,27 @@ export async function logConcertAttendance({ token, setlistId, supportSetlistIds
     body: JSON.stringify({
       setlist_id: setlistId,
       support_setlist_ids: supportSetlistIds,
+      ...(notes !== null ? { notes } : {}),
     }),
+  });
+  return parseResponse(response);
+}
+
+export async function updateConcertNotes({ token, concertId, notes }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/${concertId}/notes`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ notes }),
+  });
+  return parseResponse(response);
+}
+
+export async function fetchSetlistDetail({ token, setlistId }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/setlist/${setlistId}`, {
+    headers: { Authorization: `Bearer ${token}` },
   });
   return parseResponse(response);
 }

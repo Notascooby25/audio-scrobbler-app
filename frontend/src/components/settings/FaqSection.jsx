@@ -245,6 +245,45 @@ const FAQ_DATA = [
       </p>
     ),
   },
+  {
+    id: "setlists-view-songs",
+    category: "Set Lists & Gigs",
+    question: "Can I view the songs played at a gig, see encores, or copy the setlist?",
+    answer: (
+      <p>
+        <strong>Yes!</strong> Click on any concert headline or tap <em>View Songs &rarr;</em> to
+        open the Setlist Song Detail modal. You will see songs divided into main sets and encores,
+        complete with continuous song numbering, guest features, cover artist notes, and tape intro
+        tags. You can also click <em>Copy Setlist</em> to copy a formatted setlist text to your
+        clipboard.
+      </p>
+    ),
+  },
+  {
+    id: "setlists-gig-notes",
+    category: "Set Lists & Gigs",
+    question: "Can I add personal notes or memories to my gigs?",
+    answer: (
+      <p>
+        <strong>Yes.</strong> Every attended gig supports personal diary notes. In the setlist modal
+        or your My Gigs timeline, write any personal memories (e.g. standing spots, who you attended
+        with, favorite encore track). Your notes are securely saved in your database and displayed
+        alongside the concert.
+      </p>
+    ),
+  },
+  {
+    id: "setlists-future-gigs",
+    category: "Set Lists & Gigs",
+    question: "Can I track future gigs or concerts I'm planning to go to?",
+    answer: (
+      <p>
+        <strong>Yes.</strong> Any concert with a future date automatically displays{" "}
+        <strong>+ I&apos;M GOING</strong> instead of <em>✓ I WAS THERE</em>. In the My Gigs
+        timeline, you can filter by <strong>Upcoming</strong> to see shows on your horizon.
+      </p>
+    ),
+  },
 ];
 
 export default function FaqSection() {

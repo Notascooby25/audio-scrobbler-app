@@ -9,6 +9,11 @@ from pydantic import BaseModel, ConfigDict, Field
 class LogAttendanceRequest(BaseModel):
     setlist_id: str = Field(..., min_length=1, max_length=64)
     support_setlist_ids: list[str] = Field(default_factory=list)
+    notes: str | None = Field(None, max_length=2000)
+
+
+class UpdateConcertNotesRequest(BaseModel):
+    notes: str | None = Field(None, max_length=2000)
 
 
 class AttendedConcertResponse(BaseModel):
@@ -28,6 +33,7 @@ class AttendedConcertResponse(BaseModel):
     parent_setlist_id: str | None = None
     song_count: int = 0
     raw_data: dict[str, Any] | None = None
+    notes: str | None = None
 
 
 class DeleteConcertResponse(BaseModel):
@@ -43,6 +49,8 @@ class ArtistGigItem(BaseModel):
     country: str
     is_support: bool
     song_count: int
+    notes: str | None = None
+    raw_data: dict[str, Any] | None = None
 
 
 class ArtistLeaderboardItem(BaseModel):

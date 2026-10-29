@@ -30,6 +30,7 @@ def test_setlist_models_crud() -> None:
             parent_setlist_id=None,
             raw_data={"songs": ["All My Life", "Everlong"]},
             song_count=2,
+            notes="Front row, epic gig!",
         )
         session.add(concert)
 
@@ -57,6 +58,7 @@ def test_setlist_models_crud() -> None:
         assert queried_concert.artist_name == "Foo Fighters"
         assert queried_concert.venue_name == "Anfield"
         assert queried_concert.song_count == 2
+        assert queried_concert.notes == "Front row, epic gig!"
         assert queried_concert.raw_data == {"songs": ["All My Life", "Everlong"]}
 
         queried_cache = session.query(SetlistCache).filter_by(cache_key="search:foo_fighters:gb").first()

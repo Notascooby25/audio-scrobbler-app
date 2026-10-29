@@ -62,6 +62,7 @@ class SetlistAttendanceService:
         user_id: int,
         setlist_id: str,
         support_setlist_ids: list[str] | None = None,
+        notes: str | None = None,
     ) -> AttendedConcert:
         support_ids = support_setlist_ids or []
 
@@ -167,11 +168,14 @@ class SetlistAttendanceService:
                 parent_setlist_id=None,
                 raw_data=headliner_data,
                 song_count=len(hl_songs),
+                notes=notes.strip() if notes else None,
             )
             self.db.add(hl_concert)
         else:
             hl_concert.raw_data = headliner_data
             hl_concert.song_count = len(hl_songs)
+            if notes is not None:
+                hl_concert.notes = notes.strip() if notes else None
 
         self._create_scrobbles_for_setlist(
             user_id=user_id,
@@ -295,4 +299,14 @@ class SetlistAttendanceService:
         )
 
         self.db.commit()
+        return concert
+
+    def update_concert_notes(self, user_id: int, concert_id: int, notes: str | None) -> AttendedConcert:
+        concert = self.db.query(AttendedConcert).filter_by(id=concert_id, user_id=user_id).first()
+        if not concert:
+            raise ValueError(f"Concert {concert_id} not found.")
+
+        concert.notes = notes.strip() if notes and notes.strip() else None
+        self.db.commit()
+        self.db.refresh(concert)
         return concert

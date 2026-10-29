@@ -17,6 +17,7 @@ from ..schemas.setlists import (
     SetlistPreviewItem,
     SetlistPreviewResponse,
     SongLeaderboardItem,
+    UpdateConcertNotesRequest,
     VenueLeaderboardItem,
 )
 from ..services.setlist_attendance_service import SetlistAttendanceService
@@ -112,12 +113,64 @@ def attend_concert(
             user_id=current_user.id,
             setlist_id=payload.setlist_id,
             support_setlist_ids=payload.support_setlist_ids,
+            notes=payload.notes,
         )
         return AttendedConcertResponse.model_validate(concert)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except SetlistRateLimitError as exc:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
+
+
+@router.patch("/{concert_id}/notes", response_model=AttendedConcertResponse)
+def update_concert_notes(
+    concert_id: int,
+    payload: UpdateConcertNotesRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> AttendedConcertResponse:
+    setlist_svc = SetlistService(db=db)
+    attendance_svc = SetlistAttendanceService(db=db, setlist_service=setlist_svc)
+    try:
+        concert = attendance_svc.update_concert_notes(
+            user_id=current_user.id,
+            concert_id=concert_id,
+            notes=payload.notes,
+        )
+        return AttendedConcertResponse.model_validate(concert)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.get("/setlist/{setlist_id}")
+def get_setlist_detail(
+    setlist_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    # Check if the user already logged this setlist locally
+    logged = db.query(AttendedConcert).filter_by(user_id=current_user.id, setlist_id=setlist_id).first()
+    if logged and logged.raw_data and isinstance(logged.raw_data, dict):
+        res = dict(logged.raw_data)
+        res["notes"] = logged.notes
+        res["already_logged"] = True
+        res["logged_concert_id"] = logged.id
+        return res
+
+    service = SetlistService(db=db)
+    try:
+        data = service.get_setlist(setlist_id)
+        if not data:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Setlist {setlist_id} not found.")
+        return data
+    except SetlistApiKeyMissingError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    except SetlistRateLimitError as exc:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
+    except Exception as exc:
+        if isinstance(exc, HTTPException):
+            raise
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Failed to fetch setlist: {exc}") from exc
 
 
 @router.delete("/{concert_id}", response_model=DeleteConcertResponse)

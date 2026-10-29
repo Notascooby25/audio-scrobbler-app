@@ -158,3 +158,33 @@ def test_delete_attended_concert_cascade_purges_scrobbles(db_session: Session):
     # Both concerts and all 3 scrobbles should be gone
     assert db_session.query(AttendedConcert).filter_by(user_id=1).count() == 0
     assert db_session.query(ListeningEvent).filter_by(user_id=1, source="setlistfm").count() == 0
+
+
+def test_log_and_update_concert_notes(db_session: Session):
+    mock_setlist_service = MagicMock()
+    mock_setlist_service.get_setlist.return_value = {
+        "id": "gig_with_notes",
+        "artist": {"name": "Blur"},
+        "venue": {"name": "Wembley", "city": {"name": "London", "country": {"name": "United Kingdom"}}},
+        "eventDate": "08-07-2023",
+        "sets": {"set": [{"song": [{"name": "Song 2"}]}]},
+    }
+    service = SetlistAttendanceService(db=db_session, setlist_service=mock_setlist_service)
+
+    # Log with initial notes
+    concert = service.log_concert_attendance(
+        user_id=1,
+        setlist_id="gig_with_notes",
+        notes="  Incredible energy, packed crowd!  ",
+    )
+    assert concert.notes == "Incredible energy, packed crowd!"
+
+    # Update notes
+    updated = service.update_concert_notes(
+        user_id=1, concert_id=concert.id, notes="Updated: Lost my phone but worth it"
+    )
+    assert updated.notes == "Updated: Lost my phone but worth it"
+
+    # Clear notes with empty string
+    cleared = service.update_concert_notes(user_id=1, concert_id=concert.id, notes="")
+    assert cleared.notes is None

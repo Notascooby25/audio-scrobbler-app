@@ -22,6 +22,7 @@ import SongsHeardLeaderboard from "./SongsHeardLeaderboard";
 import VenuesLeaderboard from "./VenuesLeaderboard";
 import DeleteGigConfirmModal from "./DeleteGigConfirmModal";
 import ImportExportModal from "./ImportExportModal";
+import SetlistDetailModal from "./SetlistDetailModal";
 
 export default function SetlistsPage() {
   const session = readSession();
@@ -41,6 +42,9 @@ export default function SetlistsPage() {
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [isLogging, setIsLogging] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+
+  // Detail modal state
+  const [selectedSetlistForDetail, setSelectedSetlistForDetail] = useState(null);
 
   // Delete modal state
   const [gigToDelete, setGigToDelete] = useState(null);
@@ -220,6 +224,23 @@ export default function SetlistsPage() {
     }
   };
 
+  const handleOpenSetlistDetail = (item) => {
+    if (!item) return;
+    const setlistId = item.setlist_id || item.id;
+    const loggedId = typeof item.id === "number" ? item.id : null;
+    const initial = item.raw_data
+      ? { ...item.raw_data, notes: item.notes, logged_concert_id: loggedId }
+      : { ...item, logged_concert_id: loggedId };
+    setSelectedSetlistForDetail({
+      setlistId,
+      initialData: initial,
+    });
+  };
+
+  const handleNotesSaved = (concertId, newNotes) => {
+    setMyGigs((prev) => prev.map((g) => (g.id === concertId ? { ...g, notes: newNotes } : g)));
+  };
+
   return (
     <div className="container mx-auto px-4 py-6 max-w-5xl">
       {/* Toast Notification */}
@@ -357,6 +378,7 @@ export default function SetlistsPage() {
                   key={setlist.id}
                   setlist={setlist}
                   onLogAttendance={handleOpenAttendanceModal}
+                  onViewSetlist={handleOpenSetlistDetail}
                   isLogging={isLogging}
                 />
               ))}
@@ -390,6 +412,7 @@ export default function SetlistsPage() {
               gigs={myGigs}
               onRefreshSetlist={handleRefreshSetlist}
               onDeleteGig={(gig) => setGigToDelete(gig)}
+              onOpenSetlist={handleOpenSetlistDetail}
               isRefreshingId={isRefreshingId}
             />
           )}
@@ -401,7 +424,10 @@ export default function SetlistsPage() {
           {isLoadingData ? (
             <div className="text-center py-10 text-muted">Loading artists seen...</div>
           ) : (
-            <ArtistsSeenLeaderboard artists={artistsLeaderboard} />
+            <ArtistsSeenLeaderboard
+              artists={artistsLeaderboard}
+              onOpenSetlist={handleOpenSetlistDetail}
+            />
           )}
         </div>
       )}
@@ -479,6 +505,22 @@ export default function SetlistsPage() {
         isImporting={isImporting}
         token={token}
       />
+
+      {/* Setlist Detail Modal */}
+      {selectedSetlistForDetail && (
+        <SetlistDetailModal
+          setlistId={selectedSetlistForDetail.setlistId}
+          initialData={selectedSetlistForDetail.initialData}
+          token={token}
+          onClose={() => setSelectedSetlistForDetail(null)}
+          onLogAttendance={(setlist) => {
+            setSelectedSetlistForDetail(null);
+            handleOpenAttendanceModal(setlist);
+          }}
+          isLogging={isLogging}
+          onNotesSaved={handleNotesSaved}
+        />
+      )}
     </div>
   );
 }

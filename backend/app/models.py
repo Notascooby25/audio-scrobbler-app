@@ -269,6 +269,7 @@ class AttendedConcert(Base):
     parent_setlist_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     raw_data: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
     song_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
