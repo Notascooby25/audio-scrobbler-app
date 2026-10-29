@@ -3,7 +3,7 @@ import SetlistDateBadge from "./SetlistDateBadge";
 /**
  * Setlist.fm-style gig rows: stacked date | hairline | title link + grey meta line.
  *
- * rows: [{ key, date, title, meta?, tag?, tagMuted?, onOpen? }]
+ * rows: [{ key, date, title, meta?, tag?, tagMuted?, onOpen?, onRemove?, removeLabel? }]
  */
 export default function GigRows({ rows = [] }) {
   return (
@@ -26,6 +26,16 @@ export default function GigRows({ rows = [] }) {
             </div>
             {row.meta && <div className="sfm-gig-meta">{row.meta}</div>}
           </div>
+          {row.onRemove && (
+            <button
+              type="button"
+              className="sfm-link is-muted sfm-row-remove"
+              onClick={row.onRemove}
+              aria-label={row.removeLabel || "Remove gig"}
+            >
+              Remove
+            </button>
+          )}
         </div>
       ))}
     </div>

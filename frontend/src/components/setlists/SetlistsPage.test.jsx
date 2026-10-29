@@ -557,4 +557,72 @@ describe("SetlistsPage", () => {
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(setlistsApi.logManualConcert).toHaveBeenCalledTimes(1);
   });
+
+  it("offers Undo after logging a gig, which removes it again", async () => {
+    setlistsApi.logManualConcert.mockResolvedValueOnce({ id: 88, artist_name: "Shed Seven" });
+
+    render(
+      <MemoryRouter>
+        <SetlistsPage />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /\+ log a gig/i }));
+    fireEvent.click(screen.getByRole("button", { name: /\+ add upcoming show manually/i }));
+    fireEvent.change(screen.getByPlaceholderText(/e\.g\. Shed Seven/i), {
+      target: { value: "Shed Seven" },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/e\.g\. O2 Academy Birmingham/i), {
+      target: { value: "O2 Academy" },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/e\.g\. Birmingham/i), {
+      target: { value: "Birmingham" },
+    });
+    fireEvent.change(screen.getByLabelText(/event date/i), { target: { value: "2026-11-14" } });
+    fireEvent.click(screen.getByRole("button", { name: /log concert/i }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Undo" }));
+    await waitFor(() =>
+      expect(setlistsApi.deleteAttendance).toHaveBeenCalledWith({
+        token: "test-token",
+        concertId: 88,
+        includeSupportActs: true,
+      })
+    );
+    expect(await screen.findByText("Gig removed.")).toBeInTheDocument();
+  });
+
+  it("removes a gig from My Gigs with the subtle Remove link after confirming", async () => {
+    setlistsApi.fetchAttendances.mockResolvedValue([
+      {
+        id: 31,
+        setlist_id: "abc",
+        artist_name: "Doves",
+        venue_name: "Rock City",
+        city: "Nottingham",
+        country: "United Kingdom",
+        event_date: "2025-05-01T20:00:00",
+      },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <SetlistsPage />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Remove Doves at Rock City" }));
+    expect(screen.getByText("Delete Attended Gig")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Delete Gig" }));
+
+    await waitFor(() =>
+      expect(setlistsApi.deleteAttendance).toHaveBeenCalledWith({
+        token: "test-token",
+        concertId: 31,
+        includeSupportActs: true,
+      })
+    );
+    expect(await screen.findByText("Removed Doves.")).toBeInTheDocument();
+    setlistsApi.fetchAttendances.mockResolvedValue([]);
+  });
 });

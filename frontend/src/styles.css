@@ -6074,6 +6074,24 @@ label.sfm-check-row.is-disabled {
   z-index: 50;
 }
 
+.sfm-toast button.sfm-link,
+.sfm-toast button.sfm-link:hover:not(:disabled) {
+  color: var(--color-surface);
+  font-weight: 600;
+  margin-left: 12px;
+}
+
+button.sfm-row-remove {
+  flex: 0 0 auto;
+  font-size: 12px;
+  margin-left: auto;
+  text-decoration: none;
+}
+
+button.sfm-row-remove:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
 .sfm-warning {
   background: var(--color-danger-soft);
   border: 0.5px solid var(--color-danger);
