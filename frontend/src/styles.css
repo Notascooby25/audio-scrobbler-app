@@ -5978,6 +5978,25 @@ button.sfm-close:hover:not(:disabled) {
   margin-top: 12px;
 }
 
+.sfm-file-result {
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+.sfm-file-result p {
+  margin: 0 0 6px;
+}
+
+.sfm-file-result ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.sfm-inline-form input[type="file"] {
+  min-height: 0;
+  padding: 6px;
+}
+
 .sfm-check-list {
   display: grid;
   gap: 6px;

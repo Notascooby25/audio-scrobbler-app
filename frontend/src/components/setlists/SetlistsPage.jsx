@@ -491,6 +491,7 @@ export default function SetlistsPage() {
         isOpen={isImportExportOpen}
         onClose={() => setIsImportExportOpen(false)}
         onImport={handleImportSubmit}
+        onFileImported={() => loadData()}
         isImporting={isImporting}
         token={token}
       />

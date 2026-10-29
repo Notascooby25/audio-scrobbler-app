@@ -234,6 +234,18 @@ export async function previewSetlistsImport({ token, username, page = 1 }) {
   return parseResponse(response);
 }
 
+export async function importSetlistsFromFile({ token, format, content }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/import/file`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ format, content }),
+  });
+  return parseResponse(response);
+}
+
 export async function importSetlistHistory({ token, username, setlistIds = null }) {
   const cleanedUsername = cleanSetlistUsername(username);
   const response = await fetch(`${API_BASE_URL}/setlists/import`, {

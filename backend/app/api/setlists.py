@@ -12,6 +12,8 @@ from ..schemas.setlists import (
     ArtistLeaderboardItem,
     AttendedConcertResponse,
     DeleteConcertResponse,
+    FileImportRequest,
+    FileImportResponse,
     LogAttendanceRequest,
     LogManualConcertRequest,
     SetlistImportRequest,
@@ -29,6 +31,7 @@ from ..services.setlist_service import (
     SetlistService,
     SetlistUserNotFoundError,
 )
+from ..services.setlist_file_import_service import FileImportError, import_gigs_from_file
 from ..services.setlist_import_service import sync_user_setlist_history
 from ..services.setlist_stats_service import SetlistStatsService
 
@@ -429,6 +432,24 @@ def get_setlist_details(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
     except SetlistRateLimitError as exc:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
+
+
+@router.post("/import/file", response_model=FileImportResponse)
+def import_setlists_from_file(
+    payload: FileImportRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    try:
+        return import_gigs_from_file(
+            user_id=current_user.id,
+            file_format=payload.format,
+            content=payload.content,
+            db=db,
+            setlist_service=SetlistService(db=db),
+        )
+    except FileImportError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
 @router.post("/import")

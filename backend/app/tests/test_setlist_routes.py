@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta
 from unittest.mock import ANY, patch
 
@@ -371,3 +372,17 @@ def test_manual_gig_matching_an_existing_artist_and_day_asks_first():
 
     assert client.post("/setlists/manual", json={**payload, "allow_duplicate": True}).status_code == 201
     assert client.post("/setlists/manual", json={**payload, "artist_name": "Doves"}).status_code == 201
+
+
+def test_import_file_route_imports_for_the_current_user_only():
+    content = json.dumps([{"artist_name": "Doves", "venue_name": "Rock City", "event_date": "2025-05-01"}])
+    res = client.post("/setlists/import/file", json={"format": "json", "content": content})
+    assert res.status_code == 200
+    assert res.json()["imported"] == 1
+
+    db = TestingSession()
+    assert db.query(AttendedConcert).filter_by(user_id=42, artist_name="Doves").count() == 1
+    db.close()
+
+    assert client.post("/setlists/import/file", json={"format": "json", "content": "{bad"}).status_code == 400
+    assert client.post("/setlists/import/file", json={"format": "xml", "content": "<a/>"}).status_code == 422
