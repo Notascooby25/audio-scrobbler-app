@@ -12,7 +12,7 @@ import DeleteGigConfirmModal from "./DeleteGigConfirmModal";
 import SetlistAttribution from "./SetlistAttribution";
 import SetlistDateBadge, { isFutureDate, parseDateParts } from "./SetlistDateBadge";
 import SetlistSongs from "./SetlistSongs";
-import { processSetlistSets, setlistAsText } from "./setlistUiUtils";
+import { processSetlistSets, safeExternalUrl, setlistAsText } from "./setlistUiUtils";
 
 function NotesEditor({ gig, token, onSaved }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -175,7 +175,7 @@ export default function SetlistGigPage() {
   const isUpcoming = isFutureDate(gig.event_date);
   const sets = processSetlistSets(setlistData);
   const songCount = sets.reduce((acc, set) => acc + set.songs.filter((s) => !s.tape).length, 0);
-  const setlistUrl = gig.setlist_url || setlistData?.url || null;
+  const setlistUrl = safeExternalUrl(gig.setlist_url) || safeExternalUrl(setlistData?.url);
   const { day, month, year } = parseDateParts(gig.event_date);
 
   const handleRefresh = async () => {

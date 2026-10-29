@@ -98,3 +98,8 @@ export function setlistAsText({ artistName, venueName, eventDate, sets }) {
   });
   return lines.join("\n").trim();
 }
+
+/** Returns the URL only if it's http(s); stored and imported links are untrusted (e.g. javascript:). */
+export function safeExternalUrl(url) {
+  return typeof url === "string" && /^https?:\/\//i.test(url.trim()) ? url.trim() : null;
+}

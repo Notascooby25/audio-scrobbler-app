@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta
 from unittest.mock import ANY, patch
 
@@ -299,3 +300,89 @@ def test_list_attendances_returns_more_than_fifty_gigs():
     assert response.status_code == 200
     assert len(response.json()) == 60
     assert client.get("/setlists/attendances?limit=2001").status_code == 422
+
+
+def test_attend_asks_before_logging_the_same_show_again():
+    show = {
+        "id": "rrc_1016",
+        "artist": {"name": "Red Rum Club"},
+        "venue": {"name": "O2 Institute", "city": {"name": "Birmingham", "country": {"name": "United Kingdom"}}},
+        "eventDate": "16-10-2026",
+        "sets": {"set": [{"song": [{"name": "Eleanor"}]}]},
+    }
+    with patch("backend.app.api.setlists.SetlistService") as MockServiceCls:
+        MockServiceCls.return_value.get_setlist.return_value = show
+        assert client.post("/setlists/attend", json={"setlist_id": "rrc_1016"}).status_code == 201
+
+        again = client.post("/setlists/attend", json={"setlist_id": "rrc_1016"})
+        assert again.status_code == 409
+        detail = again.json()["detail"]
+        assert detail["code"] == "already_logged"
+        assert detail["same_show"] is True
+        assert detail["existing"]["venue_name"] == "O2 Institute"
+
+        forced = client.post("/setlists/attend", json={"setlist_id": "rrc_1016", "allow_duplicate": True})
+        assert forced.status_code == 201
+
+    db = TestingSession()
+    # Re-logging the same show refreshes it rather than adding a second gig or doubling scrobbles
+    assert db.query(AttendedConcert).filter_by(user_id=42).count() == 1
+    assert db.query(ListeningEvent).filter_by(user_id=42, source="setlistfm").count() == 1
+    db.close()
+
+
+def test_manual_gig_matching_an_existing_artist_and_day_asks_first():
+    db = TestingSession()
+    db.add(
+        AttendedConcert(
+            user_id=42,
+            setlist_id="shed_real",
+            artist_name="Shed Seven",
+            venue_name="O2 Academy",
+            city="Birmingham",
+            country="United Kingdom",
+            event_date=datetime(2026, 11, 14, 20, 0),
+        )
+    )
+    # Another user's gig on the same day must not trigger the prompt
+    db.add(
+        AttendedConcert(
+            user_id=7,
+            setlist_id="other_user",
+            artist_name="Doves",
+            venue_name="Rock City",
+            city="Nottingham",
+            country="United Kingdom",
+            event_date=datetime(2026, 11, 14, 20, 0),
+        )
+    )
+    db.commit()
+    db.close()
+
+    payload = {
+        "artist_name": "shed seven",
+        "venue_name": "O2 Academy Birmingham",
+        "city": "Birmingham",
+        "country": "United Kingdom",
+        "event_date": "2026-11-14",
+    }
+    res = client.post("/setlists/manual", json=payload)
+    assert res.status_code == 409
+    assert res.json()["detail"]["same_show"] is False
+
+    assert client.post("/setlists/manual", json={**payload, "allow_duplicate": True}).status_code == 201
+    assert client.post("/setlists/manual", json={**payload, "artist_name": "Doves"}).status_code == 201
+
+
+def test_import_file_route_imports_for_the_current_user_only():
+    content = json.dumps([{"artist_name": "Doves", "venue_name": "Rock City", "event_date": "2025-05-01"}])
+    res = client.post("/setlists/import/file", json={"format": "json", "content": content})
+    assert res.status_code == 200
+    assert res.json()["imported"] == 1
+
+    db = TestingSession()
+    assert db.query(AttendedConcert).filter_by(user_id=42, artist_name="Doves").count() == 1
+    db.close()
+
+    assert client.post("/setlists/import/file", json={"format": "json", "content": "{bad"}).status_code == 400
+    assert client.post("/setlists/import/file", json={"format": "xml", "content": "<a/>"}).status_code == 422

@@ -5,13 +5,22 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
-from sqlalchemy import delete
+from sqlalchemy import delete, func
 from sqlalchemy.orm import Session
 
 from ..models import AttendedConcert, ListeningEvent
 from .setlist_service import SetlistService
 
 logger = logging.getLogger(__name__)
+
+
+class DuplicateGigError(Exception):
+    """Raised when a gig the user is logging looks like one they've already logged."""
+
+    def __init__(self, existing: AttendedConcert, same_show: bool) -> None:
+        super().__init__("Gig already logged.")
+        self.existing = existing
+        self.same_show = same_show
 
 
 def extract_songs_from_setlist_data(data: dict[str, Any]) -> list[str]:
@@ -58,12 +67,34 @@ class SetlistAttendanceService:
         self.db = db
         self.setlist_service = setlist_service
 
+    def find_existing_gig(
+        self, user_id: int, setlist_id: str | None, artist_name: str, event_date: datetime
+    ) -> AttendedConcert | None:
+        """The same Setlist.fm show, or the same artist (any spelling case) on the same day."""
+        if setlist_id:
+            same_show = self.db.query(AttendedConcert).filter_by(user_id=user_id, setlist_id=setlist_id).first()
+            if same_show:
+                return same_show
+        day_start = datetime.combine(event_date.date(), datetime.min.time())
+        return (
+            self.db.query(AttendedConcert)
+            .filter(
+                AttendedConcert.user_id == user_id,
+                func.lower(AttendedConcert.artist_name) == artist_name.strip().lower(),
+                AttendedConcert.event_date >= day_start,
+                AttendedConcert.event_date < day_start + timedelta(days=1),
+            )
+            .order_by(AttendedConcert.id)
+            .first()
+        )
+
     def log_concert_attendance(
         self,
         user_id: int,
         setlist_id: str,
         support_setlist_ids: list[str] | None = None,
         notes: str | None = None,
+        allow_duplicate: bool = True,
     ) -> AttendedConcert:
         support_ids = support_setlist_ids or []
 
@@ -71,6 +102,16 @@ class SetlistAttendanceService:
         headliner_data = self.setlist_service.get_setlist(setlist_id)
         if not headliner_data:
             raise ValueError(f"Setlist with ID {setlist_id} could not be found.")
+
+        if not allow_duplicate:
+            existing = self.find_existing_gig(
+                user_id=user_id,
+                setlist_id=setlist_id,
+                artist_name=headliner_data.get("artist", {}).get("name", ""),
+                event_date=parse_event_date(headliner_data.get("eventDate")),
+            )
+            if existing:
+                raise DuplicateGigError(existing, same_show=existing.setlist_id == setlist_id)
 
         # 2. Fetch support act data
         support_data_list = []
@@ -322,11 +363,19 @@ class SetlistAttendanceService:
         event_date_str: str,
         notes: str | None = None,
         setlist_url: str | None = None,
+        allow_duplicate: bool = True,
     ) -> AttendedConcert:
         try:
             event_dt = datetime.strptime(event_date_str, "%Y-%m-%d")
         except ValueError:
             event_dt = parse_event_date(event_date_str)
+
+        if not allow_duplicate:
+            existing = self.find_existing_gig(
+                user_id=user_id, setlist_id=None, artist_name=artist_name, event_date=event_dt
+            )
+            if existing:
+                raise DuplicateGigError(existing, same_show=False)
 
         setlist_id = f"manual-{uuid.uuid4().hex[:12]}"
         clean_artist = artist_name.strip()

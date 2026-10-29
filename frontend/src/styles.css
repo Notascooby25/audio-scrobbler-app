@@ -5978,6 +5978,25 @@ button.sfm-close:hover:not(:disabled) {
   margin-top: 12px;
 }
 
+.sfm-file-result {
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+.sfm-file-result p {
+  margin: 0 0 6px;
+}
+
+.sfm-file-result ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.sfm-inline-form input[type="file"] {
+  min-height: 0;
+  padding: 6px;
+}
+
 .sfm-check-list {
   display: grid;
   gap: 6px;
@@ -6053,6 +6072,24 @@ label.sfm-check-row.is-disabled {
   position: fixed;
   right: 20px;
   z-index: 50;
+}
+
+.sfm-toast button.sfm-link,
+.sfm-toast button.sfm-link:hover:not(:disabled) {
+  color: var(--color-surface);
+  font-weight: 600;
+  margin-left: 12px;
+}
+
+button.sfm-row-remove {
+  flex: 0 0 auto;
+  font-size: 12px;
+  margin-left: auto;
+  text-decoration: none;
+}
+
+button.sfm-row-remove:hover:not(:disabled) {
+  text-decoration: underline;
 }
 
 .sfm-warning {

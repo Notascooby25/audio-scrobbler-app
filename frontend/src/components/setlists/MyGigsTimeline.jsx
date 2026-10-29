@@ -5,7 +5,7 @@ import { isFutureDate } from "./SetlistDateBadge";
 import SetlistPagination from "./SetlistPagination";
 import useListPaging from "./useListPaging";
 
-export default function MyGigsTimeline({ gigs = [], onOpenGig = null }) {
+export default function MyGigsTimeline({ gigs = [], onOpenGig = null, onRemoveGig = null }) {
   const pastGigs = gigs.filter((g) => !isFutureDate(g.event_date));
   const futureGigs = gigs.filter((g) => isFutureDate(g.event_date));
 
@@ -84,6 +84,8 @@ export default function MyGigsTimeline({ gigs = [], onOpenGig = null }) {
                   tag: isFuture ? "Upcoming" : gig.is_support_act ? "Support" : null,
                   tagMuted: !isFuture,
                   onOpen: onOpenGig ? () => onOpenGig(gig.id) : null,
+                  onRemove: onRemoveGig ? () => onRemoveGig(gig) : null,
+                  removeLabel: `Remove ${gig.artist_name} at ${gig.venue_name}`,
                 };
               })}
             />

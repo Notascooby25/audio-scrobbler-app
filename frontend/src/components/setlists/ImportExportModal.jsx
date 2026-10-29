@@ -1,13 +1,48 @@
 import { useState } from "react";
-import { cleanSetlistUsername, previewSetlistsImport } from "../../api/setlists";
+import {
+  cleanSetlistUsername,
+  importSetlistsFromFile,
+  previewSetlistsImport,
+} from "../../api/setlists";
 
-export default function ImportExportModal({ isOpen, onClose, onImport, isImporting, token }) {
+const MAX_FILE_BYTES = 2 * 1024 * 1024;
+
+function readFileText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Couldn't read that file."));
+    reader.readAsText(file);
+  });
+}
+
+function fileImportSummary(result) {
+  const parts = [`${result.imported} imported`];
+  if (result.skipped_existing) parts.push(`${result.skipped_existing} already logged (skipped)`);
+  if (result.invalid_count) {
+    parts.push(`${result.invalid_count} invalid ${result.invalid_count === 1 ? "row" : "rows"}`);
+  }
+  return parts.join(", ");
+}
+
+export default function ImportExportModal({
+  isOpen,
+  onClose,
+  onImport,
+  onFileImported = null,
+  isImporting,
+  token,
+}) {
   const [username, setUsername] = useState("");
   const [isFetchingPreview, setIsFetchingPreview] = useState(false);
   const [previewError, setPreviewError] = useState("");
   const [previewData, setPreviewData] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [currentPage, setCurrentPage] = useState(1);
+  const [importFile, setImportFile] = useState(null);
+  const [isFileImporting, setIsFileImporting] = useState(false);
+  const [fileError, setFileError] = useState("");
+  const [fileResult, setFileResult] = useState(null);
 
   if (!isOpen) return null;
 
@@ -79,6 +114,35 @@ export default function ImportExportModal({ isOpen, onClose, onImport, isImporti
 
   const handleImportAll = () => {
     onImport(cleanSetlistUsername(username), null);
+  };
+
+  const handleFileImport = async () => {
+    if (!importFile || !token) return;
+    setFileError("");
+    setFileResult(null);
+    const extension = importFile.name.split(".").pop().toLowerCase();
+    if (!["csv", "json"].includes(extension)) {
+      setFileError("Choose a .csv or .json file exported from Set Lists.");
+      return;
+    }
+    if (importFile.size > MAX_FILE_BYTES) {
+      setFileError("That file is larger than 2 MB.");
+      return;
+    }
+    setIsFileImporting(true);
+    try {
+      const result = await importSetlistsFromFile({
+        token,
+        format: extension,
+        content: await readFileText(importFile),
+      });
+      setFileResult(result);
+      if (onFileImported) onFileImported(result);
+    } catch (err) {
+      setFileError(err?.detail && typeof err.detail === "string" ? err.detail : err.message);
+    } finally {
+      setIsFileImporting(false);
+    }
   };
 
   const handleExport = (format) => {
@@ -232,6 +296,63 @@ export default function ImportExportModal({ isOpen, onClose, onImport, isImporti
                   {isImporting ? "Importing..." : `Import Selected (${selectedIds.size})`}
                 </button>
               </div>
+            </div>
+          )}
+        </section>
+
+        <section className="sfm-modal-section">
+          <h4>Import from a File</h4>
+          <p>
+            Import a .csv or .json file made with Export below (for example, a backup or another
+            account&apos;s gigs). Gigs you&apos;ve already logged are skipped.
+          </p>
+          <div className="sfm-inline-form">
+            <input
+              type="file"
+              accept=".csv,.json,text/csv,application/json"
+              aria-label="Gigs file (CSV or JSON)"
+              onChange={(e) => {
+                setImportFile(e.target.files?.[0] || null);
+                setFileResult(null);
+                setFileError("");
+              }}
+              disabled={isFileImporting}
+            />
+            <button
+              type="button"
+              onClick={handleFileImport}
+              disabled={!importFile || isFileImporting}
+            >
+              {isFileImporting ? "Importing..." : "Import File"}
+            </button>
+          </div>
+          {fileError && (
+            <p className="sfm-error" role="alert">
+              {fileError}
+            </p>
+          )}
+          {fileResult && (
+            <div className="sfm-file-result" role="status">
+              <p>
+                <strong>{fileImportSummary(fileResult)}.</strong>
+              </p>
+              {fileResult.without_songs > 0 && (
+                <p className="sfm-gig-meta">
+                  {fileResult.without_songs} gig{fileResult.without_songs === 1 ? "" : "s"} imported
+                  without songs
+                  {fileResult.quota_reached ? " (Setlist.fm daily limit reached)" : ""}. Open a gig
+                  and use Refresh from Setlist.fm to add them later.
+                </p>
+              )}
+              {fileResult.invalid.length > 0 && (
+                <ul className="sfm-gig-meta">
+                  {fileResult.invalid.map((row) => (
+                    <li key={row.line}>
+                      Line {row.line}: {row.error}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
         </section>

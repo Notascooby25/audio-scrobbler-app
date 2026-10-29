@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { readSession } from "../../session";
 import {
@@ -11,7 +11,11 @@ import {
   fetchVenuesVisitedLeaderboard,
   importSetlistHistory,
   fetchSetlistStatus,
+  alreadyLoggedInfo,
+  deleteAttendance,
 } from "../../api/setlists";
+import AlreadyLoggedModal from "./AlreadyLoggedModal";
+import DeleteGigConfirmModal from "./DeleteGigConfirmModal";
 import GigSearchBar from "./GigSearchBar";
 import GigCard from "./GigCard";
 import SupportActsPromptModal from "./SupportActsPromptModal";
@@ -62,7 +66,14 @@ export default function SetlistsPage() {
   const [supportActs, setSupportActs] = useState([]);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [isLogging, setIsLogging] = useState(false);
+  // Set when the backend says this gig is already logged; holds what to retry with
+  const [duplicatePrompt, setDuplicatePrompt] = useState(null);
   const [toastMessage, setToastMessage] = useState("");
+  // When set, the toast offers Undo for the gig that was just logged
+  const [toastUndoGig, setToastUndoGig] = useState(null);
+  const toastTimer = useRef(null);
+  const [gigToRemove, setGigToRemove] = useState(null);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   // Import/Export modal state
   const [isImportExportOpen, setIsImportExportOpen] = useState(false);
@@ -76,9 +87,33 @@ export default function SetlistsPage() {
   // Start in the loading state so empty-state text doesn't flash before the first fetch
   const [isLoadingData, setIsLoadingData] = useState(Boolean(token));
 
-  const showToast = (msg) => {
+  const showToast = (msg, undoGig = null) => {
+    clearTimeout(toastTimer.current);
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(""), 4000);
+    setToastUndoGig(undoGig);
+    toastTimer.current = setTimeout(
+      () => {
+        setToastMessage("");
+        setToastUndoGig(null);
+      },
+      undoGig ? 10000 : 4000
+    );
+  };
+
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
+
+  const removeGig = async (gig, includeSupportActs, doneMessage) => {
+    setIsRemoving(true);
+    try {
+      await deleteAttendance({ token, concertId: gig.id, includeSupportActs });
+      setGigToRemove(null);
+      showToast(doneMessage);
+      loadData();
+    } catch (err) {
+      alert(`Couldn't remove gig: ${err.message}`);
+    } finally {
+      setIsRemoving(false);
+    }
   };
 
   const loadData = async () => {
@@ -190,21 +225,36 @@ export default function SetlistsPage() {
     }
   };
 
-  const handleConfirmAttendance = async (chosenSupportIds) => {
+  const handleConfirmAttendance = async (chosenSupportIds, allowDuplicate = false) => {
     if (!token || !selectedMainSetlist) return;
     setIsLogging(true);
     try {
-      await logConcertAttendance({
+      const logged = await logConcertAttendance({
         token,
         setlistId: selectedMainSetlist.id,
         supportSetlistIds: chosenSupportIds,
+        allowDuplicate,
       });
+      // Re-logging the same show only refreshed an existing gig, so there's nothing to undo
+      const refreshedExisting = Boolean(duplicatePrompt?.info?.same_show);
       setIsSupportModalOpen(false);
+      setDuplicatePrompt(null);
       setSelectedMainSetlist(null);
-      showToast("Concert logged! Songs added to your scrobble library.");
+      showToast(
+        refreshedExisting
+          ? "Gig refreshed. Songs updated in your scrobble library."
+          : "Concert logged! Songs added to your scrobble library.",
+        refreshedExisting ? null : logged
+      );
       setActiveTab("gigs");
     } catch (err) {
-      alert(`Error logging concert: ${err.message}`);
+      const info = alreadyLoggedInfo(err);
+      if (info) {
+        setIsSupportModalOpen(false);
+        setDuplicatePrompt({ info, chosenSupportIds });
+      } else {
+        alert(`Error logging concert: ${err.message}`);
+      }
     } finally {
       setIsLogging(false);
     }
@@ -234,7 +284,7 @@ export default function SetlistsPage() {
   };
 
   const handleManualSaved = (newGig) => {
-    showToast(`Logged "${newGig?.artist_name || "Upcoming gig"}"!`);
+    showToast(`Logged "${newGig?.artist_name || "Upcoming gig"}"!`, newGig?.id ? newGig : null);
     loadData();
     setActiveTab("gigs");
   };
@@ -244,6 +294,16 @@ export default function SetlistsPage() {
       {toastMessage && (
         <div className="sfm-toast" role="status">
           {toastMessage}
+          {toastUndoGig && (
+            <button
+              type="button"
+              className="sfm-link"
+              onClick={() => removeGig(toastUndoGig, true, "Gig removed.")}
+              disabled={isRemoving}
+            >
+              Undo
+            </button>
+          )}
         </div>
       )}
 
@@ -416,7 +476,7 @@ export default function SetlistsPage() {
             {isLoadingData ? (
               <div className="sfm-empty">Loading your gigs...</div>
             ) : (
-              <MyGigsTimeline gigs={myGigs} onOpenGig={openGig} />
+              <MyGigsTimeline gigs={myGigs} onOpenGig={openGig} onRemoveGig={setGigToRemove} />
             )}
           </div>
         )}
@@ -464,11 +524,33 @@ export default function SetlistsPage() {
         isSubmitting={isLogging}
       />
 
+      <DeleteGigConfirmModal
+        key={gigToRemove?.id}
+        isOpen={Boolean(gigToRemove)}
+        onClose={() => setGigToRemove(null)}
+        gig={gigToRemove}
+        onConfirm={(_id, includeSupportActs) =>
+          removeGig(gigToRemove, includeSupportActs, `Removed ${gigToRemove.artist_name}.`)
+        }
+        isDeleting={isRemoving}
+      />
+
+      <AlreadyLoggedModal
+        info={duplicatePrompt?.info}
+        isSubmitting={isLogging}
+        onCancel={() => {
+          setDuplicatePrompt(null);
+          setSelectedMainSetlist(null);
+        }}
+        onConfirm={() => handleConfirmAttendance(duplicatePrompt.chosenSupportIds, true)}
+      />
+
       {/* Import / Export Modal */}
       <ImportExportModal
         isOpen={isImportExportOpen}
         onClose={() => setIsImportExportOpen(false)}
         onImport={handleImportSubmit}
+        onFileImported={() => loadData()}
         isImporting={isImporting}
         token={token}
       />

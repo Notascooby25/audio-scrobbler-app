@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import SetlistsPage from "./SetlistsPage";
@@ -18,7 +18,26 @@ vi.mock("../../api/setlists", () => ({
   fetchSetlistStatus: vi
     .fn()
     .mockResolvedValue({ configured: true, daily_quota: 1400, daily_count: 0 }),
+  alreadyLoggedInfo: (err) =>
+    err?.status === 409 && err?.detail?.code === "already_logged" ? err.detail : null,
 }));
+
+const alreadyLoggedError = (sameShow) =>
+  Object.assign(new Error("HTTP 409: Gig already logged."), {
+    status: 409,
+    detail: {
+      code: "already_logged",
+      message: "Gig already logged.",
+      same_show: sameShow,
+      existing: {
+        id: 5,
+        artist_name: "Foo Fighters",
+        venue_name: "Anfield",
+        city: "Liverpool",
+        event_date: "2026-06-27T20:00:00",
+      },
+    },
+  });
 
 vi.mock("../../session", () => ({
   readSession: () => ({ accessToken: "test-token" }),
@@ -460,5 +479,150 @@ describe("SetlistsPage", () => {
         })
       );
     });
+  });
+
+  it("asks before logging a gig that is already logged, then logs it again", async () => {
+    setlistsApi.searchSetlists.mockResolvedValueOnce({
+      total: 1,
+      setlist: [
+        {
+          id: "foo_anfield_2026",
+          artist: { name: "Foo Fighters" },
+          venue: { name: "Anfield", city: { name: "Liverpool" } },
+          eventDate: "27-06-2020",
+          sets: { set: [] },
+        },
+      ],
+    });
+    setlistsApi.logConcertAttendance
+      .mockRejectedValueOnce(alreadyLoggedError(true))
+      .mockResolvedValueOnce({ id: 5 });
+
+    render(
+      <MemoryRouter>
+        <SetlistsPage />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /\+ log a gig/i }));
+    fireEvent.change(screen.getByPlaceholderText(/search artist/i), {
+      target: { value: "Foo Fighters" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /i was there/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /save & add to scrobbles/i }));
+
+    const dialog = await screen.findByRole("alertdialog");
+    expect(dialog).toHaveTextContent(
+      "You've already logged Foo Fighters at Anfield, Liverpool on 27 Jun 2026. Are you sure you want to log it again?"
+    );
+    expect(dialog).toHaveTextContent(/refreshes its songs/i);
+
+    fireEvent.click(screen.getByRole("button", { name: "Log again" }));
+    await waitFor(() =>
+      expect(setlistsApi.logConcertAttendance).toHaveBeenLastCalledWith(
+        expect.objectContaining({ setlistId: "foo_anfield_2026", allowDuplicate: true })
+      )
+    );
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+  });
+
+  it("cancelling the already-logged prompt logs nothing", async () => {
+    setlistsApi.logManualConcert.mockRejectedValueOnce(alreadyLoggedError(false));
+
+    render(
+      <MemoryRouter>
+        <SetlistsPage />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /\+ log a gig/i }));
+    fireEvent.click(screen.getByRole("button", { name: /\+ add upcoming show manually/i }));
+    fireEvent.change(screen.getByPlaceholderText(/e\.g\. Shed Seven/i), {
+      target: { value: "Foo Fighters" },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/e\.g\. O2 Academy Birmingham/i), {
+      target: { value: "Anfield" },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/e\.g\. Birmingham/i), {
+      target: { value: "Liverpool" },
+    });
+    fireEvent.change(screen.getByLabelText(/event date/i), { target: { value: "2026-06-27" } });
+    fireEvent.click(screen.getByRole("button", { name: /log concert/i }));
+
+    const dialog = await screen.findByRole("alertdialog");
+    expect(dialog).toHaveTextContent(/adds a second gig/i);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(setlistsApi.logManualConcert).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers Undo after logging a gig, which removes it again", async () => {
+    setlistsApi.logManualConcert.mockResolvedValueOnce({ id: 88, artist_name: "Shed Seven" });
+
+    render(
+      <MemoryRouter>
+        <SetlistsPage />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /\+ log a gig/i }));
+    fireEvent.click(screen.getByRole("button", { name: /\+ add upcoming show manually/i }));
+    fireEvent.change(screen.getByPlaceholderText(/e\.g\. Shed Seven/i), {
+      target: { value: "Shed Seven" },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/e\.g\. O2 Academy Birmingham/i), {
+      target: { value: "O2 Academy" },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/e\.g\. Birmingham/i), {
+      target: { value: "Birmingham" },
+    });
+    fireEvent.change(screen.getByLabelText(/event date/i), { target: { value: "2026-11-14" } });
+    fireEvent.click(screen.getByRole("button", { name: /log concert/i }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Undo" }));
+    await waitFor(() =>
+      expect(setlistsApi.deleteAttendance).toHaveBeenCalledWith({
+        token: "test-token",
+        concertId: 88,
+        includeSupportActs: true,
+      })
+    );
+    expect(await screen.findByText("Gig removed.")).toBeInTheDocument();
+  });
+
+  it("removes a gig from My Gigs with the subtle Remove link after confirming", async () => {
+    setlistsApi.fetchAttendances.mockResolvedValue([
+      {
+        id: 31,
+        setlist_id: "abc",
+        artist_name: "Doves",
+        venue_name: "Rock City",
+        city: "Nottingham",
+        country: "United Kingdom",
+        event_date: "2025-05-01T20:00:00",
+      },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <SetlistsPage />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Remove Doves at Rock City" }));
+    expect(screen.getByText("Delete Attended Gig")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Delete Gig" }));
+
+    await waitFor(() =>
+      expect(setlistsApi.deleteAttendance).toHaveBeenCalledWith({
+        token: "test-token",
+        concertId: 31,
+        includeSupportActs: true,
+      })
+    );
+    expect(await screen.findByText("Removed Doves.")).toBeInTheDocument();
+    setlistsApi.fetchAttendances.mockResolvedValue([]);
   });
 });

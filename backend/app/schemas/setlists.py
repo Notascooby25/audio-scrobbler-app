@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -10,6 +10,8 @@ class LogAttendanceRequest(BaseModel):
     setlist_id: str = Field(..., min_length=1, max_length=64)
     support_setlist_ids: list[str] = Field(default_factory=list)
     notes: str | None = Field(None, max_length=2000)
+    # False: answer 409 if this gig looks already logged, so the app can ask first
+    allow_duplicate: bool = False
 
 
 class UpdateConcertNotesRequest(BaseModel):
@@ -24,6 +26,7 @@ class LogManualConcertRequest(BaseModel):
     event_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     notes: str | None = Field(None, max_length=2000)
     setlist_url: str | None = Field(None, max_length=500)
+    allow_duplicate: bool = False
 
 
 class AttendedConcertResponse(BaseModel):
@@ -95,6 +98,26 @@ class VenueLeaderboardItem(BaseModel):
     country: str
     count: int
     gigs: list[ConcertRefItem] = Field(default_factory=list)
+
+
+class FileImportRequest(BaseModel):
+    format: Literal["csv", "json"]
+    # The browser sends the file's text; 2 MB cap matches the service limit
+    content: str = Field(..., min_length=1, max_length=2_000_000)
+
+
+class FileImportInvalidRow(BaseModel):
+    line: int
+    error: str
+
+
+class FileImportResponse(BaseModel):
+    imported: int
+    skipped_existing: int
+    without_songs: int
+    quota_reached: bool
+    invalid: list[FileImportInvalidRow]
+    invalid_count: int
 
 
 class SetlistPreviewItem(BaseModel):

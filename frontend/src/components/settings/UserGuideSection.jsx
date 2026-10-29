@@ -290,6 +290,13 @@ export default function UserGuideSection() {
             preview its songs before logging it.
           </li>
           <li>
+            <strong>Already Logged &amp; Mistakes:</strong> If you log a gig you already have (the
+            same Setlist.fm show, or the same artist on the same day), you&apos;re asked before
+            it&apos;s logged again. Logged something by mistake? Tap <em>Undo</em> in the
+            confirmation message, or use the small <em>Remove</em> link on the gig&apos;s row in{" "}
+            <em>My Gigs</em>.
+          </li>
+          <li>
             <strong>Personal Gig Diary:</strong> Add your own memories (standing spots, who you went
             with, highlights) in the <em>My notes</em> box on each gig&apos;s page.
           </li>
@@ -323,7 +330,9 @@ export default function UserGuideSection() {
             <em>Import / Export</em> to enter their username or paste their full profile link (e.g.{" "}
             <code>https://www.setlist.fm/user/crispylettuce</code>), preview all attended gigs, tick
             the specific shows you attended, and import them with 1 click. You can also download
-            your entire gig collection as JSON or CSV.
+            your entire gig collection as JSON or CSV, and use <em>Import from a File</em> to load
+            one of those files back in (for example, to restore a backup). Gigs you&apos;ve already
+            logged are skipped.
           </li>
         </ul>
       </article>

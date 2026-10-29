@@ -1,4 +1,5 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import * as setlistsApi from "../../api/setlists";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import ArtistsSeenLeaderboard from "./ArtistsSeenLeaderboard";
@@ -15,6 +16,7 @@ vi.mock("../../api/setlists", async (importOriginal) => {
   return {
     ...actual,
     previewSetlistsImport: vi.fn(),
+    importSetlistsFromFile: vi.fn(),
     fetchSetlistDetail: vi.fn(),
     updateConcertNotes: vi.fn().mockResolvedValue({ id: 10, notes: "Updated note" }),
   };
@@ -247,6 +249,58 @@ describe("SetlistsStats and Modals", () => {
     fireEvent.click(importSelectedBtn);
 
     expect(onImport).toHaveBeenCalledWith("crispylettuce", ["show_1"]);
+  });
+
+  it("imports gigs from a JSON file and shows what happened", async () => {
+    setlistsApi.importSetlistsFromFile.mockResolvedValueOnce({
+      imported: 12,
+      skipped_existing: 3,
+      without_songs: 0,
+      quota_reached: false,
+      invalid: [{ line: 7, error: "event_date: date must look like 2026-10-16" }],
+      invalid_count: 1,
+    });
+    const onFileImported = vi.fn();
+    render(
+      <ImportExportModal
+        isOpen={true}
+        onClose={vi.fn()}
+        onImport={vi.fn()}
+        onFileImported={onFileImported}
+        isImporting={false}
+        token="test-token"
+      />
+    );
+
+    const content = JSON.stringify([{ artist_name: "Doves" }]);
+    const file = new File([content], "attended_gigs.json", { type: "application/json" });
+    fireEvent.change(screen.getByLabelText(/gigs file/i), { target: { files: [file] } });
+    fireEvent.click(screen.getByRole("button", { name: "Import File" }));
+
+    expect(
+      await screen.findByText("12 imported, 3 already logged (skipped), 1 invalid row.")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Line 7: event_date: date must look like 2026-10-16")
+    ).toBeInTheDocument();
+    expect(setlistsApi.importSetlistsFromFile).toHaveBeenCalledWith({
+      token: "test-token",
+      format: "json",
+      content,
+    });
+    expect(onFileImported).toHaveBeenCalled();
+  });
+
+  it("rejects files that aren't CSV or JSON before uploading", async () => {
+    render(
+      <ImportExportModal isOpen={true} onClose={vi.fn()} onImport={vi.fn()} token="test-token" />
+    );
+    const file = new File(["x"], "gigs.xlsx");
+    fireEvent.change(screen.getByLabelText(/gigs file/i), { target: { files: [file] } });
+    fireEvent.click(screen.getByRole("button", { name: "Import File" }));
+
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(/\.csv or \.json/));
+    expect(setlistsApi.importSetlistsFromFile).not.toHaveBeenCalled();
   });
 
   it("renders GigCard with '+ I\\'M GOING' for future gigs and '✓ I WAS THERE' for past gigs", () => {
