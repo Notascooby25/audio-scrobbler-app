@@ -43,6 +43,10 @@ class UserPreferences(Base):
             "'fools_gold', 'paint_it_black', 'pretty_in_pink', 'orange_crush')",
             name="ck_user_preferences_accent_color",
         ),
+        CheckConstraint(
+            "jukebox_source IN ('spotify_saved', 'library_archive')",
+            name="ck_user_preferences_jukebox_source",
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
@@ -50,6 +54,7 @@ class UserPreferences(Base):
     default_date_range: Mapped[str] = mapped_column(String(32), nullable=False, default="last.week")
     theme: Mapped[str] = mapped_column(String(16), nullable=False, default="system")
     accent_color: Mapped[str] = mapped_column(String(24), nullable=False, default="blue_monday")
+    jukebox_source: Mapped[str] = mapped_column(String(32), nullable=False, default="spotify_saved")
     default_page_size: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
     default_library_view: Mapped[str] = mapped_column(String(16), nullable=False, default="list")
     scrobbles_view: Mapped[str | None] = mapped_column(String(16), nullable=True)
@@ -159,6 +164,9 @@ class UserScrobbleSettings(Base):
     liked_tracks_watermark: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     liked_tracks_catch_up_floor: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     liked_tracks_last_synced_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    saved_albums_sync_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    saved_albums_backfill_offset: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    saved_albums_last_synced_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     realtime_sync_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     scrobble_threshold_percent: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
@@ -184,6 +192,29 @@ class LikedTrack(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
+
+
+class SavedAlbum(Base):
+    __tablename__ = "saved_albums"
+    __table_args__ = (
+        UniqueConstraint("user_id", "spotify_album_id", name="uq_saved_album_user_spotify_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    spotify_album_id: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
+    album_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    artist_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    release_date: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    release_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    genres: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    duration_ms: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    label: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    artwork_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    spotify_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    added_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    last_picked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 class ArtworkCache(Base):
