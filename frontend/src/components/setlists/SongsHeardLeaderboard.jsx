@@ -63,7 +63,7 @@ export default function SongsHeardLeaderboard({ songs = [], onOpenGig = null }) 
           rows={song.gigs.map((gig) => ({
             key: gig.id,
             date: gig.event_date || gig.date,
-            title: [gig.venue_name, gig.city].filter(Boolean).join(", "),
+            title: [gig.festival_name || gig.venue_name, gig.city].filter(Boolean).join(", "),
             meta: gig.artist_name,
             onOpen: onOpenGig ? () => onOpenGig(gig.id) : null,
           }))}

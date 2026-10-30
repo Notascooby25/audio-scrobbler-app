@@ -5683,6 +5683,10 @@ button.sfm-back {
   margin: 6px 0 0;
 }
 
+.sfm-festival-name {
+  font-weight: 500;
+}
+
 .sfm-gig-actions {
   display: flex;
   flex-wrap: wrap;
