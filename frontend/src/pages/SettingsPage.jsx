@@ -23,6 +23,7 @@ import ScopeCreepTools from "../components/ScopeCreepTools";
 import YouTubeScrobblerTools from "../components/YouTubeScrobblerTools";
 import UserGuideSection from "../components/settings/UserGuideSection";
 import FaqSection from "../components/settings/FaqSection";
+import HomeCitySection from "../components/settings/HomeCitySection";
 
 const SETTINGS_TABS = [
   ["general", "General"],
@@ -434,6 +435,14 @@ export default function SettingsPage() {
             {status === "saving" && <p role="status">Saving...</p>}
             {status === "saved" && <p role="status">Saved</p>}
           </div>
+
+          <HomeCitySection
+            token={session?.accessToken}
+            savedCity={settings?.home_city || null}
+            onChanged={(homeCity) =>
+              setSettings((prev) => (prev ? { ...prev, home_city: homeCity } : prev))
+            }
+          />
 
           <section
             className="settings-form settings-blocks"

@@ -312,6 +312,14 @@ export async function fetchLiveGap({ token, userId }) {
   return parseResponse(response);
 }
 
+/** Your five headline gigs furthest from your home city. Only your own gigs, never a followed person's. */
+export async function fetchFurthestGigs({ token }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/stats/furthest-gigs`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
 export async function fetchGigBump({ token, userId }) {
   const response = await fetch(`${API_BASE_URL}/setlists/stats/gig-bump${viewingQuery(userId)}`, {
     headers: { Authorization: `Bearer ${token}` },

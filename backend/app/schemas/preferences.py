@@ -8,8 +8,13 @@ VIEWS = {"list", "grid"}
 PAGE_SIZES = {10, 25, 50, 100}
 
 
+class HomeCityRequest(BaseModel):
+    city: str = Field(..., min_length=1, max_length=128)
+
+
 class UserPreferencesResponse(BaseModel):
     user_id: int
+    home_city: str | None = None
     default_date_range: str
     theme: str
     default_page_size: int

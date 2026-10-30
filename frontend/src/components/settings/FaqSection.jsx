@@ -249,6 +249,20 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "setlists-furthest-gigs",
+    category: "Set Lists & Gigs",
+    question: "How far have I travelled to gigs?",
+    answer: (
+      <p>
+        <strong>Set your home city.</strong> Go to <em>Settings → General</em> and enter the city
+        you live in, such as Leeds, United Kingdom. The Gigs tab on Reports then shows your five
+        furthest headline gigs in kilometres, measured as the crow flies. Venues are looked up on
+        OpenStreetMap a few at a time, so a long history can take a few visits to fill in. Only you
+        see these distances.
+      </p>
+    ),
+  },
+  {
     id: "setlists-download-profile",
     category: "Set Lists & Gigs",
     question: "I hit the Setlist.fm daily limit. How do I avoid fetching the same profile again?",

@@ -233,6 +233,24 @@ class SetlistImportRequest(BaseModel):
     setlist_ids: list[str] | None = None
 
 
+class FurthestGigItem(BaseModel):
+    id: int
+    artist_name: str
+    venue_name: str
+    city: str
+    country: str
+    date: str
+    event_date: str | None = None
+    distance_km: int
+
+
+class FurthestGigsResponse(BaseModel):
+    home_set: bool
+    located_gigs: int
+    pending_gigs: int
+    furthest: list[FurthestGigItem] = Field(default_factory=list)
+
+
 class GigPeriodItem(BaseModel):
     period: str
     gigs: int

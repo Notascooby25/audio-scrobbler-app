@@ -8,6 +8,7 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     DateTime,
+    Float,
     Integer,
     String,
     Text,
@@ -54,6 +55,9 @@ class UserPreferences(Base):
     timestamp_mode: Mapped[str] = mapped_column(String(16), nullable=False, default="relative")
     notify_recaps: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     notify_milestones: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    home_city: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    home_lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    home_lng: Mapped[float | None] = mapped_column(Float, nullable=True)
     notify_system: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     recap_frequency: Mapped[str] = mapped_column(String(16), nullable=False, default="weekly")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
@@ -248,6 +252,18 @@ class FollowedYouTubeChannel(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class GeoCache(Base):
+    """A place looked up on the map service. Found places are kept for months; misses for an hour,
+    so a typo or a venue the map doesn't know gets retried later."""
+
+    __tablename__ = "geo_cache"
+
+    cache_key: Mapped[str] = mapped_column(String(255), primary_key=True)
+    lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    lng: Mapped[float | None] = mapped_column(Float, nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, index=True, nullable=False)
 
 
 class AttendedConcert(Base):

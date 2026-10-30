@@ -373,6 +373,15 @@ export function updateUserSettings({ token, changes }) {
   return fetchAnalyticsResource('/users/me/settings', { token, method: 'PATCH', body: changes })
 }
 
+/** Looks the city up on the map and stores it as your home for gig distances. */
+export function setHomeCity({ token, city }) {
+  return fetchAnalyticsResource('/users/me/settings/home-city', { token, method: 'PUT', body: { city } })
+}
+
+export function clearHomeCity({ token }) {
+  return fetchAnalyticsResource('/users/me/settings/home-city', { token, method: 'DELETE' })
+}
+
 export function fetchScrobbleSettings({ token }) {
   return fetchAnalyticsResource('/users/me/settings/scrobble', { token })
 }

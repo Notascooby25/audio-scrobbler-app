@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
-import { fetchGigBump, fetchGigsByPeriod, fetchLiveGap } from "../../api/setlists";
+import { Link } from "react-router-dom";
+import {
+  fetchFurthestGigs,
+  fetchGigBump,
+  fetchGigsByPeriod,
+  fetchLiveGap,
+} from "../../api/setlists";
 import BarTrendChart from "../charts/BarTrendChart";
+
+const YEARS_SHOWN = 5;
+const LIVE_GAP_SHOWN = 5;
 
 function monthLabel(period) {
   const [year, month] = period.split("-").map(Number);
@@ -12,12 +21,33 @@ function formatChange(percent) {
   return `${percent > 0 ? "+" : ""}${percent}%`;
 }
 
+/** Every calendar year from the first gig up to this year, with zero for years without gigs. */
+function yearsSinceFirstGig(byYear) {
+  const currentYear = new Date().getFullYear();
+  const counts = new Map(byYear.map((year) => [Number(year.period), year]));
+  const firstYear = byYear.length ? Number(byYear[0].period) : currentYear;
+  const years = [];
+  for (let year = Math.min(firstYear, currentYear); year <= currentYear; year += 1) {
+    const found = counts.get(year);
+    years.push({
+      period: String(year),
+      gigs: found?.gigs ?? 0,
+      festivals: found?.festivals ?? 0,
+    });
+  }
+  return years;
+}
+
 /** Gig stats for the Gigs tab on Reports. All-time, so the listening date range does not apply. */
 export default function GigReportsSection({ token, userId }) {
   const [periods, setPeriods] = useState(null);
   const [liveGap, setLiveGap] = useState([]);
   const [bump, setBump] = useState(null);
+  const [furthest, setFurthest] = useState(null);
+  const [showAllYears, setShowAllYears] = useState(false);
+  const [showAllLiveGap, setShowAllLiveGap] = useState(false);
   const [error, setError] = useState("");
+  const isOwnReport = !userId;
 
   useEffect(() => {
     if (!token) return;
@@ -34,6 +64,13 @@ export default function GigReportsSection({ token, userId }) {
       })
       .catch((err) => setError(err.message || "Couldn't load gig reports."));
   }, [token, userId]);
+
+  useEffect(() => {
+    if (!token || !isOwnReport) return;
+    fetchFurthestGigs({ token })
+      .then(setFurthest)
+      .catch(() => setFurthest(null));
+  }, [token, isOwnReport]);
 
   if (error)
     return (
@@ -53,6 +90,9 @@ export default function GigReportsSection({ token, userId }) {
 
   const totalGigs = periods.by_year.reduce((sum, year) => sum + year.gigs, 0);
   const totalFestivals = periods.by_year.reduce((sum, year) => sum + year.festivals, 0);
+  const years = yearsSinceFirstGig(periods.by_year);
+  const shownYears = showAllYears ? years : years.slice(-YEARS_SHOWN);
+  const shownLiveGap = showAllLiveGap ? liveGap : liveGap.slice(0, LIVE_GAP_SHOWN);
 
   return (
     <div className="gig-reports">
@@ -86,9 +126,8 @@ export default function GigReportsSection({ token, userId }) {
         <div className="chart-panel">
           <h2>Gigs per year</h2>
           <ol className="ranked-list">
-            {periods.by_year.map((year, index) => (
+            {shownYears.map((year) => (
               <li key={year.period}>
-                <span className="rank-number">{index + 1}</span>
                 <span className="rank-copy">
                   <strong>{year.period}</strong>
                   <small>
@@ -99,6 +138,15 @@ export default function GigReportsSection({ token, userId }) {
               </li>
             ))}
           </ol>
+          {years.length > YEARS_SHOWN && (
+            <button
+              type="button"
+              className="sfm-link"
+              onClick={() => setShowAllYears((prev) => !prev)}
+            >
+              {showAllYears ? "Show last 5 years" : `Show all ${years.length} years`}
+            </button>
+          )}
         </div>
 
         <div className="chart-panel">
@@ -109,19 +157,72 @@ export default function GigReportsSection({ token, userId }) {
           {liveGap.length === 0 ? (
             <p className="notice">You have seen every artist in your top listening live.</p>
           ) : (
-            <ol className="ranked-list">
-              {liveGap.map((artist, index) => (
-                <li key={artist.artist_name}>
-                  <span className="rank-number">{index + 1}</span>
-                  <span className="rank-copy">
-                    <strong>{artist.artist_name}</strong>
-                  </span>
-                  <span className="rank-count">{artist.plays.toLocaleString()}</span>
-                </li>
-              ))}
-            </ol>
+            <>
+              <ol className="ranked-list">
+                {shownLiveGap.map((artist, index) => (
+                  <li key={artist.artist_name}>
+                    <span className="rank-number">{index + 1}</span>
+                    <span className="rank-copy">
+                      <strong>{artist.artist_name}</strong>
+                    </span>
+                    <span className="rank-count">{artist.plays.toLocaleString()}</span>
+                  </li>
+                ))}
+              </ol>
+              {liveGap.length > LIVE_GAP_SHOWN && (
+                <button
+                  type="button"
+                  className="sfm-link"
+                  onClick={() => setShowAllLiveGap((prev) => !prev)}
+                >
+                  {showAllLiveGap ? "Show top 5" : `Show more (${liveGap.length})`}
+                </button>
+              )}
+            </>
           )}
         </div>
+
+        {isOwnReport && furthest && (
+          <div className="chart-panel">
+            <h2>Furthest gigs</h2>
+            {!furthest.home_set ? (
+              <p className="notice">
+                Add your home city in <Link to="/settings">Settings</Link> to see how far you&apos;ve
+                travelled to gigs.
+              </p>
+            ) : (
+              <>
+                <p className="chart-caption">
+                  Headline gigs furthest from your home city, as the crow flies.
+                </p>
+                {furthest.furthest.length === 0 ? (
+                  <p className="notice">No gigs located yet.</p>
+                ) : (
+                  <ol className="ranked-list">
+                    {furthest.furthest.map((gig, index) => (
+                      <li key={gig.id}>
+                        <span className="rank-number">{index + 1}</span>
+                        <span className="rank-copy">
+                          <strong>{gig.artist_name}</strong>
+                          <small>
+                            {gig.venue_name}, {gig.city} · {gig.date}
+                          </small>
+                        </span>
+                        <span className="rank-count">{gig.distance_km.toLocaleString()} km</span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+                {furthest.pending_gigs > 0 && (
+                  <p className="chart-caption">
+                    {furthest.pending_gigs} gig{furthest.pending_gigs === 1 ? " is" : "s are"} still
+                    being located. Refresh the page to update.
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {bump && (

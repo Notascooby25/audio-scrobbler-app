@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.28.0",
+    date: "2026-10-30",
+    changes: [
+      "Home city: set where you live in Settings > General. The Gigs tab on Reports then shows your five furthest headline gigs from home, in kilometres. Only you see these distances.",
+      "Gigs per year now shows the last five calendar years, moving on each year. Show all years reveals the rest.",
+      "Live gap shows the top five artists, with Show more for the rest.",
+    ],
+  },
+  {
     version: "0.27.1",
     date: "2026-10-30",
     changes: [
