@@ -5687,6 +5687,23 @@ button.sfm-back {
   font-weight: 500;
 }
 
+.venue-festival-heading {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.festival-editions {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+}
+
+.festival-editions li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border, #e5e5e5);
+}
+
 .sfm-gig-actions {
   display: flex;
   flex-wrap: wrap;
