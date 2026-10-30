@@ -53,10 +53,10 @@ A reductive, monochromatic palette anchored by a customizable signature accent c
 ### Primary & Accent Palette
 Users can personalize their signature accent color in *Settings → General*. The palette consists of 8 curated song-title presets that dynamically customize the primary color token (`--color-primary`, `--color-accent`) and all derived shades via modern CSS `color-mix()`:
 - **Blue Monday** (`#0066FF`, New Order - Default)
-- **Spotify Green** (`#169C46`, Spotify - tuned for WCAG AA contrast)
+- **Green Eyes** (`#169C46`, Coldplay - tuned for WCAG AA contrast)
 - **Red Red Wine** (`#E11D48`, UB40)
 - **Purple Rain** (`#7C3AED`, Prince)
-- **Fool's Gold** (`#B45309`, The Stone Roses - rich warm gold)
+- **Fool's Gold** (`#D97706`, The Stone Roses - bright warm gold)
 - **Paint It Black** (`#475569`, The Rolling Stones - slate)
 - **Pretty in Pink** (`#EC4899`, The Psychedelic Furs)
 - **Orange Crush** (`#EA580C`, R.E.M. - tuned for WCAG AA contrast)

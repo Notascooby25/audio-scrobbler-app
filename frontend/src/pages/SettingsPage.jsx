@@ -48,10 +48,10 @@ const VIEW_OPTIONS = [
 
 const ACCENT_PRESETS = [
   { id: "blue_monday", name: "Blue Monday", artist: "New Order", hex: "#0066FF" },
-  { id: "spotify_green", name: "Spotify Green", artist: "Spotify", hex: "#169C46" },
+  { id: "spotify_green", name: "Green Eyes", artist: "Coldplay", hex: "#169C46" },
   { id: "red_red_wine", name: "Red Red Wine", artist: "UB40", hex: "#E11D48" },
   { id: "purple_rain", name: "Purple Rain", artist: "Prince", hex: "#7C3AED" },
-  { id: "fools_gold", name: "Fool's Gold", artist: "The Stone Roses", hex: "#B45309" },
+  { id: "fools_gold", name: "Fool's Gold", artist: "The Stone Roses", hex: "#D97706" },
   { id: "paint_it_black", name: "Paint It Black", artist: "The Rolling Stones", hex: "#475569" },
   { id: "pretty_in_pink", name: "Pretty in Pink", artist: "The Psychedelic Furs", hex: "#EC4899" },
   { id: "orange_crush", name: "Orange Crush", artist: "R.E.M.", hex: "#EA580C" },

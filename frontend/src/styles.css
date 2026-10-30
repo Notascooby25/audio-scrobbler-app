@@ -79,10 +79,10 @@
 }
 
 :root[data-accent="fools_gold"] {
-  --color-primary: #b45309;
-  --color-accent: #b45309;
-  --color-accent-hover: #92400e;
-  --color-focus: #b45309;
+  --color-primary: #d97706;
+  --color-accent: #d97706;
+  --color-accent-hover: #b45309;
+  --color-focus: #d97706;
 }
 
 :root[data-accent="paint_it_black"] {

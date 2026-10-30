@@ -30,7 +30,7 @@ const FAQ_DATA = [
         <strong>Yes!</strong> In <strong>Settings → General</strong>, you can switch between Light,
         Dark, or System theme modes. You can also customize the site's accent color across buttons,
         active nav tabs, charts, and activity heatmaps using 8 curated song-title presets:{" "}
-        <em>Blue Monday</em>, <em>Spotify Green</em>, <em>Red Red Wine</em>, <em>Purple Rain</em>,{" "}
+        <em>Blue Monday</em>, <em>Green Eyes</em>, <em>Red Red Wine</em>, <em>Purple Rain</em>,{" "}
         <em>Fool's Gold</em>, <em>Paint It Black</em>, <em>Pretty in Pink</em>, or{" "}
         <em>Orange Crush</em>.
       </p>

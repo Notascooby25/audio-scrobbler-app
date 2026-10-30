@@ -146,7 +146,7 @@ describe("SettingsPage", () => {
     const options = screen.getByLabelText("Accent color").querySelectorAll("option");
     expect(options).toHaveLength(8);
     expect(screen.getByRole("option", { name: "Blue Monday" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Spotify Green" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Green Eyes" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Red Red Wine" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Purple Rain" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Fool's Gold" })).toBeInTheDocument();

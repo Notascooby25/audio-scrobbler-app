@@ -228,9 +228,9 @@ export default function UserGuideSection() {
           <li>
             <strong>Theme & Accent Color Personalization:</strong> Make the site feel like yours by
             picking your favorite accent color in <em>Settings → General</em>. Choose from 8 curated
-            music presets based on iconic song titles (Blue Monday, Spotify Green, Red Red Wine,
-            Purple Rain, Fool's Gold, Paint It Black, Pretty in Pink, Orange Crush). Your choice
-            updates buttons, active tabs, charts, and heatmaps seamlessly.
+            music presets based on iconic song titles (Blue Monday, Green Eyes, Red Red Wine, Purple
+            Rain, Fool's Gold, Paint It Black, Pretty in Pink, Orange Crush). Your choice updates
+            buttons, active tabs, charts, and heatmaps seamlessly.
           </li>
           <li>
             <strong>Shareable Image Cards:</strong> Want to brag about your top 5 albums or artists?

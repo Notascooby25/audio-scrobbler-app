@@ -140,7 +140,7 @@ describe("Primary Text Color & WCAG AA Contrast Verification", () => {
       { id: "spotify_green", hex: "#169C46" },
       { id: "red_red_wine", hex: "#E11D48" },
       { id: "purple_rain", hex: "#7C3AED" },
-      { id: "fools_gold", hex: "#B45309" },
+      { id: "fools_gold", hex: "#D97706" },
       { id: "paint_it_black", hex: "#475569" },
       { id: "pretty_in_pink", hex: "#EC4899" },
       { id: "orange_crush", hex: "#EA580C" },
