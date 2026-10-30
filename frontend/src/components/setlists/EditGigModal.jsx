@@ -11,6 +11,7 @@ export default function EditGigModal({ gig, onClose, onSaved, token }) {
   const [eventDate, setEventDate] = useState((gig.event_date || "").slice(0, 10));
   const [tourName, setTourName] = useState(gig.tour_name || "");
   const [isFestival, setIsFestival] = useState(Boolean(gig.is_festival));
+  const [festivalName, setFestivalName] = useState(gig.festival_name || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [duplicateInfo, setDuplicateInfo] = useState(null);
@@ -34,6 +35,7 @@ export default function EditGigModal({ gig, onClose, onSaved, token }) {
         eventDate,
         tourName: tourName.trim() || null,
         isFestival,
+        festivalName: isFestival ? festivalName.trim() || null : null,
         allowDuplicate,
       });
       setDuplicateInfo(null);
@@ -138,6 +140,18 @@ export default function EditGigModal({ gig, onClose, onSaved, token }) {
             />
             <span>This was a festival</span>
           </label>
+          {isFestival && (
+            <label className="sfm-field">
+              Festival name (optional)
+              <input
+                type="text"
+                maxLength={255}
+                placeholder="e.g. Victorious Festival 2026"
+                value={festivalName}
+                onChange={(e) => setFestivalName(e.target.value)}
+              />
+            </label>
+          )}
           {!gig.is_support_act && (
             <p className="sfm-gig-meta">
               Support acts you logged with this gig move to the new date and venue too.

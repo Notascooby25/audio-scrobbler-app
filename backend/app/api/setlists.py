@@ -197,6 +197,7 @@ def log_manual_concert(
             setlist_url=payload.setlist_url,
             allow_duplicate=payload.allow_duplicate,
             is_festival=payload.is_festival,
+            festival_name=payload.festival_name,
         )
         return AttendedConcertResponse.model_validate(concert)
     except DuplicateGigError as exc:
@@ -225,6 +226,7 @@ def update_concert(
             tour_name=payload.tour_name,
             allow_duplicate=payload.allow_duplicate,
             is_festival=payload.is_festival,
+            festival_name=payload.festival_name,
         )
     except LookupError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gig not found.") from exc

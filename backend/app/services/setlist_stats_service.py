@@ -36,6 +36,7 @@ def _concert_ref(c: AttendedConcert) -> dict[str, Any]:
         "date": _display_date(c.event_date),
         "is_support": c.is_support_act,
         "is_festival": c.is_festival,
+        "festival_name": c.festival_name,
     }
 
 
@@ -95,6 +96,7 @@ class SetlistStatsService:
                     "setlist_url": c.setlist_url,
                     "is_support_act": c.is_support_act,
                     "is_festival": c.is_festival,
+                    "festival_name": c.festival_name,
                     "parent_setlist_id": c.parent_setlist_id,
                     "song_count": c.song_count,
                     "raw_data": c.raw_data,

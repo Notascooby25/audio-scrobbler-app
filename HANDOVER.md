@@ -421,6 +421,8 @@ the NAS listing.** The live setup has drifted from the repos before.
   `WORKER_VENUE_GEOCODE_BATCH_SIZE` (default 60) venues a run. A venue the map
   doesn't know falls back to its city (`approximate: true`). The furthest list
   groups gigs by venue, so a festival shows once with its bands.
+- **v0.28.3:** `attended_concerts.festival_name` (migration 0026), typed by the
+  user for festival gigs. Setlist.fm's API doesn't record festival names.
 - **Also 2026-09-22/23:** listening heatmap, frontend redesign, nginx
   `client_max_body_size` raised for large imports, listening clock restored,
   friends-average removed from the UI, Library share-image feature,
