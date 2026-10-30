@@ -309,6 +309,8 @@ class SetlistStatsService:
                 "event_date",
                 "tour_name",
                 "is_support_act",
+                "is_festival",
+                "festival_name",
                 "song_count",
                 "setlist_url",
             ]
@@ -324,6 +326,8 @@ class SetlistStatsService:
                         "event_date": g.event_date.strftime("%Y-%m-%d") if g.event_date else "",
                         "tour_name": _sanitize_csv_cell(g.tour_name or ""),
                         "is_support_act": g.is_support_act,
+                        "is_festival": g.is_festival,
+                        "festival_name": _sanitize_csv_cell(g.festival_name or ""),
                         "song_count": g.song_count,
                         "setlist_url": _sanitize_csv_cell(g.setlist_url or ""),
                     }
@@ -342,6 +346,8 @@ class SetlistStatsService:
                 "event_date": g.event_date.isoformat() if g.event_date else None,
                 "tour_name": g.tour_name,
                 "is_support_act": g.is_support_act,
+                "is_festival": g.is_festival,
+                "festival_name": g.festival_name,
                 "parent_setlist_id": g.parent_setlist_id,
                 "song_count": g.song_count,
                 "setlist_url": g.setlist_url,

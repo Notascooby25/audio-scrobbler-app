@@ -377,14 +377,14 @@ export async function cancelImportJob({ token }) {
   return parseResponse(response);
 }
 
-export async function importSetlistsFromFile({ token, format, content }) {
+export async function importSetlistsFromFile({ token, format, content, updateExisting = false }) {
   const response = await fetch(`${API_BASE_URL}/setlists/import/file`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ format, content }),
+    body: JSON.stringify({ format, content, update_existing: updateExisting }),
   });
   return parseResponse(response);
 }

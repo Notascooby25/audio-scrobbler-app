@@ -25,7 +25,7 @@ class DuplicateGigError(Exception):
         self.same_show = same_show
 
 
-def _festival_name(is_festival: bool, name: str | None) -> str | None:
+def festival_name_for(is_festival: bool, name: str | None) -> str | None:
     """A festival's name, kept only for festival gigs and trimmed; blank means no name."""
     cleaned = " ".join(name.split()) if name else ""
     return cleaned[:255] if is_festival and cleaned else None
@@ -510,7 +510,7 @@ class SetlistAttendanceService:
         if is_festival is not None:
             concert.is_festival = is_festival
         if is_festival is not None or festival_name is not None:
-            concert.festival_name = _festival_name(concert.is_festival, festival_name)
+            concert.festival_name = festival_name_for(concert.is_festival, festival_name)
         for gig in [concert, *supports]:
             gig.event_date = gig.event_date + shift
             if venue_moved:
@@ -598,7 +598,7 @@ class SetlistAttendanceService:
             setlist_url=clean_url,
             is_support_act=False,
             is_festival=is_festival,
-            festival_name=_festival_name(is_festival, festival_name),
+            festival_name=festival_name_for(is_festival, festival_name),
             raw_data=raw_data,
             song_count=0,
             notes=clean_notes,

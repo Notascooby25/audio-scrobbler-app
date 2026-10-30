@@ -396,7 +396,9 @@ export default function UserGuideSection() {
                 <em>File Import &amp; Backup:</em> Download your full gig history as JSON or CSV
                 anytime. Use <em>Import from a File</em> to restore your data or migrate between
                 accounts; existing gigs are skipped, and file imports that run out of quota
-                automatically fetch missing songs later.
+                automatically fetch missing songs later. Festival ticks and names come through too;
+                tick <em>Update festival names and ticks on gigs I already have</em> to apply an
+                edited export to gigs you already have.
               </li>
             </ul>
           </li>

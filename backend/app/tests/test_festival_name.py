@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.db import Base
 from backend.app.models import AttendedConcert
-from backend.app.services.setlist_attendance_service import SetlistAttendanceService, _festival_name
+from backend.app.services.setlist_attendance_service import SetlistAttendanceService, festival_name_for
 from unittest.mock import MagicMock
 
 
@@ -21,10 +21,10 @@ def db_session():
 
 
 def test_festival_name_is_trimmed_and_kept_only_for_festivals():
-    assert _festival_name(True, "  Victorious   Festival 2026 ") == "Victorious Festival 2026"
-    assert _festival_name(True, "   ") is None
-    assert _festival_name(False, "Victorious Festival 2026") is None
-    assert _festival_name(True, None) is None
+    assert festival_name_for(True, "  Victorious   Festival 2026 ") == "Victorious Festival 2026"
+    assert festival_name_for(True, "   ") is None
+    assert festival_name_for(False, "Victorious Festival 2026") is None
+    assert festival_name_for(True, None) is None
 
 
 def test_update_stores_the_name_and_unticking_festival_clears_it(db_session: Session):

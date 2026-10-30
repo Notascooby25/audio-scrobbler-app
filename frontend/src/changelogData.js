@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.28.4",
+    date: "2026-10-30",
+    changes: [
+      "Exports now include the festival tick and name, in both CSV and JSON.",
+      "Importing a file reads the festival tick and name, so a restored festival gig keeps them. Tick Update festival names and ticks on gigs I already have to apply an edited export to gigs already in your account. Everything else on those gigs is left as it is.",
+    ],
+  },
+  {
     version: "0.28.3",
     date: "2026-10-30",
     changes: [

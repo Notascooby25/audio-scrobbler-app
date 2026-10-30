@@ -35,6 +35,7 @@ function readFileText(file) {
 
 function fileImportSummary(result) {
   const parts = [`${result.imported} imported`];
+  if (result.updated) parts.push(`${result.updated} updated`);
   if (result.skipped_existing) parts.push(`${result.skipped_existing} already logged (skipped)`);
   if (result.invalid_count) {
     parts.push(`${result.invalid_count} invalid ${result.invalid_count === 1 ? "row" : "rows"}`);
@@ -57,6 +58,7 @@ export default function ImportExportModal({
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const [importFile, setImportFile] = useState(null);
+  const [updateExisting, setUpdateExisting] = useState(false);
   const [isFileImporting, setIsFileImporting] = useState(false);
   const [isDownloadingProfile, setIsDownloadingProfile] = useState(false);
   const [fileError, setFileError] = useState("");
@@ -194,6 +196,7 @@ export default function ImportExportModal({
         token,
         format: extension,
         content: await readFileText(importFile),
+        updateExisting,
       });
       setFileResult(result);
       if (onFileImported) onFileImported(result);
@@ -387,6 +390,15 @@ export default function ImportExportModal({
             Import a .csv or .json file made with Export below (for example, a backup or another
             account&apos;s gigs). Gigs you&apos;ve already logged are skipped.
           </p>
+          <label className="sfm-check">
+            <input
+              type="checkbox"
+              checked={updateExisting}
+              onChange={(e) => setUpdateExisting(e.target.checked)}
+              disabled={isFileImporting}
+            />
+            <span>Update festival names and ticks on gigs I already have</span>
+          </label>
           <div className="sfm-inline-form">
             <input
               type="file"

@@ -289,6 +289,7 @@ describe("SetlistsStats and Modals", () => {
       token: "test-token",
       format: "json",
       content,
+      updateExisting: false,
     });
     expect(onFileImported).toHaveBeenCalled();
   });
