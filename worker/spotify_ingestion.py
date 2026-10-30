@@ -20,6 +20,8 @@ SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
 SPOTIFY_RECENT_URL = "https://api.spotify.com/v1/me/player/recently-played"
 SPOTIFY_SAVED_TRACKS_URL = "https://api.spotify.com/v1/me/tracks"
 SPOTIFY_SAVED_TRACKS_LIMIT = 40
+SPOTIFY_SAVED_ALBUMS_URL = "https://api.spotify.com/v1/me/albums"
+SPOTIFY_SAVED_ALBUMS_LIMIT = 50
 Base = declarative_base()
 
 # Spotify's quota is per-app (client_id), not per-user, so this is process-wide
@@ -98,6 +100,9 @@ class ScrobbleSettingsRecord(Base):
     liked_tracks_watermark: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     liked_tracks_catch_up_floor: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     liked_tracks_last_synced_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    saved_albums_sync_enabled: Mapped[bool] = mapped_column(Boolean)
+    saved_albums_backfill_offset: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    saved_albums_last_synced_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     realtime_sync_enabled: Mapped[bool] = mapped_column(Boolean)
     scrobble_threshold_percent: Mapped[int] = mapped_column(Integer)
 
@@ -145,6 +150,78 @@ def submit_liked_tracks_with_retries(backend_url: str, worker_token: str, user_i
         response.raise_for_status()
         return response
     raise requests.HTTPError("Backend liked-tracks sync failed after retries")
+
+
+def submit_saved_albums_with_retries(backend_url: str, worker_token: str, user_id: int, albums: list[dict[str, object]]):
+    payload = {"user_id": user_id, "albums": albums}
+    for attempt in range(3):
+        response = requests.post(
+            f"{backend_url}/spotify/internal/saved-albums",
+            json=payload,
+            headers={"X-Worker-Token": worker_token},
+            timeout=15,
+        )
+        if response.status_code in (429, 500, 502, 503, 504) and attempt < 2:
+            retry_after = min(float(response.headers.get("Retry-After", "1")), 30) if response.status_code == 429 else 2 ** attempt
+            time.sleep(retry_after)
+            continue
+        response.raise_for_status()
+        return response
+    raise requests.HTTPError("Backend saved-albums sync failed after retries")
+
+
+def normalize_saved_album_item(
+    item: dict[str, object],
+    user_id: int,
+    artist_genres_map: dict[str, list[str]] | None = None,
+) -> dict[str, object] | None:
+    album = item.get("album")
+    added_at = _parse_added_at(item.get("added_at"))
+    if not isinstance(album, dict) or added_at is None:
+        return None
+    album_id = album.get("id")
+    album_name = album.get("name")
+    artists = album.get("artists")
+    if not isinstance(album_id, str) or not isinstance(album_name, str) or not isinstance(artists, list) or not artists:
+        return None
+    primary_artist = artists[0]
+    if not isinstance(primary_artist, dict) or not isinstance(primary_artist.get("name"), str):
+        return None
+    artist_id = primary_artist.get("id")
+    genres = (artist_genres_map or {}).get(artist_id, []) if isinstance(artist_id, str) else []
+    
+    release_date = album.get("release_date")
+    release_year = None
+    if isinstance(release_date, str) and len(release_date) >= 4 and release_date[:4].isdigit():
+        release_year = int(release_date[:4])
+
+    duration_ms = 0
+    tracks_obj = album.get("tracks")
+    if isinstance(tracks_obj, dict) and isinstance(tracks_obj.get("items"), list):
+        for track_item in tracks_obj["items"]:
+            if isinstance(track_item, dict) and isinstance(track_item.get("duration_ms"), int):
+                duration_ms += track_item["duration_ms"]
+
+    images = album.get("images")
+    artwork_url = images[0].get("url") if isinstance(images, list) and images and isinstance(images[0], dict) else None
+    external_urls = album.get("external_urls")
+    spotify_url = external_urls.get("spotify") if isinstance(external_urls, dict) and isinstance(external_urls.get("spotify"), str) else None
+    label = album.get("label") if isinstance(album.get("label"), str) else None
+
+    return {
+        "user_id": user_id,
+        "spotify_album_id": album_id,
+        "album_name": album_name,
+        "artist_name": primary_artist["name"],
+        "release_date": release_date if isinstance(release_date, str) else None,
+        "release_year": release_year,
+        "genres": genres,
+        "duration_ms": duration_ms if duration_ms > 0 else None,
+        "label": label,
+        "artwork_url": artwork_url,
+        "spotify_url": spotify_url,
+        "added_at": added_at.isoformat(),
+    }
 
 
 
@@ -267,6 +344,13 @@ class SpotifyClient:
         # rather than looping pages here, which is what caused the previous rate-limit failures.
         params = {"limit": limit, "offset": offset}
         response = self._request("get", SPOTIFY_SAVED_TRACKS_URL, headers={"Authorization": f"Bearer {access_token}"}, params=params)
+        response.raise_for_status()
+        items = response.json().get("items", [])
+        return [item for item in items if isinstance(item, dict)]
+
+    def saved_albums(self, access_token: str, *, offset: int = 0, limit: int = SPOTIFY_SAVED_ALBUMS_LIMIT) -> list[dict[str, object]]:
+        params = {"limit": limit, "offset": offset}
+        response = self._request("get", SPOTIFY_SAVED_ALBUMS_URL, headers={"Authorization": f"Bearer {access_token}"}, params=params)
         response.raise_for_status()
         items = response.json().get("items", [])
         return [item for item in items if isinstance(item, dict)]
@@ -511,6 +595,76 @@ def sync_liked_tracks_for_user(
         user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)
     session.commit()
     return len(normalized)
+
+
+def sync_saved_albums_for_user(
+    session,
+    user: UserRecord,
+    settings: ScrobbleSettingsRecord,
+    client: SpotifyClient,
+    backend_url: str,
+    worker_token: str,
+) -> int:
+    """Syncs at most one page (<=50 items) of saved albums per call."""
+    starting_new_walk = settings.saved_albums_backfill_offset is None
+    if starting_new_walk and settings.saved_albums_last_synced_at is not None:
+        last_synced = settings.saved_albums_last_synced_at.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) - last_synced < timedelta(hours=24):
+            return 0
+
+    try:
+        refresh_token = decrypt_refresh_token(user.refresh_token_cipher, client.refresh_token_key)
+    except InvalidToken:
+        return 0
+    access_token, rotated_refresh_token = client.refresh_access_token(refresh_token)
+
+    offset = settings.saved_albums_backfill_offset or 0
+    raw_items = client.saved_albums(access_token, offset=offset)
+    
+    # Collect primary artist IDs to map genres if possible
+    artist_ids = []
+    for item in raw_items:
+        album = item.get("album")
+        if isinstance(album, dict) and isinstance(album.get("artists"), list) and album["artists"]:
+            aid = album["artists"][0].get("id")
+            if isinstance(aid, str) and aid not in artist_ids:
+                artist_ids.append(aid)
+
+    # Batch artist lookup for genres (up to 50)
+    artist_genres_map = {}
+    if artist_ids:
+        try:
+            artists_data = client.artists(access_token, artist_ids[:50])
+            for a in artists_data:
+                if isinstance(a, dict) and isinstance(a.get("id"), str) and isinstance(a.get("genres"), list):
+                    artist_genres_map[a["id"]] = a["genres"]
+        except Exception:
+            logger.warning("Could not resolve artist genres during album sync", exc_info=True)
+
+    normalized = [
+        album
+        for album in (
+            normalize_saved_album_item(item, user.id, artist_genres_map)
+            for item in raw_items
+        )
+        if album is not None
+    ]
+    page_is_full = len(raw_items) == SPOTIFY_SAVED_ALBUMS_LIMIT
+
+    if normalized:
+        submit_saved_albums_with_retries(backend_url, worker_token, user.id, normalized)
+
+    if page_is_full:
+        settings.saved_albums_backfill_offset = offset + len(raw_items)
+    else:
+        settings.saved_albums_backfill_offset = None
+        settings.saved_albums_last_synced_at = datetime.utcnow()
+
+    if rotated_refresh_token:
+        user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)
+    session.commit()
+    return len(normalized)
+
 
 def fetch_pending_genre_artist_ids(backend_url: str, worker_token: str, limit: int) -> list[dict[str, object]]:
     response = requests.get(

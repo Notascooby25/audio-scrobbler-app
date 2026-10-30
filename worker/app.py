@@ -26,6 +26,7 @@ from spotify_ingestion import (
     spotify_rate_limit_blocked_until,
     sync_currently_playing,
     sync_liked_tracks_for_user,
+    sync_saved_albums_for_user,
     sync_user,
 )
 
@@ -248,6 +249,42 @@ def run_liked_tracks_ingestion() -> None:
         last_liked_tracks_sync_users = len(enabled_settings)
         last_liked_tracks_sync_failures = failures
         last_liked_tracks_sync_events = events
+    finally:
+        session.close()
+        engine.dispose()
+
+
+def run_saved_albums_ingestion() -> None:
+    if not spotify_enabled or not spotify_client_id or not spotify_client_secret:
+        return
+    blocked_until = spotify_rate_limit_blocked_until()
+    if blocked_until:
+        return
+    engine = create_engine(database_url, pool_pre_ping=True)
+    session = sessionmaker(bind=engine)()
+    client = SpotifyClient(spotify_client_id, spotify_client_secret, refresh_token_key)
+    try:
+        enabled_settings = (
+            session.query(ScrobbleSettingsRecord)
+            .filter(ScrobbleSettingsRecord.saved_albums_sync_enabled.is_(True))
+            .all()
+        )
+        user_ids = [record.user_id for record in enabled_settings]
+        users_by_id = {
+            user.id: user
+            for user in session.query(UserRecord).filter(UserRecord.id.in_(user_ids), UserRecord.is_active.is_(True)).all()
+        } if user_ids else {}
+        for settings in enabled_settings:
+            user = users_by_id.get(settings.user_id)
+            if user is None:
+                continue
+            try:
+                count = sync_saved_albums_for_user(session, user, settings, client, backend_url, worker_token)
+                if count > 0:
+                    logger.info("Saved-albums sync completed for user %s: %s albums", user.id, count)
+            except Exception:
+                session.rollback()
+                logger.exception("Saved-albums sync failed for user %s", user.id)
     finally:
         session.close()
         engine.dispose()
@@ -534,6 +571,7 @@ def start_scheduler() -> None:
         scheduler.add_job(run_spotify_ingestion, "interval", minutes=spotify_interval_minutes, id="spotify-ingestion")
         scheduler.add_job(run_currently_playing_sync, "interval", seconds=10, id="currently-playing-sync")
         scheduler.add_job(run_liked_tracks_ingestion, "interval", minutes=liked_tracks_interval_minutes, id="liked-tracks-ingestion")
+        scheduler.add_job(run_saved_albums_ingestion, "interval", minutes=liked_tracks_interval_minutes, id="saved-albums-ingestion")
     if file_import_enabled:
         scheduler.add_job(run_file_import, "interval", minutes=file_import_interval_minutes, id="file-import")
     scheduler.add_job(
