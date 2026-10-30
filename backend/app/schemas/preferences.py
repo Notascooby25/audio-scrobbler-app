@@ -6,6 +6,16 @@ from pydantic import BaseModel, ConfigDict, Field
 DATE_RANGES = {"last.week", "last.month", "last.year", "all.time", "custom"}
 VIEWS = {"list", "grid"}
 PAGE_SIZES = {10, 25, 50, 100}
+ACCENT_COLORS = {
+    "blue_monday",
+    "spotify_green",
+    "red_red_wine",
+    "purple_rain",
+    "fools_gold",
+    "paint_it_black",
+    "pretty_in_pink",
+    "orange_crush",
+}
 
 
 class HomeCityRequest(BaseModel):
@@ -17,6 +27,7 @@ class UserPreferencesResponse(BaseModel):
     home_city: str | None = None
     default_date_range: str
     theme: str
+    accent_color: str = "blue_monday"
     default_page_size: int
     default_library_view: str
     scrobbles_view: str | None
@@ -37,6 +48,7 @@ class UserPreferencesResponse(BaseModel):
 class UserPreferencesUpdate(BaseModel):
     default_date_range: str | None = None
     theme: str | None = None
+    accent_color: str | None = None
     default_page_size: int | None = Field(default=None)
     default_library_view: str | None = None
     scrobbles_view: str | None = None

@@ -35,6 +35,8 @@ class FakeDB:
     def add(self, value):
         if getattr(value, "theme", None) is None:
             value.theme = "system"
+        if getattr(value, "accent_color", None) is None:
+            value.accent_color = "blue_monday"
         if getattr(value, "notify_recaps", None) is None:
             value.notify_recaps = True
         if getattr(value, "notify_milestones", None) is None:
@@ -84,6 +86,31 @@ def test_settings_rejects_invalid_page_size():
     response = client.patch(
         "/users/me/settings",
         json={"default_page_size": 20},
+        headers={"Authorization": "Bearer demo"},
+    )
+    assert response.status_code == 400
+
+
+def test_settings_returns_blue_monday_default():
+    response = client.get("/users/me/settings", headers={"Authorization": "Bearer demo"})
+    assert response.status_code == 200
+    assert response.json()["accent_color"] == "blue_monday"
+
+
+def test_settings_updates_accent_color():
+    response = client.patch(
+        "/users/me/settings",
+        json={"accent_color": "purple_rain"},
+        headers={"Authorization": "Bearer demo"},
+    )
+    assert response.status_code == 200
+    assert response.json()["accent_color"] == "purple_rain"
+
+
+def test_settings_rejects_invalid_accent_color():
+    response = client.patch(
+        "/users/me/settings",
+        json={"accent_color": "neon_yellow"},
         headers={"Authorization": "Bearer demo"},
     )
     assert response.status_code == 400
