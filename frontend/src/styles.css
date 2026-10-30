@@ -1277,6 +1277,78 @@ button:disabled {
   cursor: pointer;
 }
 
+.settings-accent-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-accent-group .settings-label {
+  color: var(--color-ink);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.settings-accent-swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.settings-accent-swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--color-surface);
+  border: 0.5px solid var(--color-border);
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-ink);
+  text-align: left;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease;
+}
+
+.settings-accent-swatch:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-muted);
+}
+
+.settings-accent-swatch.active {
+  border-color: var(--color-primary);
+  background: var(--color-accent-soft);
+  font-weight: 600;
+}
+
+.settings-accent-swatch:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.settings-accent-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 0.5px solid rgba(0, 0, 0, 0.15);
+}
+
+:root[data-theme="dark"] .settings-accent-dot {
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+}
+
+.settings-accent-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .settings-link {
   color: var(--color-accent);
   font:

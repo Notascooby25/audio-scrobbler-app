@@ -43,6 +43,7 @@ const settings = {
   show_artwork: true,
   show_source_badges: true,
   timestamp_mode: "relative",
+  accent_color: "blue_monday",
 };
 
 const scrobbleSettings = {
@@ -129,6 +130,42 @@ describe("SettingsPage", () => {
     );
     expect(localStorage.getItem("audio-scrobbler-theme")).toBe("dark");
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+  });
+
+  it("renders 8 song-title accent color swatches and updates the setting on selection", async () => {
+    fetchUserSettings.mockResolvedValue(settings);
+    updateUserSettings.mockResolvedValue({ ...settings, accent_color: "purple_rain" });
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>
+    );
+
+    // Verify all 8 swatches are rendered with song titles
+    await waitFor(() =>
+      expect(screen.getByRole("radio", { name: /Purple Rain/i })).toBeInTheDocument()
+    );
+    expect(screen.getByRole("radio", { name: /Blue Monday/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Spotify Green/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Red Red Wine/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Fool's Gold/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Paint It Black/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Pretty in Pink/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Orange Crush/i })).toBeInTheDocument();
+
+    // Click Purple Rain swatch
+    fireEvent.click(screen.getByRole("radio", { name: /Purple Rain/i }));
+
+    await waitFor(
+      () =>
+        expect(updateUserSettings).toHaveBeenCalledWith({
+          token: "token",
+          changes: { accent_color: "purple_rain" },
+        }),
+      { timeout: 1000 }
+    );
+    expect(localStorage.getItem("audio-scrobbler-accent")).toBe("purple_rain");
+    expect(document.documentElement.getAttribute("data-accent")).toBe("purple_rain");
   });
 
   it("lists blocked items and unblocks them individually", async () => {

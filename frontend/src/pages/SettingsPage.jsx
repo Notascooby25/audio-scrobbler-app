@@ -45,6 +45,17 @@ const VIEW_OPTIONS = [
   ["albums_view", "Albums view"],
   ["tracks_view", "Tracks view"],
 ];
+
+const ACCENT_PRESETS = [
+  { id: "blue_monday", name: "Blue Monday", artist: "New Order", hex: "#0066FF" },
+  { id: "spotify_green", name: "Spotify Green", artist: "Spotify", hex: "#169C46" },
+  { id: "red_red_wine", name: "Red Red Wine", artist: "UB40", hex: "#E11D48" },
+  { id: "purple_rain", name: "Purple Rain", artist: "Prince", hex: "#7C3AED" },
+  { id: "fools_gold", name: "Fool's Gold", artist: "The Stone Roses", hex: "#B45309" },
+  { id: "paint_it_black", name: "Paint It Black", artist: "The Rolling Stones", hex: "#475569" },
+  { id: "pretty_in_pink", name: "Pretty in Pink", artist: "The Psychedelic Furs", hex: "#EC4899" },
+  { id: "orange_crush", name: "Orange Crush", artist: "R.E.M.", hex: "#EA580C" },
+];
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -164,6 +175,11 @@ export default function SettingsPage() {
     if (key === "theme") {
       localStorage.setItem("audio-scrobbler-theme", value);
       document.documentElement.setAttribute("data-theme", value);
+    }
+
+    if (key === "accent_color") {
+      localStorage.setItem("audio-scrobbler-accent", value);
+      document.documentElement.setAttribute("data-accent", value);
     }
 
     clearTimeout(saveTimer.current);
@@ -381,6 +397,43 @@ export default function SettingsPage() {
                 <option value="system">System Default</option>
               </select>
             </label>
+            <div
+              className="settings-accent-group"
+              role="group"
+              aria-labelledby="accent-color-label"
+            >
+              <span id="accent-color-label" className="settings-label">
+                Accent color
+              </span>
+              <div
+                className="settings-accent-swatches"
+                role="radiogroup"
+                aria-labelledby="accent-color-label"
+              >
+                {ACCENT_PRESETS.map((preset) => {
+                  const isSelected = (settings.accent_color || "blue_monday") === preset.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={isSelected}
+                      aria-label={`${preset.name} (${preset.artist})`}
+                      title={`${preset.name} – ${preset.artist}`}
+                      className={`settings-accent-swatch ${isSelected ? "active" : ""}`}
+                      onClick={() => changeSetting("accent_color", preset.id)}
+                    >
+                      <span
+                        className="settings-accent-dot"
+                        style={{ backgroundColor: preset.hex }}
+                        aria-hidden="true"
+                      />
+                      <span className="settings-accent-name">{preset.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <label>
               Default date range
               <select
