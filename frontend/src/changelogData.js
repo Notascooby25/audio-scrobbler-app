@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.28.8",
+    date: "2026-10-30",
+    changes: [
+      "Fixed: the festival heading on a venue row now uses the same style as the other venue names.",
+    ],
+  },
+  {
     version: "0.28.7",
     date: "2026-10-30",
     changes: [
