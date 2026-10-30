@@ -11,11 +11,7 @@ export default function VenuesLeaderboard({ venues = [], onOpenGig = null }) {
     const festivalName = venueFestivalName(venue.gigs || []);
     return {
       key: [venue.venue_name, venue.city, venue.country].join("|"),
-      label: festivalName ? (
-        <span className="venue-festival-heading">{festivalName}</span>
-      ) : (
-        venue.venue_name
-      ),
+      label: festivalName || venue.venue_name,
       sub: festivalName ? [venue.venue_name, address].filter(Boolean).join(", ") : address,
       count: venue.count,
       detail:
