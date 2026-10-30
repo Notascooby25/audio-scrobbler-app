@@ -25,6 +25,12 @@ class DuplicateGigError(Exception):
         self.same_show = same_show
 
 
+def _festival_name(is_festival: bool, name: str | None) -> str | None:
+    """A festival's name, kept only for festival gigs and trimmed; blank means no name."""
+    cleaned = " ".join(name.split()) if name else ""
+    return cleaned[:255] if is_festival and cleaned else None
+
+
 def extract_songs_from_setlist_data(data: dict[str, Any]) -> list[str]:
     sets_data = data.get("sets", {})
     if not isinstance(sets_data, dict):
@@ -467,6 +473,7 @@ class SetlistAttendanceService:
         tour_name: str | None = None,
         allow_duplicate: bool = False,
         is_festival: bool | None = None,
+        festival_name: str | None = None,
     ) -> AttendedConcert:
         """Corrects a gig's details. Its scrobbles, and support acts logged under it, move
         with it. Setlist.fm's copy (raw_data) is left alone, so Refresh only updates songs."""
@@ -502,6 +509,8 @@ class SetlistAttendanceService:
         concert.artist_name, concert.tour_name = artist, tour
         if is_festival is not None:
             concert.is_festival = is_festival
+        if is_festival is not None or festival_name is not None:
+            concert.festival_name = _festival_name(concert.is_festival, festival_name)
         for gig in [concert, *supports]:
             gig.event_date = gig.event_date + shift
             if venue_moved:
@@ -543,6 +552,7 @@ class SetlistAttendanceService:
         setlist_url: str | None = None,
         allow_duplicate: bool = True,
         is_festival: bool = False,
+        festival_name: str | None = None,
     ) -> AttendedConcert:
         try:
             event_dt = datetime.strptime(event_date_str, "%Y-%m-%d")
@@ -588,6 +598,7 @@ class SetlistAttendanceService:
             setlist_url=clean_url,
             is_support_act=False,
             is_festival=is_festival,
+            festival_name=_festival_name(is_festival, festival_name),
             raw_data=raw_data,
             song_count=0,
             notes=clean_notes,

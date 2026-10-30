@@ -15,7 +15,11 @@ export default function VenuesLeaderboard({ venues = [], onOpenGig = null }) {
             date: gig.event_date || gig.date,
             title: gig.artist_name,
             meta: gig.date,
-            tag: gig.is_support ? "Support" : gig.is_festival ? "Festival" : null,
+            tag: gig.is_support
+              ? "Support"
+              : gig.is_festival
+                ? gig.festival_name || "Festival"
+                : null,
             tagMuted: true,
             onOpen: onOpenGig ? () => onOpenGig(gig.id) : null,
           }))}
@@ -60,7 +64,7 @@ export default function VenuesLeaderboard({ venues = [], onOpenGig = null }) {
               key: gig.id,
               date: gig.event_date || gig.date,
               title: gig.artist_name,
-              meta: [gig.venueName, gig.venueSub].filter(Boolean).join(" · "),
+              meta: [gig.festival_name, gig.venueName, gig.venueSub].filter(Boolean).join(" · "),
               onOpen: onOpenGig ? () => onOpenGig(gig.id) : null,
             }))}
           />

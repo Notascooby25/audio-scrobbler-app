@@ -163,6 +163,7 @@ describe("SetlistGigPage", () => {
         eventDate: "2024-02-11",
         tourName: "My Big Day",
         isFestival: false,
+        festivalName: null,
         allowDuplicate: false,
       })
     );

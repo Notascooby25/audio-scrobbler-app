@@ -11,6 +11,7 @@ export default function ManualConcertModal({ isOpen, onClose, onSaved, token }) 
   const [notes, setNotes] = useState("");
   const [setlistUrl, setSetlistUrl] = useState("");
   const [isFestival, setIsFestival] = useState(false);
+  const [festivalName, setFestivalName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [duplicateInfo, setDuplicateInfo] = useState(null);
@@ -38,6 +39,7 @@ export default function ManualConcertModal({ isOpen, onClose, onSaved, token }) 
         notes: notes.trim() || null,
         setlistUrl: setlistUrl.trim() || null,
         isFestival,
+        festivalName: isFestival ? festivalName.trim() || null : null,
         allowDuplicate,
       });
       setDuplicateInfo(null);
@@ -150,6 +152,18 @@ export default function ManualConcertModal({ isOpen, onClose, onSaved, token }) 
             />
             <span>This was a festival</span>
           </label>
+          {isFestival && (
+            <label className="sfm-field">
+              Festival name (optional)
+              <input
+                type="text"
+                maxLength={255}
+                placeholder="e.g. Victorious Festival 2026"
+                value={festivalName}
+                onChange={(e) => setFestivalName(e.target.value)}
+              />
+            </label>
+          )}
 
           <label className="sfm-field">
             Setlist.fm Link or Tour URL (optional)

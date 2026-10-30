@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.28.3",
+    date: "2026-10-30",
+    changes: [
+      "Festival name: when you tick This was a festival, you can type its name, such as Victorious Festival 2026. The name shows on the Festivals list and in each venue's gig list.",
+    ],
+  },
+  {
     version: "0.28.2",
     date: "2026-10-30",
     changes: [

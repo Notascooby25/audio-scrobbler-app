@@ -249,6 +249,19 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "setlists-festival-name",
+    category: "Set Lists & Gigs",
+    question: "Can I say which festival a gig was at?",
+    answer: (
+      <p>
+        <strong>Yes.</strong> When you tick <em>This was a festival</em> on a gig, type its name in
+        the <em>Festival name</em> box, such as Victorious Festival 2026. The name appears on the
+        Festivals list in the Venues tab. Setlist.fm doesn&apos;t record festival names, so the
+        app can&apos;t fill this in for you.
+      </p>
+    ),
+  },
+  {
     id: "setlists-furthest-gigs",
     category: "Set Lists & Gigs",
     question: "How far have I travelled to gigs?",
