@@ -723,6 +723,7 @@ def import_setlists_from_file(
             content=payload.content,
             db=db,
             setlist_service=SetlistService(db=db),
+            update_existing=payload.update_existing,
         )
     except FileImportError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc

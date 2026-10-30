@@ -97,3 +97,51 @@ describe("ImportExportModal profile download", () => {
     expect(screen.getByText(/uses no Setlist.fm calls/)).toBeInTheDocument();
   });
 });
+
+describe("ImportExportModal file update", () => {
+  beforeEach(() => {
+    setlistsApi.importSetlistsFromFile.mockResolvedValue({
+      imported: 0,
+      skipped_existing: 0,
+      updated: 2,
+      without_songs: 0,
+      quota_reached: false,
+      invalid: [],
+      invalid_count: 0,
+    });
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
+  it("asks the server to update existing gigs when the box is ticked", async () => {
+    render(
+      <ImportExportModal
+        isOpen
+        onClose={vi.fn()}
+        onImport={vi.fn()}
+        isImporting={false}
+        token="test-token"
+      />
+    );
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "Update festival names and ticks on gigs I already have",
+      })
+    );
+    const file = new File(['[{"artist_name":"Doves"}]'], "gigs.json", { type: "application/json" });
+    fireEvent.change(screen.getByLabelText("Gigs file (CSV or JSON)"), {
+      target: { files: [file] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Import File" }));
+
+    await waitFor(() =>
+      expect(setlistsApi.importSetlistsFromFile).toHaveBeenCalledWith(
+        expect.objectContaining({ format: "json", updateExisting: true })
+      )
+    );
+    expect(await screen.findByText(/2 updated/)).toBeInTheDocument();
+  });
+});

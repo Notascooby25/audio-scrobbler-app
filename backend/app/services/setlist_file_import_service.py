@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field, ValidationError, field_validator
 from sqlalchemy.orm import Session
 
 from ..models import AttendedConcert
-from .setlist_attendance_service import SetlistAttendanceService, extract_songs_from_setlist_data
+from .setlist_attendance_service import SetlistAttendanceService, extract_songs_from_setlist_data, festival_name_for
 from .setlist_service import (
     SetlistApiAuthError,
     SetlistApiKeyMissingError,
@@ -46,6 +46,8 @@ class ImportedGigRow(BaseModel):
     event_date: datetime
     tour_name: str | None = Field(None, max_length=255)
     is_support_act: bool | None = None
+    is_festival: bool | None = None
+    festival_name: str | None = Field(None, max_length=255)
     setlist_url: str | None = Field(None, max_length=500)
     notes: str | None = Field(None, max_length=2000)
     raw_data: dict[str, Any] | None = None
@@ -134,7 +136,27 @@ def _first_error(exc: ValidationError) -> str:
     return f"{field}: {message}"
 
 
-def import_gigs_from_file(user_id: int, file_format: str, content: str, db: Session, setlist_service: Any) -> dict:
+def _apply_festival_details(concert: AttendedConcert, row: ImportedGigRow) -> bool:
+    """Copies a file's festival tick and name onto a gig. False when the file has neither."""
+    if row.is_festival is None and row.festival_name is None:
+        return False
+    if row.is_festival is not None:
+        concert.is_festival = row.is_festival
+    if row.festival_name is not None:
+        concert.festival_name = festival_name_for(concert.is_festival, row.festival_name)
+    elif not concert.is_festival:
+        concert.festival_name = None
+    return True
+
+
+def import_gigs_from_file(
+    user_id: int,
+    file_format: str,
+    content: str,
+    db: Session,
+    setlist_service: Any,
+    update_existing: bool = False,
+) -> dict:
     """Imports gigs from an exported Set Lists CSV/JSON file for one user.
 
     Gigs already logged are skipped. JSON rows carry their songs; CSV rows with a
@@ -145,6 +167,7 @@ def import_gigs_from_file(user_id: int, file_format: str, content: str, db: Sess
 
     imported = 0
     skipped_existing = 0
+    updated = 0
     without_songs = 0
     # Gigs saved without songs because the quota ran out; their songs are fetched later
     awaiting_songs_ids: list[int] = []
@@ -164,8 +187,13 @@ def import_gigs_from_file(user_id: int, file_format: str, content: str, db: Sess
             setlist_id = extract_setlist_id(row.setlist_url)
         is_manual = not setlist_id or setlist_id.startswith("manual-")
 
-        if attendance.find_existing_gig(user_id, setlist_id, row.artist_name, row.event_date):
-            skipped_existing += 1
+        existing = attendance.find_existing_gig(user_id, setlist_id, row.artist_name, row.event_date)
+        if existing:
+            # Re-importing an edited export: only the festival details can change on a gig already here
+            if update_existing and _apply_festival_details(existing, row):
+                updated += 1
+            else:
+                skipped_existing += 1
             continue
 
         setlist_data = row.raw_data if row.raw_data and row.raw_data.get("sets") else None
@@ -194,6 +222,8 @@ def import_gigs_from_file(user_id: int, file_format: str, content: str, db: Sess
             tour_name=row.tour_name,
             setlist_url=row.setlist_url,
             is_support_act=bool(row.is_support_act),
+            is_festival=bool(row.is_festival),
+            festival_name=festival_name_for(bool(row.is_festival), row.festival_name),
             raw_data=setlist_data or row.raw_data or {"id": setlist_id, "sets": {"set": []}, "is_manual": is_manual},
             song_count=len(songs),
             notes=row.notes,
@@ -219,6 +249,7 @@ def import_gigs_from_file(user_id: int, file_format: str, content: str, db: Sess
     return {
         "imported": imported,
         "skipped_existing": skipped_existing,
+        "updated": updated,
         "without_songs": without_songs,
         "quota_reached": quota_reached,
         "awaiting_songs_ids": awaiting_songs_ids,

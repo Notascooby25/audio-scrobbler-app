@@ -194,6 +194,8 @@ class FileImportRequest(BaseModel):
     format: Literal["csv", "json"]
     # The browser sends the file's text; 2 MB cap matches the service limit
     content: str = Field(..., min_length=1, max_length=2_000_000)
+    # True: gigs already logged take the file's festival tick and name
+    update_existing: bool = False
 
 
 class FileImportInvalidRow(BaseModel):
@@ -204,6 +206,7 @@ class FileImportInvalidRow(BaseModel):
 class FileImportResponse(BaseModel):
     imported: int
     skipped_existing: int
+    updated: int = 0
     without_songs: int
     quota_reached: bool
     # True when gigs saved without songs will get them automatically after the quota resets
