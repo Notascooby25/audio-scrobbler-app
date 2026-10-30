@@ -296,9 +296,12 @@ export async function fetchVenuesVisitedLeaderboard({ token, userId }) {
 
 /** Gig reports (the Gigs tab on Reports). Each one follows the viewed user like the other stats. */
 export async function fetchGigsByPeriod({ token, userId }) {
-  const response = await fetch(`${API_BASE_URL}/setlists/stats/gigs-by-period${viewingQuery(userId)}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const response = await fetch(
+    `${API_BASE_URL}/setlists/stats/gigs-by-period${viewingQuery(userId)}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
   return parseResponse(response);
 }
 
@@ -332,6 +335,19 @@ export async function previewSetlistsImport({ token, username, page = 1 }) {
     headers: { Authorization: `Bearer ${token}` },
   });
   return parseResponse(response);
+}
+
+/** Every show on a profile as a file. Importing that file later uses no Setlist.fm calls. */
+export async function downloadProfileExport({ token, username }) {
+  const params = new URLSearchParams({ username: cleanSetlistUsername(username) });
+  const response = await fetch(
+    `${API_BASE_URL}/setlists/import/profile-export?${params.toString()}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  if (!response.ok) await parseResponse(response);
+  return response.blob();
 }
 
 export async function fetchImportJob({ token }) {

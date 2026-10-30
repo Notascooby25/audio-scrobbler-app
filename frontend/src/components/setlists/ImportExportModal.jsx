@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   cancelImportJob,
   cleanSetlistUsername,
+  downloadProfileExport,
   fetchImportJob,
   importSetlistsFromFile,
   previewSetlistsImport,
@@ -57,6 +58,7 @@ export default function ImportExportModal({
   const [currentPage, setCurrentPage] = useState(1);
   const [importFile, setImportFile] = useState(null);
   const [isFileImporting, setIsFileImporting] = useState(false);
+  const [isDownloadingProfile, setIsDownloadingProfile] = useState(false);
   const [fileError, setFileError] = useState("");
   const [fileResult, setFileResult] = useState(null);
   const [pausedJob, setPausedJob] = useState(null);
@@ -141,6 +143,27 @@ export default function ImportExportModal({
 
   const handleDeselectAll = () => {
     setSelectedIds(new Set());
+  };
+
+  const handleDownloadProfile = async () => {
+    const cleaned = cleanSetlistUsername(username);
+    setIsDownloadingProfile(true);
+    setPreviewError("");
+    try {
+      const blob = await downloadProfileExport({ token, username: cleaned });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = `setlist-${cleaned}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      setPreviewError(err?.message || "Couldn't download these gigs.");
+    } finally {
+      setIsDownloadingProfile(false);
+    }
   };
 
   const handleImportSelected = () => {
@@ -260,6 +283,14 @@ export default function ImportExportModal({
                   {previewData.total_pages})
                 </span>
                 <div>
+                  <button
+                    type="button"
+                    className="sfm-link"
+                    onClick={handleDownloadProfile}
+                    disabled={isDownloadingProfile || isImporting}
+                  >
+                    {isDownloadingProfile ? "Preparing file..." : "Download these gigs"}
+                  </button>
                   <button type="button" className="sfm-link" onClick={handleSelectAll}>
                     Select All
                   </button>
@@ -269,6 +300,11 @@ export default function ImportExportModal({
                   <strong>{selectedIds.size} selected</strong>
                 </div>
               </div>
+
+              <p className="sfm-gig-meta">
+                Download saves every show on this profile to a file. Import the file later with
+                Import from file and it uses no Setlist.fm calls.
+              </p>
 
               <div className="sfm-check-list">
                 {previewData.items.map((item) => (
