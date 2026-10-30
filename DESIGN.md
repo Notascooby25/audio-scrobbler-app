@@ -130,7 +130,9 @@ Utilitarian geometric forms.
 - **Do** use a 0.5px border for dividing content and framing cards.
 
 ### Don't:
-- **Don't** use any box-shadows or drop-shadows.
-- **Don't** use gradients anywhere in the UI.
+- **Don't** use any box-shadows or drop-shadows (Exception: `RetroJukebox.module.css` which is intentionally skeuomorphic).
+- **Don't** use gradients anywhere in the UI (Exception: `RetroJukebox.module.css`).
 - **Don't** use dropdown menus for primary navigation or filtering where segmented tabs could fit.
+- **Don't** modify or restyle `RetroJukebox.jsx` or `RetroJukebox.module.css` during global theme/accent restyles.
+
 
