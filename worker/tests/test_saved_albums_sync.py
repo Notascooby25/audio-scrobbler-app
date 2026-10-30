@@ -75,7 +75,9 @@ def _saved_albums_settings(**overrides):
 
 
 def _user():
-    return UserRecord(id=4, refresh_token_cipher="cipher", is_active=True, spotify_user_id="spotify", display_name="User")
+    return UserRecord(
+        id=4, refresh_token_cipher="cipher", is_active=True, spotify_user_id="spotify", display_name="User"
+    )
 
 
 def test_normalize_saved_album_item():

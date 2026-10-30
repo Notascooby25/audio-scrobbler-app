@@ -88,7 +88,9 @@ def get_jukebox_albums(
                     album_name=row.album_name,
                     artist_name=row.artist_name,
                     artwork_url=row.artwork_url,
-                    added_at=row.first_played.isoformat() if row.first_played else datetime.now(timezone.utc).isoformat(),
+                    added_at=row.first_played.isoformat()
+                    if row.first_played
+                    else datetime.now(timezone.utc).isoformat(),
                     play_count=row.plays,
                     genres=[],
                 )
@@ -142,9 +144,7 @@ def record_pick(
     current_user: User = Depends(get_current_user),
 ):
     album = (
-        db.query(SavedAlbum)
-        .filter(SavedAlbum.id == payload.album_id, SavedAlbum.user_id == current_user.id)
-        .first()
+        db.query(SavedAlbum).filter(SavedAlbum.id == payload.album_id, SavedAlbum.user_id == current_user.id).first()
     )
     if album:
         album.last_picked_at = datetime.now(timezone.utc)

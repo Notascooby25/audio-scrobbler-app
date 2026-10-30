@@ -1,6 +1,7 @@
 from datetime import datetime
 from backend.app.models import SavedAlbum
 
+
 def test_saved_album_instantiation():
     album = SavedAlbum(
         user_id=1,

@@ -54,8 +54,10 @@ class FakeDB:
         class Result:
             def all(self):
                 return []
+
             def first(self):
                 return None
+
         return Result()
 
     def commit(self):
