@@ -1,5 +1,6 @@
 # How to Work on This Repo
 - Every time you have an issue, bug, or update to make: Follow `agents/planner_agent.md` to plan it and wait for the user's approval, then follow `agents/implementation_agent.md` to implement it.
+- When presenting a plan, if you recommend native execution, execute via native directly upon plan approval instead of prompting for execution approaches. Only prompt when there is a genuine choice without a clear recommendation.
 - Before any code change, read `HANDOVER.md` (and `HANDOVER.private.md` if it exists; it is gitignored, so never commit or quote it).
 - For page work, check `agents/page_specs.md` and `DESIGN.md`. See `agents/agents.md` for the overall workflow.
 - If the user explicitly says to skip planning for a small fix, skip the plan, but still follow the testing, security review, commit, and safety rules below.
