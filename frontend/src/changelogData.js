@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.27.1",
+    date: "2026-10-30",
+    changes: [
+      "Fixed: the Live gap no longer lists artists you've already seen live just because Spotify and Setlist.fm spell their name differently, such as an accent (Maxïmo Park) or a curly apostrophe (Noel Gallagher’s).",
+    ],
+  },
+  {
     version: "0.27.0",
     date: "2026-10-30",
     changes: [

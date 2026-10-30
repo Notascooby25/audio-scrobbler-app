@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+import unicodedata
 from collections import Counter
 from datetime import datetime, timedelta
 from typing import Any
@@ -9,6 +11,17 @@ from sqlalchemy.orm import Session
 
 from ..models import AttendedConcert, ListeningEvent
 from ..queries.analytics_queries import not_blocked_clause
+
+_APOSTROPHES = re.compile(r"[\u2018\u2019\u02bc\u0060\u00b4]")
+
+
+def artist_key(name: str) -> str:
+    """Matches artist names across Spotify and Setlist.fm: ignores case, accents, apostrophe
+    style and extra spaces, so "Maxïmo Park" and "Maximo Park" are the same artist."""
+    decomposed = unicodedata.normalize("NFKD", name)
+    without_accents = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+    return " ".join(_APOSTROPHES.sub("'", without_accents).casefold().split())
+
 
 # Plays counted on each side of a gig. Same-day plays are left out of both sides.
 GIG_WINDOW_DAYS = 14
@@ -71,13 +84,14 @@ class GigReportsService:
     def get_live_gap(self, user_id: int, limit: int = 20) -> list[dict[str, Any]]:
         """Artists you play a lot on Spotify but have never logged a gig for."""
         seen_live = {
-            name.casefold()
+            artist_key(name)
             for (name,) in self.db.query(AttendedConcert.artist_name).filter(AttendedConcert.user_id == user_id)
         }
-        artist_key = func.lower(ListeningEvent.artist_name)
-        top_plays = (
+        # Spotify and Setlist.fm spell names differently (accents, curly apostrophes), so the
+        # rows are grouped by a normalised key in Python, not by SQL lower()
+        spellings = (
             self.db.query(
-                func.max(ListeningEvent.artist_name).label("artist_name"),
+                ListeningEvent.artist_name,
                 func.count(ListeningEvent.id).label("plays"),
             )
             .filter(
@@ -86,15 +100,20 @@ class GigReportsService:
                 ListeningEvent.artist_name.isnot(None),
                 not_blocked_clause(user_id),
             )
-            .group_by(artist_key)
-            .order_by(desc("plays"), artist_key)
-            .limit(200)
+            .group_by(ListeningEvent.artist_name)
             .all()
         )
+        plays_by_artist: dict[str, int] = Counter()
+        spelling_plays: dict[str, Counter[str]] = {}
+        for name, plays in spellings:
+            key = artist_key(name)
+            plays_by_artist[key] += int(plays)
+            spelling_plays.setdefault(key, Counter())[name] += int(plays)
+
         gap = [
-            {"artist_name": row.artist_name, "plays": int(row.plays)}
-            for row in top_plays
-            if row.artist_name.casefold() not in seen_live
+            {"artist_name": spelling_plays[key].most_common(1)[0][0], "plays": plays}
+            for key, plays in sorted(plays_by_artist.items(), key=lambda item: (-item[1], item[0]))
+            if key not in seen_live
         ]
         return gap[:limit]
 
