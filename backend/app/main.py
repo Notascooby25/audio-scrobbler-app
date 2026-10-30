@@ -20,6 +20,7 @@ from .api.blocks import router as blocks_router
 from .api.tools import router as tools_router
 from .api.notifications import router as notifications_router
 from .api.setlists import router as setlists_router
+from .api.jukebox import router as jukebox_router
 from .config import settings
 from .db import SessionLocal
 from .db import engine
@@ -48,6 +49,7 @@ app.include_router(blocks_router)
 app.include_router(tools_router)
 app.include_router(notifications_router)
 app.include_router(setlists_router)
+app.include_router(jukebox_router)
 
 app.add_middleware(
     CORSMiddleware,

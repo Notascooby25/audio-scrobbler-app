@@ -16,10 +16,12 @@ from ..schemas.spotify_library import (
     GenreCachePendingResponse,
     GenreCacheUpsertResponse,
     LikedTracksUpsertResponse,
+    SavedAlbumsUpsertResponse,
     SpotifySyncResponse,
     WorkerBackfillArtworkRequest,
     WorkerGenreCacheUpsertRequest,
     WorkerLikedTracksSyncRequest,
+    WorkerSavedAlbumsSyncRequest,
 )
 from ..services import scrobble_settings_service
 from ..services.spotify_library_service import (
@@ -27,6 +29,7 @@ from ..services.spotify_library_service import (
     find_pending_genre_artist_ids,
     upsert_genre_cache,
     upsert_liked_tracks,
+    upsert_saved_albums,
 )
 
 router = APIRouter(prefix="/spotify", tags=["spotify-library"])
@@ -52,6 +55,18 @@ def sync_liked_tracks_internal(
     if user is None:
         raise HTTPException(status_code=404, detail="Active user not found")
     return LikedTracksUpsertResponse(**upsert_liked_tracks(db, user.id, payload.tracks))
+
+
+@router.post("/internal/saved-albums", response_model=SavedAlbumsUpsertResponse)
+def sync_saved_albums_internal(
+    payload: WorkerSavedAlbumsSyncRequest,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_worker_token),
+) -> SavedAlbumsUpsertResponse:
+    user = db.query(User).filter(User.id == payload.user_id, User.is_active.is_(True)).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="Active user not found")
+    return SavedAlbumsUpsertResponse(**upsert_saved_albums(db, user.id, payload.albums))
 
 
 @router.post("/backfill-artwork", response_model=SpotifySyncResponse)

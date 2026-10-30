@@ -54,3 +54,28 @@ class WorkerGenreCacheUpsertRequest(BaseModel):
 
 class GenreCacheUpsertResponse(BaseModel):
     upserted: int
+
+
+class WorkerSavedAlbumItem(BaseModel):
+    spotify_album_id: str
+    album_name: str
+    artist_name: str
+    release_date: str | None = None
+    release_year: int | None = None
+    genres: list[str] | None = None
+    duration_ms: int | None = None
+    label: str | None = None
+    artwork_url: str | None = None
+    spotify_url: str | None = None
+    added_at: datetime
+
+
+class WorkerSavedAlbumsSyncRequest(BaseModel):
+    user_id: int = Field(gt=0)
+    albums: list[WorkerSavedAlbumItem]
+
+
+class SavedAlbumsUpsertResponse(BaseModel):
+    inserted: int
+    updated: int
+

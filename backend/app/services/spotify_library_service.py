@@ -8,9 +8,9 @@ import requests
 from sqlalchemy.orm import Session
 
 from ..config import settings
-from ..models import GenreCache, LikedTrack, ListeningEvent, User
+from ..models import GenreCache, LikedTrack, ListeningEvent, SavedAlbum, User
 from ..queries.analytics_queries import build_pending_genre_artist_ids_query
-from ..schemas.spotify_library import WorkerLikedTrackItem
+from ..schemas.spotify_library import WorkerLikedTrackItem, WorkerSavedAlbumItem
 from ..security import decrypt_refresh_token, encrypt_refresh_token
 
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
@@ -140,6 +140,54 @@ def upsert_liked_tracks(db: Session, user_id: int, tracks: list[WorkerLikedTrack
             existing.artist_artwork_url = track.artist_artwork_url
             existing.added_at = track.added_at
             existing.raw_metadata = track.raw_metadata
+            updated += 1
+    db.commit()
+    return {"inserted": inserted, "updated": updated}
+
+
+def upsert_saved_albums(db: Session, user_id: int, albums: list[WorkerSavedAlbumItem]) -> dict[str, int]:
+    if not albums:
+        return {"inserted": 0, "updated": 0}
+    album_ids = {a.spotify_album_id for a in albums}
+    existing_rows = (
+        db.query(SavedAlbum)
+        .filter(SavedAlbum.user_id == user_id, SavedAlbum.spotify_album_id.in_(album_ids))
+        .all()
+    )
+    existing_by_id = {row.spotify_album_id: row for row in existing_rows}
+    inserted = 0
+    updated = 0
+    for album in albums:
+        existing = existing_by_id.get(album.spotify_album_id)
+        if existing is None:
+            db.add(
+                SavedAlbum(
+                    user_id=user_id,
+                    spotify_album_id=album.spotify_album_id,
+                    album_name=album.album_name,
+                    artist_name=album.artist_name,
+                    release_date=album.release_date,
+                    release_year=album.release_year,
+                    genres=album.genres,
+                    duration_ms=album.duration_ms,
+                    label=album.label,
+                    artwork_url=album.artwork_url,
+                    spotify_url=album.spotify_url,
+                    added_at=album.added_at,
+                )
+            )
+            inserted += 1
+        else:
+            existing.album_name = album.album_name
+            existing.artist_name = album.artist_name
+            existing.release_date = album.release_date
+            existing.release_year = album.release_year
+            existing.genres = album.genres
+            existing.duration_ms = album.duration_ms
+            existing.label = album.label
+            existing.artwork_url = album.artwork_url
+            existing.spotify_url = album.spotify_url
+            existing.added_at = album.added_at
             updated += 1
     db.commit()
     return {"inserted": inserted, "updated": updated}
