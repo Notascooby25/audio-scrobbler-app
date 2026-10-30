@@ -256,7 +256,9 @@ const FAQ_DATA = [
       <p>
         <strong>Set your home city.</strong> Go to <em>Settings → General</em> and enter the city
         you live in, such as Leeds, United Kingdom. The Gigs tab on Reports then shows your five
-        furthest headline gigs in kilometres, measured as the crow flies. Venues are looked up on
+        furthest venues in kilometres, measured as the crow flies. A festival appears once, and
+        tapping it shows every band you saw there. A venue the map doesn't know is placed at its
+        city and marked approximate. Venues are looked up on
         OpenStreetMap in the background, a batch every couple of minutes, so a long history fills in
         by itself. Only you see these distances.
       </p>

@@ -418,7 +418,9 @@ the NAS listing.** The live setup has drifted from the repos before.
   `GET /setlists/stats/furthest-gigs` (own gigs only) only reads `geo_cache`.
   The worker job `venue-geocoding` (every `WORKER_VENUE_GEOCODE_INTERVAL_MINUTES`,
   default 2) calls `POST /setlists/internal/geocode-venues`, which places up to
-  `WORKER_VENUE_GEOCODE_BATCH_SIZE` (default 60) venues a run.
+  `WORKER_VENUE_GEOCODE_BATCH_SIZE` (default 60) venues a run. A venue the map
+  doesn't know falls back to its city (`approximate: true`). The furthest list
+  groups gigs by venue, so a festival shows once with its bands.
 - **Also 2026-09-22/23:** listening heatmap, frontend redesign, nginx
   `client_max_body_size` raised for large imports, listening clock restored,
   friends-average removed from the UI, Library share-image feature,

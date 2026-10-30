@@ -7,6 +7,7 @@ import {
   fetchLiveGap,
 } from "../../api/setlists";
 import BarTrendChart from "../charts/BarTrendChart";
+import FurthestVenues from "./FurthestVenues";
 
 const YEARS_SHOWN = 5;
 const LIVE_GAP_SHOWN = 5;
@@ -198,20 +199,7 @@ export default function GigReportsSection({ token, userId }) {
                 {furthest.furthest.length === 0 ? (
                   <p className="notice">No gigs located yet.</p>
                 ) : (
-                  <ol className="ranked-list">
-                    {furthest.furthest.map((gig, index) => (
-                      <li key={gig.id}>
-                        <span className="rank-number">{index + 1}</span>
-                        <span className="rank-copy">
-                          <strong>{gig.artist_name}</strong>
-                          <small>
-                            {gig.venue_name}, {gig.city} · {gig.date}
-                          </small>
-                        </span>
-                        <span className="rank-count">{gig.distance_km.toLocaleString()} km</span>
-                      </li>
-                    ))}
-                  </ol>
+                  <FurthestVenues venues={furthest.furthest} />
                 )}
                 {furthest.pending_gigs > 0 && (
                   <p className="chart-caption">

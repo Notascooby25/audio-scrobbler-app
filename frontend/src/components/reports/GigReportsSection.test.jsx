@@ -118,7 +118,7 @@ describe("GigReportsSection", () => {
     expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("href", "/settings");
   });
 
-  it("lists the five furthest gigs with distance and notes gigs still being located", async () => {
+  it("lists the furthest venues with distance, and notes gigs still being located", async () => {
     mockReports({
       byYear: [{ period: String(currentYear), gigs: 1, festivals: 0 }],
       furthest: {
@@ -127,23 +127,74 @@ describe("GigReportsSection", () => {
         pending_gigs: 2,
         furthest: [
           {
-            id: 1,
-            artist_name: "Far Band",
             venue_name: "Big Hall",
             city: "Paris",
             country: "France",
-            date: "01 Jan 2026",
-            event_date: "2026-01-01T00:00:00",
             distance_km: 343,
+            approximate: false,
+            gig_count: 1,
+            gigs: [
+              {
+                id: 1,
+                artist_name: "Far Band",
+                date: "01 Jan 2026",
+                event_date: "2026-01-01T00:00:00",
+              },
+            ],
           },
         ],
       },
     });
     renderSection();
 
-    expect(await screen.findByText("Far Band")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /Big Hall/ })).toBeInTheDocument();
     expect(screen.getByText("343 km")).toBeInTheDocument();
     expect(screen.getByText(/2 gigs are still being located/)).toBeInTheDocument();
+  });
+
+  it("opens a venue to show every band you saw there", async () => {
+    mockReports({
+      byYear: [{ period: String(currentYear), gigs: 2, festivals: 1 }],
+      furthest: {
+        home_set: true,
+        located_gigs: 2,
+        pending_gigs: 0,
+        furthest: [
+          {
+            venue_name: "Watergate Bay",
+            city: "Newquay",
+            country: "United Kingdom",
+            distance_km: 316,
+            approximate: false,
+            gig_count: 2,
+            gigs: [
+              {
+                id: 7,
+                artist_name: "Breaks Co-op",
+                date: "05 Aug 2006",
+                event_date: "2006-08-05T00:00:00",
+              },
+              {
+                id: 8,
+                artist_name: "Starsailor",
+                date: "05 Aug 2006",
+                event_date: "2006-08-05T00:00:00",
+              },
+            ],
+          },
+        ],
+      },
+    });
+    renderSection();
+
+    const toggle = await screen.findByRole("button", { name: /Watergate Bay/ });
+    expect(toggle).toHaveTextContent("2 gigs");
+    expect(screen.queryByRole("link", { name: "Starsailor" })).not.toBeInTheDocument();
+
+    fireEvent.click(toggle);
+
+    expect(screen.getByRole("link", { name: "Breaks Co-op" })).toHaveAttribute("href", "/gigs/7");
+    expect(screen.getByRole("link", { name: "Starsailor" })).toHaveAttribute("href", "/gigs/8");
   });
 
   it("does not show furthest gigs for a followed person's report", async () => {
