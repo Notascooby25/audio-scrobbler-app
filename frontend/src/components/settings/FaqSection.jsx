@@ -22,6 +22,21 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "theme-accent-color",
+    category: "General & Appearance",
+    question: "Can I customize the site theme and accent color?",
+    answer: (
+      <p>
+        <strong>Yes!</strong> In <strong>Settings → General</strong>, you can switch between Light,
+        Dark, or System theme modes. You can also customize the site's accent color across buttons,
+        active nav tabs, charts, and activity heatmaps using 8 curated song-title presets:{" "}
+        <em>Blue Monday</em>, <em>Spotify Green</em>, <em>Red Red Wine</em>, <em>Purple Rain</em>,{" "}
+        <em>Fool's Gold</em>, <em>Paint It Black</em>, <em>Pretty in Pink</em>, or{" "}
+        <em>Orange Crush</em>.
+      </p>
+    ),
+  },
+  {
     id: "sync-closed-browser",
     category: "Sync & Scrobbles",
     question: "Does the app keep scrobbling if I close the browser?",
@@ -255,11 +270,11 @@ const FAQ_DATA = [
     answer: (
       <p>
         <strong>Yes.</strong> When you tick <em>This was a festival</em> on a gig, type its name in
-        the <em>Festival name</em> box, such as Victorious Festival 2026. The name appears above
-        the venue on the gig page, and in My Gigs and Songs Heard in place of the venue. Festivals
-        are grouped without their year, so V Festival – 2009 and V Festival – 2008 count as one
-        festival on a venue's page. Setlist.fm doesn&apos;t record festival names, so the
-        app can&apos;t fill this in for you.
+        the <em>Festival name</em> box, such as Victorious Festival 2026. The name appears above the
+        venue on the gig page, and in My Gigs and Songs Heard in place of the venue. Festivals are
+        grouped without their year, so V Festival – 2009 and V Festival – 2008 count as one festival
+        on a venue's page. Setlist.fm doesn&apos;t record festival names, so the app can&apos;t fill
+        this in for you.
       </p>
     ),
   },
@@ -273,9 +288,9 @@ const FAQ_DATA = [
         you live in, such as Leeds, United Kingdom. The Gigs tab on Reports then shows your five
         furthest venues in kilometres, measured as the crow flies. A festival appears once, and
         tapping it shows every band you saw there. A venue the map doesn't know is placed at its
-        city and marked approximate. Venues are looked up on
-        OpenStreetMap in the background, a batch every couple of minutes, so a long history fills in
-        by itself. Only you see these distances.
+        city and marked approximate. Venues are looked up on OpenStreetMap in the background, a
+        batch every couple of minutes, so a long history fills in by itself. Only you see these
+        distances.
       </p>
     ),
   },

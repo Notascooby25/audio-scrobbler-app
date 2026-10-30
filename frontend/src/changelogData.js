@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.28.9",
+    date: "2026-10-30",
+    changes: [
+      "Song-Title Accent Themes: Personalize your app theme across the whole site with 8 curated music presets inspired by classic songs (Blue Monday, Spotify Green, Red Red Wine, Purple Rain, Fool's Gold, Paint It Black, Pretty in Pink, Orange Crush). Switch presets instantly in Settings → General.",
+    ],
+  },
+  {
     version: "0.28.8",
     date: "2026-10-30",
     changes: [

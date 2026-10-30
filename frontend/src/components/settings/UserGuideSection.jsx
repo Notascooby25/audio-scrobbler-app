@@ -218,12 +218,19 @@ export default function UserGuideSection() {
           <li>
             <strong>Reports:</strong> Deep analytical insights. Explore your listening heatmap (what
             days and times you listen most), your 24-hour listening clock, music breakdown by
-            decade, top genres, and compare stats side-by-side with friends you follow.
-            The <em>Gigs</em> tab next to Listening shows your gigs per month and year, artists you
-            play a lot but have never seen live, and how your listening changes around each gig.
-            Gigs per year shows the last five years, and <em>Show all years</em> reveals the rest.
-            With a home city set in <em>Settings → General</em>, the <em>Furthest gigs</em> panel
-            lists your five furthest headline gigs from home.
+            decade, top genres, and compare stats side-by-side with friends you follow. The{" "}
+            <em>Gigs</em> tab next to Listening shows your gigs per month and year, artists you play
+            a lot but have never seen live, and how your listening changes around each gig. Gigs per
+            year shows the last five years, and <em>Show all years</em> reveals the rest. With a
+            home city set in <em>Settings → General</em>, the <em>Furthest gigs</em> panel lists
+            your five furthest headline gigs from home.
+          </li>
+          <li>
+            <strong>Theme & Accent Color Personalization:</strong> Make the site feel like yours by
+            picking your favorite accent color in <em>Settings → General</em>. Choose from 8 curated
+            music presets based on iconic song titles (Blue Monday, Spotify Green, Red Red Wine,
+            Purple Rain, Fool's Gold, Paint It Black, Pretty in Pink, Orange Crush). Your choice
+            updates buttons, active tabs, charts, and heatmaps seamlessly.
           </li>
           <li>
             <strong>Shareable Image Cards:</strong> Want to brag about your top 5 albums or artists?
