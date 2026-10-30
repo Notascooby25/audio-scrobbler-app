@@ -24,6 +24,10 @@ export default function App() {
             localStorage.setItem("audio-scrobbler-theme", settings.theme);
             document.documentElement.setAttribute("data-theme", settings.theme);
           }
+          if (settings.accent_color) {
+            localStorage.setItem("audio-scrobbler-accent", settings.accent_color);
+            document.documentElement.setAttribute("data-accent", settings.accent_color);
+          }
         })
         .catch(() => {});
     }

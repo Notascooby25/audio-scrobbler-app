@@ -1,203 +1,284 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import App from './App'
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import App from "./App";
 
-vi.mock('./api', () => ({
+vi.mock("./api", () => ({
   fetchMonthlySummary: vi.fn(),
-  fetchRecentScrobbles: vi.fn().mockResolvedValue({ user_id: 1, scrobbles: [], limit: 50, offset: 0 }),
-  fetchUserCharts: vi.fn().mockResolvedValue({ user_id: 1, entity: 'artists', range: 'overall', entries: [] }),
+  fetchRecentScrobbles: vi
+    .fn()
+    .mockResolvedValue({ user_id: 1, scrobbles: [], limit: 50, offset: 0 }),
+  fetchUserCharts: vi
+    .fn()
+    .mockResolvedValue({ user_id: 1, entity: "artists", range: "overall", entries: [] }),
   fetchUnreadNotificationCount: vi.fn().mockResolvedValue({ count: 0 }),
   submitImportScrobbles: vi.fn(),
-  requestDevelopmentToken: vi.fn().mockResolvedValue({ access_token: 'demo-token', expires_in: 3600 }),
-  requestSpotifyAuthorization: vi.fn().mockResolvedValue({ authorization_url: 'https://accounts.spotify.com/authorize' }),
+  requestDevelopmentToken: vi
+    .fn()
+    .mockResolvedValue({ access_token: "demo-token", expires_in: 3600 }),
+  requestSpotifyAuthorization: vi
+    .fn()
+    .mockResolvedValue({ authorization_url: "https://accounts.spotify.com/authorize" }),
   redirectToAuthorization: vi.fn(),
   fetchSpotifyStatus: vi.fn().mockResolvedValue({ rate_limited: false, retry_after: null }),
-  fetchUserSettings: vi.fn().mockResolvedValue({ theme: 'system' }),
-}))
+  fetchUserSettings: vi.fn().mockResolvedValue({ theme: "system", accent_color: "blue_monday" }),
+  fetchStatsSummary: vi.fn().mockResolvedValue({ total_scrobbles: 0, top_artist: null }),
+  fetchStatsChart: vi.fn().mockResolvedValue({ entries: [] }),
+  fetchRediscoverTracks: vi.fn().mockResolvedValue({ tracks: [] }),
+}));
 
-import { fetchMonthlySummary, fetchRecentScrobbles, fetchSpotifyStatus, requestDevelopmentToken, requestSpotifyAuthorization, submitImportScrobbles } from './api'
+import {
+  fetchMonthlySummary,
+  fetchRecentScrobbles,
+  fetchSpotifyStatus,
+  fetchUserSettings,
+  requestDevelopmentToken,
+  requestSpotifyAuthorization,
+  submitImportScrobbles,
+} from "./api";
 
-describe('App', () => {
+describe("App", () => {
   afterEach(() => {
-    cleanup()
-  })
+    cleanup();
+  });
 
   beforeEach(() => {
-    localStorage.clear()
-    vi.clearAllMocks()
-  })
+    localStorage.clear();
+    document.documentElement.removeAttribute("data-theme");
+    document.documentElement.removeAttribute("data-accent");
+    vi.clearAllMocks();
+  });
 
-  function renderConnectPage(hash = '') {
-    window.history.pushState({}, '', `/connect${hash}`)
-    return render(<App />)
+  function renderConnectPage(hash = "") {
+    window.history.pushState({}, "", `/connect${hash}`);
+    return render(<App />);
   }
 
-  it('renders the new Overview page at the root route', () => {
-    render(<App />)
-    expect(screen.getByRole('heading', { name: 'Overview' })).toBeInTheDocument()
-  })
+  it("renders the new Overview page at the root route", () => {
+    render(<App />);
+    expect(screen.getByRole("heading", { name: "Overview" })).toBeInTheDocument();
+  });
 
-  it('shows an error after Spotify authorization is cancelled', () => {
-    renderConnectPage('#auth_error=spotify_authorization_denied')
-    expect(screen.getByText('Spotify authorization was cancelled.')).toBeInTheDocument()
-    window.history.replaceState({}, document.title, window.location.pathname)
-  })
+  it("shows an error after Spotify authorization is cancelled", () => {
+    renderConnectPage("#auth_error=spotify_authorization_denied");
+    expect(screen.getByText("Spotify authorization was cancelled.")).toBeInTheDocument();
+    window.history.replaceState({}, document.title, window.location.pathname);
+  });
 
-  it('requests Spotify authorization from the dashboard', async () => {
-    renderConnectPage()
-    fireEvent.click(screen.getByRole('button', { name: 'Connect Spotify' }))
-    await waitFor(() => expect(requestSpotifyAuthorization).toHaveBeenCalled())
-  })
+  it("requests Spotify authorization from the dashboard", async () => {
+    renderConnectPage();
+    fireEvent.click(screen.getByRole("button", { name: "Connect Spotify" }));
+    await waitFor(() => expect(requestSpotifyAuthorization).toHaveBeenCalled());
+  });
 
-  it('disables the Connect button while Spotify is rate-limited', async () => {
-    fetchSpotifyStatus.mockResolvedValueOnce({ rate_limited: true, retry_after: '2026-09-17T20:00:00Z' })
-    renderConnectPage()
+  it("disables the Connect button while Spotify is rate-limited", async () => {
+    fetchSpotifyStatus.mockResolvedValueOnce({
+      rate_limited: true,
+      retry_after: "2026-09-17T20:00:00Z",
+    });
+    renderConnectPage();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Connect Spotify' })).toBeDisabled())
-    expect(screen.getByText(/Spotify is rate-limiting this app/)).toBeInTheDocument()
-    expect(requestSpotifyAuthorization).not.toHaveBeenCalled()
-  })
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Connect Spotify" })).toBeDisabled()
+    );
+    expect(screen.getByText(/Spotify is rate-limiting this app/)).toBeInTheDocument();
+    expect(requestSpotifyAuthorization).not.toHaveBeenCalled();
+  });
 
-  it('renders an empty result after loading a filtered summary', async () => {
-    fetchMonthlySummary.mockResolvedValue({ user_id: 1, summary: [], total_months: 0 })
-    renderConnectPage()
+  it("renders an empty result after loading a filtered summary", async () => {
+    fetchMonthlySummary.mockResolvedValue({ user_id: 1, summary: [], total_months: 0 });
+    renderConnectPage();
 
-    fireEvent.change(screen.getByLabelText('Development user ID'), { target: { value: '1' } })
-    fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'))
+    fireEvent.change(screen.getByLabelText("Development user ID"), { target: { value: "1" } });
+    fireEvent.submit(screen.getByRole("button", { name: "Sign in" }).closest("form"));
 
-    await waitFor(() => expect(screen.getByText("It's quiet in here")).toBeInTheDocument())
-    expect(fetchMonthlySummary).toHaveBeenCalled()
-    expect(requestDevelopmentToken).toHaveBeenCalledWith('1')
-  })
+    await waitFor(() => expect(screen.getByText("It's quiet in here")).toBeInTheDocument());
+    expect(fetchMonthlySummary).toHaveBeenCalled();
+    expect(requestDevelopmentToken).toHaveBeenCalledWith("1");
+  });
 
-  it('renders monthly metrics from a populated summary', async () => {
+  it("renders monthly metrics from a populated summary", async () => {
     fetchMonthlySummary.mockResolvedValue({
       user_id: 1,
       total_months: 1,
-      summary: [{ month: '2026-01', total_plays: 12, unique_tracks: 5, total_listening_minutes: 240 }],
-    })
-    renderConnectPage()
+      summary: [
+        { month: "2026-01", total_plays: 12, unique_tracks: 5, total_listening_minutes: 240 },
+      ],
+    });
+    renderConnectPage();
 
-    fireEvent.change(screen.getByLabelText('Development user ID'), { target: { value: '1' } })
-    fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'))
+    fireEvent.change(screen.getByLabelText("Development user ID"), { target: { value: "1" } });
+    fireEvent.submit(screen.getByRole("button", { name: "Sign in" }).closest("form"));
 
-    await waitFor(() => expect(screen.getByText('2026-01')).toBeInTheDocument())
-    expect(screen.getByText('12')).toBeInTheDocument()
-    expect(screen.getByText('240 min')).toBeInTheDocument()
-  })
+    await waitFor(() => expect(screen.getByText("2026-01")).toBeInTheDocument());
+    expect(screen.getByText("12")).toBeInTheDocument();
+    expect(screen.getByText("240 min")).toBeInTheDocument();
+  });
 
-  it('clears the session when analytics returns unauthorized', async () => {
-    fetchMonthlySummary.mockRejectedValue(Object.assign(new Error('Unauthorized'), { status: 401 }))
-    localStorage.setItem('audio-scrobbler-session', JSON.stringify({
-      userId: 1,
-      accessToken: 'expired-token',
-      expiresAt: Date.now() + 60000,
-    }))
+  it("clears the session when analytics returns unauthorized", async () => {
+    fetchMonthlySummary.mockRejectedValue(
+      Object.assign(new Error("Unauthorized"), { status: 401 })
+    );
+    localStorage.setItem(
+      "audio-scrobbler-session",
+      JSON.stringify({
+        userId: 1,
+        accessToken: "expired-token",
+        expiresAt: Date.now() + 60000,
+      })
+    );
 
-    renderConnectPage()
+    renderConnectPage();
 
-    await waitFor(() => expect(screen.getByText('Your session has expired. Sign in again.')).toBeInTheDocument())
-    expect(localStorage.getItem('audio-scrobbler-session')).toBeNull()
-  })
+    await waitFor(() =>
+      expect(screen.getByText("Your session has expired. Sign in again.")).toBeInTheDocument()
+    );
+    expect(localStorage.getItem("audio-scrobbler-session")).toBeNull();
+  });
 
-  it('renders source badges for recent scrobbles', async () => {
-    fetchMonthlySummary.mockResolvedValue({ user_id: 1, summary: [], total_months: 0 })
+  it("renders source badges for recent scrobbles", async () => {
+    fetchMonthlySummary.mockResolvedValue({ user_id: 1, summary: [], total_months: 0 });
     fetchRecentScrobbles.mockResolvedValue({
       user_id: 1,
       limit: 50,
       offset: 0,
       scrobbles: [
-        { id: 1, track_name: 'Daylight', artist_name: 'Matt Berninger', source: 'spotify', played_at: '2026-01-15T12:30:00' },
-        { id: 2, track_name: 'Midnight City', artist_name: 'M83', source: 'youtube', played_at: '2026-01-15T12:31:00' },
+        {
+          id: 1,
+          track_name: "Daylight",
+          artist_name: "Matt Berninger",
+          source: "spotify",
+          played_at: "2026-01-15T12:30:00",
+        },
+        {
+          id: 2,
+          track_name: "Midnight City",
+          artist_name: "M83",
+          source: "youtube",
+          played_at: "2026-01-15T12:31:00",
+        },
       ],
-    })
-    renderConnectPage()
+    });
+    renderConnectPage();
 
-    fireEvent.change(screen.getByLabelText('Development user ID'), { target: { value: '1' } })
-    fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'))
+    fireEvent.change(screen.getByLabelText("Development user ID"), { target: { value: "1" } });
+    fireEvent.submit(screen.getByRole("button", { name: "Sign in" }).closest("form"));
 
-    await waitFor(() => expect(screen.getByText('Daylight')).toBeInTheDocument())
-    expect(screen.getByText('spotify')).toBeInTheDocument()
-    expect(screen.getByText('youtube')).toBeInTheDocument()
-  })
+    await waitFor(() => expect(screen.getByText("Daylight")).toBeInTheDocument());
+    expect(screen.getByText("spotify")).toBeInTheDocument();
+    expect(screen.getByText("youtube")).toBeInTheDocument();
+  });
 
-  it('shows an import summary breakdown after a successful import', async () => {
-    fetchMonthlySummary.mockResolvedValue({ user_id: 1, summary: [], total_months: 0 })
-    fetchRecentScrobbles.mockResolvedValue({ user_id: 1, scrobbles: [], limit: 50, offset: 0 })
+  it("shows an import summary breakdown after a successful import", async () => {
+    fetchMonthlySummary.mockResolvedValue({ user_id: 1, summary: [], total_months: 0 });
+    fetchRecentScrobbles.mockResolvedValue({ user_id: 1, scrobbles: [], limit: 50, offset: 0 });
     submitImportScrobbles.mockResolvedValue({
-      source: 'spotify',
-      status: 'ok',
+      source: "spotify",
+      status: "ok",
       summary: { inserted: 2, skipped: 1, duplicate: 0 },
-    })
-    renderConnectPage()
+    });
+    renderConnectPage();
 
-    fireEvent.change(screen.getByLabelText('Development user ID'), { target: { value: '1' } })
-    fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'))
-    await waitFor(() => expect(screen.getByText("It's quiet in here")).toBeInTheDocument())
+    fireEvent.change(screen.getByLabelText("Development user ID"), { target: { value: "1" } });
+    fireEvent.submit(screen.getByRole("button", { name: "Sign in" }).closest("form"));
+    await waitFor(() => expect(screen.getByText("It's quiet in here")).toBeInTheDocument());
 
-    const file = new File([JSON.stringify([{ trackName: 'Slow Show' }])], 'spotify-history.json', { type: 'application/json' })
-    file.text = async () => JSON.stringify([{ trackName: 'Slow Show' }])
-    fireEvent.change(screen.getByLabelText('Import history JSON'), { target: { files: [file] } })
+    const file = new File([JSON.stringify([{ trackName: "Slow Show" }])], "spotify-history.json", {
+      type: "application/json",
+    });
+    file.text = async () => JSON.stringify([{ trackName: "Slow Show" }]);
+    fireEvent.change(screen.getByLabelText("Import history JSON"), { target: { files: [file] } });
 
-    await waitFor(() => expect(within(screen.getByRole('status', { name: 'Import Summary' })).getByText('spotify', { exact: false })).toBeInTheDocument())
-    expect(screen.getByText('2')).toBeInTheDocument()
-  })
+    await waitFor(() =>
+      expect(
+        within(screen.getByRole("status", { name: "Import Summary" })).getByText("spotify", {
+          exact: false,
+        })
+      ).toBeInTheDocument()
+    );
+    expect(screen.getByText("2")).toBeInTheDocument();
+  });
 
-  it('detects a youtube import from file content when the filename gives no hint', async () => {
-    fetchMonthlySummary.mockResolvedValue({ user_id: 1, summary: [], total_months: 0 })
-    fetchRecentScrobbles.mockResolvedValue({ user_id: 1, scrobbles: [], limit: 50, offset: 0 })
+  it("detects a youtube import from file content when the filename gives no hint", async () => {
+    fetchMonthlySummary.mockResolvedValue({ user_id: 1, summary: [], total_months: 0 });
+    fetchRecentScrobbles.mockResolvedValue({ user_id: 1, scrobbles: [], limit: 50, offset: 0 });
     submitImportScrobbles.mockResolvedValue({
-      source: 'youtube',
-      status: 'ok',
+      source: "youtube",
+      status: "ok",
       summary: { inserted: 1, skipped: 0, duplicate: 0 },
-    })
-    renderConnectPage()
+    });
+    renderConnectPage();
 
-    fireEvent.change(screen.getByLabelText('Development user ID'), { target: { value: '1' } })
-    fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'))
-    await waitFor(() => expect(screen.getByText("It's quiet in here")).toBeInTheDocument())
+    fireEvent.change(screen.getByLabelText("Development user ID"), { target: { value: "1" } });
+    fireEvent.submit(screen.getByRole("button", { name: "Sign in" }).closest("form"));
+    await waitFor(() => expect(screen.getByText("It's quiet in here")).toBeInTheDocument());
 
-    const entries = [{ artist: 'The Sherlocks', song: 'Everything Must Make Sense', album: 'Everything Must Make Sense!', time: '2025-10-20T12:33:20.422Z' }]
-    const file = new File([JSON.stringify(entries)], 'watch-history.json', { type: 'application/json' })
-    file.text = async () => JSON.stringify(entries)
-    fireEvent.change(screen.getByLabelText('Import history JSON'), { target: { files: [file] } })
+    const entries = [
+      {
+        artist: "The Sherlocks",
+        song: "Everything Must Make Sense",
+        album: "Everything Must Make Sense!",
+        time: "2025-10-20T12:33:20.422Z",
+      },
+    ];
+    const file = new File([JSON.stringify(entries)], "watch-history.json", {
+      type: "application/json",
+    });
+    file.text = async () => JSON.stringify(entries);
+    fireEvent.change(screen.getByLabelText("Import history JSON"), { target: { files: [file] } });
 
-    await waitFor(() => expect(submitImportScrobbles).toHaveBeenCalledWith({ token: 'demo-token', source: 'youtube', entries }))
-  })
-})
+    await waitFor(() =>
+      expect(submitImportScrobbles).toHaveBeenCalledWith({
+        token: "demo-token",
+        source: "youtube",
+        entries,
+      })
+    );
+  });
+});
 
-describe('Navigation', () => {
+describe("Navigation", () => {
   beforeEach(() => {
-    localStorage.clear()
-  })
+    localStorage.clear();
+  });
 
   afterEach(() => {
-    cleanup()
-  })
+    cleanup();
+  });
 
   function renderAtRoute(path) {
-    window.history.pushState({}, '', path)
-    return render(<App />)
+    window.history.pushState({}, "", path);
+    return render(<App />);
   }
 
-  it('shows the header navigation on every top-level page', () => {
-    ['/overview', '/library', '/reports', '/profile', '/connect'].forEach((path) => {
-      const { unmount } = renderAtRoute(path)
-      expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBeInTheDocument()
-      unmount()
-    })
-  })
+  it("shows the header navigation on every top-level page", () => {
+    ["/overview", "/library", "/reports", "/profile", "/connect"].forEach((path) => {
+      const { unmount } = renderAtRoute(path);
+      expect(screen.getByRole("navigation", { name: "Primary navigation" })).toBeInTheDocument();
+      unmount();
+    });
+  });
 
-  it('highlights the active link for the current route', () => {
-    renderAtRoute('/reports')
-    expect(screen.getByRole('link', { name: 'Reports' })).toHaveClass('nav-link-active')
-  })
+  it("highlights the active link for the current route", () => {
+    renderAtRoute("/reports");
+    expect(screen.getByRole("link", { name: "Reports" })).toHaveClass("nav-link-active");
+  });
 
-  it('keeps the header visible after navigating to another page', () => {
-    renderAtRoute('/overview')
-    fireEvent.click(screen.getByRole('link', { name: 'Library' }))
+  it("keeps the header visible after navigating to another page", () => {
+    renderAtRoute("/overview");
+    fireEvent.click(screen.getByRole("link", { name: "Library" }));
 
-    expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Library' })).toBeInTheDocument()
-  })
-})
+    expect(screen.getByRole("navigation", { name: "Primary navigation" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Library" })).toBeInTheDocument();
+  });
+
+  it("applies and saves accent_color preference on initial session load", async () => {
+    localStorage.setItem("audio-scrobbler-session", JSON.stringify({ accessToken: "valid-token" }));
+    fetchUserSettings.mockResolvedValueOnce({ theme: "dark", accent_color: "purple_rain" });
+    renderAtRoute("/overview");
+
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute("data-accent")).toBe("purple_rain");
+      expect(localStorage.getItem("audio-scrobbler-accent")).toBe("purple_rain");
+    });
+  });
+});
