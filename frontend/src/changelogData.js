@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.28.2",
+    date: "2026-10-30",
+    changes: [
+      "Furthest gigs now lists venues rather than single gigs. A festival appears once, and tapping it shows every band you saw there. The five entries are five different places.",
+      "A venue the map doesn't know, such as a casino theatre, is placed at its city instead. Its distance is marked approximate.",
+    ],
+  },
+  {
     version: "0.28.1",
     date: "2026-10-30",
     changes: [

@@ -84,8 +84,38 @@ def test_furthest_gigs_ranks_headline_gigs_by_distance_from_home(db_session: Ses
     assert result["home_set"] is True
     assert result["located_gigs"] == 2
     assert result["pending_gigs"] == 0
-    assert [gig["artist_name"] for gig in result["furthest"]] == ["Far Band", "Near Band"]
+    assert [venue["venue_name"] for venue in result["furthest"]] == ["Venue Two", "Venue One"]
     assert result["furthest"][0]["distance_km"] == round(haversine_km(LEEDS, PARIS))
+    assert result["furthest"][0]["gigs"][0]["artist_name"] == "Far Band"
+    assert result["furthest"][0]["approximate"] is False
+
+
+def test_a_festival_lists_once_with_every_band_you_saw(db_session: Session):
+    _home(db_session, LEEDS)
+    _cache_place(db_session, "Watergate Bay, Newquay, United Kingdom", (50.44, -5.05))
+    for index, artist in enumerate(["Breaks Co-op", "Starsailor", "Graham Coxon"]):
+        _gig(db_session, artist, "Watergate Bay", "Newquay", "United Kingdom", datetime(2006, 8, 5 - index))
+
+    result = furthest_gigs(db_session, user_id=1)
+
+    assert len(result["furthest"]) == 1
+    venue = result["furthest"][0]
+    assert venue["venue_name"] == "Watergate Bay"
+    assert venue["gig_count"] == 3
+    assert [gig["artist_name"] for gig in venue["gigs"]] == ["Breaks Co-op", "Starsailor", "Graham Coxon"]
+
+
+def test_a_venue_the_map_does_not_know_is_placed_at_its_city(db_session: Session):
+    _home(db_session, LEEDS)
+    _cache_place(db_session, "Zappos Theater, Las Vegas, United States", None)
+    _cache_place(db_session, "Las Vegas, United States", (36.17, -115.14))
+    _gig(db_session, "Gwen Stefani", "Zappos Theater", "Las Vegas", "United States", datetime(2019, 10, 30))
+
+    result = furthest_gigs(db_session, user_id=1)
+
+    assert result["furthest"][0]["venue_name"] == "Zappos Theater"
+    assert result["furthest"][0]["approximate"] is True
+    assert result["furthest"][0]["distance_km"] > 6000
 
 
 def test_furthest_gigs_without_home_says_so(db_session: Session):
@@ -122,6 +152,20 @@ def test_worker_geocodes_pending_venues_up_to_the_batch_limit(db_session: Sessio
         result = geocode_pending_venues(db_session, limit=2)
 
     assert lookup.call_count == 2
+    # Venue B's city fallback is still waiting for budget
+    assert result == {"checked": 2, "found": 1, "pending": 1}
+
+
+def test_worker_falls_back_to_the_city_when_the_venue_is_unknown(db_session: Session):
+    _gig(db_session, "Gwen Stefani", "Zappos Theater", "Las Vegas", "United States", datetime(2019, 10, 30))
+
+    with patch.object(gig_distance_service, "locate", side_effect=[None, (36.17, -115.14)]) as lookup:
+        result = geocode_pending_venues(db_session, limit=60)
+
+    assert [call.args[1] for call in lookup.call_args_list] == [
+        "Zappos Theater, Las Vegas, United States",
+        "Las Vegas, United States",
+    ]
     assert result == {"checked": 2, "found": 1, "pending": 0}
 
 
