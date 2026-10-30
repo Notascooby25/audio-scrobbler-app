@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.28.7",
+    date: "2026-10-30",
+    changes: [
+      "Festivals on the Venues tab are listed by edition, with the year, such as V Festival 2009, and a count of the acts you saw there. Open one to see those acts.",
+      "A venue where every gig was a festival is headed by the festival name, with the venue and address beneath it.",
+    ],
+  },
+  {
     version: "0.28.6",
     date: "2026-10-30",
     changes: [
