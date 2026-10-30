@@ -35,6 +35,7 @@ from ..schemas.setlists import (
     VenueLeaderboardItem,
 )
 from ..services.gig_reports_service import GigReportsService
+from ..services.setlist_profile_export_service import ProfileExportTooLargeError, build_profile_export
 from ..services.setlist_artwork_service import backfill_live_artwork
 from ..services.setlist_attendance_service import DuplicateGigError, SetlistAttendanceService
 from ..services.setlist_service import (
@@ -553,6 +554,39 @@ def export_gigs(
         content=content,
         media_type=media_type,
         headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+@router.get("/import/profile-export")
+def export_profile_gigs(
+    username: str = Query(..., min_length=1, max_length=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Response:
+    """Every show on a Setlist.fm profile in the import file format. Importing the file
+    later uses no Setlist.fm calls, so a profile only needs fetching once."""
+    service = SetlistService(db=db)
+    try:
+        content, _exported, _skipped = build_profile_export(service, username.strip())
+    except ProfileExportTooLargeError as exc:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(exc)) from exc
+    except SetlistApiKeyMissingError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    except SetlistApiAuthError as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
+    except SetlistUserNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except SetlistRateLimitError as exc:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to export setlists for {username}: {exc}",
+        ) from exc
+    return Response(
+        content=content,
+        media_type="application/json",
+        headers={"Content-Disposition": "attachment; filename=setlist-profile-export.json"},
     )
 
 

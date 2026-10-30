@@ -384,6 +384,12 @@ export default function UserGuideSection() {
                 notification when finished.
               </li>
               <li>
+                <em>Download Once, Import Free:</em> After you preview a profile, tap{" "}
+                <em>Download these gigs</em> to save every show on it, with its songs, to a file.
+                Importing that file later uses no Setlist.fm calls, so it's the way to avoid using
+                your daily allowance twice. Profile pages are also kept for a day.
+              </li>
+              <li>
                 <em>File Import &amp; Backup:</em> Download your full gig history as JSON or CSV
                 anytime. Use <em>Import from a File</em> to restore your data or migrate between
                 accounts; existing gigs are skipped, and file imports that run out of quota

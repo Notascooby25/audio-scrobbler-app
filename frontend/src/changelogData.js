@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.27.0",
+    date: "2026-10-30",
+    changes: [
+      "Use your Setlist.fm allowance once: after you preview a profile, tap Download these gigs to save every show on it to a file. Import that file later with Import from file and it adds the gigs with their songs without using any Setlist.fm calls.",
+      "Profile pages are kept for a day, so previewing a profile and then importing it no longer fetches every page twice.",
+      "Gigs with no setlist on Setlist.fm now come through the file import without a lookup each.",
+    ],
+  },
+  {
     version: "0.26.0",
     date: "2026-10-30",
     changes: [

@@ -249,6 +249,20 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "setlists-download-profile",
+    category: "Set Lists & Gigs",
+    question: "I hit the Setlist.fm daily limit. How do I avoid fetching the same profile again?",
+    answer: (
+      <p>
+        <strong>Download it once.</strong> After you preview a profile, tap{" "}
+        <em>Download these gigs</em>. It saves every show on that profile, with its songs, to a
+        file. Later, use <em>Import from file</em> with that file. Importing a downloaded file uses
+        no Setlist.fm calls. Profile pages are also kept for a day, so previewing and importing the
+        same profile doesn&apos;t fetch them twice.
+      </p>
+    ),
+  },
+  {
     id: "setlists-import-file",
     category: "Set Lists & Gigs",
     question: "Can I import gigs from a CSV or JSON file?",

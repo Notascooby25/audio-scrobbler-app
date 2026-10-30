@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 SETLIST_FM_BASE_URL = "https://api.setlist.fm/rest/1.0"
 MAX_DAILY_CALLS = 1400  # safety threshold under 1,440 daily limit
+ATTENDED_PAGE_TTL = timedelta(days=1)
 MIN_INTERVAL_SECONDS = 0.55  # strictly enforce <= 2 req/second
 
 
@@ -382,6 +383,30 @@ class SetlistService:
                 break
         return results
 
+    def _cached_attended_page(self, username: str, page: int) -> dict[str, Any] | None:
+        """A profile page fetched within the last day. Preview, import and export share it,
+        so one profile costs its pages once a day, not once per step."""
+        now = datetime.utcnow()
+        cached = (
+            self.db.query(SetlistCache)
+            .filter(SetlistCache.cache_key == f"attended:{username}:{page}", SetlistCache.expires_at > now)
+            .first()
+        )
+        if cached and isinstance(cached.response_json, dict) and cached.response_json.get("setlist"):
+            return cached.response_json
+        return None
+
+    def _store_attended_page(self, username: str, page: int, data: dict[str, Any]) -> None:
+        """Only pages with gigs are kept: an empty page may fill in on Setlist.fm later."""
+        self.db.merge(
+            SetlistCache(
+                cache_key=f"attended:{username}:{page}",
+                response_json=data,
+                expires_at=datetime.utcnow() + ATTENDED_PAGE_TTL,
+            )
+        )
+        self.db.commit()
+
     def get_user_attended(self, username: str, p: int = 1) -> dict[str, Any]:
         cleaned_username = sanitize_setlist_username(username)
         if not cleaned_username:
@@ -403,6 +428,9 @@ class SetlistService:
 
         for candidate in casings:
             try:
+                cached = self._cached_attended_page(candidate, p)
+                if cached is not None:
+                    return cached
                 data = self._request(f"/user/{candidate}/attended", params={"p": p})
                 total = int(data.get("total", 0)) if isinstance(data, dict) else 0
                 setlists = data.get("setlist", []) if isinstance(data, dict) else []
@@ -410,6 +438,8 @@ class SetlistService:
                     logger.info("Setlist.fm found %s shows with username casing '%s'", total, candidate)
                     # Each attended show is a full setlist; keep them so importing costs no extra calls
                     self.remember_setlists(setlists)
+                    if setlists:
+                        self._store_attended_page(candidate, p, data)
                     return data
                 if last_data is None:
                     last_data = data

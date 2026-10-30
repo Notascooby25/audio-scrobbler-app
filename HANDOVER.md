@@ -405,6 +405,11 @@ the NAS listing.** The live setup has drifted from the repos before.
   (`gigs-by-period`, `live-gap`, `gig-bump`), built in
   `services/gig_reports_service.py`. Gig bump runs two count queries per gig
   (capped at the 200 most recent), so it's the one to watch if it gets slow.
+- **v0.27.0 (2026-10-30):** profile pages from `get_user_attended` are cached
+  in `setlist_cache` for a day (`attended:{casing}:{page}`, only pages with
+  gigs). `GET /setlists/import/profile-export` downloads a profile as an
+  import file, built by `services/setlist_profile_export_service.py`. Its
+  rows carry their songs, so importing the file costs no Setlist.fm calls.
 - **Also 2026-09-22/23:** listening heatmap, frontend redesign, nginx
   `client_max_body_size` raised for large imports, listening clock restored,
   friends-average removed from the UI, Library share-image feature,
