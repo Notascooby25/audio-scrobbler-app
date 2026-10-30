@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.26.0",
+    date: "2026-10-30",
+    changes: [
+      "Festivals: tick This was a festival when you add or edit a gig. Festival gigs are listed under a Festivals heading at the bottom of the Venues tab, newest first, and get a Festival tag in each venue's list.",
+      "Gigs tab on Reports: a new Gigs tab next to Listening shows how many gigs you've been to per month and per year (with festivals), the live gap (artists you play a lot but have never seen live) and your gig bump (average Spotify plays in the two weeks before and after each gig).",
+    ],
+  },
+  {
     version: "0.25.0",
     date: "2026-10-29",
     changes: [

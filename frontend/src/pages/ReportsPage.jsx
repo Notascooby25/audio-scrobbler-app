@@ -8,6 +8,7 @@ import ListeningHeatmap from '../components/charts/ListeningHeatmap'
 import ListeningClockChart from '../components/charts/ListeningClockChart'
 import GenreBarList from '../components/charts/GenreBarList'
 import FriendsComparisonSection from '../components/reports/FriendsComparisonSection'
+import GigReportsSection from '../components/reports/GigReportsSection'
 import { fetchReportsCharts, fetchReportsEntity, fetchReportsSummary, fetchUserProfile } from '../api'
 import { createDefaultDateRange, DATE_RANGE_PRESETS, isValidDateRange } from '../dateRange'
 import { readSession } from '../session'
@@ -40,6 +41,7 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(false)
   const [showFriendsComparison, setShowFriendsComparison] = useState(false)
   const [error, setError] = useState('')
+  const [reportView, setReportView] = useState('listening')
 
   useEffect(() => {
     if (!session?.accessToken || isOwnReport) {
@@ -78,6 +80,27 @@ export default function ReportsPage() {
     <AnalyticsPage eyebrow="Listening report" title={isOwnReport ? 'Reports' : `@${targetProfile?.username || '...'}'s Reports`}>
       {!session?.accessToken && <p className="notice">Connect Spotify from the <Link to="/connect">connection page</Link> to see your listening report.</p>}
       {error && <p className="notice notice-error" role="alert">{error}</p>}
+      <div className="sfm-tabs" role="tablist" aria-label="Report sections">
+        {[
+          { id: 'listening', label: 'Listening' },
+          { id: 'gigs', label: 'Gigs' },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={reportView === tab.id}
+            className={`sfm-tab ${reportView === tab.id ? 'active' : ''}`}
+            onClick={() => setReportView(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      {reportView === 'gigs' && session?.accessToken && (
+        <GigReportsSection token={session.accessToken} userId={targetUserId} />
+      )}
+      {reportView === 'listening' && (<>
       <div className="reports-toolbar">
         <DateRangeSelector value={dateRange} onChange={setDateRange} showCompare={false} />
         <div className="reports-toolbar-actions">
@@ -217,7 +240,7 @@ export default function ReportsPage() {
           </div>
         </div>
       </div>}
-      
+      </>)}
     </AnalyticsPage>
   )
 }

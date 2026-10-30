@@ -330,6 +330,32 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "setlists-festivals",
+    category: "Set Lists & Gigs",
+    question: "How do I mark a gig as a festival?",
+    answer: (
+      <p>
+        <strong>Tick the box.</strong> When you add a gig, or tap <em>Edit details</em> on an
+        existing one, tick <em>This was a festival</em>. Festival gigs appear under a{" "}
+        <em>Festivals</em> heading at the bottom of the <em>Venues</em> tab.
+      </p>
+    ),
+  },
+  {
+    id: "setlists-gig-reports",
+    category: "Set Lists & Gigs",
+    question: "What do the gig reports show?",
+    answer: (
+      <p>
+        <strong>The Gigs tab on Reports.</strong> It shows how many gigs you've been to per month
+        and per year, with festivals counted separately. The <em>live gap</em> lists artists you
+        play a lot on Spotify but have never seen live. The <em>gig bump</em> compares your average
+        Spotify plays in the two weeks before and after each past gig. Gigs from the last two weeks
+        are left out of the bump until their full window has passed.
+      </p>
+    ),
+  },
+  {
     id: "setlists-duplicates",
     category: "Set Lists & Gigs",
     question: "What happens if I log a gig I've already logged, or log one by mistake?",

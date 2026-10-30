@@ -399,6 +399,12 @@ the NAS listing.** The live setup has drifted from the repos before.
   - Friends' gigs: Set Lists read routes take `?user_id=` for people you
     follow (403 otherwise; notes always blanked for viewers). "+ I was there
     too" copies a friend's gig via `POST /setlists/attendances/{id}/add-to-mine`.
+- **v0.26.0 (2026-10-30):** festival tick box on gigs (`is_festival`,
+  migration 0024; Festivals section at the bottom of the Venues tab) and a
+  Gigs tab on Reports. Gig report routes live under `/setlists/stats/`
+  (`gigs-by-period`, `live-gap`, `gig-bump`), built in
+  `services/gig_reports_service.py`. Gig bump runs two count queries per gig
+  (capped at the 200 most recent), so it's the one to watch if it gets slow.
 - **Also 2026-09-22/23:** listening heatmap, frontend redesign, nginx
   `client_max_body_size` raised for large imports, listening clock restored,
   friends-average removed from the UI, Library share-image feature,

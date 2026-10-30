@@ -15,13 +15,25 @@ export default function VenuesLeaderboard({ venues = [], onOpenGig = null }) {
             date: gig.event_date || gig.date,
             title: gig.artist_name,
             meta: gig.date,
-            tag: gig.is_support ? "Support" : null,
+            tag: gig.is_support ? "Support" : gig.is_festival ? "Festival" : null,
             tagMuted: true,
             onOpen: onOpenGig ? () => onOpenGig(gig.id) : null,
           }))}
         />
       ) : null,
   }));
+
+  const festivalGigs = venues
+    .flatMap((venue) =>
+      (venue.gigs || [])
+        .filter((gig) => gig.is_festival)
+        .map((gig) => ({
+          ...gig,
+          venueName: venue.venue_name,
+          venueSub: [venue.city, venue.country].filter(Boolean).join(", "),
+        }))
+    )
+    .sort((a, b) => (b.event_date || "").localeCompare(a.event_date || ""));
 
   return (
     <div>
@@ -37,6 +49,23 @@ export default function VenuesLeaderboard({ venues = [], onOpenGig = null }) {
         idPrefix="venues"
         emptyText="No venues recorded yet."
       />
+      {festivalGigs.length > 0 && (
+        <div className="sfm-festivals">
+          <div className="sfm-section-head">
+            <h2>Festivals</h2>
+            <p className="sfm-section-desc">Gigs you marked as festivals, newest first.</p>
+          </div>
+          <GigRows
+            rows={festivalGigs.map((gig) => ({
+              key: gig.id,
+              date: gig.event_date || gig.date,
+              title: gig.artist_name,
+              meta: [gig.venueName, gig.venueSub].filter(Boolean).join(" · "),
+              onOpen: onOpenGig ? () => onOpenGig(gig.id) : null,
+            }))}
+          />
+        </div>
+      )}
     </div>
   );
 }

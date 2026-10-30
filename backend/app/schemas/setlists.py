@@ -26,6 +26,7 @@ class LogManualConcertRequest(BaseModel):
     event_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     notes: str | None = Field(None, max_length=2000)
     setlist_url: str | None = Field(None, max_length=500)
+    is_festival: bool = False
     allow_duplicate: bool = False
 
 
@@ -36,6 +37,8 @@ class UpdateConcertRequest(BaseModel):
     country: str = Field("", max_length=128)
     event_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     tour_name: str | None = Field(None, max_length=255)
+    # None leaves the festival tick as it is
+    is_festival: bool | None = None
     allow_duplicate: bool = False
 
 
@@ -89,6 +92,7 @@ class AttendedConcertResponse(BaseModel):
     tour_name: str | None = None
     setlist_url: str | None = None
     is_support_act: bool = False
+    is_festival: bool = False
     parent_setlist_id: str | None = None
     song_count: int = 0
     raw_data: dict[str, Any] | None = None
@@ -129,6 +133,7 @@ class ConcertRefItem(BaseModel):
     event_date: str | None = None
     date: str
     is_support: bool = False
+    is_festival: bool = False
 
 
 class SongLeaderboardItem(BaseModel):
@@ -226,3 +231,27 @@ class SetlistPreviewResponse(BaseModel):
 class SetlistImportRequest(BaseModel):
     username: str = Field(..., min_length=1, max_length=128)
     setlist_ids: list[str] | None = None
+
+
+class GigPeriodItem(BaseModel):
+    period: str
+    gigs: int
+    festivals: int
+
+
+class GigsByPeriodResponse(BaseModel):
+    by_year: list[GigPeriodItem]
+    by_month: list[GigPeriodItem]
+
+
+class LiveGapItem(BaseModel):
+    artist_name: str
+    plays: int
+
+
+class GigBumpResponse(BaseModel):
+    window_days: int
+    gigs_analysed: int
+    average_plays_before: float
+    average_plays_after: float
+    change_percent: float | None = None

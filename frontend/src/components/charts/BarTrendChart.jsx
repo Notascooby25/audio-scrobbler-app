@@ -1,4 +1,4 @@
-export default function BarTrendChart({ title, points = [], emptyMessage = 'No data available for this period.' }) {
+export default function BarTrendChart({ title, points = [], emptyMessage = 'No data available for this period.', unit = 'scrobbles' }) {
   if (points.length === 0) {
     return (
       <section className="chart-panel">
@@ -29,7 +29,7 @@ export default function BarTrendChart({ title, points = [], emptyMessage = 'No d
               height={height}
               rx="0.6"
             >
-              <title>{`${point.label}: ${point.count} scrobbles`}</title>
+              <title>{`${point.label}: ${point.count} ${unit}`}</title>
             </rect>
           )
         })}

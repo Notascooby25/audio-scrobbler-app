@@ -17,8 +17,11 @@ from ..schemas.setlists import (
     FileImportRequest,
     FileImportResponse,
     GigBillResponse,
+    GigBumpResponse,
     GigCompanionsResponse,
     GigInviteItem,
+    GigsByPeriodResponse,
+    LiveGapItem,
     SetlistImportJobResponse,
     LogBillActRequest,
     LogAttendanceRequest,
@@ -31,6 +34,7 @@ from ..schemas.setlists import (
     UpdateConcertRequest,
     VenueLeaderboardItem,
 )
+from ..services.gig_reports_service import GigReportsService
 from ..services.setlist_artwork_service import backfill_live_artwork
 from ..services.setlist_attendance_service import DuplicateGigError, SetlistAttendanceService
 from ..services.setlist_service import (
@@ -189,6 +193,7 @@ def log_manual_concert(
             notes=payload.notes,
             setlist_url=payload.setlist_url,
             allow_duplicate=payload.allow_duplicate,
+            is_festival=payload.is_festival,
         )
         return AttendedConcertResponse.model_validate(concert)
     except DuplicateGigError as exc:
@@ -216,6 +221,7 @@ def update_concert(
             event_date_str=payload.event_date,
             tour_name=payload.tour_name,
             allow_duplicate=payload.allow_duplicate,
+            is_festival=payload.is_festival,
         )
     except LookupError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gig not found.") from exc
@@ -502,6 +508,36 @@ def get_venues_visited_leaderboard(
     return [
         VenueLeaderboardItem.model_validate(item) for item in stats_svc.get_venues_visited_leaderboard(target_user_id)
     ]
+
+
+@router.get("/stats/gigs-by-period", response_model=GigsByPeriodResponse)
+def get_gigs_by_period(
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's gigs."),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> GigsByPeriodResponse:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    return GigsByPeriodResponse.model_validate(GigReportsService(db=db).get_gigs_by_period(target_user_id))
+
+
+@router.get("/stats/live-gap", response_model=list[LiveGapItem])
+def get_live_gap(
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's gigs."),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[LiveGapItem]:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    return [LiveGapItem.model_validate(item) for item in GigReportsService(db=db).get_live_gap(target_user_id)]
+
+
+@router.get("/stats/gig-bump", response_model=GigBumpResponse)
+def get_gig_bump(
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's gigs."),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> GigBumpResponse:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    return GigBumpResponse.model_validate(GigReportsService(db=db).get_gig_bump(target_user_id))
 
 
 @router.get("/export")
