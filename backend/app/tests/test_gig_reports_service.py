@@ -163,3 +163,18 @@ def test_update_concert_details_sets_festival_only_when_given(db_session: Sessio
 
     service.update_concert_details(**details, is_festival=False)
     assert concert.is_festival is False
+
+
+def test_live_gap_matches_spelling_differences_between_spotify_and_setlist_fm(db_session: Session):
+    # Logged from Setlist.fm: accent and curly apostrophe. Played on Spotify: plain spelling.
+    _gig(db_session, "a", "Maxïmo Park", datetime(2026, 1, 10))
+    _gig(db_session, "b", "Noel Gallagher’s High Flying Birds", datetime(2026, 2, 10))
+    for _ in range(4):
+        _play(db_session, "Maximo Park", datetime(2026, 1, 1))
+    for _ in range(2):
+        _play(db_session, "Noel Gallagher's High Flying Birds", datetime(2026, 1, 2))
+    _play(db_session, "Unseen Act", datetime(2026, 1, 3))
+
+    gap = GigReportsService(db_session).get_live_gap(user_id=1)
+
+    assert gap == [{"artist_name": "Unseen Act", "plays": 1}]
