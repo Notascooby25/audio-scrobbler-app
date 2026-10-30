@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.28.1",
+    date: "2026-10-30",
+    changes: [
+      "Furthest gigs now checks every headline gig you've been to, not just a few per visit. The background job places each new venue on the map within a few minutes, so the list fills in on its own.",
+    ],
+  },
+  {
     version: "0.28.0",
     date: "2026-10-30",
     changes: [

@@ -11,8 +11,6 @@ from .geocoding_service import GeocodingUnavailableError, find_cached, locate
 from .preferences_service import get_or_create
 
 EARTH_RADIUS_KM = 6371.0
-# New venues looked up in one request. Each lookup waits about a second, so this keeps a page load short.
-MAX_NEW_LOOKUPS_PER_REQUEST = 5
 FURTHEST_LIMIT = 5
 
 
@@ -56,11 +54,42 @@ def clear_home_city(db: Session, user_id: int) -> UserPreferences:
     return preferences
 
 
+def geocode_pending_venues(db: Session, limit: int) -> dict[str, int]:
+    """Looks up up to `limit` headline-gig venues not yet on the map. Run by the worker, so
+    report pages never wait on the map service. Stops early if the service is unavailable."""
+    rows = (
+        db.query(AttendedConcert.venue_name, AttendedConcert.city, AttendedConcert.country)
+        .filter(AttendedConcert.is_support_act.is_(False))
+        .order_by(desc(AttendedConcert.event_date))
+        .all()
+    )
+    queries = list(dict.fromkeys(_venue_query(venue, city, country) for venue, city, country in rows))
+    checked = found = 0
+    unavailable = False
+    pending = 0
+    for query in queries:
+        known, _ = find_cached(db, query)
+        if known:
+            continue
+        if unavailable or checked >= limit:
+            pending += 1
+            continue
+        try:
+            point = locate(db, query)
+        except GeocodingUnavailableError:
+            unavailable = True
+            pending += 1
+            continue
+        checked += 1
+        found += point is not None
+    return {"checked": checked, "found": found, "pending": pending}
+
+
 def furthest_gigs(db: Session, user_id: int) -> dict[str, Any]:
     """The five headline gigs furthest from the user's home city.
 
-    Venues are looked up at most a few at a time; gigs whose venue is still unknown are counted
-    as pending and fill in on the next visit.
+    Reads only venues the worker has already placed. Gigs whose venue isn't placed yet are
+    counted as pending.
     """
     preferences = db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
     if preferences is None or preferences.home_lat is None or preferences.home_lng is None:
@@ -75,20 +104,10 @@ def furthest_gigs(db: Session, user_id: int) -> dict[str, Any]:
     )
     queries = {gig.id: _venue_query(gig.venue_name, gig.city, gig.country) for gig in gigs}
     points: dict[str, tuple[float, float] | None] = {}
-    new_lookups = 0
-    map_unavailable = False
     for query in dict.fromkeys(queries.values()):
         known, point = find_cached(db, query)
         if known:
             points[query] = point
-            continue
-        if map_unavailable or new_lookups >= MAX_NEW_LOOKUPS_PER_REQUEST:
-            continue
-        new_lookups += 1
-        try:
-            points[query] = locate(db, query)
-        except GeocodingUnavailableError:
-            map_unavailable = True
 
     distances = []
     pending = 0

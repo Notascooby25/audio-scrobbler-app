@@ -257,8 +257,8 @@ const FAQ_DATA = [
         <strong>Set your home city.</strong> Go to <em>Settings → General</em> and enter the city
         you live in, such as Leeds, United Kingdom. The Gigs tab on Reports then shows your five
         furthest headline gigs in kilometres, measured as the crow flies. Venues are looked up on
-        OpenStreetMap a few at a time, so a long history can take a few visits to fill in. Only you
-        see these distances.
+        OpenStreetMap in the background, a batch every couple of minutes, so a long history fills in
+        by itself. Only you see these distances.
       </p>
     ),
   },
