@@ -7,7 +7,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..models import AttendedConcert, Follow, GigCompanion, Notification, User
-from .setlist_attendance_service import SetlistAttendanceService, extract_songs_from_setlist_data
+from .setlist_attendance_service import DuplicateGigError, SetlistAttendanceService, extract_songs_from_setlist_data
 from .setlist_service import SetlistService
 
 # People you can pick from on one gig (the picker lists everyone you follow)
@@ -199,6 +199,23 @@ def _copy_gig(
     return copy
 
 
+def _copy_night(db: Session, user_id: int, gig: AttendedConcert) -> AttendedConcert:
+    """Logs another user's gig and its support acts on this user's account (not committed)."""
+    attendance = SetlistAttendanceService(db=db, setlist_service=SetlistService(db=db))
+    day = datetime.combine(gig.event_date.date(), datetime.min.time())
+    supports = [
+        s
+        for s in _support_acts(db, gig)
+        if not db.query(AttendedConcert).filter_by(user_id=user_id, setlist_id=s.setlist_id).first()
+    ]
+    for idx, support in enumerate(supports):
+        _copy_gig(db, attendance, user_id, support, day + timedelta(hours=18, minutes=45 + idx * 45), gig.setlist_id)
+    headline_start = timedelta(hours=20, minutes=45) if supports else timedelta(hours=20)
+    copy = _copy_gig(db, attendance, user_id, gig, day + headline_start)
+    db.flush()
+    return copy
+
+
 def add_invited_gig(db: Session, user: User, invite_id: int) -> AttendedConcert:
     """The invited user says yes: the gig and its support acts are logged on their account."""
     row = _pending_invite(db, user.id, invite_id)
@@ -208,22 +225,7 @@ def add_invited_gig(db: Session, user: User, invite_id: int) -> AttendedConcert:
         db.commit()
         raise LookupError("That gig has been removed.")
 
-    own_copy = _matching_gig(db, user.id, gig)
-    if own_copy is None:
-        attendance = SetlistAttendanceService(db=db, setlist_service=SetlistService(db=db))
-        day = datetime.combine(gig.event_date.date(), datetime.min.time())
-        supports = [
-            s
-            for s in _support_acts(db, gig)
-            if not db.query(AttendedConcert).filter_by(user_id=user.id, setlist_id=s.setlist_id).first()
-        ]
-        for idx, support in enumerate(supports):
-            _copy_gig(
-                db, attendance, user.id, support, day + timedelta(hours=18, minutes=45 + idx * 45), gig.setlist_id
-            )
-        headline_start = timedelta(hours=20, minutes=45) if supports else timedelta(hours=20)
-        own_copy = _copy_gig(db, attendance, user.id, gig, day + headline_start)
-        db.flush()
+    own_copy = _matching_gig(db, user.id, gig) or _copy_night(db, user.id, gig)
 
     row.status = "added"
     row.friend_concert_id = own_copy.id
@@ -244,3 +246,38 @@ def dismiss_invite(db: Session, user_id: int, invite_id: int) -> None:
     row = _pending_invite(db, user_id, invite_id)
     row.status = "dismissed"
     db.commit()
+
+
+def add_friends_gig(db: Session, user: User, owner_id: int, concert_id: int) -> AttendedConcert:
+    """'I was there too' on a followed person's gig: logs the whole night on the user's account.
+
+    The caller checks the user may view the owner's gigs. Raises DuplicateGigError if the
+    user already logged it."""
+    opened = _owned_gig(db, owner_id, concert_id)
+    gig = opened
+    if opened.is_support_act and opened.parent_setlist_id:
+        headliner = db.query(AttendedConcert).filter_by(user_id=owner_id, setlist_id=opened.parent_setlist_id).first()
+        gig = headliner or opened
+
+    existing = _matching_gig(db, user.id, gig)
+    if existing is not None:
+        raise DuplicateGigError(existing, same_show=existing.setlist_id == gig.setlist_id)
+    own_copy = _copy_night(db, user.id, gig)
+
+    # An invite to this gig is answered by adding it this way too
+    for row in db.query(GigCompanion).filter(
+        GigCompanion.friend_id == user.id, GigCompanion.concert_id.in_({opened.id, gig.id})
+    ):
+        row.status = "added"
+        row.friend_concert_id = own_copy.id
+    db.add(
+        Notification(
+            user_id=owner_id,
+            title="Gig added",
+            message=f"{user.display_name} was at {_gig_label(gig)} too and added it to their gigs.",
+            type="general",
+        )
+    )
+    db.commit()
+    db.refresh(own_copy)
+    return own_copy

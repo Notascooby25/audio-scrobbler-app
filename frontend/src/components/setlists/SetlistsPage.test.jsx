@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useParams, useSearchParams } from "react-router-dom";
 import SetlistsPage from "./SetlistsPage";
 import * as setlistsApi from "../../api/setlists";
 
@@ -41,9 +41,23 @@ const alreadyLoggedError = (sameShow) =>
     },
   });
 
+vi.mock("../../api", () => ({
+  fetchUserProfile: vi.fn().mockResolvedValue({ id: 2, username: "sam" }),
+}));
+
 vi.mock("../../session", () => ({
   readSession: () => ({ accessToken: "test-token" }),
 }));
+
+function GigRoute() {
+  const { concertId } = useParams();
+  const [searchParams] = useSearchParams();
+  return (
+    <div>
+      Gig {concertId} for user {searchParams.get("userId")}
+    </div>
+  );
+}
 
 describe("SetlistsPage", () => {
   afterEach(() => {
@@ -386,6 +400,66 @@ describe("SetlistsPage", () => {
       expect(screen.getByText("Theme from PSB")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /hide songs/i })).toBeInTheDocument();
     });
+  });
+
+  it("shows a followed person's gigs read-only", async () => {
+    const samsGigs = [
+      {
+        id: 88,
+        setlist_id: "doves_rock_city",
+        artist_name: "Doves",
+        venue_name: "Rock City",
+        city: "Nottingham",
+        country: "United Kingdom",
+        event_date: "2025-05-01T20:00:00",
+        song_count: 14,
+      },
+    ];
+    // Loaded again on returning to the Gigs tab
+    setlistsApi.fetchAttendances.mockResolvedValueOnce(samsGigs).mockResolvedValueOnce(samsGigs);
+
+    render(
+      <MemoryRouter initialEntries={["/setlists?userId=2"]}>
+        <Routes>
+          <Route path="/setlists" element={<SetlistsPage />} />
+          <Route path="/gigs/:concertId" element={<GigRoute />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "@sam's Set Lists" })).toBeInTheDocument();
+    expect(await screen.findByText(/Rock City, Nottingham/i)).toBeInTheDocument();
+    expect(setlistsApi.fetchAttendances).toHaveBeenCalledWith({ token: "test-token", userId: 2 });
+    expect(screen.getByRole("tab", { name: /^gigs/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /log a gig/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /import \/ export/i })).not.toBeInTheDocument();
+    expect(setlistsApi.fetchGigInvites).not.toHaveBeenCalled();
+
+    // Switching tabs keeps showing their data
+    fireEvent.click(screen.getByRole("tab", { name: /venues/i }));
+    await waitFor(() =>
+      expect(setlistsApi.fetchVenuesVisitedLeaderboard).toHaveBeenCalledWith({
+        token: "test-token",
+        userId: 2,
+      })
+    );
+    fireEvent.click(screen.getByRole("tab", { name: /^gigs/i }));
+    fireEvent.click(await screen.findByRole("button", { name: "Doves" }));
+    expect(await screen.findByText("Gig 88 for user 2")).toBeInTheDocument();
+  });
+
+  it("explains when you need to follow someone to see their gigs", async () => {
+    setlistsApi.fetchAttendances.mockRejectedValueOnce(
+      Object.assign(new Error("HTTP 403: Forbidden"), { status: 403 })
+    );
+    render(
+      <MemoryRouter initialEntries={["/setlists?userId=2"]}>
+        <SetlistsPage />
+      </MemoryRouter>
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Follow this person to see their gigs."
+    );
   });
 
   it("opens a gig's setlist page from My Gigs", async () => {

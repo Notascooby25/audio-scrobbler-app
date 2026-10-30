@@ -301,6 +301,12 @@ export default function UserGuideSection() {
             <em>Dismiss</em>. Your notes are never shared.
           </li>
           <li>
+            <strong>Friends&apos; Gigs:</strong> On the profile of someone you follow, tap{" "}
+            <em>View Gigs</em> to browse their gigs, artists, songs and venues (read-only; their
+            notes stay private). On one of their gig pages, tap <em>+ I was there too</em> to add
+            it, with its songs and support acts, to your own gigs.
+          </li>
+          <li>
             <strong>On the Bill:</strong> Under <em>My notes</em> on any gig page, see the other
             acts who played that venue the same night. Acts you&apos;ve already logged display{" "}
             <em>✓ I was there</em> and link to their own gig page. Tap <em>+ I was there</em> next

@@ -128,6 +128,10 @@ describe("ProfilePage", () => {
       "href",
       "/library?userId=2"
     );
+    expect(screen.getByRole("link", { name: "View Gigs" })).toHaveAttribute(
+      "href",
+      "/setlists?userId=2"
+    );
     expect(screen.getByRole("link", { name: "View Last 7 Days" })).toHaveAttribute(
       "href",
       "/reports?userId=2&range=last.week"

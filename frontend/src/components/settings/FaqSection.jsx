@@ -317,6 +317,19 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "setlists-friends-gigs",
+    category: "Set Lists & Gigs",
+    question: "Can I see the gigs my friends have been to?",
+    answer: (
+      <p>
+        <strong>Yes, if you follow them.</strong> Open their profile and tap <em>View Gigs</em> to
+        browse their gigs, artists seen, songs heard and venues. It&apos;s read-only and their notes
+        are never shown. If you were at one of their gigs too, open it and tap{" "}
+        <em>+ I was there too</em> to add it to your own gigs, songs and support acts included.
+      </p>
+    ),
+  },
+  {
     id: "setlists-duplicates",
     category: "Set Lists & Gigs",
     question: "What happens if I log a gig I've already logged, or log one by mistake?",

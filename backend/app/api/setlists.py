@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
-from ..api.deps import get_current_user
+from ..api.deps import get_current_user, resolve_viewable_user_id
 from ..api.ingestion import require_worker_token
 from ..db import get_db
 from ..models import AttendedConcert, User
@@ -127,15 +127,22 @@ def get_venue_date_support_acts(
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
 
 
+def _hide_notes(gigs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Gig notes are private: followers see everything else about a gig."""
+    return [{**gig, "notes": None} for gig in gigs]
+
+
 @router.get("/attendances")
 def list_attendances(
     limit: int = Query(50, ge=1, le=2000),
     offset: int = Query(0, ge=0),
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's gigs."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[dict[str, Any]]:
-    stats_service = SetlistStatsService(db=db)
-    return stats_service.get_my_gigs(user_id=current_user.id, limit=limit, offset=offset)
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    gigs = SetlistStatsService(db=db).get_my_gigs(user_id=target_user_id, limit=limit, offset=offset)
+    return gigs if target_user_id == current_user.id else _hide_notes(gigs)
 
 
 @router.post("/attend", response_model=AttendedConcertResponse, status_code=status.HTTP_201_CREATED)
@@ -307,26 +314,31 @@ def refresh_setlist(
 @router.get("/attendances/{concert_id}", response_model=AttendedConcertResponse)
 def get_attendance(
     concert_id: int,
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's gigs."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> AttendedConcert:
-    gig = SetlistStatsService(db=db).get_gig(user_id=current_user.id, concert_id=concert_id)
+) -> AttendedConcertResponse:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    gig = SetlistStatsService(db=db).get_gig(user_id=target_user_id, concert_id=concert_id)
     if gig is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gig not found.")
-    return gig
+    response = AttendedConcertResponse.model_validate(gig)
+    return response if target_user_id == current_user.id else response.model_copy(update={"notes": None})
 
 
 @router.get("/attendances/{concert_id}/bill", response_model=GigBillResponse)
 def get_attendance_bill(
     concert_id: int,
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's gigs."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
     stats_svc = SetlistStatsService(db=db)
-    gig = stats_svc.get_gig(user_id=current_user.id, concert_id=concert_id)
+    gig = stats_svc.get_gig(user_id=target_user_id, concert_id=concert_id)
     if gig is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gig not found.")
-    return stats_svc.get_gig_bill(user_id=current_user.id, gig=gig, setlist_service=SetlistService(db=db))
+    return stats_svc.get_gig_bill(user_id=target_user_id, gig=gig, setlist_service=SetlistService(db=db))
 
 
 @router.post(
@@ -397,6 +409,26 @@ def remove_gig_companion(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@router.post(
+    "/attendances/{concert_id}/add-to-mine",
+    response_model=AttendedConcertResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def add_friends_gig_to_mine(
+    concert_id: int,
+    user_id: int = Query(..., description="The followed user whose gig this is."),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> AttendedConcert:
+    owner_id = resolve_viewable_user_id(db, current_user, user_id)
+    try:
+        return companions.add_friends_gig(db, current_user, owner_id, concert_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gig not found.") from exc
+    except DuplicateGigError as exc:
+        raise _already_logged(exc) from exc
+
+
 @router.get("/invites", response_model=list[GigInviteItem])
 def get_gig_invites(
     db: Session = Depends(get_db),
@@ -433,36 +465,42 @@ def dismiss_gig_invite(
 
 @router.get("/stats/artists", response_model=list[ArtistLeaderboardItem])
 def get_artists_seen_leaderboard(
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's gigs."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[ArtistLeaderboardItem]:
-    stats_svc = SetlistStatsService(db=db)
-    return [
-        ArtistLeaderboardItem.model_validate(item) for item in stats_svc.get_artists_seen_leaderboard(current_user.id)
-    ]
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    items = SetlistStatsService(db=db).get_artists_seen_leaderboard(target_user_id)
+    if target_user_id != current_user.id:
+        items = [{**item, "gigs": _hide_notes(item["gigs"])} for item in items]
+    return [ArtistLeaderboardItem.model_validate(item) for item in items]
 
 
 @router.get("/stats/songs", response_model=list[SongLeaderboardItem])
 def get_songs_heard_leaderboard(
     limit: int = Query(1000, ge=1, le=2000),
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's gigs."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[SongLeaderboardItem]:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
     stats_svc = SetlistStatsService(db=db)
     return [
         SongLeaderboardItem.model_validate(item)
-        for item in stats_svc.get_songs_heard_leaderboard(current_user.id, limit=limit)
+        for item in stats_svc.get_songs_heard_leaderboard(target_user_id, limit=limit)
     ]
 
 
 @router.get("/stats/venues", response_model=list[VenueLeaderboardItem])
 def get_venues_visited_leaderboard(
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's gigs."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[VenueLeaderboardItem]:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
     stats_svc = SetlistStatsService(db=db)
     return [
-        VenueLeaderboardItem.model_validate(item) for item in stats_svc.get_venues_visited_leaderboard(current_user.id)
+        VenueLeaderboardItem.model_validate(item) for item in stats_svc.get_venues_visited_leaderboard(target_user_id)
     ]
 
 

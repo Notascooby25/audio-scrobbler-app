@@ -4,8 +4,9 @@ import { alreadyLoggedInfo, deleteAttendance, fetchGigBill, logBillAct } from ".
 
 const ROLE_LABELS = { support: "Support", headliner: "Headliner" };
 
-/** "On the bill": the other acts at this venue that night, and whether you logged each. */
-export default function GigBill({ concertId, token }) {
+/** "On the bill": the other acts at this venue that night, and whether you logged each.
+ * With viewUserId it shows a followed person's bill read-only. */
+export default function GigBill({ concertId, token, viewUserId }) {
   const [bill, setBill] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
@@ -15,7 +16,7 @@ export default function GigBill({ concertId, token }) {
 
   useEffect(() => {
     let isMounted = true;
-    fetchGigBill({ token, concertId })
+    fetchGigBill({ token, concertId, userId: viewUserId })
       // Anything unexpected just hides the box rather than breaking the gig page
       .then((data) => isMounted && setBill(Array.isArray(data?.acts) ? data : null))
       .catch(() => isMounted && setBill(null))
@@ -23,7 +24,7 @@ export default function GigBill({ concertId, token }) {
     return () => {
       isMounted = false;
     };
-  }, [concertId, token]);
+  }, [concertId, token, viewUserId]);
 
   const updateAct = (setlistId, changes) =>
     setBill((prev) => ({
@@ -90,7 +91,14 @@ export default function GigBill({ concertId, token }) {
             <li key={act.setlist_id}>
               <span className="sfm-bill-name">
                 {act.logged && act.concert_id ? (
-                  <Link className="sfm-link" to={`/gigs/${act.concert_id}`}>
+                  <Link
+                    className="sfm-link"
+                    to={
+                      viewUserId
+                        ? `/gigs/${act.concert_id}?userId=${viewUserId}`
+                        : `/gigs/${act.concert_id}`
+                    }
+                  >
                     {act.artist_name}
                   </Link>
                 ) : (
@@ -99,7 +107,9 @@ export default function GigBill({ concertId, token }) {
                 {act.role && <span className="sfm-tag is-muted">{ROLE_LABELS[act.role]}</span>}
               </span>
               <span className="sfm-bill-status">
-                {act.logged ? (
+                {viewUserId ? (
+                  act.logged && <span className="sfm-bill-done">✓ Saw them</span>
+                ) : act.logged ? (
                   <>
                     <span className="sfm-bill-done">✓ I was there</span>
                     {justLogged[act.setlist_id] && (

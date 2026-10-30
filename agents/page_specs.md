@@ -33,8 +33,8 @@ Visual design rules are in `DESIGN.md` and `PRODUCT.md`.
 
 ### 1.3 Viewing another user
 
-- Library, Reports and Profile accept `?userId=` (or `/profile/:userId`) to show
-  a **followed** user's data.
+- Library, Reports, Set Lists, gig pages and Profile accept `?userId=` (or
+  `/profile/:userId`) to show a **followed** user's data.
 - The backend returns 403 when you don't follow them. The page shows "Follow
   this user to see their reports." or its equivalent.
 - The title shows `@username`.
@@ -146,8 +146,8 @@ Sections in page order:
 - `@username` header and now-playing, from `GET /users/{id}/profile` and
   `GET /users/{id}/now-playing`, fed by the worker's `currently-playing-sync`.
 - `FollowButton`: `POST` and `DELETE /users/{id}/follow`.
-- Links to that user's Reports and Library (with `?userId=`), including "View
-  All Time".
+- Links to that user's Reports, Library and Set Lists ("View Gigs") (with
+  `?userId=`), including "View All Time".
 
 ## 6. Following: `/following`
 
@@ -207,6 +207,13 @@ Setlist.fm-style concert diary. Styled with plain `sfm-*` classes in `styles.css
 | Setlist.fm attribution (required by its terms) at the bottom | `SetlistAttribution` | |
 
 - Editing a gig moves its scrobbles and support acts; Refresh only updates songs.
+- `?userId=` (a followed user, via "View Gigs" on their profile) makes the list
+  and gig pages read-only: the read routes take `user_id` (same follow check as
+  Library, `resolve_viewable_user_id` in `api/deps.py`) and blank `notes`. No
+  logging, import/export, invites, edit, refresh, delete, notes or Went with;
+  the bill shows "✓ Saw them" with links kept on their gigs. "+ I was there too"
+  (`POST /setlists/attendances/{id}/add-to-mine?user_id=`) copies the night to
+  the viewer's gigs from stored data and answers any pending invite.
 - Went with: you can only add people you follow; nothing is written to their
   account until they choose Add. Invites never include the owner's notes.
 - Gig scrobbles (source `setlistfm`) reuse artwork from the user's own plays;

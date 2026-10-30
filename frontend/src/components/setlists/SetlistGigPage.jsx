@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { readSession } from "../../session";
+import { fetchUserProfile } from "../../api";
 import {
+  addFriendsGig,
+  alreadyLoggedInfo,
   deleteAttendance,
   fetchAttendance,
   fetchSetlistDetail,
@@ -101,7 +104,18 @@ export default function SetlistGigPage() {
   const { concertId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const token = readSession()?.accessToken;
+  const session = readSession();
+  const token = session?.accessToken;
+  // ?userId= is a followed person's gig, shown read-only
+  const [searchParams] = useSearchParams();
+  const routeUserId = searchParams.get("userId");
+  const viewUserId =
+    routeUserId && Number(routeUserId) !== session?.userId ? Number(routeUserId) : undefined;
+  const isViewing = viewUserId !== undefined;
+  const [owner, setOwner] = useState(null);
+  const [isAdding, setIsAdding] = useState(false);
+  // The gig on your own account after "I was there too" (new or already logged)
+  const [ownCopyId, setOwnCopyId] = useState(null);
 
   const [gig, setGig] = useState(null);
   const [setlistData, setSetlistData] = useState(null);
@@ -117,15 +131,24 @@ export default function SetlistGigPage() {
   // expanded row); a direct visit has no in-app history, so fall back to My Gigs.
   const goBack = () => {
     if (location.key !== "default") navigate(-1);
-    else navigate("/setlists");
+    else navigate(isViewing ? `/setlists?userId=${viewUserId}` : "/setlists");
   };
+
+  useEffect(() => {
+    setOwner(null);
+    if (!token || !isViewing) return;
+    fetchUserProfile({ token, userId: viewUserId })
+      .then(setOwner)
+      .catch(() => {});
+  }, [token, viewUserId]);
 
   useEffect(() => {
     if (!token) return undefined;
     let isMounted = true;
     setIsLoading(true);
     setError("");
-    fetchAttendance({ token, concertId })
+    setOwnCopyId(null);
+    fetchAttendance({ token, concertId, userId: viewUserId })
       .then(async (data) => {
         if (!isMounted) return;
         setGig(data);
@@ -149,7 +172,7 @@ export default function SetlistGigPage() {
     return () => {
       isMounted = false;
     };
-  }, [concertId, token]);
+  }, [concertId, token, viewUserId]);
 
   const backLink = (
     <button type="button" className="sfm-link sfm-back" onClick={goBack}>
@@ -209,6 +232,26 @@ export default function SetlistGigPage() {
     }
   };
 
+  const handleAddToMine = async () => {
+    setIsAdding(true);
+    setActionMessage("");
+    try {
+      const added = await addFriendsGig({ token, concertId: gig.id, userId: viewUserId });
+      setOwnCopyId(added.id);
+      setActionMessage("Added to your gigs.");
+    } catch (err) {
+      const info = alreadyLoggedInfo(err);
+      if (info) {
+        setOwnCopyId(info.existing.id);
+        setActionMessage("You've already logged this gig.");
+      } else {
+        setActionMessage(`Couldn't add it: ${err.message}`);
+      }
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
   const handleCopy = () => {
     navigator.clipboard?.writeText(
       setlistAsText({
@@ -235,11 +278,17 @@ export default function SetlistGigPage() {
             {gig.is_support_act && <span className="sfm-tag is-muted">Support act</span>}
           </p>
           {gig.tour_name && <p>Tour: {gig.tour_name}</p>}
+          {isViewing && <p>From @{owner?.username || "..."}&apos;s gigs</p>}
         </div>
       </header>
 
       <div className="sfm-gig-actions">
-        {!isManual && (
+        {isViewing && !ownCopyId && (
+          <button type="button" className="sfm-link" onClick={handleAddToMine} disabled={isAdding}>
+            {isAdding ? "Adding..." : "+ I was there too"}
+          </button>
+        )}
+        {!isViewing && !isManual && (
           <button
             type="button"
             className="sfm-link"
@@ -259,16 +308,32 @@ export default function SetlistGigPage() {
             Copy setlist
           </button>
         )}
-        <button type="button" className="sfm-link" onClick={() => setIsEditOpen(true)}>
-          Edit details
-        </button>
-        <button type="button" className="sfm-link is-danger" onClick={() => setIsDeleteOpen(true)}>
-          Delete gig
-        </button>
+        {!isViewing && (
+          <>
+            <button type="button" className="sfm-link" onClick={() => setIsEditOpen(true)}>
+              Edit details
+            </button>
+            <button
+              type="button"
+              className="sfm-link is-danger"
+              onClick={() => setIsDeleteOpen(true)}
+            >
+              Delete gig
+            </button>
+          </>
+        )}
       </div>
       {actionMessage && (
         <p className="sfm-gig-meta" role="status">
           {actionMessage}
+          {ownCopyId && (
+            <>
+              {" "}
+              <Link className="sfm-link" to={`/gigs/${ownCopyId}`}>
+                View your gig
+              </Link>
+            </>
+          )}
         </p>
       )}
 
@@ -288,19 +353,22 @@ export default function SetlistGigPage() {
         </section>
 
         <div className="sfm-gig-side">
-          <NotesEditor
-            key={gig.id}
-            gig={gig}
-            token={token}
-            onSaved={(notes) => setGig((prev) => ({ ...prev, notes }))}
-          />
+          {!isViewing && (
+            <NotesEditor
+              key={gig.id}
+              gig={gig}
+              token={token}
+              onSaved={(notes) => setGig((prev) => ({ ...prev, notes }))}
+            />
+          )}
           {/* Re-keyed on the details so the bill reloads after an edit */}
           <GigBill
             key={`bill-${gig.id}-${gig.event_date}-${gig.venue_name}`}
             concertId={gig.id}
             token={token}
+            viewUserId={viewUserId}
           />
-          <GigCompanions key={`with-${gig.id}`} concertId={gig.id} token={token} />
+          {!isViewing && <GigCompanions key={`with-${gig.id}`} concertId={gig.id} token={token} />}
         </div>
       </div>
 
