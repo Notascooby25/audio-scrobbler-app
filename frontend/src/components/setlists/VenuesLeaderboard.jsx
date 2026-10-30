@@ -1,5 +1,6 @@
 import GigRows from "./GigRows";
 import RankedBarList from "./RankedBarList";
+import VenueFestivals from "./VenueFestivals";
 
 export default function VenuesLeaderboard({ venues = [], onOpenGig = null }) {
   const items = venues.map((venue) => ({
@@ -9,21 +10,24 @@ export default function VenuesLeaderboard({ venues = [], onOpenGig = null }) {
     count: venue.count,
     detail:
       venue.gigs && venue.gigs.length > 0 ? (
-        <GigRows
-          rows={venue.gigs.map((gig) => ({
-            key: gig.id,
-            date: gig.event_date || gig.date,
-            title: gig.artist_name,
-            meta: gig.date,
-            tag: gig.is_support
-              ? "Support"
-              : gig.is_festival
-                ? gig.festival_name || "Festival"
-                : null,
-            tagMuted: true,
-            onOpen: onOpenGig ? () => onOpenGig(gig.id) : null,
-          }))}
-        />
+        <>
+          <VenueFestivals gigs={venue.gigs} onOpenGig={onOpenGig} />
+          <GigRows
+            rows={venue.gigs.map((gig) => ({
+              key: gig.id,
+              date: gig.event_date || gig.date,
+              title: gig.artist_name,
+              meta: gig.date,
+              tag: gig.is_support
+                ? "Support"
+                : gig.is_festival
+                  ? gig.festival_name || "Festival"
+                  : null,
+              tagMuted: true,
+              onOpen: onOpenGig ? () => onOpenGig(gig.id) : null,
+            }))}
+          />
+        </>
       ) : null,
   }));
 

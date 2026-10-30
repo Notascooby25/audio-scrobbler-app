@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.db import Base
 from backend.app.models import AttendedConcert
+from backend.app.services.setlist_stats_service import SetlistStatsService
 from backend.app.services.setlist_attendance_service import SetlistAttendanceService, festival_name_for
 from unittest.mock import MagicMock
 
@@ -55,3 +56,24 @@ def test_update_stores_the_name_and_unticking_festival_clears_it(db_session: Ses
 
     service.update_concert_details(**details, is_festival=False)
     assert concert.festival_name is None
+
+
+def test_artists_seen_gigs_carry_the_festival_name(db_session: Session):
+    db_session.add(
+        AttendedConcert(
+            user_id=1,
+            setlist_id="doves-2",
+            artist_name="Doves",
+            venue_name="Castle Stage",
+            city="Portsmouth",
+            country="United Kingdom",
+            event_date=datetime(2026, 8, 29),
+            is_festival=True,
+            festival_name="Victorious Festival 2026",
+        )
+    )
+    db_session.commit()
+
+    artist = SetlistStatsService(db=db_session).get_artists_seen_leaderboard(user_id=1)[0]
+
+    assert artist["gigs"][0]["festival_name"] == "Victorious Festival 2026"

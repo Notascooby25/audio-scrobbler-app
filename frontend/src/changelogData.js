@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.28.6",
+    date: "2026-10-30",
+    changes: [
+      "Artists Seen: a festival gig shows its festival alongside the venue, the same as My Gigs.",
+      "Venues: a venue with festival gigs lists its festivals, with a count for each. Open a festival to see all of its gigs there.",
+      "Festivals are grouped without their year, so V Festival – 2009 and V Festival – 2008 are one festival, shown as V Festival.",
+    ],
+  },
+  {
     version: "0.28.5",
     date: "2026-10-30",
     changes: [

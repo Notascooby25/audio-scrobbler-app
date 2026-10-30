@@ -204,6 +204,8 @@ class SetlistStatsService:
                     "city": c.city,
                     "country": c.country,
                     "is_support": c.is_support_act,
+                    "is_festival": c.is_festival,
+                    "festival_name": c.festival_name,
                     "song_count": c.song_count,
                     "notes": c.notes,
                     "raw_data": c.raw_data,
