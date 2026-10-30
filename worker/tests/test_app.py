@@ -188,3 +188,32 @@ def test_setlist_artwork_backfill_survives_backend_errors(monkeypatch):
 
     monkeypatch.setattr(app.requests, "post", fail)
     app.run_setlist_artwork_backfill()  # must not raise
+
+
+def test_venue_geocoding_calls_the_backend_with_the_worker_token(monkeypatch):
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"checked": 60, "found": 55, "pending": 40}
+
+    calls = []
+    monkeypatch.setattr(app, "backend_url", "http://backend:8000")
+    monkeypatch.setattr(app, "worker_token", "test-token")
+    monkeypatch.setattr(app, "venue_geocode_batch_size", 60)
+    monkeypatch.setattr(app.requests, "post", lambda *args, **kwargs: calls.append((args, kwargs)) or Response())
+
+    app.run_venue_geocoding()
+
+    assert calls[0][0] == ("http://backend:8000/setlists/internal/geocode-venues",)
+    assert calls[0][1]["headers"] == {"X-Worker-Token": "test-token"}
+    assert calls[0][1]["params"] == {"limit": 60}
+
+
+def test_venue_geocoding_survives_backend_errors(monkeypatch):
+    def fail(*args, **kwargs):
+        raise app.requests.ConnectionError("backend down")
+
+    monkeypatch.setattr(app.requests, "post", fail)
+    app.run_venue_geocoding()  # must not raise

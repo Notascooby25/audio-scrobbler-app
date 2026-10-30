@@ -71,6 +71,9 @@ file_import_interval_minutes = int(os.getenv("WORKER_FILE_IMPORT_INTERVAL_MINUTE
 setlist_resume_interval_minutes = int(os.getenv("WORKER_SETLIST_RESUME_INTERVAL_MINUTES", "30"))
 # How often to look up artwork for gig scrobbles that have none (a few dozen songs per run)
 setlist_artwork_interval_minutes = int(os.getenv("WORKER_SETLIST_ARTWORK_INTERVAL_MINUTES", "15"))
+# Map lookups are limited to one a second, so 60 a run keeps each run within about a minute
+venue_geocode_interval_minutes = int(os.getenv("WORKER_VENUE_GEOCODE_INTERVAL_MINUTES", "2"))
+venue_geocode_batch_size = int(os.getenv("WORKER_VENUE_GEOCODE_BATCH_SIZE", "60"))
 max_attempts = 3
 last_spotify_sync_at: str | None = None
 last_spotify_sync_users = 0
@@ -366,6 +369,28 @@ def run_setlist_artwork_backfill() -> None:
         )
 
 
+def run_venue_geocoding() -> None:
+    try:
+        response = requests.post(
+            f"{backend_url}/setlists/internal/geocode-venues",
+            params={"limit": venue_geocode_batch_size},
+            headers={"X-Worker-Token": worker_token},
+            timeout=600,
+        )
+        response.raise_for_status()
+        counts = response.json()
+    except requests.RequestException as exc:
+        logger.warning("Venue geocoding failed: %s", exc)
+        return
+    if counts.get("checked"):
+        logger.info(
+            "Venue geocoding: %s venues checked, %s placed, %s still waiting",
+            counts.get("checked", 0),
+            counts.get("found", 0),
+            counts.get("pending", 0),
+        )
+
+
 @app.get("/health")
 def health_check() -> dict[str, str]:
     blocked_until = spotify_rate_limit_blocked_until()
@@ -523,6 +548,13 @@ def start_scheduler() -> None:
         "interval",
         minutes=setlist_artwork_interval_minutes,
         id="setlist-artwork-backfill",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        run_venue_geocoding,
+        "interval",
+        minutes=venue_geocode_interval_minutes,
+        id="venue-geocoding",
         replace_existing=True,
     )
 

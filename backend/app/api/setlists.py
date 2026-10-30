@@ -35,7 +35,7 @@ from ..schemas.setlists import (
     UpdateConcertRequest,
     VenueLeaderboardItem,
 )
-from ..services.gig_distance_service import furthest_gigs
+from ..services.gig_distance_service import furthest_gigs, geocode_pending_venues
 from ..services.gig_reports_service import GigReportsService
 from ..services.setlist_profile_export_service import ProfileExportTooLargeError, build_profile_export
 from ..services.setlist_artwork_service import backfill_live_artwork
@@ -761,6 +761,16 @@ def resume_paused_imports(
 ) -> dict[str, int]:
     """Called by the worker: carries on Setlist.fm imports paused at the daily quota."""
     return import_jobs.resume_due_jobs(db)
+
+
+@router.post("/internal/geocode-venues")
+def geocode_gig_venues(
+    limit: int = Query(default=60, ge=1, le=100),
+    db: Session = Depends(get_db),
+    _: None = Depends(require_worker_token),
+) -> dict[str, int]:
+    """Called by the worker: places gig venues on the map so distances can be shown."""
+    return geocode_pending_venues(db, limit)
 
 
 @router.post("/internal/backfill-artwork")

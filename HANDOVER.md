@@ -415,8 +415,10 @@ the NAS listing.** The live setup has drifted from the repos before.
   /users/me/settings/home-city`, which geocodes). Venues are geocoded through
   OpenStreetMap Nominatim (`services/geocoding_service.py`, one request a
   second, results cached in `geo_cache`: 90 days for found, 1 hour for misses).
-  `GET /setlists/stats/furthest-gigs` (own gigs only) uses at most five new
-  lookups per request, so a visit can wait about five seconds.
+  `GET /setlists/stats/furthest-gigs` (own gigs only) only reads `geo_cache`.
+  The worker job `venue-geocoding` (every `WORKER_VENUE_GEOCODE_INTERVAL_MINUTES`,
+  default 2) calls `POST /setlists/internal/geocode-venues`, which places up to
+  `WORKER_VENUE_GEOCODE_BATCH_SIZE` (default 60) venues a run.
 - **Also 2026-09-22/23:** listening heatmap, frontend redesign, nginx
   `client_max_body_size` raised for large imports, listening clock restored,
   friends-average removed from the UI, Library share-image feature,

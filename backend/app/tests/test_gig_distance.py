@@ -14,6 +14,7 @@ from backend.app.services.gig_distance_service import (
     HomeCityNotFoundError,
     clear_home_city,
     furthest_gigs,
+    geocode_pending_venues,
     haversine_km,
     set_home_city,
 )
@@ -98,29 +99,41 @@ def test_furthest_gigs_without_home_says_so(db_session: Session):
     }
 
 
-def test_unlocated_venues_are_capped_per_request_and_counted_as_pending(db_session: Session):
+def test_furthest_gigs_never_looks_up_venues_itself(db_session: Session):
     _home(db_session, LEEDS)
     for index in range(8):
         _gig(db_session, f"Band {index}", f"Venue {index}", "City", "Country", datetime(2026, 1, index + 1))
 
-    with patch.object(gig_distance_service, "locate", return_value=None) as lookup:
+    with patch.object(gig_distance_service, "locate") as lookup:
         result = furthest_gigs(db_session, user_id=1)
 
-    assert lookup.call_count == gig_distance_service.MAX_NEW_LOOKUPS_PER_REQUEST
-    assert result["pending_gigs"] == 3
+    lookup.assert_not_called()
+    assert result["pending_gigs"] == 8
     assert result["furthest"] == []
 
 
-def test_map_outage_stops_lookups_and_leaves_gigs_pending(db_session: Session):
-    _home(db_session, LEEDS)
+def test_worker_geocodes_pending_venues_up_to_the_batch_limit(db_session: Session):
+    _gig(db_session, "Band A", "Venue A", "City", "Country", datetime(2026, 1, 1))
+    _gig(db_session, "Band B", "Venue B", "City", "Country", datetime(2026, 1, 2))
+    _gig(db_session, "Band C", "Venue C", "City", "Country", datetime(2026, 1, 3))
+    _cache_place(db_session, "Venue C, City, Country", LEEDS)
+
+    with patch.object(gig_distance_service, "locate", side_effect=[PARIS, None]) as lookup:
+        result = geocode_pending_venues(db_session, limit=2)
+
+    assert lookup.call_count == 2
+    assert result == {"checked": 2, "found": 1, "pending": 0}
+
+
+def test_worker_geocoding_stops_when_the_map_is_down(db_session: Session):
     _gig(db_session, "Band A", "Venue A", "City", "Country", datetime(2026, 1, 1))
     _gig(db_session, "Band B", "Venue B", "City", "Country", datetime(2026, 1, 2))
 
     with patch.object(gig_distance_service, "locate", side_effect=GeocodingUnavailableError("down")) as lookup:
-        result = furthest_gigs(db_session, user_id=1)
+        result = geocode_pending_venues(db_session, limit=60)
 
     assert lookup.call_count == 1
-    assert result["pending_gigs"] == 2
+    assert result == {"checked": 0, "found": 0, "pending": 2}
 
 
 def test_set_home_city_stores_the_location_and_clear_removes_it(db_session: Session):
