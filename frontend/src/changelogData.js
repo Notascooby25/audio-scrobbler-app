@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.29.0",
+    date: "2026-10-30",
+    changes: [
+      "Album Jukebox: Break choice paralysis and return to whole-album listening with Lucky Dip, a 3-roll limit, and daily picks on your Overview page. Toggle between a clean Flat Utility view and a nostalgic Arcade Jukebox cabinet.",
+    ],
+  },
+  {
     version: "0.28.9",
     date: "2026-10-30",
     changes: [
