@@ -397,43 +397,32 @@ export default function SettingsPage() {
                 <option value="system">System Default</option>
               </select>
             </label>
-            <div
-              className="settings-accent-group"
-              role="group"
-              aria-labelledby="accent-color-label"
-            >
-              <span id="accent-color-label" className="settings-label">
-                Accent color
-              </span>
-              <div
-                className="settings-accent-swatches"
-                role="radiogroup"
-                aria-labelledby="accent-color-label"
-              >
-                {ACCENT_PRESETS.map((preset) => {
-                  const isSelected = (settings.accent_color || "blue_monday") === preset.id;
-                  return (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={isSelected}
-                      aria-label={`${preset.name} (${preset.artist})`}
-                      title={`${preset.name} – ${preset.artist}`}
-                      className={`settings-accent-swatch ${isSelected ? "active" : ""}`}
-                      onClick={() => changeSetting("accent_color", preset.id)}
-                    >
-                      <span
-                        className="settings-accent-dot"
-                        style={{ backgroundColor: preset.hex }}
-                        aria-hidden="true"
-                      />
-                      <span className="settings-accent-name">{preset.name}</span>
-                    </button>
-                  );
-                })}
+            <label>
+              Accent color
+              <div className="settings-accent-select-wrapper">
+                <span
+                  className="settings-accent-select-dot"
+                  style={{
+                    backgroundColor:
+                      ACCENT_PRESETS.find(
+                        (preset) => preset.id === (settings.accent_color || "blue_monday")
+                      )?.hex || "#0066FF",
+                  }}
+                  aria-hidden="true"
+                />
+                <select
+                  aria-label="Accent color"
+                  value={settings.accent_color || "blue_monday"}
+                  onChange={(event) => changeSetting("accent_color", event.target.value)}
+                >
+                  {ACCENT_PRESETS.map((preset) => (
+                    <option key={preset.id} value={preset.id}>
+                      {preset.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-            </div>
+            </label>
             <label>
               Default date range
               <select

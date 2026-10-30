@@ -132,7 +132,7 @@ describe("SettingsPage", () => {
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
   });
 
-  it("renders 8 song-title accent color swatches and updates the setting on selection", async () => {
+  it("renders 8 song-title accent color options in a dropdown and updates the setting on selection", async () => {
     fetchUserSettings.mockResolvedValue(settings);
     updateUserSettings.mockResolvedValue({ ...settings, accent_color: "purple_rain" });
     render(
@@ -141,20 +141,21 @@ describe("SettingsPage", () => {
       </MemoryRouter>
     );
 
-    // Verify all 8 swatches are rendered with song titles
-    await waitFor(() =>
-      expect(screen.getByRole("radio", { name: /Purple Rain/i })).toBeInTheDocument()
-    );
-    expect(screen.getByRole("radio", { name: /Blue Monday/i })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: /Spotify Green/i })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: /Red Red Wine/i })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: /Fool's Gold/i })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: /Paint It Black/i })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: /Pretty in Pink/i })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: /Orange Crush/i })).toBeInTheDocument();
+    // Verify dropdown is rendered with current value and options
+    await waitFor(() => expect(screen.getByLabelText("Accent color")).toHaveValue("blue_monday"));
+    const options = screen.getByLabelText("Accent color").querySelectorAll("option");
+    expect(options).toHaveLength(8);
+    expect(screen.getByRole("option", { name: "Blue Monday" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Spotify Green" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Red Red Wine" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Purple Rain" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Fool's Gold" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Paint It Black" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Pretty in Pink" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Orange Crush" })).toBeInTheDocument();
 
-    // Click Purple Rain swatch
-    fireEvent.click(screen.getByRole("radio", { name: /Purple Rain/i }));
+    // Select Purple Rain
+    fireEvent.change(screen.getByLabelText("Accent color"), { target: { value: "purple_rain" } });
 
     await waitFor(
       () =>
