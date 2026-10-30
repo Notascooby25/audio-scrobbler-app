@@ -17,6 +17,7 @@ from ..schemas.setlists import (
     FileImportRequest,
     FileImportResponse,
     GigBillResponse,
+    FurthestGigsResponse,
     GigBumpResponse,
     GigCompanionsResponse,
     GigInviteItem,
@@ -34,6 +35,7 @@ from ..schemas.setlists import (
     UpdateConcertRequest,
     VenueLeaderboardItem,
 )
+from ..services.gig_distance_service import furthest_gigs
 from ..services.gig_reports_service import GigReportsService
 from ..services.setlist_profile_export_service import ProfileExportTooLargeError, build_profile_export
 from ..services.setlist_artwork_service import backfill_live_artwork
@@ -529,6 +531,15 @@ def get_live_gap(
 ) -> list[LiveGapItem]:
     target_user_id = resolve_viewable_user_id(db, current_user, user_id)
     return [LiveGapItem.model_validate(item) for item in GigReportsService(db=db).get_live_gap(target_user_id)]
+
+
+@router.get("/stats/furthest-gigs", response_model=FurthestGigsResponse)
+def get_furthest_gigs(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> FurthestGigsResponse:
+    # Your own gigs only: distances from home would give away where a followed person lives
+    return FurthestGigsResponse.model_validate(furthest_gigs(db, current_user.id))
 
 
 @router.get("/stats/gig-bump", response_model=GigBumpResponse)

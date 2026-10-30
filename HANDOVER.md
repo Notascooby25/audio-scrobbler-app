@@ -410,6 +410,13 @@ the NAS listing.** The live setup has drifted from the repos before.
   gigs). `GET /setlists/import/profile-export` downloads a profile as an
   import file, built by `services/setlist_profile_export_service.py`. Its
   rows carry their songs, so importing the file costs no Setlist.fm calls.
+- **v0.28.0 (2026-10-30):** home city on `user_preferences` (`home_city`,
+  `home_lat`, `home_lng`, migration 0025, set via `PUT/DELETE
+  /users/me/settings/home-city`, which geocodes). Venues are geocoded through
+  OpenStreetMap Nominatim (`services/geocoding_service.py`, one request a
+  second, results cached in `geo_cache`: 90 days for found, 1 hour for misses).
+  `GET /setlists/stats/furthest-gigs` (own gigs only) uses at most five new
+  lookups per request, so a visit can wait about five seconds.
 - **Also 2026-09-22/23:** listening heatmap, frontend redesign, nginx
   `client_max_body_size` raised for large imports, listening clock restored,
   friends-average removed from the UI, Library share-image feature,

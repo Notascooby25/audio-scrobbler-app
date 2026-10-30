@@ -221,6 +221,9 @@ export default function UserGuideSection() {
             decade, top genres, and compare stats side-by-side with friends you follow.
             The <em>Gigs</em> tab next to Listening shows your gigs per month and year, artists you
             play a lot but have never seen live, and how your listening changes around each gig.
+            Gigs per year shows the last five years, and <em>Show all years</em> reveals the rest.
+            With a home city set in <em>Settings → General</em>, the <em>Furthest gigs</em> panel
+            lists your five furthest headline gigs from home.
           </li>
           <li>
             <strong>Shareable Image Cards:</strong> Want to brag about your top 5 albums or artists?
