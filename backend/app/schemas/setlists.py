@@ -116,6 +116,8 @@ class ArtistGigItem(BaseModel):
     city: str
     country: str
     is_support: bool
+    is_festival: bool = False
+    festival_name: str | None = None
     song_count: int
     notes: str | None = None
     raw_data: dict[str, Any] | None = None

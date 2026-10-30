@@ -256,7 +256,9 @@ const FAQ_DATA = [
       <p>
         <strong>Yes.</strong> When you tick <em>This was a festival</em> on a gig, type its name in
         the <em>Festival name</em> box, such as Victorious Festival 2026. The name appears above
-        the venue on the gig page, and in My Gigs and Songs Heard in place of the venue. Setlist.fm doesn&apos;t record festival names, so the
+        the venue on the gig page, and in My Gigs and Songs Heard in place of the venue. Festivals
+        are grouped without their year, so V Festival – 2009 and V Festival – 2008 count as one
+        festival on a venue's page. Setlist.fm doesn&apos;t record festival names, so the
         app can&apos;t fill this in for you.
       </p>
     ),

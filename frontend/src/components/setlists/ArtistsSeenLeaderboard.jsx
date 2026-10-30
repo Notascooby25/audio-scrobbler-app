@@ -5,6 +5,11 @@ function venueLine(gig) {
   return [gig.venue, gig.city].filter(Boolean).join(", ");
 }
 
+// A festival gig sits alongside its venue: "Victorious Festival · Castle Stage, Portsmouth"
+function gigTitle(gig) {
+  return [gig.festival_name, venueLine(gig)].filter(Boolean).join(" · ");
+}
+
 export default function ArtistsSeenLeaderboard({ artists = [], onOpenGig = null }) {
   const items = artists.map((artist) => ({
     key: artist.artist_name,
@@ -16,7 +21,7 @@ export default function ArtistsSeenLeaderboard({ artists = [], onOpenGig = null 
           rows={artist.gigs.map((gig) => ({
             key: gig.id,
             date: gig.event_date || gig.date,
-            title: venueLine(gig),
+            title: gigTitle(gig),
             meta: [gig.date, gig.song_count > 0 ? `${gig.song_count} songs` : null]
               .filter(Boolean)
               .join(" · "),
