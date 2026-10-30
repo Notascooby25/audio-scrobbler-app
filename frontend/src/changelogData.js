@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.28.5",
+    date: "2026-10-30",
+    changes: [
+      "Festival names show where they belong: a festival gig's page puts the festival name above its venue, and My Gigs and Songs Heard show the festival in place of the venue. Festivals without a name still say Festival.",
+    ],
+  },
+  {
     version: "0.28.4",
     date: "2026-10-30",
     changes: [

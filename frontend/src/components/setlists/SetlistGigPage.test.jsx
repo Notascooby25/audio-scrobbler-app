@@ -107,6 +107,19 @@ describe("SetlistGigPage", () => {
     expect(setlistsApi.fetchSetlistDetail).not.toHaveBeenCalled();
   });
 
+  it("shows the festival name above the venue on a festival gig", async () => {
+    setlistsApi.fetchAttendance.mockResolvedValueOnce({
+      ...gig,
+      venue_name: "Watergate Bay",
+      is_festival: true,
+      festival_name: "The Boardmasters Festival - 2006",
+    });
+    renderGigPage();
+
+    expect(await screen.findByText("The Boardmasters Festival - 2006")).toBeInTheDocument();
+    expect(screen.getByText(/at Watergate Bay/)).toBeInTheDocument();
+  });
+
   it("goes back to the list it came from", async () => {
     setlistsApi.fetchAttendance.mockResolvedValue(gig);
     renderGigPage(["/setlists"]);

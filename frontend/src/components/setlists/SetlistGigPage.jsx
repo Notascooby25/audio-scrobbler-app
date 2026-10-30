@@ -272,6 +272,7 @@ export default function SetlistGigPage() {
         <SetlistDateBadge date={gig.event_date} size="lg" />
         <div className="sfm-gig-heading">
           <h1>{gig.artist_name} Setlist</h1>
+          {gig.festival_name && <p className="sfm-festival-name">{gig.festival_name}</p>}
           <p>
             at {[gig.venue_name, gig.city, gig.country].filter(Boolean).join(", ")}
             {isUpcoming && <span className="sfm-tag">Upcoming</span>}
