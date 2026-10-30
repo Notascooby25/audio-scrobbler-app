@@ -219,6 +219,8 @@ export default function UserGuideSection() {
             <strong>Reports:</strong> Deep analytical insights. Explore your listening heatmap (what
             days and times you listen most), your 24-hour listening clock, music breakdown by
             decade, top genres, and compare stats side-by-side with friends you follow.
+            The <em>Gigs</em> tab next to Listening shows your gigs per month and year, artists you
+            play a lot but have never seen live, and how your listening changes around each gig.
           </li>
           <li>
             <strong>Shareable Image Cards:</strong> Want to brag about your top 5 albums or artists?
@@ -305,6 +307,11 @@ export default function UserGuideSection() {
             <em>View Gigs</em> to browse their gigs, artists, songs and venues (read-only; their
             notes stay private). On one of their gig pages, tap <em>+ I was there too</em> to add
             it, with its songs and support acts, to your own gigs.
+          </li>
+          <li>
+            <strong>Festivals:</strong> When you add a gig, or tap <em>Edit details</em> on an
+            existing one, tick <em>This was a festival</em>. Festival gigs are listed under a{" "}
+            <em>Festivals</em> heading at the bottom of the <em>Venues</em> tab.
           </li>
           <li>
             <strong>On the Bill:</strong> Under <em>My notes</em> on any gig page, see the other

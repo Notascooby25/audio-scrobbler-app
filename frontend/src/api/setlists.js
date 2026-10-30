@@ -93,6 +93,7 @@ export async function logManualConcert({
   eventDate,
   notes = null,
   setlistUrl = null,
+  isFestival = false,
   allowDuplicate = false,
 }) {
   const response = await fetch(`${API_BASE_URL}/setlists/manual`, {
@@ -109,6 +110,7 @@ export async function logManualConcert({
       event_date: eventDate,
       ...(notes !== null ? { notes } : {}),
       ...(setlistUrl ? { setlist_url: setlistUrl } : {}),
+      is_festival: isFestival,
       allow_duplicate: allowDuplicate,
     }),
   });
@@ -162,6 +164,7 @@ export async function updateConcert({
   country = "",
   eventDate,
   tourName = null,
+  isFestival = null,
   allowDuplicate = false,
 }) {
   const response = await fetch(`${API_BASE_URL}/setlists/${concertId}`, {
@@ -177,6 +180,7 @@ export async function updateConcert({
       country,
       event_date: eventDate,
       tour_name: tourName,
+      is_festival: isFestival,
       allow_duplicate: allowDuplicate,
     }),
   });
@@ -285,6 +289,28 @@ export async function fetchSongsHeardLeaderboard({ token, limit = 1000, userId }
 
 export async function fetchVenuesVisitedLeaderboard({ token, userId }) {
   const response = await fetch(`${API_BASE_URL}/setlists/stats/venues${viewingQuery(userId)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+/** Gig reports (the Gigs tab on Reports). Each one follows the viewed user like the other stats. */
+export async function fetchGigsByPeriod({ token, userId }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/stats/gigs-by-period${viewingQuery(userId)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function fetchLiveGap({ token, userId }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/stats/live-gap${viewingQuery(userId)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function fetchGigBump({ token, userId }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/stats/gig-bump${viewingQuery(userId)}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return parseResponse(response);

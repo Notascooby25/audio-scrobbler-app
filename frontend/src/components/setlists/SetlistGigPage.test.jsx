@@ -162,6 +162,7 @@ describe("SetlistGigPage", () => {
         country: "England",
         eventDate: "2024-02-11",
         tourName: "My Big Day",
+        isFestival: false,
         allowDuplicate: false,
       })
     );

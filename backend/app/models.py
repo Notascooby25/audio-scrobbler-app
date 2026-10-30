@@ -266,6 +266,7 @@ class AttendedConcert(Base):
     tour_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     setlist_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_support_act: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_festival: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     parent_setlist_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     raw_data: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
     song_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

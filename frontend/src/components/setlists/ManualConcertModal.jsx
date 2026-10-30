@@ -10,6 +10,7 @@ export default function ManualConcertModal({ isOpen, onClose, onSaved, token }) 
   const [eventDate, setEventDate] = useState("");
   const [notes, setNotes] = useState("");
   const [setlistUrl, setSetlistUrl] = useState("");
+  const [isFestival, setIsFestival] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [duplicateInfo, setDuplicateInfo] = useState(null);
@@ -36,6 +37,7 @@ export default function ManualConcertModal({ isOpen, onClose, onSaved, token }) 
         eventDate,
         notes: notes.trim() || null,
         setlistUrl: setlistUrl.trim() || null,
+        isFestival,
         allowDuplicate,
       });
       setDuplicateInfo(null);
@@ -138,6 +140,15 @@ export default function ManualConcertModal({ isOpen, onClose, onSaved, token }) 
               onChange={(e) => setNotes(e.target.value)}
               maxLength={2000}
             />
+          </label>
+
+          <label className="sfm-check">
+            <input
+              type="checkbox"
+              checked={isFestival}
+              onChange={(e) => setIsFestival(e.target.checked)}
+            />
+            <span>This was a festival</span>
           </label>
 
           <label className="sfm-field">
