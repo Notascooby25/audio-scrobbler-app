@@ -3164,14 +3164,15 @@ button.btn-secondary:hover:not(:disabled) {
   grid-template-columns: auto minmax(0, 1fr);
   column-gap: 8px;
   row-gap: 4px;
-  align-items: start;
+  align-items: center;
   height: auto;
-  min-height: 100px;
+  min-height: 52px;
+  padding: 6px 4px;
 }
 
 .report-category-grid .library-rank-media {
   grid-area: media;
-  align-self: start;
+  align-self: center;
 }
 
 .report-category-grid .library-row-copy {
@@ -3186,7 +3187,8 @@ button.btn-secondary:hover:not(:disabled) {
   justify-content: flex-start;
   width: 100%;
   margin-left: 0;
-  margin-top: 4px;
+  margin-top: 2px;
+  gap: 8px;
 }
 
 .report-category-grid .library-row-artwork {
@@ -3195,23 +3197,25 @@ button.btn-secondary:hover:not(:disabled) {
 }
 
 .report-category-grid .library-row-copy strong {
+  display: block;
   font-size: 13px;
-  white-space: normal;
-  overflow-wrap: break-word;
-  overflow: visible;
-  text-overflow: clip;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .report-category-grid .library-row-copy small {
-  font-size: 10.5px;
-  white-space: normal;
-  overflow-wrap: break-word;
-  overflow: visible;
-  text-overflow: clip;
+  display: block;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .report-category-grid .library-bar-track {
   flex: 1 1 auto;
+  max-width: 180px;
   width: 100%;
 }
 
@@ -3822,7 +3826,7 @@ dd {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
   }
-  .library-rank-panel:not(.library-rank-panel-grid) .library-rank-row {
+  .library-layout .library-rank-panel:not(.library-rank-panel-grid) .library-rank-row {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -3830,19 +3834,19 @@ dd {
     min-height: 48px;
     padding: 4px 8px;
   }
-  .library-rank-panel:not(.library-rank-panel-grid) .library-rank-media {
+  .library-layout .library-rank-panel:not(.library-rank-panel-grid) .library-rank-media {
     flex: 0 0 auto;
   }
-  .library-rank-panel:not(.library-rank-panel-grid) .library-row-artwork {
+  .library-layout .library-rank-panel:not(.library-rank-panel-grid) .library-row-artwork {
     width: 34px;
     height: 34px;
     flex: 0 0 34px;
   }
-  .library-rank-panel:not(.library-rank-panel-grid) .library-row-copy {
+  .library-layout .library-rank-panel:not(.library-rank-panel-grid) .library-row-copy {
     flex: 1 1 auto;
     min-width: 0;
   }
-  .library-rank-panel:not(.library-rank-panel-grid) .library-rank-actions {
+  .library-layout .library-rank-panel:not(.library-rank-panel-grid) .library-rank-actions {
     flex: 0 0 auto;
     gap: 6px;
     margin-left: auto;

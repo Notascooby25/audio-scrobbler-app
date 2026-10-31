@@ -75,4 +75,25 @@ describe("Library List Row Density per DESIGN.md", () => {
     expect(mobileMediaBlock).toMatch(/\.calendar-preset-chip\s*\{[^}]*min-height:\s*44px/);
     expect(mobileMediaBlock).toMatch(/\.calendar-day-btn\s*\{[^}]*min-height:\s*44px/);
   });
+
+  it("preserves Reports category grid 2-row layout with single-line ellipsis and max-width bar track", () => {
+    expect(stylesContent).toMatch(
+      /\.report-category-grid\s+\.library-rank-row\s*\{[^}]*display:\s*grid/
+    );
+    expect(stylesContent).toMatch(
+      /\.report-category-grid\s+\.library-rank-row\s*\{[^}]*grid-template-areas:\s*"media copy"\s*"media actions"/
+    );
+    expect(stylesContent).toMatch(
+      /\.report-category-grid\s+\.library-rank-row\s*\{[^}]*min-height:\s*52px/
+    );
+    expect(stylesContent).toMatch(
+      /\.report-category-grid\s+\.library-row-copy\s+strong\s*\{[^}]*white-space:\s*nowrap/
+    );
+    expect(stylesContent).toMatch(
+      /\.report-category-grid\s+\.library-row-copy\s+strong\s*\{[^}]*text-overflow:\s*ellipsis/
+    );
+    expect(stylesContent).toMatch(
+      /\.report-category-grid\s+\.library-bar-track\s*\{[^}]*max-width:\s*180px/
+    );
+  });
 });

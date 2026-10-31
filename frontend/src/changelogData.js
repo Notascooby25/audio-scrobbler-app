@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.30.8",
+    date: "2026-10-31",
+    changes: [
+      "Reports Category Grid Layout Fix: Fixed text squashing and proportional bar sizing on mobile Reports cards. Artist, album, and track names remain legible on a single line with neat text ellipsis, and frequency bars are properly bounded without squashing or overflowing.",
+      "Component Styling Scoping: Scoped mobile Library list row layout specifically to the Library page, preventing style collisions with shared ranking lists used across Reports and gig summaries.",
+    ],
+  },
+  {
     version: "0.30.7",
     date: "2026-10-31",
     changes: [
