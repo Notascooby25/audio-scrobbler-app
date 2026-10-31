@@ -169,7 +169,7 @@ describe("SettingsPage", () => {
     expect(document.documentElement.getAttribute("data-accent")).toBe("purple_rain");
   });
 
-  it("lists blocked items and unblocks them individually", async () => {
+  it("lists blocked items in Data tab and unblocks them individually", async () => {
     fetchBlocks.mockResolvedValue({
       blocks: [
         { id: 7, entity_type: "album", name: "Football Weekly", created_at: "2026-09-11T10:00:00" },
@@ -183,8 +183,21 @@ describe("SettingsPage", () => {
       </MemoryRouter>
     );
 
+    // Switch to Data tab
+    fireEvent.click(screen.getByRole("tab", { name: "Data" }));
+
+    // Expand Blocked items accordion
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Blocked items \(1\)/i })).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Blocked items \(1\)/i }));
+
     await waitFor(() => expect(screen.getByText("Football Weekly")).toBeInTheDocument());
     fireEvent.click(screen.getByRole("button", { name: "Unblock" }));
+
+    // Confirm dialog
+    const confirmBtn = screen.getByRole("button", { name: /^Confirm Unblock$/i });
+    fireEvent.click(confirmBtn);
 
     await waitFor(() => expect(screen.queryByText("Football Weekly")).not.toBeInTheDocument());
     expect(removeBlock).toHaveBeenCalledWith({ token: "token", blockId: 7 });

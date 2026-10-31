@@ -24,6 +24,7 @@ import YouTubeScrobblerTools from "../components/YouTubeScrobblerTools";
 import UserGuideSection from "../components/settings/UserGuideSection";
 import FaqSection from "../components/settings/FaqSection";
 import HomeCitySection from "../components/settings/HomeCitySection";
+import BlockedItemsSection from "../components/settings/BlockedItemsSection";
 
 const SETTINGS_TABS = [
   ["general", "General"],
@@ -226,11 +227,12 @@ export default function SettingsPage() {
     }
   };
 
-  const unblock = async (blockId) => {
+  const unblock = async (blockIds) => {
     setBlocksError("");
+    const ids = Array.isArray(blockIds) ? blockIds : [blockIds];
     try {
-      await removeBlock({ token: session.accessToken, blockId });
-      setBlocks((current) => current.filter((block) => block.id !== blockId));
+      await Promise.all(ids.map((id) => removeBlock({ token: session.accessToken, blockId: id })));
+      setBlocks((current) => current.filter((block) => !ids.includes(block.id)));
     } catch {
       setBlocksError("Unblock failed. Try again.");
     }
@@ -495,42 +497,6 @@ export default function SettingsPage() {
               setSettings((prev) => (prev ? { ...prev, home_city: homeCity } : prev))
             }
           />
-
-          <section
-            className="settings-form settings-blocks"
-            aria-labelledby="blocked-items-heading"
-          >
-            <h2 id="blocked-items-heading">Blocked items</h2>
-            {blocksError && (
-              <p className="notice notice-error" role="alert">
-                {blocksError}
-              </p>
-            )}
-            {blocks.length === 0 ? (
-              <p className="panel-meta">
-                Nothing is blocked. Use the menu on Library entries to block artists, albums, or
-                tracks.
-              </p>
-            ) : (
-              <ul className="blocked-list">
-                {blocks.map((block) => (
-                  <li key={block.id}>
-                    <span className="blocked-copy">
-                      <strong>{block.name}</strong>
-                      <small>{block.entity_type}</small>
-                    </span>
-                    <button
-                      type="button"
-                      className="blocked-unblock"
-                      onClick={() => unblock(block.id)}
-                    >
-                      Unblock
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
         </>
       )}
       {activeTab === "views" && settings && (
@@ -807,6 +773,12 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
+
+          <BlockedItemsSection
+            blocks={blocks}
+            error={blocksError}
+            onUnblock={unblock}
+          />
         </section>
       )}
       {activeTab === "notifications" && settings && (
