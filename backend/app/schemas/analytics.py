@@ -56,6 +56,7 @@ class ChartEntry(BaseModel):
     play_count: int
     artwork_url: str | None = None
     spotify_track_id: str | None = None
+    spotify_album_id: str | None = None
     sources: list[str] = []
     is_liked: bool = False
 
@@ -97,6 +98,7 @@ class LibraryEntry(BaseModel):
     artwork_url: str | None = None
     sources: list[str] = []
     spotify_track_id: str | None = None
+    spotify_album_id: str | None = None
     is_liked: bool = False
 
 

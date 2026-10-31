@@ -6,7 +6,7 @@ from datetime import datetime
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from ..models import Follow, GenreCache, LikedTrack, ListeningEvent
+from ..models import Follow, GenreCache, LikedTrack, ListeningEvent, SavedAlbum
 from ..queries.analytics_queries import (
     build_report_genre_artist_counts_query,
     build_report_heatmap_query,
@@ -62,6 +62,13 @@ def _liked_track_ids(db: Session, user_id: int, candidate_ids: set[str]) -> set[
 
 def _candidate_track_ids(rows) -> set[str]:
     return {track_id for row in rows if (track_id := getattr(row, "spotify_track_id", None))}
+
+
+def _saved_albums_by_key(db: Session, user_id: int, candidate_names: set[str]) -> dict[tuple[str, str], str]:
+    if not candidate_names or not hasattr(db, "query"):
+        return {}
+    saved = db.query(SavedAlbum).filter(SavedAlbum.user_id == user_id, SavedAlbum.album_name.in_(candidate_names)).all()
+    return {(record.album_name, record.artist_name): record.spotify_album_id for record in saved}
 
 
 def get_monthly_summary(
@@ -146,39 +153,76 @@ def get_user_charts(
         statement = build_report_genre_artist_counts_query(user_id=user_id, start=start, end=end)
         rows = db.execute(statement).all()
         artist_ids = {row.artist_id for row in rows if row.artist_id}
-        
+
         genres_by_artist = {}
         if artist_ids:
             cache_rows = db.query(GenreCache).filter(GenreCache.artist_spotify_id.in_(artist_ids)).all()
             genres_by_artist = {r.artist_spotify_id: r.genres for r in cache_rows}
-            
+
         counter = Counter()
         for row in rows:
-            if not row.artist_id: continue
+            if not row.artist_id:
+                continue
             genres = genres_by_artist.get(row.artist_id) or []
             for g in genres:
                 counter[g] += row.play_count
-                
+
         entries = [
             ChartEntry(label=g, secondary=None, play_count=count, artwork_url=None, sources=[])
             for g, count in counter.most_common(limit)
         ]
         return ChartResponse(user_id=user_id, entity=entity, range=range_key, entries=entries)
 
-    statement = build_top_entities_query(user_id=user_id, entity=entity, range_key=range_key, limit=limit, start=start, end=end)
+    statement = build_top_entities_query(
+        user_id=user_id, entity=entity, range_key=range_key, limit=limit, start=start, end=end
+    )
     rows = db.execute(statement).all()
     liked_ids = _liked_track_ids(db, user_id, _candidate_track_ids(rows)) if entity == "tracks" else set()
+    saved_albums = (
+        _saved_albums_by_key(db, user_id, {row.album_name for row in rows if getattr(row, "album_name", None)})
+        if entity == "albums"
+        else {}
+    )
 
     entries = []
     for row in rows:
         row_sources = _parse_sources(getattr(row, "sources", None))
         if entity == "artists":
-            entries.append(ChartEntry(label=row.artist_name, secondary=None, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), sources=row_sources))
+            entries.append(
+                ChartEntry(
+                    label=row.artist_name,
+                    secondary=None,
+                    play_count=row.play_count,
+                    artwork_url=getattr(row, "artwork_url", None),
+                    sources=row_sources,
+                )
+            )
         elif entity == "tracks":
             track_id = getattr(row, "spotify_track_id", None)
-            entries.append(ChartEntry(label=row.track_name, secondary=row.artist_name, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), spotify_track_id=track_id, sources=row_sources, is_liked=track_id in liked_ids))
+            entries.append(
+                ChartEntry(
+                    label=row.track_name,
+                    secondary=row.artist_name,
+                    play_count=row.play_count,
+                    artwork_url=getattr(row, "artwork_url", None),
+                    spotify_track_id=track_id,
+                    sources=row_sources,
+                    is_liked=track_id in liked_ids,
+                )
+            )
         else:
-            entries.append(ChartEntry(label=row.album_name, secondary=row.artist_name, play_count=row.play_count, artwork_url=getattr(row, "artwork_url", None), sources=row_sources))
+            album_id = saved_albums.get((row.album_name, row.artist_name))
+            entries.append(
+                ChartEntry(
+                    label=row.album_name,
+                    secondary=row.artist_name,
+                    play_count=row.play_count,
+                    artwork_url=getattr(row, "artwork_url", None),
+                    spotify_album_id=album_id,
+                    sources=row_sources,
+                    is_liked=album_id is not None,
+                )
+            )
 
     return ChartResponse(user_id=user_id, entity=entity, range=range_key, entries=entries)
 
@@ -204,8 +248,14 @@ def get_library_scrobbles(
     filter_secondary: str | None = None,
     search_query: str | None = None,
 ) -> LibraryScrobbleResponse:
-    rows = db.execute(build_library_scrobbles_query(user_id, limit, offset, start, end, filter_entity, filter_name, filter_secondary, search_query)).all()
-    total_count = db.execute(build_library_count_query(user_id, start, end, filter_entity, filter_name, filter_secondary, search_query)).scalar_one()
+    rows = db.execute(
+        build_library_scrobbles_query(
+            user_id, limit, offset, start, end, filter_entity, filter_name, filter_secondary, search_query
+        )
+    ).all()
+    total_count = db.execute(
+        build_library_count_query(user_id, start, end, filter_entity, filter_name, filter_secondary, search_query)
+    ).scalar_one()
     liked_ids = _liked_track_ids(db, user_id, _candidate_track_ids(rows))
     scrobbles = [
         LibraryScrobbleEntry(
@@ -242,16 +292,49 @@ def get_library_entities(
     rows = db.execute(build_library_entities_query(user_id, entity, limit, offset, start, end, search_query)).all()
     total_count = db.execute(build_library_entity_count_query(user_id, entity, start, end, search_query)).scalar_one()
     liked_ids = _liked_track_ids(db, user_id, _candidate_track_ids(rows)) if entity == "tracks" else set()
+    saved_albums = (
+        _saved_albums_by_key(db, user_id, {row.album_name for row in rows if getattr(row, "album_name", None)})
+        if entity == "albums"
+        else {}
+    )
     entries = []
     for row in rows:
         row_sources = _parse_sources(getattr(row, "sources", None))
         if entity == "artists":
-            entries.append(LibraryEntry(label=row.artist_name, play_count=int(row.play_count), artwork_url=getattr(row, "artwork_url", None), sources=row_sources))
+            entries.append(
+                LibraryEntry(
+                    label=row.artist_name,
+                    play_count=int(row.play_count),
+                    artwork_url=getattr(row, "artwork_url", None),
+                    sources=row_sources,
+                )
+            )
         elif entity == "albums":
-            entries.append(LibraryEntry(label=row.album_name, secondary=row.artist_name, play_count=int(row.play_count), artwork_url=getattr(row, "artwork_url", None), sources=row_sources))
+            album_id = saved_albums.get((row.album_name, row.artist_name))
+            entries.append(
+                LibraryEntry(
+                    label=row.album_name,
+                    secondary=row.artist_name,
+                    play_count=int(row.play_count),
+                    artwork_url=getattr(row, "artwork_url", None),
+                    sources=row_sources,
+                    spotify_album_id=album_id,
+                    is_liked=album_id is not None,
+                )
+            )
         else:
             track_id = getattr(row, "spotify_track_id", None)
-            entries.append(LibraryEntry(label=row.track_name, secondary=row.artist_name, play_count=int(row.play_count), artwork_url=getattr(row, "artwork_url", None), sources=row_sources, spotify_track_id=track_id, is_liked=track_id in liked_ids))
+            entries.append(
+                LibraryEntry(
+                    label=row.track_name,
+                    secondary=row.artist_name,
+                    play_count=int(row.play_count),
+                    artwork_url=getattr(row, "artwork_url", None),
+                    sources=row_sources,
+                    spotify_track_id=track_id,
+                    is_liked=track_id in liked_ids,
+                )
+            )
     return LibraryResponse(user_id=user_id, entries=entries, limit=limit, offset=offset, total_count=int(total_count))
 
 
@@ -271,7 +354,9 @@ def get_report_summary(
     end_date: str | None = None,
     compare_to_previous: bool = True,
 ) -> ReportSummaryResponse:
-    period_start, period_end, previous_start, previous_end, _granularity = resolve_date_range(range_key, start_date, end_date)
+    period_start, period_end, previous_start, previous_end, _granularity = resolve_date_range(
+        range_key, start_date, end_date
+    )
     total = db.execute(build_library_count_query(user_id)).scalar_one()
     current = db.execute(build_report_period_count_query(user_id, period_start, period_end)).one()
     current_count = int(current.scrobble_count)
@@ -303,7 +388,9 @@ def get_report_summary(
             current_avg = round(current_count / days, 1)
 
             comparison = ((current_count - previous_count) / previous_count * 100) if previous_count else 0.0
-            minutes_comparison = ((current_minutes - previous_minutes) / previous_minutes * 100) if previous_minutes else 0.0
+            minutes_comparison = (
+                ((current_minutes - previous_minutes) / previous_minutes * 100) if previous_minutes else 0.0
+            )
             avg_comparison = ((current_avg - previous_avg) / previous_avg * 100) if previous_avg else 0.0
     following_avg = None
     if range_key != "all.time":
@@ -347,31 +434,37 @@ def get_report_charts(
     start_date: str | None = None,
     end_date: str | None = None,
 ) -> ReportChartsResponse:
-    period_start, period_end, _previous_start, _previous_end, granularity = resolve_date_range(range_key, start_date, end_date)
+    period_start, period_end, _previous_start, _previous_end, granularity = resolve_date_range(
+        range_key, start_date, end_date
+    )
     if granularity == "month":
         scrobble_rows = db.execute(build_report_monthly_query(user_id, period_start, period_end)).all()
     else:
         scrobble_rows = db.execute(build_report_weekly_query(user_id, period_start, period_end)).all()
     clock_rows = db.execute(build_report_clock_query(user_id, period_start, period_end)).all()
     clock_counts = {int(row.label): int(row.count) for row in clock_rows}
-    
+
     decade_rows = db.execute(build_report_decade_query(user_id, period_start, period_end)).all()
-    
 
     heatmap_rows = db.execute(build_report_heatmap_query(user_id, period_start, period_end)).all()
-    heatmap_data = {(int(row.day), int(row.hour)): int(row.count) for row in heatmap_rows if row.day is not None and row.hour is not None}
-    
+    heatmap_data = {
+        (int(row.day), int(row.hour)): int(row.count)
+        for row in heatmap_rows
+        if row.day is not None and row.hour is not None
+    }
+
     listening_heatmap = []
     for day in range(7):
         for hour in range(24):
             listening_heatmap.append(HeatmapPoint(day=day, hour=hour, count=heatmap_data.get((day, hour), 0)))
-            
-    return ReportChartsResponse(
 
+    return ReportChartsResponse(
         user_id=user_id,
         range=range_key,
         weekly_scrobbles=[ReportPoint(label=row.label, count=int(row.count)) for row in scrobble_rows],
         listening_clock=[ReportPoint(label=str(hour), count=clock_counts.get(hour, 0)) for hour in range(24)],
-        music_by_decade=[ReportPoint(label=f"{int(row.label)}s", count=int(row.count)) for row in decade_rows if row.label],
+        music_by_decade=[
+            ReportPoint(label=f"{int(row.label)}s", count=int(row.count)) for row in decade_rows if row.label
+        ],
         listening_heatmap=listening_heatmap,
     )
