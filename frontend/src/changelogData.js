@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.30.6",
+    date: "2026-10-31",
+    changes: [
+      "Setlist-Style Proportional Play Count Bars: Artists, Albums, and Tracks in Library (list view) and Reports now display clean, proportional frequency bars filled with your active accent color tint, exactly matching the Setlist leaderboard style.",
+      "Clear Number-Inside Bar Presentation: The play count is rendered cleanly inside the proportional bar in bold tabular numbers, with consistent track alignment across all rows and tooltips for complete play counts.",
+    ],
+  },
+  {
     version: "0.30.5",
     date: "2026-10-31",
     changes: [

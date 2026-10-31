@@ -34,11 +34,40 @@ describe("LibraryRankList", () => {
     expect(screen.getByText("The National")).toBeInTheDocument();
     expect(screen.getByText("51")).toBeInTheDocument();
     const countLink = screen.getByRole("link", { name: "Show 12 scrobbles for Slow Show" });
-    expect(countLink).toHaveTextContent("12 scrobbles");
+    expect(countLink).toHaveTextContent("12");
     expect(countLink).toHaveAttribute(
       "href",
       "/library?filter_entity=track&filter_name=Slow%20Show&filter_secondary=The%20National"
     );
+  });
+
+  it("renders proportional width bar on list rows", () => {
+    const { container } = render(
+      <MemoryRouter>
+        <LibraryRankList
+          entries={[
+            { label: "The Lottery Winners", play_count: 4, artwork_url: "/lw.jpg" },
+            { label: "Ocean Colour Scene", play_count: 4, artwork_url: "/ocs.jpg" },
+            { label: "Cast", play_count: 2, artwork_url: "/cast.jpg" },
+          ]}
+          kind="artists"
+          token="token"
+          page={1}
+          pageSize={50}
+          totalCount={3}
+          view="list"
+        />
+      </MemoryRouter>
+    );
+
+    const bars = container.querySelectorAll(".library-count-bar");
+    expect(bars).toHaveLength(3);
+    expect(bars[0]).toHaveStyle({ width: "100%" });
+    expect(bars[0]).toHaveTextContent("4");
+    expect(bars[1]).toHaveStyle({ width: "100%" });
+    expect(bars[1]).toHaveTextContent("4");
+    expect(bars[2]).toHaveStyle({ width: "50%" });
+    expect(bars[2]).toHaveTextContent("2");
   });
 
   it("uses artwork and count bars for artist rows", () => {

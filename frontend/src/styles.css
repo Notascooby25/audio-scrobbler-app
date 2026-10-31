@@ -2383,20 +2383,39 @@ button.btn-secondary:hover:not(:disabled) {
   line-height: 1.25;
 }
 
-.library-count-bar {
-  background: var(--color-surface-raised);
-  color: var(--color-muted);
-  display: flex;
+.library-bar-track {
   align-items: center;
-  justify-content: flex-end;
-  flex: 0 1 12rem;
-  font-size: 12px;
-  font-weight: 500;
-  min-width: 4.5rem;
-  padding: 4px 8px;
+  display: flex;
+  flex: 0 1 180px;
+  justify-content: flex-start;
+  min-width: 60px;
+  width: 180px;
+}
+
+.library-count-bar {
+  align-items: center;
+  background: var(--color-accent-bar);
   border-radius: 4px;
+  color: var(--color-ink);
+  display: flex;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  height: 22px;
+  min-width: 2rem;
+  padding: 0 8px;
   text-decoration: none;
-  text-align: right;
+  box-sizing: border-box;
+  transition: filter 0.15s ease;
+}
+
+.library-count-bar:hover {
+  filter: brightness(0.92);
+}
+
+.library-count-bar:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
 }
 
 .library-rank-actions {
@@ -2407,10 +2426,6 @@ button.btn-secondary:hover:not(:disabled) {
   justify-content: flex-end;
   min-width: 0;
   margin-left: auto;
-}
-
-.library-rank-actions .library-count-bar {
-  flex: 0 1 auto;
 }
 
 .library-scrobble-row .library-row-copy {
@@ -3166,8 +3181,12 @@ button.btn-secondary:hover:not(:disabled) {
 
 .report-category-grid .library-rank-actions {
   grid-area: actions;
-  justify-content: flex-end;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
   margin-left: 0;
+  margin-top: 4px;
 }
 
 .report-category-grid .library-row-artwork {
@@ -3191,10 +3210,16 @@ button.btn-secondary:hover:not(:disabled) {
   text-overflow: clip;
 }
 
+.report-category-grid .library-bar-track {
+  flex: 1 1 auto;
+  width: 100%;
+}
+
 .report-category-grid .library-count-bar {
-  min-width: 2rem;
-  padding: 3px 6px;
   font-size: 11px;
+  height: 20px;
+  min-width: 1.75rem;
+  padding: 0 6px;
 }
 
 .month-card {
@@ -3888,9 +3913,14 @@ dd {
   .library-count-suffix {
     display: none;
   }
+  .library-bar-track {
+    flex: 0 1 90px;
+    width: 90px;
+    min-width: 44px;
+  }
   .library-count-bar {
-    min-width: 2rem;
-    padding: 3px 6px;
+    min-width: 1.75rem;
+    padding: 0 6px;
     font-size: 11px;
   }
   .entry-menu-toggle {

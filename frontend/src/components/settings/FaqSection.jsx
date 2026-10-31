@@ -241,6 +241,20 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "proportional-play-bars",
+    category: "Library & Data Maintenance",
+    question: "What do the colored horizontal bars next to play counts mean?",
+    answer: (
+      <p>
+        In both your <strong>Library</strong> (artists, albums, and tracks) and{" "}
+        <strong>Reports</strong> top categories, play counts are styled with proportional horizontal
+        bars tinted with your active theme accent color. The width reflects each item&apos;s
+        relative play frequency compared to the top item on the current page or report, making it
+        effortless to visualize relative popularity at a glance.
+      </p>
+    ),
+  },
+  {
     id: "mobile-push",
     category: "Mobile & Notifications",
     question: "How do I enable device push notifications on iPhone or Android?",

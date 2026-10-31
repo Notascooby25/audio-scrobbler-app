@@ -5,7 +5,8 @@ import SourceBadge from "./SourceBadge";
 import { Link } from "react-router-dom";
 
 function countWidth(count, maximum) {
-  return { width: `${Math.max(8, (count / maximum) * 100)}%` };
+  const pct = maximum > 0 ? Math.max(4, Math.round(((count || 0) / maximum) * 100)) : 0;
+  return { width: `${pct}%` };
 }
 
 const ENTITY_TYPES = { artists: "artist", albums: "album", tracks: "track" };
@@ -213,17 +214,17 @@ export default function LibraryRankList({
                       onToggle={onToggleLike ? () => onToggleLike(entry, kind) : undefined}
                     />
                   )}
-                  <Link
-                    className="library-count-bar"
-                    style={countWidth(entry.play_count, maximum)}
-                    to={entityUrl}
-                    aria-label={`Show ${entry.play_count.toLocaleString()} scrobbles for ${entry.label}`}
-                  >
-                    <span>
-                      {entry.play_count.toLocaleString()}
-                      {view === "list" && <span className="library-count-suffix"> scrobbles</span>}
-                    </span>
-                  </Link>
+                  <div className="library-bar-track">
+                    <Link
+                      className="library-count-bar"
+                      style={countWidth(entry.play_count, maximum)}
+                      to={entityUrl}
+                      aria-label={`Show ${entry.play_count.toLocaleString()} scrobbles for ${entry.label}`}
+                      title={`${entry.play_count.toLocaleString()} scrobbles`}
+                    >
+                      <span>{entry.play_count.toLocaleString()}</span>
+                    </Link>
+                  </div>
                   {onEntryChanged && entityType && (
                     <EntryMenu
                       token={token}
