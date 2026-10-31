@@ -47,6 +47,8 @@ class FakeDB:
             value.recap_frequency = "weekly"
         if getattr(value, "jukebox_source", None) is None:
             value.jukebox_source = "spotify_saved"
+        if getattr(value, "jukebox_archive_limit", None) is None:
+            value.jukebox_archive_limit = 100
         self.preferences = value
 
     def commit(self):
@@ -116,3 +118,29 @@ def test_settings_rejects_invalid_accent_color():
         headers={"Authorization": "Bearer demo"},
     )
     assert response.status_code == 400
+
+
+def test_settings_returns_jukebox_archive_limit_default():
+    response = client.get("/users/me/settings", headers={"Authorization": "Bearer demo"})
+    assert response.status_code == 200
+    assert response.json()["jukebox_archive_limit"] == 100
+
+
+def test_settings_updates_jukebox_archive_limit():
+    response = client.patch(
+        "/users/me/settings",
+        json={"jukebox_archive_limit": 250},
+        headers={"Authorization": "Bearer demo"},
+    )
+    assert response.status_code == 200
+    assert response.json()["jukebox_archive_limit"] == 250
+
+
+def test_settings_rejects_invalid_jukebox_archive_limit():
+    response = client.patch(
+        "/users/me/settings",
+        json={"jukebox_archive_limit": 500},
+        headers={"Authorization": "Bearer demo"},
+    )
+    assert response.status_code == 400
+

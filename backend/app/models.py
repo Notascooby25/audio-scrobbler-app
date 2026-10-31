@@ -47,6 +47,10 @@ class UserPreferences(Base):
             "jukebox_source IN ('spotify_saved', 'library_archive')",
             name="ck_user_preferences_jukebox_source",
         ),
+        CheckConstraint(
+            "jukebox_archive_limit IN (100, 150, 200, 250, 300)",
+            name="ck_user_preferences_jukebox_archive_limit",
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
@@ -55,6 +59,7 @@ class UserPreferences(Base):
     theme: Mapped[str] = mapped_column(String(16), nullable=False, default="system")
     accent_color: Mapped[str] = mapped_column(String(24), nullable=False, default="blue_monday")
     jukebox_source: Mapped[str] = mapped_column(String(32), nullable=False, default="spotify_saved")
+    jukebox_archive_limit: Mapped[int] = mapped_column(Integer, nullable=False, default=100)
     default_page_size: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
     default_library_view: Mapped[str] = mapped_column(String(16), nullable=False, default="list")
     scrobbles_view: Mapped[str | None] = mapped_column(String(16), nullable=True)

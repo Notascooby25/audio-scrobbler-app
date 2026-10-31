@@ -38,6 +38,7 @@ class UserPreferencesResponse(BaseModel):
     show_source_badges: bool
     timestamp_mode: str
     jukebox_source: str = "spotify_saved"
+    jukebox_archive_limit: int = 100
     notify_recaps: bool = True
     notify_milestones: bool = True
     notify_system: bool = False
@@ -51,6 +52,7 @@ class UserPreferencesUpdate(BaseModel):
     theme: str | None = None
     accent_color: str | None = None
     jukebox_source: str | None = None
+    jukebox_archive_limit: int | None = None
     default_page_size: int | None = Field(default=None)
     default_library_view: str | None = None
     scrobbles_view: str | None = None

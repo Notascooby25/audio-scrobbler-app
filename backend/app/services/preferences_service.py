@@ -20,6 +20,7 @@ DEFAULTS = {
     "show_source_badges": True,
     "timestamp_mode": "relative",
     "jukebox_source": "spotify_saved",
+    "jukebox_archive_limit": 100,
 }
 
 
@@ -50,6 +51,8 @@ def update(db: Session, user_id: int, changes: dict[str, object]) -> UserPrefere
             raise ValueError("Unsupported timestamp mode")
         if key == "jukebox_source" and value not in {"spotify_saved", "library_archive"}:
             raise ValueError("Unsupported jukebox source")
+        if key == "jukebox_archive_limit" and value not in {100, 150, 200, 250, 300}:
+            raise ValueError("Unsupported jukebox archive limit")
         setattr(preferences, key, value)
     db.commit()
     db.refresh(preferences)
