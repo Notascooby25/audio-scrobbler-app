@@ -1,6 +1,8 @@
 import { useState } from "react";
+import JukeboxFilters from "./JukeboxFilters";
 
 export default function FlatJukebox({
+  albums = [],
   filteredAlbums = [],
   pool = [],
   currentPick = null,
@@ -9,7 +11,10 @@ export default function FlatJukebox({
   canRoll = true,
   busy = false,
   mode = "any",
-  _setMode,
+  setMode,
+  filters = { artist: "", decade: new Set(), genre: new Set(), length: new Set() },
+  toggleFilter = () => {},
+  clearFilters = () => {},
   onLuckyDip,
   onReroll,
   onCommit,
@@ -82,6 +87,15 @@ export default function FlatJukebox({
           {mode !== "any" && `(pool: ${pool.length})`}
         </span>
       </div>
+
+      <JukeboxFilters
+        albums={albums}
+        filters={filters}
+        toggleFilter={toggleFilter}
+        clearFilters={clearFilters}
+        mode={mode}
+        setMode={setMode}
+      />
 
       <div
         style={{

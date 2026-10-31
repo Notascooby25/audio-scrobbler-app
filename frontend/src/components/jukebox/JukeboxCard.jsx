@@ -102,6 +102,7 @@ export default function JukeboxCard({ token }) {
 
       {themeMode === "flat" ? (
         <FlatJukebox
+          albums={albums}
           filteredAlbums={engine.filteredAlbums}
           pool={engine.pool}
           currentPick={engine.currentPick}
@@ -111,12 +112,16 @@ export default function JukeboxCard({ token }) {
           busy={engine.busy}
           mode={engine.mode}
           setMode={engine.setMode}
+          filters={engine.filters}
+          toggleFilter={engine.toggleFilter}
+          clearFilters={engine.clearFilters}
           onLuckyDip={engine.luckyDip}
           onReroll={engine.reroll}
           onCommit={handleRollCommit}
         />
       ) : (
         <RetroJukebox
+          albums={albums}
           filteredAlbums={engine.filteredAlbums}
           pool={engine.pool}
           currentPick={engine.currentPick}
@@ -126,6 +131,9 @@ export default function JukeboxCard({ token }) {
           busy={engine.busy}
           mode={engine.mode}
           setMode={engine.setMode}
+          filters={engine.filters}
+          toggleFilter={engine.toggleFilter}
+          clearFilters={engine.clearFilters}
           onLuckyDip={engine.luckyDip}
           onReroll={engine.reroll}
           onCommit={handleRollCommit}

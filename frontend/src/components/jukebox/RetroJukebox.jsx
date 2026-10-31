@@ -1,7 +1,9 @@
 import { useState } from "react";
 import styles from "./RetroJukebox.module.css";
+import JukeboxFilters from "./JukeboxFilters";
 
 export default function RetroJukebox({
+  albums = [],
   filteredAlbums = [],
   _pool = [],
   currentPick = null,
@@ -10,7 +12,10 @@ export default function RetroJukebox({
   canRoll = true,
   busy = false,
   mode = "any",
-  _setMode,
+  setMode,
+  filters = { artist: "", decade: new Set(), genre: new Set(), length: new Set() },
+  toggleFilter = () => {},
+  clearFilters = () => {},
   onLuckyDip,
   onReroll,
   onCommit,
@@ -52,6 +57,15 @@ export default function RetroJukebox({
       <div style={{ textAlign: "center", marginBottom: "10px" }}>
         <strong>{filteredAlbums.length}</strong> records match filters
       </div>
+
+      <JukeboxFilters
+        albums={albums}
+        filters={filters}
+        toggleFilter={toggleFilter}
+        clearFilters={clearFilters}
+        mode={mode}
+        setMode={setMode}
+      />
 
       <button
         type="button"
