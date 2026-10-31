@@ -15,6 +15,10 @@ from ..schemas.spotify_library import (
     GenreCachePendingItem,
     GenreCachePendingResponse,
     GenreCacheUpsertResponse,
+    LikeAlbumPayload,
+    LikeAlbumResponse,
+    LikeTrackPayload,
+    LikeTrackResponse,
     LikedTracksUpsertResponse,
     SavedAlbumsUpsertResponse,
     SpotifySyncResponse,
@@ -27,6 +31,8 @@ from ..services import scrobble_settings_service
 from ..services.spotify_library_service import (
     backfill_scrobble_artwork,
     find_pending_genre_artist_ids,
+    toggle_like_album,
+    toggle_like_track,
     upsert_genre_cache,
     upsert_liked_tracks,
     upsert_saved_albums,
@@ -34,6 +40,48 @@ from ..services.spotify_library_service import (
 
 router = APIRouter(prefix="/spotify", tags=["spotify-library"])
 logger = logging.getLogger("audio-scrobbler-api")
+
+
+@router.put("/like-track/{track_id}", response_model=LikeTrackResponse)
+def like_track_route(
+    track_id: str,
+    payload: LikeTrackPayload | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> LikeTrackResponse:
+    is_liked = toggle_like_track(db, current_user, track_id, payload, like=True)
+    return LikeTrackResponse(success=True, is_liked=is_liked)
+
+
+@router.delete("/like-track/{track_id}", response_model=LikeTrackResponse)
+def unlike_track_route(
+    track_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> LikeTrackResponse:
+    is_liked = toggle_like_track(db, current_user, track_id, like=False)
+    return LikeTrackResponse(success=True, is_liked=is_liked)
+
+
+@router.put("/like-album/{album_id_or_name}", response_model=LikeAlbumResponse)
+def like_album_route(
+    album_id_or_name: str,
+    payload: LikeAlbumPayload | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> LikeAlbumResponse:
+    is_liked, spotify_album_id = toggle_like_album(db, current_user, album_id_or_name, payload, like=True)
+    return LikeAlbumResponse(success=True, is_liked=is_liked, spotify_album_id=spotify_album_id)
+
+
+@router.delete("/like-album/{album_id}", response_model=LikeAlbumResponse)
+def unlike_album_route(
+    album_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> LikeAlbumResponse:
+    is_liked, spotify_album_id = toggle_like_album(db, current_user, album_id, like=False)
+    return LikeAlbumResponse(success=True, is_liked=is_liked, spotify_album_id=spotify_album_id)
 
 
 @router.post("/sync-liked", response_model=UserScrobbleSettingsResponse)

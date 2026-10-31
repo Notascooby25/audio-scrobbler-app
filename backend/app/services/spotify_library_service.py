@@ -1,16 +1,23 @@
 from __future__ import annotations
 
+import re
 import time
 from datetime import datetime
 from typing import Any
 
+from fastapi import HTTPException
 import requests
 from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..models import GenreCache, LikedTrack, ListeningEvent, SavedAlbum, User
 from ..queries.analytics_queries import build_pending_genre_artist_ids_query
-from ..schemas.spotify_library import WorkerLikedTrackItem, WorkerSavedAlbumItem
+from ..schemas.spotify_library import (
+    LikeAlbumPayload,
+    LikeTrackPayload,
+    WorkerLikedTrackItem,
+    WorkerSavedAlbumItem,
+)
 from ..security import decrypt_refresh_token, encrypt_refresh_token
 
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
@@ -31,7 +38,7 @@ def _request(method: str, url: str, **kwargs: Any) -> requests.Response:
             time.sleep(retry_after)
             continue
         if response.status_code >= 500 and attempt < 2:
-            time.sleep(2 ** attempt)
+            time.sleep(2**attempt)
             continue
         response.raise_for_status()
         return response
@@ -68,11 +75,15 @@ def _artwork_url(track: dict[str, Any]) -> str | None:
 def backfill_scrobble_artwork(db: Session, user: User) -> dict[str, int]:
     access_token = _refresh_access_token(db, user)
     headers = {"Authorization": f"Bearer {access_token}"}
-    missing = db.query(ListeningEvent).filter(
-        ListeningEvent.user_id == user.id,
-        ListeningEvent.source == "spotify",
-        ListeningEvent.artwork_url.is_(None),
-    ).all()
+    missing = (
+        db.query(ListeningEvent)
+        .filter(
+            ListeningEvent.user_id == user.id,
+            ListeningEvent.source == "spotify",
+            ListeningEvent.artwork_url.is_(None),
+        )
+        .all()
+    )
     track_ids = {}
     for event in missing:
         track_id = event.track_id.rsplit(":", 1)[-1]
@@ -81,8 +92,12 @@ def backfill_scrobble_artwork(db: Session, user: User) -> dict[str, int]:
     updated = 0
     ids = list(track_ids)
     for start in range(0, len(ids), 50):
-        batch = ids[start:start + 50]
-        tracks = _request("GET", SPOTIFY_TRACKS_URL, headers=headers, params={"ids": ",".join(batch)}).json().get("tracks", [])
+        batch = ids[start : start + 50]
+        tracks = (
+            _request("GET", SPOTIFY_TRACKS_URL, headers=headers, params={"ids": ",".join(batch)})
+            .json()
+            .get("tracks", [])
+        )
         for track in tracks:
             if not isinstance(track, dict) or not isinstance(track.get("id"), str):
                 continue
@@ -110,10 +125,12 @@ def upsert_liked_tracks(db: Session, user_id: int, tracks: list[WorkerLikedTrack
     updated = 0
     existing_by_track_id = {
         record.spotify_track_id: record
-        for record in db.query(LikedTrack).filter(
+        for record in db.query(LikedTrack)
+        .filter(
             LikedTrack.user_id == user_id,
             LikedTrack.spotify_track_id.in_([track.spotify_track_id for track in tracks]),
-        ).all()
+        )
+        .all()
     }
     for track in tracks:
         existing = existing_by_track_id.get(track.spotify_track_id)
@@ -150,9 +167,7 @@ def upsert_saved_albums(db: Session, user_id: int, albums: list[WorkerSavedAlbum
         return {"inserted": 0, "updated": 0}
     album_ids = {a.spotify_album_id for a in albums}
     existing_rows = (
-        db.query(SavedAlbum)
-        .filter(SavedAlbum.user_id == user_id, SavedAlbum.spotify_album_id.in_(album_ids))
-        .all()
+        db.query(SavedAlbum).filter(SavedAlbum.user_id == user_id, SavedAlbum.spotify_album_id.in_(album_ids)).all()
     )
     existing_by_id = {row.spotify_album_id: row for row in existing_rows}
     inserted = 0
@@ -195,7 +210,11 @@ def upsert_saved_albums(db: Session, user_id: int, albums: list[WorkerSavedAlbum
 
 def find_pending_genre_artist_ids(db: Session, limit: int = 10) -> list[dict[str, str]]:
     rows = db.execute(build_pending_genre_artist_ids_query(limit)).all()
-    return [{"artist_id": row.artist_id, "artist_name": row.artist_name} for row in rows if row.artist_id and row.artist_name]
+    return [
+        {"artist_id": row.artist_id, "artist_name": row.artist_name}
+        for row in rows
+        if row.artist_id and row.artist_name
+    ]
 
 
 def upsert_genre_cache(db: Session, items: list[dict[str, object]]) -> int:
@@ -215,3 +234,132 @@ def upsert_genre_cache(db: Session, items: list[dict[str, object]]) -> int:
             db.add(GenreCache(artist_spotify_id=artist_id, genres=genres, cached_at=datetime.utcnow()))
     db.commit()
     return len(items)
+
+
+def _call_user_spotify(db: Session, user: User, method: str, url: str, **kwargs: Any) -> requests.Response:
+    token = _refresh_access_token(db, user)
+    headers = {"Authorization": f"Bearer {token}", **kwargs.pop("headers", {})}
+    resp = requests.request(method, url, headers=headers, timeout=15, **kwargs)
+    if resp.status_code == 403:
+        raise HTTPException(status_code=403, detail="needs_spotify_reconnect")
+    if resp.status_code == 429:
+        raise HTTPException(status_code=429, detail="Spotify rate limit reached; please try again later")
+    if not resp.ok:
+        raise HTTPException(status_code=resp.status_code, detail=f"Spotify error: {resp.text}")
+    return resp
+
+
+def toggle_like_track(
+    db: Session,
+    user: User,
+    track_id: str,
+    payload: LikeTrackPayload | None = None,
+    like: bool = True,
+) -> bool:
+    url = f"https://api.spotify.com/v1/me/tracks?ids={track_id}"
+    _call_user_spotify(db, user, "PUT" if like else "DELETE", url)
+    if like:
+        record = (
+            db.query(LikedTrack).filter(LikedTrack.user_id == user.id, LikedTrack.spotify_track_id == track_id).first()
+        )
+        if not record:
+            track_name = (payload.track_name if payload else None) or "Unknown Track"
+            artist_name = (payload.artist_name if payload else None) or "Unknown Artist"
+            album_name = payload.album_name if payload else None
+            artwork_url = payload.artwork_url if payload else None
+            db.add(
+                LikedTrack(
+                    user_id=user.id,
+                    spotify_track_id=track_id,
+                    track_name=track_name,
+                    artist_name=artist_name,
+                    album_name=album_name,
+                    artwork_url=artwork_url,
+                    added_at=datetime.utcnow(),
+                )
+            )
+            db.commit()
+        return True
+    else:
+        db.query(LikedTrack).filter(
+            LikedTrack.user_id == user.id,
+            LikedTrack.spotify_track_id == track_id,
+        ).delete()
+        db.commit()
+        return False
+
+
+def toggle_like_album(
+    db: Session,
+    user: User,
+    album_id_or_name: str,
+    payload: LikeAlbumPayload | None = None,
+    like: bool = True,
+) -> tuple[bool, str]:
+    resolved_id = album_id_or_name
+    album_name = (payload.album_name if payload else None) or album_id_or_name
+    artist_name = (payload.artist_name if payload else None) or "Unknown Artist"
+    artwork_url = payload.artwork_url if payload else None
+
+    is_valid_id = bool(re.fullmatch(r"[a-zA-Z0-9_-]{5,40}", album_id_or_name))
+    if not is_valid_id and like:
+        existing_saved = (
+            db.query(SavedAlbum)
+            .filter(
+                SavedAlbum.user_id == user.id,
+                SavedAlbum.album_name == album_name,
+            )
+            .first()
+        )
+        if existing_saved:
+            resolved_id = existing_saved.spotify_album_id
+        else:
+            token = _refresh_access_token(db, user)
+            q = f"album:{album_name}"
+            if artist_name and artist_name != "Unknown Artist":
+                q += f" artist:{artist_name}"
+            search_resp = requests.get(
+                "https://api.spotify.com/v1/search",
+                headers={"Authorization": f"Bearer {token}"},
+                params={"type": "album", "limit": 1, "q": q},
+                timeout=10,
+            )
+            if search_resp.ok:
+                items = search_resp.json().get("albums", {}).get("items", [])
+                if items and items[0].get("id"):
+                    resolved_id = items[0]["id"]
+                    if not artwork_url and items[0].get("images"):
+                        artwork_url = items[0]["images"][0].get("url")
+                else:
+                    raise HTTPException(status_code=404, detail="Album not found on Spotify")
+            else:
+                raise HTTPException(status_code=404, detail="Album not found on Spotify")
+
+    url = f"https://api.spotify.com/v1/me/albums?ids={resolved_id}"
+    _call_user_spotify(db, user, "PUT" if like else "DELETE", url)
+    if like:
+        record = (
+            db.query(SavedAlbum)
+            .filter(SavedAlbum.user_id == user.id, SavedAlbum.spotify_album_id == resolved_id)
+            .first()
+        )
+        if not record:
+            db.add(
+                SavedAlbum(
+                    user_id=user.id,
+                    spotify_album_id=resolved_id,
+                    album_name=album_name,
+                    artist_name=artist_name,
+                    artwork_url=artwork_url,
+                    added_at=datetime.utcnow(),
+                )
+            )
+            db.commit()
+        return True, resolved_id
+    else:
+        db.query(SavedAlbum).filter(
+            SavedAlbum.user_id == user.id,
+            SavedAlbum.spotify_album_id == resolved_id,
+        ).delete()
+        db.commit()
+        return False, resolved_id

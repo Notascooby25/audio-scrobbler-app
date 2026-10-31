@@ -37,20 +37,23 @@ class LikedTracksUpsertResponse(BaseModel):
     updated: int
 
 
-
 class GenreCachePendingItem(BaseModel):
     artist_spotify_id: str
     artist_name: str
 
+
 class GenreCachePendingResponse(BaseModel):
     items: list[GenreCachePendingItem]
+
 
 class WorkerGenreCacheItem(BaseModel):
     artist_spotify_id: str
     genres: list[str]
 
+
 class WorkerGenreCacheUpsertRequest(BaseModel):
     items: list[WorkerGenreCacheItem]
+
 
 class GenreCacheUpsertResponse(BaseModel):
     upserted: int
@@ -79,3 +82,26 @@ class SavedAlbumsUpsertResponse(BaseModel):
     inserted: int
     updated: int
 
+
+class LikeTrackPayload(BaseModel):
+    track_name: str | None = None
+    artist_name: str | None = None
+    album_name: str | None = None
+    artwork_url: str | None = None
+
+
+class LikeTrackResponse(BaseModel):
+    success: bool = True
+    is_liked: bool = True
+
+
+class LikeAlbumPayload(BaseModel):
+    album_name: str | None = None
+    artist_name: str | None = None
+    artwork_url: str | None = None
+
+
+class LikeAlbumResponse(BaseModel):
+    success: bool = True
+    is_liked: bool = True
+    spotify_album_id: str | None = None

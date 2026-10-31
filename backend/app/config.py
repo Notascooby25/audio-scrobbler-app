@@ -28,7 +28,7 @@ class Settings:
     spotify_redirect_uri: str = os.getenv("SPOTIFY_REDIRECT_URI", "http://127.0.0.1:8000/auth/spotify/callback")
     spotify_scopes: str = os.getenv(
         "SPOTIFY_SCOPES",
-        "user-read-recently-played user-library-read user-read-currently-playing playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public",
+        "user-read-recently-played user-library-read user-library-modify user-read-currently-playing playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public",
     )
     frontend_auth_callback_url: str = os.getenv("FRONTEND_AUTH_CALLBACK_URL", "")
     # Comma-separated Spotify user IDs allowed to sign up or log in.
