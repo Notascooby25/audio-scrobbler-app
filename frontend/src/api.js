@@ -1,151 +1,165 @@
-import { toQueryParams } from './dateRange'
+import { toQueryParams } from "./dateRange";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 async function parseResponse(response) {
   if (!response.ok) {
-    let detail = ''
-    if (typeof response.text === 'function') {
-      const text = await response.text().catch(() => '')
+    let detail = "";
+    if (typeof response.text === "function") {
+      const text = await response.text().catch(() => "");
       try {
-        const parsed = JSON.parse(text)
-        detail = parsed?.detail || parsed?.message || ''
+        const parsed = JSON.parse(text);
+        detail = parsed?.detail || parsed?.message || "";
       } catch {
-        detail = text.slice(0, 300)
+        detail = text.slice(0, 300);
       }
-    } else if (typeof response.json === 'function') {
-      const body = await response.json().catch(() => null)
-      detail = body?.detail || body?.message || ''
+    } else if (typeof response.json === "function") {
+      const body = await response.json().catch(() => null);
+      detail = body?.detail || body?.message || "";
     }
-    const message = detail ? `HTTP ${response.status}: ${detail}` : `Request failed with HTTP ${response.status} (${response.statusText || 'Error'})`
-    const error = new Error(message)
-    error.status = response.status
-    error.detail = detail
-    throw error
+    const message = detail
+      ? `HTTP ${response.status}: ${detail}`
+      : `Request failed with HTTP ${response.status} (${response.statusText || "Error"})`;
+    const error = new Error(message);
+    error.status = response.status;
+    error.detail = detail;
+    throw error;
   }
-  return response.json()
+  return response.json();
 }
 
 export async function requestDevelopmentToken(userId) {
   const response = await fetch(`${API_BASE_URL}/auth/dev-token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ user_id: Number(userId) }),
-  })
-  return parseResponse(response)
+  });
+  return parseResponse(response);
 }
 
 export async function requestSpotifyAuthorization(forceDialog = false) {
-  const params = forceDialog ? '?force_dialog=true' : ''
-  const response = await fetch(`${API_BASE_URL}/auth/spotify/authorize${params}`)
-  return parseResponse(response)
+  const params = forceDialog ? "?force_dialog=true" : "";
+  const response = await fetch(`${API_BASE_URL}/auth/spotify/authorize${params}`);
+  return parseResponse(response);
 }
 
 export async function fetchSpotifyStatus() {
-  const response = await fetch(`${API_BASE_URL}/auth/spotify/status`)
-  return parseResponse(response)
+  const response = await fetch(`${API_BASE_URL}/auth/spotify/status`);
+  return parseResponse(response);
 }
 
 export function redirectToAuthorization(url) {
-  window.location.assign(url)
+  window.location.assign(url);
 }
 
 export async function fetchMonthlySummary({ token, fromMonth, toMonth }) {
-  const params = new URLSearchParams()
-  if (fromMonth) params.set('from_month', fromMonth)
-  if (toMonth) params.set('to_month', toMonth)
+  const params = new URLSearchParams();
+  if (fromMonth) params.set("from_month", fromMonth);
+  if (toMonth) params.set("to_month", toMonth);
 
-  const query = params.toString()
-  const response = await fetch(`${API_BASE_URL}/analytics/monthly-summary${query ? `?${query}` : ''}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  return parseResponse(response)
+  const query = params.toString();
+  const response = await fetch(
+    `${API_BASE_URL}/analytics/monthly-summary${query ? `?${query}` : ""}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  return parseResponse(response);
 }
 
 export async function fetchRecentScrobbles({ token, limit, offset }) {
-  const params = new URLSearchParams()
-  if (limit) params.set('limit', limit)
-  if (offset) params.set('offset', offset)
+  const params = new URLSearchParams();
+  if (limit) params.set("limit", limit);
+  if (offset) params.set("offset", offset);
 
-  const query = params.toString()
-  const response = await fetch(`${API_BASE_URL}/analytics/recent-scrobbles${query ? `?${query}` : ''}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  return parseResponse(response)
+  const query = params.toString();
+  const response = await fetch(
+    `${API_BASE_URL}/analytics/recent-scrobbles${query ? `?${query}` : ""}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  return parseResponse(response);
 }
 
 export async function submitImportScrobbles({ token, source, entries }) {
   if (!token) {
-    const noTokenErr = new Error('You are not signed in. Please sign in with a Development User ID (e.g. 1) before importing.')
-    noTokenErr.status = 401
-    throw noTokenErr
+    const noTokenErr = new Error(
+      "You are not signed in. Please sign in with a Development User ID (e.g. 1) before importing."
+    );
+    noTokenErr.status = 401;
+    throw noTokenErr;
   }
   try {
     const response = await fetch(`${API_BASE_URL}/import/scrobbles`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ source, entries }),
-    })
-    return await parseResponse(response)
+    });
+    return await parseResponse(response);
   } catch (error) {
     if (error instanceof TypeError) {
-      throw new Error(`Network failure (fetch failed): Unable to reach the backend at "${API_BASE_URL || window.location.origin}". Ensure the backend container is running and healthy. Details: ${error.message}`)
+      throw new Error(
+        `Network failure (fetch failed): Unable to reach the backend at "${API_BASE_URL || window.location.origin}". Ensure the backend container is running and healthy. Details: ${error.message}`
+      );
     }
-    throw error
+    throw error;
   }
 }
 
 export async function submitUnifiedImport({ token, entries, source, onProgress }) {
   if (!token) {
-    const noTokenErr = new Error('You are not signed in. Please sign in with a Development User ID (e.g. 1) before importing.')
-    noTokenErr.status = 401
-    throw noTokenErr
+    const noTokenErr = new Error(
+      "You are not signed in. Please sign in with a Development User ID (e.g. 1) before importing."
+    );
+    noTokenErr.status = 401;
+    throw noTokenErr;
   }
   try {
     const response = await fetch(`${API_BASE_URL}/import/unified?stream=true`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ entries, source: source || null }),
-    })
+    });
 
     if (!response.ok) {
-      return await parseResponse(response)
+      return await parseResponse(response);
     }
 
-    if (!response.body || typeof response.body.getReader !== 'function') {
-      return await response.json()
+    if (!response.body || typeof response.body.getReader !== "function") {
+      return await response.json();
     }
 
-    const reader = response.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
-    let finalResult = null
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let finalResult = null;
 
     while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n\n')
-      buffer = lines.pop() || ''
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n\n");
+      buffer = lines.pop() || "";
 
       for (const block of lines) {
-        if (!block.trim()) continue
-        const eventMatch = block.match(/^event:\s*(\w+)/m)
-        const dataMatch = block.match(/^data:\s*(.+)$/m)
+        if (!block.trim()) continue;
+        const eventMatch = block.match(/^event:\s*(\w+)/m);
+        const dataMatch = block.match(/^data:\s*(.+)$/m);
         if (dataMatch) {
           try {
-            const parsedData = JSON.parse(dataMatch[1])
-            if (onProgress && typeof onProgress === 'function') {
-              onProgress(parsedData)
+            const parsedData = JSON.parse(dataMatch[1]);
+            if (onProgress && typeof onProgress === "function") {
+              onProgress(parsedData);
             }
-            if ((eventMatch && eventMatch[1] === 'complete') || parsedData.stage === 'completion') {
-              finalResult = parsedData
+            if ((eventMatch && eventMatch[1] === "complete") || parsedData.stage === "completion") {
+              finalResult = parsedData;
             }
           } catch {
             // Ignore parse errors on partial chunks
@@ -156,71 +170,75 @@ export async function submitUnifiedImport({ token, entries, source, onProgress }
 
     if (!finalResult) {
       finalResult = {
-        status: 'ok',
-        source: source || 'auto',
+        status: "ok",
+        source: source || "auto",
         summary: { inserted: entries.length, skipped: 0, duplicate: 0 },
-      }
+      };
     }
-    return finalResult
+    return finalResult;
   } catch (error) {
     if (error instanceof TypeError) {
-      throw new Error(`Network failure (fetch failed): Unable to reach the backend at "${API_BASE_URL || window.location.origin}". Ensure the backend container is running and healthy. Details: ${error.message}`)
+      throw new Error(
+        `Network failure (fetch failed): Unable to reach the backend at "${API_BASE_URL || window.location.origin}". Ensure the backend container is running and healthy. Details: ${error.message}`
+      );
     }
-    throw error
+    throw error;
   }
 }
 
 export function fetchCachedArtwork({ trackId }) {
-  return fetch(`${API_BASE_URL}/artwork/cache/${encodeURIComponent(trackId)}`).then(parseResponse)
+  return fetch(`${API_BASE_URL}/artwork/cache/${encodeURIComponent(trackId)}`).then(parseResponse);
 }
 
 export async function startArtworkBackfill({ token, onProgress, signal }) {
   if (!token) {
-    const noTokenErr = new Error('You are not signed in. Please sign in with a Development User ID (e.g. 1) before importing.')
-    noTokenErr.status = 401
-    throw noTokenErr
+    const noTokenErr = new Error(
+      "You are not signed in. Please sign in with a Development User ID (e.g. 1) before importing."
+    );
+    noTokenErr.status = 401;
+    throw noTokenErr;
   }
   try {
     const response = await fetch(`${API_BASE_URL}/artwork/backfill`, {
-      method: 'POST',
+      method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
       },
       signal,
-    })
+    });
 
     if (!response.ok) {
-      return await parseResponse(response)
+      return await parseResponse(response);
     }
 
-    if (!response.body || typeof response.body.getReader !== 'function') {
-      return await response.json()
+    if (!response.body || typeof response.body.getReader !== "function") {
+      return await response.json();
     }
 
-    const reader = response.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
-    let finalResult = null
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let finalResult = null;
 
     while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n\n')
-      buffer = lines.pop() || ''
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n\n");
+      buffer = lines.pop() || "";
 
       for (const block of lines) {
-        if (!block.trim()) continue
-        const eventMatch = block.match(/^event:\s*(\w+)/m)
-        const dataMatch = block.match(/^data:\s*(.+)$/m)
+        if (!block.trim()) continue;
+        const eventMatch = block.match(/^event:\s*(\w+)/m);
+        const dataMatch = block.match(/^data:\s*(.+)$/m);
         if (dataMatch) {
           try {
-            const parsedData = JSON.parse(dataMatch[1])
-            if (onProgress && typeof onProgress === 'function') {
-              onProgress(parsedData)
+            const parsedData = JSON.parse(dataMatch[1]);
+            if (onProgress && typeof onProgress === "function") {
+              onProgress(parsedData);
             }
-            if ((eventMatch && eventMatch[1] === 'complete') || parsedData.stage === 'completion') {
-              finalResult = parsedData
+            if ((eventMatch && eventMatch[1] === "complete") || parsedData.stage === "completion") {
+              finalResult = parsedData;
             }
           } catch {
             // Ignore parse errors on partial chunks
@@ -229,104 +247,135 @@ export async function startArtworkBackfill({ token, onProgress, signal }) {
       }
     }
 
-    return finalResult || { status: 'ok', summary: { inserted: 0, skipped: 0, duplicate: 0 } }
+    return finalResult || { status: "ok", summary: { inserted: 0, skipped: 0, duplicate: 0 } };
   } catch (error) {
     if (error instanceof TypeError) {
-      throw new Error(`Network failure (fetch failed): Unable to reach the backend at "${API_BASE_URL || window.location.origin}". Ensure the backend container is running and healthy. Details: ${error.message}`)
+      throw new Error(
+        `Network failure (fetch failed): Unable to reach the backend at "${API_BASE_URL || window.location.origin}". Ensure the backend container is running and healthy. Details: ${error.message}`
+      );
     }
-    throw error
+    throw error;
   }
 }
 
-
 export function deleteImportedScrobbles({ token, source }) {
-  return fetchAnalyticsResource(`/import/scrobbles/${encodeURIComponent(source)}`, { token, method: 'DELETE' })
+  return fetchAnalyticsResource(`/import/scrobbles/${encodeURIComponent(source)}`, {
+    token,
+    method: "DELETE",
+  });
 }
 
 export async function followUser({ token, userId }) {
   const response = await fetch(`${API_BASE_URL}/users/${userId}/follow`, {
-    method: 'POST',
+    method: "POST",
     headers: { Authorization: `Bearer ${token}` },
-  })
-  return parseResponse(response)
+  });
+  return parseResponse(response);
 }
 
 export async function unfollowUser({ token, userId }) {
   const response = await fetch(`${API_BASE_URL}/users/${userId}/follow`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
-  })
-  return parseResponse(response)
+  });
+  return parseResponse(response);
 }
 
 export async function searchUsers({ token, query }) {
-  const params = new URLSearchParams({ q: query })
+  const params = new URLSearchParams({ q: query });
   const response = await fetch(`${API_BASE_URL}/users/search?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
-  })
-  return parseResponse(response)
+  });
+  return parseResponse(response);
 }
 
 export async function fetchUserProfile({ token, userId }) {
   const response = await fetch(`${API_BASE_URL}/users/${userId}/profile`, {
     headers: { Authorization: `Bearer ${token}` },
-  })
-  return parseResponse(response)
+  });
+  return parseResponse(response);
 }
 
 export async function fetchNowPlaying({ token, userId }) {
   const response = await fetch(`${API_BASE_URL}/users/${userId}/now-playing`, {
     headers: { Authorization: `Bearer ${token}` },
-  })
-  return parseResponse(response)
+  });
+  return parseResponse(response);
 }
 
 export async function fetchUserCharts({ token, userId, entity, range, limit }) {
-  const params = new URLSearchParams()
-  if (entity) params.set('entity', entity)
-  if (range) params.set('range', range)
-  if (limit) params.set('limit', limit)
+  const params = new URLSearchParams();
+  if (entity) params.set("entity", entity);
+  if (range) params.set("range", range);
+  if (limit) params.set("limit", limit);
 
-  const query = params.toString()
-  const response = await fetch(`${API_BASE_URL}/analytics/charts/${userId}${query ? `?${query}` : ''}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  return parseResponse(response)
+  const query = params.toString();
+  const response = await fetch(
+    `${API_BASE_URL}/analytics/charts/${userId}${query ? `?${query}` : ""}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  return parseResponse(response);
 }
 
-async function fetchAnalyticsResource(path, { token, method = 'GET', params = {}, body } = {}) {
-  const query = new URLSearchParams()
+async function fetchAnalyticsResource(path, { token, method = "GET", params = {}, body } = {}) {
+  const query = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') query.set(key, value)
-  })
-  const suffix = query.toString() ? `?${query.toString()}` : ''
+    if (value !== undefined && value !== null && value !== "") query.set(key, value);
+  });
+  const suffix = query.toString() ? `?${query.toString()}` : "";
   const response = await fetch(`${API_BASE_URL}${path}${suffix}`, {
     method,
     headers: {
       Authorization: `Bearer ${token}`,
-      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      ...(body ? { "Content-Type": "application/json" } : {}),
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
-  })
-  return parseResponse(response)
+  });
+  return parseResponse(response);
 }
 
 export function fetchStatsSummary({ token }) {
-  return fetchAnalyticsResource('/stats/summary', { token })
+  return fetchAnalyticsResource("/stats/summary", { token });
 }
 
 export function fetchStatsChart({ token, entity, limit, dateRange }) {
-  const params = { limit, ...(dateRange ? toQueryParams(dateRange) : {}) }
-  return fetchAnalyticsResource(`/stats/top-${entity}`, { token, params })
+  const params = { limit, ...(dateRange ? toQueryParams(dateRange) : {}) };
+  return fetchAnalyticsResource(`/stats/top-${entity}`, { token, params });
 }
 
-export function fetchLibraryCollection({ token, entity, limit, offset, dateRange, search, userId }) {
-  const params = { limit, offset, search, user_id: userId, ...(dateRange ? toQueryParams(dateRange) : {}) }
-  return fetchAnalyticsResource(`/library/${entity}`, { token, params })
+export function fetchLibraryCollection({
+  token,
+  entity,
+  limit,
+  offset,
+  dateRange,
+  search,
+  userId,
+}) {
+  const params = {
+    limit,
+    offset,
+    search,
+    user_id: userId,
+    ...(dateRange ? toQueryParams(dateRange) : {}),
+  };
+  return fetchAnalyticsResource(`/library/${entity}`, { token, params });
 }
 
-export function fetchLibraryScrobbles({ token, limit, offset, dateRange, filterEntity, filterName, filterSecondary, search, userId }) {
-  return fetchAnalyticsResource('/library/scrobbles', {
+export function fetchLibraryScrobbles({
+  token,
+  limit,
+  offset,
+  dateRange,
+  filterEntity,
+  filterName,
+  filterSecondary,
+  search,
+  userId,
+}) {
+  return fetchAnalyticsResource("/library/scrobbles", {
     token,
     params: {
       limit,
@@ -338,153 +387,210 @@ export function fetchLibraryScrobbles({ token, limit, offset, dateRange, filterE
       user_id: userId,
       ...(dateRange ? toQueryParams(dateRange) : {}),
     },
-  })
+  });
 }
 
 export function fetchLibraryTimeline({ token, userId }) {
-  return fetchAnalyticsResource('/library/timeline', { token, params: { user_id: userId } })
+  return fetchAnalyticsResource("/library/timeline", { token, params: { user_id: userId } });
 }
 
 export function fetchReportsSummary({ token, dateRange, userId }) {
-  const params = { user_id: userId, ...(dateRange ? toQueryParams(dateRange) : {}) }
-  return fetchAnalyticsResource('/reports/summary', { token, params })
+  const params = { user_id: userId, ...(dateRange ? toQueryParams(dateRange) : {}) };
+  return fetchAnalyticsResource("/reports/summary", { token, params });
 }
 
 export function fetchReportsCharts({ token, dateRange, userId }) {
-  const params = { user_id: userId, ...(dateRange ? toQueryParams(dateRange) : {}) }
-  return fetchAnalyticsResource('/reports/charts', { token, params })
+  const params = { user_id: userId, ...(dateRange ? toQueryParams(dateRange) : {}) };
+  return fetchAnalyticsResource("/reports/charts", { token, params });
 }
 
 export function fetchReportsEntity({ token, entity, dateRange, userId }) {
-  const params = { user_id: userId, ...(dateRange ? toQueryParams(dateRange) : {}) }
-  return fetchAnalyticsResource(`/reports/${entity}`, { token, params })
+  const params = { user_id: userId, ...(dateRange ? toQueryParams(dateRange) : {}) };
+  return fetchAnalyticsResource(`/reports/${entity}`, { token, params });
 }
 
 export function fetchFriendsComparison({ token, dateRange }) {
-  const params = dateRange ? toQueryParams(dateRange) : {}
-  return fetchAnalyticsResource('/reports/friends-comparison', { token, params })
+  const params = dateRange ? toQueryParams(dateRange) : {};
+  return fetchAnalyticsResource("/reports/friends-comparison", { token, params });
 }
 
 export function fetchUserSettings({ token }) {
-  return fetchAnalyticsResource('/users/me/settings', { token })
+  return fetchAnalyticsResource("/users/me/settings", { token });
 }
 
 export function updateUserSettings({ token, changes }) {
-  return fetchAnalyticsResource('/users/me/settings', { token, method: 'PATCH', body: changes })
+  return fetchAnalyticsResource("/users/me/settings", { token, method: "PATCH", body: changes });
 }
 
 /** Looks the city up on the map and stores it as your home for gig distances. */
 export function setHomeCity({ token, city }) {
-  return fetchAnalyticsResource('/users/me/settings/home-city', { token, method: 'PUT', body: { city } })
+  return fetchAnalyticsResource("/users/me/settings/home-city", {
+    token,
+    method: "PUT",
+    body: { city },
+  });
 }
 
 export function clearHomeCity({ token }) {
-  return fetchAnalyticsResource('/users/me/settings/home-city', { token, method: 'DELETE' })
+  return fetchAnalyticsResource("/users/me/settings/home-city", { token, method: "DELETE" });
 }
 
 export function fetchScrobbleSettings({ token }) {
-  return fetchAnalyticsResource('/users/me/settings/scrobble', { token })
+  return fetchAnalyticsResource("/users/me/settings/scrobble", { token });
 }
 
 export function updateScrobbleSettings({ token, changes }) {
-  return fetchAnalyticsResource('/users/me/settings/scrobble', { token, method: 'PATCH', body: changes })
+  return fetchAnalyticsResource("/users/me/settings/scrobble", {
+    token,
+    method: "PATCH",
+    body: changes,
+  });
 }
 
 export function enableLikedTracksSync({ token }) {
-  return fetchAnalyticsResource('/spotify/sync-liked', { token, method: 'POST' })
+  return fetchAnalyticsResource("/spotify/sync-liked", { token, method: "POST" });
+}
+
+export function likeTrack({ token, trackId, payload = {} }) {
+  return fetchAnalyticsResource(`/spotify/like-track/${encodeURIComponent(trackId)}`, {
+    token,
+    method: "PUT",
+    body: payload,
+  });
+}
+
+export function unlikeTrack({ token, trackId }) {
+  return fetchAnalyticsResource(`/spotify/like-track/${encodeURIComponent(trackId)}`, {
+    token,
+    method: "DELETE",
+  });
+}
+
+export function likeAlbum({ token, albumId, payload = {} }) {
+  return fetchAnalyticsResource(`/spotify/like-album/${encodeURIComponent(albumId)}`, {
+    token,
+    method: "PUT",
+    body: payload,
+  });
+}
+
+export function unlikeAlbum({ token, albumId }) {
+  return fetchAnalyticsResource(`/spotify/like-album/${encodeURIComponent(albumId)}`, {
+    token,
+    method: "DELETE",
+  });
 }
 
 export function fetchFollowing({ token }) {
-  return fetchAnalyticsResource('/users/me/following', { token })
+  return fetchAnalyticsResource("/users/me/following", { token });
 }
 
 export function fetchLeaderboard({ token, dateRange }) {
-  const params = dateRange ? toQueryParams(dateRange) : {}
-  return fetchAnalyticsResource('/users/me/leaderboard', { token, params })
+  const params = dateRange ? toQueryParams(dateRange) : {};
+  return fetchAnalyticsResource("/users/me/leaderboard", { token, params });
 }
 
 export function fetchBlocks({ token }) {
-  return fetchAnalyticsResource('/users/me/blocks', { token })
+  return fetchAnalyticsResource("/users/me/blocks", { token });
 }
 
 export function createBlock({ token, entityType, name }) {
-  return fetchAnalyticsResource('/users/me/blocks', { token, method: 'POST', body: { entity_type: entityType, name } })
+  return fetchAnalyticsResource("/users/me/blocks", {
+    token,
+    method: "POST",
+    body: { entity_type: entityType, name },
+  });
 }
 
 export async function removeBlock({ token, blockId }) {
   const response = await fetch(`${API_BASE_URL}/users/me/blocks/${blockId}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
-  })
-  if (!response.ok) throw new Error(`Request failed (${response.status})`)
+  });
+  if (!response.ok) throw new Error(`Request failed (${response.status})`);
 }
 
 export function deleteLibraryEntries({ token, entityType, name, secondary }) {
-  return fetchAnalyticsResource('/library/delete-entries', { token, method: 'POST', body: { entity_type: entityType, name, secondary } })
+  return fetchAnalyticsResource("/library/delete-entries", {
+    token,
+    method: "POST",
+    body: { entity_type: entityType, name, secondary },
+  });
 }
 
 export function clearLibraryArtwork({ token, entityType, name, secondary }) {
-  return fetchAnalyticsResource('/library/clear-artwork', { token, method: 'POST', body: { entity_type: entityType, name, secondary } })
+  return fetchAnalyticsResource("/library/clear-artwork", {
+    token,
+    method: "POST",
+    body: { entity_type: entityType, name, secondary },
+  });
 }
 
 export function deleteLibraryScrobbles({ token, ids }) {
-  return fetchAnalyticsResource('/library/delete-scrobbles', { token, method: 'POST', body: { ids } })
+  return fetchAnalyticsResource("/library/delete-scrobbles", {
+    token,
+    method: "POST",
+    body: { ids },
+  });
 }
 export function fetchImportBatches({ token }) {
-  return fetchAnalyticsResource('/import/batches', { token })
+  return fetchAnalyticsResource("/import/batches", { token });
 }
 
 export function advancedDeleteImports({ token, source, startDate, endDate, batchTime }) {
-  return fetchAnalyticsResource('/import/advanced-delete', {
+  return fetchAnalyticsResource("/import/advanced-delete", {
     token,
-    method: 'POST',
+    method: "POST",
     body: {
       source: source || null,
       start_date: startDate || null,
       end_date: endDate || null,
       batch_time: batchTime || null,
-    }
-  })
+    },
+  });
 }
 
-export async function downloadScrobblesExport({ token, format = 'csv' }) {
-  const response = await fetch(`${API_BASE_URL}/import/export?format=${encodeURIComponent(format)}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
+export async function downloadScrobblesExport({ token, format = "csv" }) {
+  const response = await fetch(
+    `${API_BASE_URL}/import/export?format=${encodeURIComponent(format)}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
   if (!response.ok) {
-    throw new Error(`Export failed with HTTP ${response.status}`)
+    throw new Error(`Export failed with HTTP ${response.status}`);
   }
-  const blob = await response.blob()
-  const contentDisposition = response.headers.get('content-disposition') || ''
-  let filename = `audio-scrobbler-history.${format}`
-  const match = contentDisposition.match(/filename="?([^";]+)"?/)
+  const blob = await response.blob();
+  const contentDisposition = response.headers.get("content-disposition") || "";
+  let filename = `audio-scrobbler-history.${format}`;
+  const match = contentDisposition.match(/filename="?([^";]+)"?/);
   if (match && match[1]) {
-    filename = match[1]
+    filename = match[1];
   }
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  window.URL.revokeObjectURL(url)
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
 }
 
 export function copyScrobbles({ token, userId, startDate, endDate }) {
   return fetchAnalyticsResource(`/users/${userId}/copy-scrobbles`, {
     token,
-    method: 'POST',
+    method: "POST",
     body: {
       start_date: startDate,
       end_date: endDate,
-    }
-  })
+    },
+  });
 }
 
 export async function fetchNotifications({ token }) {
   const res = await fetch(`${API_BASE_URL}/notifications`, {
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Failed to fetch notifications");
   return res.json();
@@ -492,7 +598,7 @@ export async function fetchNotifications({ token }) {
 
 export async function fetchUnreadNotificationCount({ token }) {
   const res = await fetch(`${API_BASE_URL}/notifications/unread_count`, {
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Failed to fetch unread count");
   return res.json();
@@ -501,7 +607,7 @@ export async function fetchUnreadNotificationCount({ token }) {
 export async function markNotificationsRead({ token }) {
   const res = await fetch(`${API_BASE_URL}/notifications/mark_read`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Failed to mark notifications read");
   return res.json();
@@ -512,13 +618,13 @@ export async function subscribeToPushNotifications({ token, subscription }) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
       endpoint: subscription.endpoint,
       p256dh: subscription.keys ? subscription.keys.p256dh : "",
-      auth: subscription.keys ? subscription.keys.auth : ""
-    })
+      auth: subscription.keys ? subscription.keys.auth : "",
+    }),
   });
   if (!res.ok) throw new Error("Failed to subscribe to push notifications");
   return res.json();
@@ -533,52 +639,52 @@ export async function fetchVapidPublicKey() {
 export async function sendTestNotification({ token }) {
   const res = await fetch(`${API_BASE_URL}/notifications/push/test`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Failed to send test notification");
   return res.json();
 }
 
-export async function fetchRediscoverTracks({ token, mode = 'forgotten', limit = 15 }) {
-  const params = new URLSearchParams()
-  if (mode) params.set('mode', mode)
-  if (limit) params.set('limit', String(limit))
+export async function fetchRediscoverTracks({ token, mode = "forgotten", limit = 15 }) {
+  const params = new URLSearchParams();
+  if (mode) params.set("mode", mode);
+  if (limit) params.set("limit", String(limit));
   const response = await fetch(`${API_BASE_URL}/analytics/rediscover?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
-  })
-  return parseResponse(response)
+  });
+  return parseResponse(response);
 }
 
-export async function createRediscoverPlaylist({ token, mode = 'forgotten', title, trackIds }) {
-  const body = { mode }
-  if (title) body.title = title
-  if (trackIds && trackIds.length > 0) body.track_ids = trackIds
+export async function createRediscoverPlaylist({ token, mode = "forgotten", title, trackIds }) {
+  const body = { mode };
+  if (title) body.title = title;
+  if (trackIds && trackIds.length > 0) body.track_ids = trackIds;
   const response = await fetch(`${API_BASE_URL}/analytics/rediscover/playlist`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(body),
-  })
-  return parseResponse(response)
+  });
+  return parseResponse(response);
 }
 
 export async function fetchJukeboxAlbums({ token }) {
   const response = await fetch(`${API_BASE_URL}/jukebox/albums`, {
     headers: { Authorization: `Bearer ${token}` },
-  })
-  return parseResponse(response)
+  });
+  return parseResponse(response);
 }
 
 export async function recordJukeboxPick({ token, albumId, mode }) {
   const response = await fetch(`${API_BASE_URL}/jukebox/record-pick`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ album_id: albumId, mode }),
-  })
-  return parseResponse(response)
+  });
+  return parseResponse(response);
 }
