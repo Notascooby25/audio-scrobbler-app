@@ -476,19 +476,28 @@ export default function SettingsPage() {
                 <option value="absolute">Always show date and time</option>
               </select>
             </label>
+            {status === "saving" && <p role="status">Saving...</p>}
+            {status === "saved" && <p role="status">Saved</p>}
+          </div>
+
+          <section className="settings-form" aria-labelledby="jukebox-settings-heading">
+            <h2 id="jukebox-settings-heading">Album Jukebox</h2>
+            <p>
+              Choose where the Album Jukebox draws its catalog from when spinning for whole-album listening sessions.
+            </p>
             <label>
-              Jukebox album source
+              Album catalog source
               <select
                 value={settings.jukebox_source || "spotify_saved"}
                 onChange={(event) => changeSetting("jukebox_source", event.target.value)}
               >
-                <option value="spotify_saved">Spotify Saved / Favourited Albums</option>
+                <option value="spotify_saved">Spotify Saved / Favourited Albums (Default)</option>
                 <option value="library_archive">Library Archive (Top 100 Scrobbled)</option>
               </select>
             </label>
             {status === "saving" && <p role="status">Saving...</p>}
             {status === "saved" && <p role="status">Saved</p>}
-          </div>
+          </section>
 
           <HomeCitySection
             token={session?.accessToken}
