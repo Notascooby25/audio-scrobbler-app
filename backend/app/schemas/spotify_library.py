@@ -93,6 +93,7 @@ class LikeTrackPayload(BaseModel):
 class LikeTrackResponse(BaseModel):
     success: bool = True
     is_liked: bool = True
+    spotify_track_id: str | None = None
 
 
 class LikeAlbumPayload(BaseModel):

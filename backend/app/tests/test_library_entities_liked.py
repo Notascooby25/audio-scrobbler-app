@@ -163,3 +163,49 @@ def test_scrobble_list_transfers_spotify_track_id_to_older_youtube_scrobble():
         assert recent_by_source[("Pure YouTube Track", "youtube")].spotify_track_id is None
     finally:
         db.close()
+
+
+def test_youtube_only_track_resolves_spotify_track_id_and_is_liked_from_liked_tracks():
+    db = TestingSession()
+    try:
+        _make_event(
+            db,
+            user_id=5,
+            track_id="yt-uuid-only-123",
+            track_name="Hypersonic Missiles",
+            artist_name="Sam Fender",
+            source="youtube",
+            played_at=datetime(2025, 6, 15, 12, 0, 0),
+        )
+        db.add(
+            LikedTrack(
+                user_id=5,
+                spotify_track_id="6rqhFgbbKwnb9MLmUQDhG6",
+                track_name="  hypersonic missiles ",
+                artist_name="SAM FENDER",
+                added_at=datetime(2025, 6, 15, 0, 0, 0),
+            )
+        )
+        db.commit()
+
+        lib_res = get_library_entities(db, user_id=5, entity="tracks", limit=10, offset=0)
+        assert len(lib_res.entries) == 1
+        assert lib_res.entries[0].spotify_track_id == "6rqhFgbbKwnb9MLmUQDhG6"
+        assert lib_res.entries[0].is_liked is True
+
+        chart_res = get_user_charts(db, user_id=5, entity="tracks", range_key="overall", limit=10)
+        assert len(chart_res.entries) == 1
+        assert chart_res.entries[0].spotify_track_id == "6rqhFgbbKwnb9MLmUQDhG6"
+        assert chart_res.entries[0].is_liked is True
+
+        scrobble_res = get_library_scrobbles(db, user_id=5, limit=10, offset=0)
+        assert len(scrobble_res.scrobbles) == 1
+        assert scrobble_res.scrobbles[0].spotify_track_id == "6rqhFgbbKwnb9MLmUQDhG6"
+        assert scrobble_res.scrobbles[0].is_liked is True
+
+        recent_res = get_recent_scrobbles(db, user_id=5, limit=10, offset=0)
+        assert len(recent_res.scrobbles) == 1
+        assert recent_res.scrobbles[0].spotify_track_id == "6rqhFgbbKwnb9MLmUQDhG6"
+        assert recent_res.scrobbles[0].is_liked is True
+    finally:
+        db.close()

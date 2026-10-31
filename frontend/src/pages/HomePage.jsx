@@ -206,10 +206,16 @@ export default function HomePage() {
   const handleToggleLike = async (scrobble) => {
     if (!token) return;
 
-    const isSpotify = Boolean(
-      scrobble.spotify_track_id || String(scrobble.source || "").startsWith("spotify")
-    );
-    if (!isSpotify || !scrobble.spotify_track_id) {
+    const wasLiked = Boolean(scrobble.is_liked);
+    if (wasLiked && !scrobble.spotify_track_id) {
+      setActionNotice("Only able to like tracks played through Spotify");
+      return;
+    }
+    if (
+      !wasLiked &&
+      !scrobble.spotify_track_id &&
+      (!scrobble.track_name || !scrobble.artist_name)
+    ) {
       setActionNotice("Only able to like tracks played through Spotify");
       return;
     }
@@ -217,13 +223,13 @@ export default function HomePage() {
     const itemKey = scrobble.id;
     setLikingScrobbleIds((prev) => new Set(prev).add(itemKey));
 
-    const wasLiked = Boolean(scrobble.is_liked);
     const nextLiked = !wasLiked;
 
     setScrobbles((prev) =>
       (prev || []).map((s) =>
         s.id === scrobble.id ||
-        (scrobble.spotify_track_id && s.spotify_track_id === scrobble.spotify_track_id)
+        (scrobble.spotify_track_id && s.spotify_track_id === scrobble.spotify_track_id) ||
+        (s.track_name === scrobble.track_name && s.artist_name === scrobble.artist_name)
           ? { ...s, is_liked: nextLiked }
           : s
       )
@@ -233,9 +239,9 @@ export default function HomePage() {
       if (wasLiked) {
         await unlikeTrack({ token, trackId: scrobble.spotify_track_id });
       } else {
-        await likeTrack({
+        const res = await likeTrack({
           token,
-          trackId: scrobble.spotify_track_id,
+          trackId: scrobble.spotify_track_id || "__resolve__",
           payload: {
             track_name: scrobble.track_name,
             artist_name: scrobble.artist_name || undefined,
@@ -243,12 +249,23 @@ export default function HomePage() {
             artwork_url: scrobble.artwork_url || undefined,
           },
         });
+        if (res?.spotify_track_id) {
+          setScrobbles((prev) =>
+            (prev || []).map((s) =>
+              s.id === scrobble.id ||
+              (s.track_name === scrobble.track_name && s.artist_name === scrobble.artist_name)
+                ? { ...s, spotify_track_id: res.spotify_track_id }
+                : s
+            )
+          );
+        }
       }
     } catch (err) {
       setScrobbles((prev) =>
         (prev || []).map((s) =>
           s.id === scrobble.id ||
-          (scrobble.spotify_track_id && s.spotify_track_id === scrobble.spotify_track_id)
+          (scrobble.spotify_track_id && s.spotify_track_id === scrobble.spotify_track_id) ||
+          (s.track_name === scrobble.track_name && s.artist_name === scrobble.artist_name)
             ? { ...s, is_liked: wasLiked }
             : s
         )

@@ -72,7 +72,7 @@ def _resolve_spotify_track_ids_by_name(
     if not rows or not hasattr(db, "query"):
         return {}
     missing_names = {
-        row.track_name.lower()
+        row.track_name.strip().lower()
         for row in rows
         if not getattr(row, "spotify_track_id", None) and getattr(row, "track_name", None)
     }
@@ -88,16 +88,34 @@ def _resolve_spotify_track_ids_by_name(
             ListeningEvent.user_id == user_id,
             ListeningEvent.source.in_(["spotify", "spotify_realtime"]),
             ListeningEvent.track_id.isnot(None),
-            func.lower(ListeningEvent.track_name).in_(missing_names),
+            func.lower(func.trim(ListeningEvent.track_name)).in_(missing_names),
         )
         .order_by(ListeningEvent.played_at.desc())
         .all()
     )
     resolved: dict[tuple[str, str], str] = {}
     for s_row in spotify_rows:
-        key = ((s_row.track_name or "").lower(), (s_row.artist_name or "").lower())
+        key = ((s_row.track_name or "").strip().lower(), (s_row.artist_name or "").strip().lower())
         if key not in resolved and s_row.track_id:
             resolved[key] = s_row.track_id
+
+    liked_rows = (
+        db.query(
+            LikedTrack.track_name,
+            LikedTrack.artist_name,
+            LikedTrack.spotify_track_id,
+        )
+        .filter(
+            LikedTrack.user_id == user_id,
+            LikedTrack.spotify_track_id.isnot(None),
+            func.lower(func.trim(LikedTrack.track_name)).in_(missing_names),
+        )
+        .all()
+    )
+    for l_row in liked_rows:
+        key = ((l_row.track_name or "").strip().lower(), (l_row.artist_name or "").strip().lower())
+        if key not in resolved and l_row.spotify_track_id:
+            resolved[key] = l_row.spotify_track_id
     return resolved
 
 
@@ -107,7 +125,7 @@ def _effective_spotify_track_id(row, resolved_by_name: dict[tuple[str, str], str
         return direct
     t_name = getattr(row, "track_name", None) or ""
     a_name = getattr(row, "artist_name", None) or ""
-    return resolved_by_name.get((t_name.lower(), a_name.lower()))
+    return resolved_by_name.get((t_name.strip().lower(), a_name.strip().lower()))
 
 
 def _saved_albums_by_key(db: Session, user_id: int, candidate_names: set[str]) -> dict[tuple[str, str], str]:

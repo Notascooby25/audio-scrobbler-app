@@ -212,14 +212,16 @@ export default function LibraryPage() {
 
     const isAlbum = itemKind === "albums";
     const isTrack = itemKind === "tracks" || itemKind === "scrobbles" || itemKind === "scrobble";
+    const wasLiked = Boolean(item.is_liked);
+    const trackName = item.track_name || item.label;
+    const artistName = item.artist_name || item.secondary;
 
     if (isTrack) {
-      const isSpotify = Boolean(
-        item.spotify_track_id ||
-        (item.sources && item.sources.some((s) => String(s).startsWith("spotify"))) ||
-        String(item.source || "").startsWith("spotify")
-      );
-      if (!isSpotify || !item.spotify_track_id) {
+      if (wasLiked && !item.spotify_track_id) {
+        setActionNotice("Only able to like tracks played through Spotify");
+        return;
+      }
+      if (!wasLiked && !item.spotify_track_id && (!trackName || !artistName)) {
         setActionNotice("Only able to like tracks played through Spotify");
         return;
       }
@@ -242,7 +244,6 @@ export default function LibraryPage() {
 
     setLikingKeys((prev) => new Set(prev).add(itemKey));
 
-    const wasLiked = Boolean(item.is_liked);
     const nextLiked = !wasLiked;
 
     setData((prev) => {
@@ -252,7 +253,8 @@ export default function LibraryPage() {
           ...prev,
           scrobbles: (prev.scrobbles || []).map((s) =>
             s.id === item.id ||
-            (item.spotify_track_id && s.spotify_track_id === item.spotify_track_id)
+            (item.spotify_track_id && s.spotify_track_id === item.spotify_track_id) ||
+            (s.track_name === item.track_name && s.artist_name === item.artist_name)
               ? { ...s, is_liked: nextLiked }
               : s
           ),
@@ -298,20 +300,44 @@ export default function LibraryPage() {
           }
         }
       } else {
-        const trackId = item.spotify_track_id;
+        const trackId = item.spotify_track_id || "__resolve__";
         if (wasLiked) {
-          await unlikeTrack({ token: session.accessToken, trackId });
+          await unlikeTrack({ token: session.accessToken, trackId: item.spotify_track_id });
         } else {
-          await likeTrack({
+          const res = await likeTrack({
             token: session.accessToken,
             trackId,
             payload: {
-              track_name: item.track_name || item.label,
-              artist_name: item.artist_name || item.secondary || undefined,
+              track_name: trackName,
+              artist_name: artistName || undefined,
               album_name: item.album_name || undefined,
               artwork_url: item.artwork_url || undefined,
             },
           });
+          if (res?.spotify_track_id) {
+            setData((prev) => {
+              if (!prev) return prev;
+              if (itemKind === "scrobble" || itemKind === "scrobbles") {
+                return {
+                  ...prev,
+                  scrobbles: (prev.scrobbles || []).map((s) =>
+                    s.id === item.id ||
+                    (s.track_name === item.track_name && s.artist_name === item.artist_name)
+                      ? { ...s, spotify_track_id: res.spotify_track_id }
+                      : s
+                  ),
+                };
+              }
+              return {
+                ...prev,
+                entries: (prev.entries || []).map((e) =>
+                  e.label === item.label && e.secondary === item.secondary
+                    ? { ...e, spotify_track_id: res.spotify_track_id }
+                    : e
+                ),
+              };
+            });
+          }
         }
       }
     } catch (err) {
@@ -322,7 +348,8 @@ export default function LibraryPage() {
             ...prev,
             scrobbles: (prev.scrobbles || []).map((s) =>
               s.id === item.id ||
-              (item.spotify_track_id && s.spotify_track_id === item.spotify_track_id)
+              (item.spotify_track_id && s.spotify_track_id === item.spotify_track_id) ||
+              (s.track_name === item.track_name && s.artist_name === item.artist_name)
                 ? { ...s, is_liked: wasLiked }
                 : s
             ),

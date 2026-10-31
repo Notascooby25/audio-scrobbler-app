@@ -49,8 +49,8 @@ def like_track_route(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> LikeTrackResponse:
-    is_liked = toggle_like_track(db, current_user, track_id, payload, like=True)
-    return LikeTrackResponse(success=True, is_liked=is_liked)
+    is_liked, spotify_track_id = toggle_like_track(db, current_user, track_id, payload, like=True)
+    return LikeTrackResponse(success=True, is_liked=is_liked, spotify_track_id=spotify_track_id)
 
 
 @router.delete("/like-track/{track_id}", response_model=LikeTrackResponse)
@@ -59,8 +59,8 @@ def unlike_track_route(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> LikeTrackResponse:
-    is_liked = toggle_like_track(db, current_user, track_id, like=False)
-    return LikeTrackResponse(success=True, is_liked=is_liked)
+    is_liked, spotify_track_id = toggle_like_track(db, current_user, track_id, like=False)
+    return LikeTrackResponse(success=True, is_liked=is_liked, spotify_track_id=spotify_track_id)
 
 
 @router.put("/like-album/{album_id_or_name}", response_model=LikeAlbumResponse)

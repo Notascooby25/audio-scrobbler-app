@@ -360,3 +360,101 @@ def test_like_track_rejects_invalid_track_id_characters(mock_user):
     assert res.status_code == 400
 
     app.dependency_overrides.clear()
+
+
+def test_like_track_resolve_exact_match_on_spotify(mock_user):
+    fake_db = FakeDB(user=mock_user)
+    app.dependency_overrides[get_current_user] = lambda: mock_user
+    app.dependency_overrides[get_db] = lambda: fake_db
+
+    mock_search = MagicMock()
+    mock_search.ok = True
+    mock_search.json.return_value = {
+        "tracks": {
+            "items": [
+                {
+                    "id": "1111111111111111111111",
+                    "name": "Hypersonic Missiles - Live at Brixton",
+                    "artists": [{"name": "Sam Fender"}],
+                    "album": {"name": "Live Album", "images": [{"url": "http://live.jpg"}]},
+                },
+                {
+                    "id": "6rqhFgbbKwnb9MLmUQDhG6",
+                    "name": "Hypersonic Missiles",
+                    "artists": [{"name": "Sam Fender"}],
+                    "album": {"name": "Hypersonic Missiles", "images": [{"url": "http://exact.jpg"}]},
+                },
+            ]
+        }
+    }
+
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.status_code = 200
+
+    with (
+        patch("backend.app.services.spotify_library_service._refresh_access_token", return_value="access-token"),
+        patch("requests.get", return_value=mock_search) as mock_get,
+        patch("requests.request", return_value=mock_resp) as mock_req,
+    ):
+        res = client.put(
+            "/spotify/like-track/__resolve__",
+            json={"track_name": "  hypersonic missiles ", "artist_name": "SAM FENDER"},
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert data["success"] is True
+        assert data["is_liked"] is True
+        assert data["spotify_track_id"] == "6rqhFgbbKwnb9MLmUQDhG6"
+        assert mock_get.called
+        assert len(fake_db.liked_tracks) == 1
+        assert fake_db.liked_tracks[0].spotify_track_id == "6rqhFgbbKwnb9MLmUQDhG6"
+        assert fake_db.liked_tracks[0].album_name == "Hypersonic Missiles"
+        assert fake_db.liked_tracks[0].artwork_url == "http://exact.jpg"
+        assert (
+            mock_req.call_args[0][1]
+            == "https://api.spotify.com/v1/me/library?uris=spotify:track:6rqhFgbbKwnb9MLmUQDhG6"
+        )
+
+    app.dependency_overrides.clear()
+
+
+def test_like_track_resolve_rejects_non_exact_match(mock_user):
+    fake_db = FakeDB(user=mock_user)
+    app.dependency_overrides[get_current_user] = lambda: mock_user
+    app.dependency_overrides[get_db] = lambda: fake_db
+
+    mock_search = MagicMock()
+    mock_search.ok = True
+    mock_search.json.return_value = {
+        "tracks": {
+            "items": [
+                {
+                    "id": "1111111111111111111111",
+                    "name": "Hypersonic Missiles (Acoustic)",
+                    "artists": [{"name": "Sam Fender"}],
+                    "album": {"name": "Acoustic EP", "images": []},
+                },
+                {
+                    "id": "2222222222222222222222",
+                    "name": "Hypersonic Missiles",
+                    "artists": [{"name": "Tribute Band"}],
+                    "album": {"name": "Covers", "images": []},
+                },
+            ]
+        }
+    }
+
+    with (
+        patch("backend.app.services.spotify_library_service._refresh_access_token", return_value="access-token"),
+        patch("requests.get", return_value=mock_search),
+    ):
+        res = client.put(
+            "/spotify/like-track/__resolve__",
+            json={"track_name": "Hypersonic Missiles", "artist_name": "Sam Fender"},
+        )
+        assert res.status_code == 404
+        assert "100% exact" in res.json()["detail"]
+        assert len(fake_db.liked_tracks) == 0
+
+    app.dependency_overrides.clear()

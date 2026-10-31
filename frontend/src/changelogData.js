@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.30.4",
+    date: "2026-10-31",
+    changes: [
+      "Strict 100% Spotify Liked Songs Linking: Tracks that only have YouTube Music scrobbles in your history now automatically link to their Spotify Track ID and show as liked whenever a 100% exact track and artist name match exists in your synced Spotify Liked Songs.",
+      "On-Demand Exact Spotify Track Liking: Tapping the heart on a YouTube-only track now searches Spotify for a strict 100% exact track and artist match and likes it on Spotify while keeping your YouTube play history and source badges intact.",
+    ],
+  },
+  {
     version: "0.30.3",
     date: "2026-10-31",
     changes: [

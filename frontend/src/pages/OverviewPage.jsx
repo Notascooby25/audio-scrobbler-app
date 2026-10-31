@@ -34,14 +34,14 @@ export default function OverviewPage() {
 
     const isAlbum = kind === "albums";
     const isTrack = kind === "tracks";
+    const wasLiked = Boolean(item.is_liked);
 
     if (isTrack) {
-      const isSpotify = Boolean(
-        item.spotify_track_id ||
-        (item.sources && item.sources.some((s) => String(s).startsWith("spotify"))) ||
-        String(item.source || "").startsWith("spotify")
-      );
-      if (!isSpotify || !item.spotify_track_id) {
+      if (wasLiked && !item.spotify_track_id) {
+        setActionNotice("Only able to like tracks played through Spotify");
+        return;
+      }
+      if (!wasLiked && !item.spotify_track_id && (!item.label || !item.secondary)) {
         setActionNotice("Only able to like tracks played through Spotify");
         return;
       }
@@ -60,7 +60,6 @@ export default function OverviewPage() {
     const itemKey = `${kind}:${item.label}:${item.secondary || ""}`;
     setLikingKeys((prev) => new Set(prev).add(itemKey));
 
-    const wasLiked = Boolean(item.is_liked);
     const nextLiked = !wasLiked;
 
     setCharts((prev) => {
@@ -105,11 +104,11 @@ export default function OverviewPage() {
           }
         }
       } else {
-        const trackId = item.spotify_track_id;
+        const trackId = item.spotify_track_id || "__resolve__";
         if (wasLiked) {
-          await unlikeTrack({ token: session.accessToken, trackId });
+          await unlikeTrack({ token: session.accessToken, trackId: item.spotify_track_id });
         } else {
-          await likeTrack({
+          const res = await likeTrack({
             token: session.accessToken,
             trackId,
             payload: {
@@ -118,6 +117,19 @@ export default function OverviewPage() {
               artwork_url: item.artwork_url || undefined,
             },
           });
+          if (res?.spotify_track_id) {
+            setCharts((prev) => {
+              if (!prev || !prev[kind]) return prev;
+              return {
+                ...prev,
+                [kind]: prev[kind].map((e) =>
+                  e.label === item.label && e.secondary === item.secondary
+                    ? { ...e, spotify_track_id: res.spotify_track_id }
+                    : e
+                ),
+              };
+            });
+          }
         }
       }
     } catch (err) {

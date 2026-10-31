@@ -8,6 +8,7 @@ from typing import Any
 
 from fastapi import HTTPException
 import requests
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..config import settings
@@ -260,14 +261,87 @@ def _call_user_spotify(db: Session, user: User, method: str, url: str, **kwargs:
     return resp
 
 
+def _resolve_exact_spotify_track(
+    db: Session,
+    user: User,
+    payload: LikeTrackPayload | None,
+) -> tuple[str, str | None, str | None]:
+    raw_track = (payload.track_name if payload else None) or ""
+    raw_artist = (payload.artist_name if payload else None) or ""
+    norm_track = raw_track.strip().lower()
+    norm_artist = raw_artist.strip().lower()
+    if not norm_track or not norm_artist or norm_artist == "unknown artist":
+        raise HTTPException(
+            status_code=404,
+            detail="No 100% exact track and artist match found on Spotify",
+        )
+
+    for record in (
+        db.query(LikedTrack)
+        .filter(
+            LikedTrack.user_id == user.id,
+            func.lower(func.trim(LikedTrack.track_name)) == norm_track,
+        )
+        .all()
+    ):
+        if (
+            (record.track_name or "").strip().lower() == norm_track
+            and (record.artist_name or "").strip().lower() == norm_artist
+            and record.spotify_track_id
+        ):
+            return record.spotify_track_id, record.album_name, record.artwork_url
+
+    token = _refresh_access_token(db, user)
+    queries = [
+        f'track:"{raw_track.strip()}" artist:"{raw_artist.strip()}"',
+        f"{raw_track.strip()} {raw_artist.strip()}",
+    ]
+    for q in queries:
+        search_resp = requests.get(
+            "https://api.spotify.com/v1/search",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"type": "track", "limit": 10, "q": q},
+            timeout=10,
+        )
+        if not search_resp.ok:
+            continue
+        items = search_resp.json().get("tracks", {}).get("items", [])
+        for item in items:
+            if not isinstance(item, dict) or not item.get("id"):
+                continue
+            item_title = (item.get("name") or "").strip().lower()
+            if item_title != norm_track:
+                continue
+            artists = item.get("artists") or []
+            artist_names = [
+                (a.get("name") or "").strip().lower() for a in artists if isinstance(a, dict) and a.get("name")
+            ]
+            joined_artists = ", ".join(artist_names)
+            primary_artist = artist_names[0] if artist_names else ""
+            if norm_artist == primary_artist or norm_artist == joined_artists:
+                album_obj = item.get("album") if isinstance(item.get("album"), dict) else {}
+                album_name = album_obj.get("name") if isinstance(album_obj, dict) else None
+                artwork_url = _artwork_url(item)
+                return str(item["id"]), album_name, artwork_url
+
+    raise HTTPException(
+        status_code=404,
+        detail="No 100% exact track and artist match found on Spotify",
+    )
+
+
 def toggle_like_track(
     db: Session,
     user: User,
     track_id: str,
     payload: LikeTrackPayload | None = None,
     like: bool = True,
-) -> bool:
+) -> tuple[bool, str]:
     clean_id = track_id.removeprefix("spotify:track:").strip()
+    resolved_album: str | None = None
+    resolved_artwork: str | None = None
+    if clean_id == "__resolve__":
+        clean_id, resolved_album, resolved_artwork = _resolve_exact_spotify_track(db, user, payload)
     if not re.fullmatch(r"[A-Za-z0-9_-]{5,40}", clean_id):
         raise HTTPException(status_code=400, detail="Invalid Spotify track ID")
     url = f"https://api.spotify.com/v1/me/library?uris=spotify:track:{clean_id}"
@@ -282,10 +356,10 @@ def toggle_like_track(
             db.query(LikedTrack).filter(LikedTrack.user_id == user.id, LikedTrack.spotify_track_id == clean_id).first()
         )
         if not record:
-            track_name = (payload.track_name if payload else None) or "Unknown Track"
-            artist_name = (payload.artist_name if payload else None) or "Unknown Artist"
-            album_name = payload.album_name if payload else None
-            artwork_url = payload.artwork_url if payload else None
+            track_name = ((payload.track_name if payload else None) or "Unknown Track").strip()
+            artist_name = ((payload.artist_name if payload else None) or "Unknown Artist").strip()
+            album_name = (payload.album_name if payload else None) or resolved_album
+            artwork_url = (payload.artwork_url if payload else None) or resolved_artwork
             db.add(
                 LikedTrack(
                     user_id=user.id,
@@ -298,14 +372,14 @@ def toggle_like_track(
                 )
             )
             db.commit()
-        return True
+        return True, clean_id
     else:
         db.query(LikedTrack).filter(
             LikedTrack.user_id == user.id,
             LikedTrack.spotify_track_id == clean_id,
         ).delete()
         db.commit()
-        return False
+        return False, clean_id
 
 
 def toggle_like_album(
