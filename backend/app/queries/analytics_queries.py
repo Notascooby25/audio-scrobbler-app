@@ -111,6 +111,13 @@ def _entity_filter(entity: str | None, name: str | None, secondary: str | None =
     return clause
 
 
+def _spotify_track_id_expr():
+    return case(
+        (ListeningEvent.source.in_(["spotify", "spotify_realtime"]), ListeningEvent.track_id),
+        else_=None,
+    )
+
+
 def build_recent_scrobbles_query(
     user_id: int,
     limit: int,
@@ -130,7 +137,7 @@ def build_recent_scrobbles_query(
             ListeningEvent.source,
             ListeningEvent.played_at,
             ListeningEvent.artwork_url,
-            ListeningEvent.track_id.label("spotify_track_id"),
+            _spotify_track_id_expr().label("spotify_track_id"),
         )
         .where(ListeningEvent.user_id == user_id)
         .where(not_blocked_clause(user_id))
@@ -210,7 +217,7 @@ def build_top_entities_query(
         group_concat_distinct(ListeningEvent.source).label("sources"),
     ]
     if entity == "tracks":
-        selected_columns.append(func.max(ListeningEvent.track_id).label("spotify_track_id"))
+        selected_columns.append(func.max(_spotify_track_id_expr()).label("spotify_track_id"))
     statement = select(*selected_columns).where(ListeningEvent.user_id == user_id).where(not_blocked_clause(user_id))
     if entity == "albums":
         statement = statement.where(ListeningEvent.album_name.isnot(None))
@@ -374,7 +381,7 @@ def build_library_entities_query(
         group_concat_distinct(ListeningEvent.source).label("sources"),
     ]
     if entity == "tracks":
-        selected_columns.append(func.max(ListeningEvent.track_id).label("spotify_track_id"))
+        selected_columns.append(func.max(_spotify_track_id_expr()).label("spotify_track_id"))
 
     statement = select(*selected_columns).where(ListeningEvent.user_id == user_id).where(not_blocked_clause(user_id))
     if entity == "albums":

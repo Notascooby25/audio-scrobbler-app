@@ -206,7 +206,9 @@ export default function HomePage() {
   const handleToggleLike = async (scrobble) => {
     if (!token) return;
 
-    const isSpotify = Boolean(scrobble.spotify_track_id || scrobble.source === "spotify");
+    const isSpotify = Boolean(
+      scrobble.spotify_track_id || String(scrobble.source || "").startsWith("spotify")
+    );
     if (!isSpotify || !scrobble.spotify_track_id) {
       setActionNotice("Only able to like tracks played through Spotify");
       return;

@@ -38,8 +38,8 @@ export default function OverviewPage() {
     if (isTrack) {
       const isSpotify = Boolean(
         item.spotify_track_id ||
-        (item.sources && item.sources.includes("spotify")) ||
-        item.source === "spotify"
+        (item.sources && item.sources.some((s) => String(s).startsWith("spotify"))) ||
+        String(item.source || "").startsWith("spotify")
       );
       if (!isSpotify || !item.spotify_track_id) {
         setActionNotice("Only able to like tracks played through Spotify");
@@ -48,8 +48,8 @@ export default function OverviewPage() {
     } else if (isAlbum) {
       const isSpotify = Boolean(
         item.spotify_album_id ||
-        (item.sources && item.sources.includes("spotify")) ||
-        item.source === "spotify"
+        (item.sources && item.sources.some((s) => String(s).startsWith("spotify"))) ||
+        String(item.source || "").startsWith("spotify")
       );
       if (!isSpotify) {
         setActionNotice("Only able to like albums played through Spotify");

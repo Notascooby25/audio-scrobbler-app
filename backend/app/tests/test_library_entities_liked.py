@@ -8,23 +8,28 @@ from sqlalchemy.pool import StaticPool
 
 from backend.app.db import Base
 from backend.app.models import LikedTrack, ListeningEvent
-from backend.app.services.analytics_service import get_library_entities
+from backend.app.services.analytics_service import (
+    get_library_entities,
+    get_library_scrobbles,
+    get_recent_scrobbles,
+    get_user_charts,
+)
 
 engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
 TestingSession = sessionmaker(bind=engine)
 Base.metadata.create_all(engine)
 
 
-def _make_event(db, user_id, track_id, track_name, artist_name):
+def _make_event(db, user_id, track_id, track_name, artist_name, source="spotify", played_at=None):
     db.add(
         ListeningEvent(
             user_id=user_id,
             track_id=track_id,
             track_name=track_name,
             artist_name=artist_name,
-            played_at=datetime(2026, 1, 1, 12, 0, 0),
-            source="spotify",
-            play_id=track_id,
+            played_at=played_at or datetime(2026, 1, 1, 12, 0, 0),
+            source=source,
+            play_id=f"{source}:{track_id}",
         )
     )
 
@@ -65,5 +70,96 @@ def test_library_artists_entity_has_no_liked_fields():
 
         assert response.entries[0].is_liked is False
         assert response.entries[0].spotify_track_id is None
+    finally:
+        db.close()
+
+
+def test_multi_source_track_prefers_spotify_track_id_over_youtube_uuid():
+    db = TestingSession()
+    try:
+        _make_event(
+            db,
+            user_id=3,
+            track_id="zzzz-youtube-uuid-9999",
+            track_name="Getting Started",
+            artist_name="Sam Fender",
+            source="youtube",
+            played_at=datetime(2023, 5, 1, 12, 0, 0),
+        )
+        _make_event(
+            db,
+            user_id=3,
+            track_id="4jzK6Ey84SAexMK5C2JWKx",
+            track_name="Getting Started",
+            artist_name="Sam Fender",
+            source="spotify",
+            played_at=datetime(2026, 1, 2, 12, 0, 0),
+        )
+        db.add(
+            LikedTrack(
+                user_id=3,
+                spotify_track_id="4jzK6Ey84SAexMK5C2JWKx",
+                track_name="Getting Started",
+                artist_name="Sam Fender",
+                added_at=datetime(2026, 1, 2, 0, 0, 0),
+            )
+        )
+        db.commit()
+
+        lib_res = get_library_entities(db, user_id=3, entity="tracks", limit=10, offset=0)
+        assert len(lib_res.entries) == 1
+        assert lib_res.entries[0].spotify_track_id == "4jzK6Ey84SAexMK5C2JWKx"
+        assert lib_res.entries[0].is_liked is True
+
+        chart_res = get_user_charts(db, user_id=3, entity="tracks", range_key="overall", limit=10)
+        assert len(chart_res.entries) == 1
+        assert chart_res.entries[0].spotify_track_id == "4jzK6Ey84SAexMK5C2JWKx"
+        assert chart_res.entries[0].is_liked is True
+    finally:
+        db.close()
+
+
+def test_scrobble_list_transfers_spotify_track_id_to_older_youtube_scrobble():
+    db = TestingSession()
+    try:
+        _make_event(
+            db,
+            user_id=4,
+            track_id="zzzz-youtube-uuid-9999",
+            track_name="Glass Towns",
+            artist_name="The K's",
+            source="youtube",
+            played_at=datetime(2023, 5, 1, 12, 0, 0),
+        )
+        _make_event(
+            db,
+            user_id=4,
+            track_id="0XnhTgURxJoXS2SYsc74V7",
+            track_name="Glass Towns",
+            artist_name="The K's",
+            source="spotify_realtime",
+            played_at=datetime(2026, 1, 2, 12, 0, 0),
+        )
+        _make_event(
+            db,
+            user_id=4,
+            track_id="youtube-only-uuid",
+            track_name="Pure YouTube Track",
+            artist_name="Indie Band",
+            source="youtube",
+            played_at=datetime(2024, 1, 1, 12, 0, 0),
+        )
+        db.commit()
+
+        scrobbles_res = get_library_scrobbles(db, user_id=4, limit=10, offset=0)
+        by_source_and_name = {(s.track_name, s.source): s for s in scrobbles_res.scrobbles}
+        assert by_source_and_name[("Glass Towns", "spotify_realtime")].spotify_track_id == "0XnhTgURxJoXS2SYsc74V7"
+        assert by_source_and_name[("Glass Towns", "youtube")].spotify_track_id == "0XnhTgURxJoXS2SYsc74V7"
+        assert by_source_and_name[("Pure YouTube Track", "youtube")].spotify_track_id is None
+
+        recent_res = get_recent_scrobbles(db, user_id=4, limit=10, offset=0)
+        recent_by_source = {(s.track_name, s.source): s for s in recent_res.scrobbles}
+        assert recent_by_source[("Glass Towns", "youtube")].spotify_track_id == "0XnhTgURxJoXS2SYsc74V7"
+        assert recent_by_source[("Pure YouTube Track", "youtube")].spotify_track_id is None
     finally:
         db.close()

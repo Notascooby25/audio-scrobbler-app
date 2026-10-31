@@ -64,6 +64,52 @@ def _candidate_track_ids(rows) -> set[str]:
     return {track_id for row in rows if (track_id := getattr(row, "spotify_track_id", None))}
 
 
+def _resolve_spotify_track_ids_by_name(
+    db: Session,
+    user_id: int,
+    rows,
+) -> dict[tuple[str, str], str]:
+    if not rows or not hasattr(db, "query"):
+        return {}
+    missing_names = {
+        row.track_name.lower()
+        for row in rows
+        if not getattr(row, "spotify_track_id", None) and getattr(row, "track_name", None)
+    }
+    if not missing_names:
+        return {}
+    spotify_rows = (
+        db.query(
+            ListeningEvent.track_name,
+            ListeningEvent.artist_name,
+            ListeningEvent.track_id,
+        )
+        .filter(
+            ListeningEvent.user_id == user_id,
+            ListeningEvent.source.in_(["spotify", "spotify_realtime"]),
+            ListeningEvent.track_id.isnot(None),
+            func.lower(ListeningEvent.track_name).in_(missing_names),
+        )
+        .order_by(ListeningEvent.played_at.desc())
+        .all()
+    )
+    resolved: dict[tuple[str, str], str] = {}
+    for s_row in spotify_rows:
+        key = ((s_row.track_name or "").lower(), (s_row.artist_name or "").lower())
+        if key not in resolved and s_row.track_id:
+            resolved[key] = s_row.track_id
+    return resolved
+
+
+def _effective_spotify_track_id(row, resolved_by_name: dict[tuple[str, str], str]) -> str | None:
+    direct = getattr(row, "spotify_track_id", None)
+    if direct:
+        return direct
+    t_name = getattr(row, "track_name", None) or ""
+    a_name = getattr(row, "artist_name", None) or ""
+    return resolved_by_name.get((t_name.lower(), a_name.lower()))
+
+
 def _saved_albums_by_key(db: Session, user_id: int, candidate_names: set[str]) -> dict[tuple[str, str], str]:
     if not candidate_names or not hasattr(db, "query"):
         return {}
@@ -109,21 +155,25 @@ def get_recent_scrobbles(
 ) -> ScrobbleListResponse:
     statement = build_recent_scrobbles_query(user_id=user_id, limit=limit, offset=offset)
     rows = db.execute(statement).all()
-    liked_ids = _liked_track_ids(db, user_id, _candidate_track_ids(rows))
+    resolved_by_name = _resolve_spotify_track_ids_by_name(db, user_id, rows)
+    all_candidate_ids = _candidate_track_ids(rows) | set(resolved_by_name.values())
+    liked_ids = _liked_track_ids(db, user_id, all_candidate_ids)
 
-    scrobbles = [
-        ScrobbleListEntry(
-            id=row.id,
-            track_name=row.track_name,
-            artist_name=row.artist_name,
-            source=row.source,
-            played_at=row.played_at,
-            artwork_url=getattr(row, "artwork_url", None),
-            spotify_track_id=getattr(row, "spotify_track_id", None),
-            is_liked=getattr(row, "spotify_track_id", None) in liked_ids,
+    scrobbles = []
+    for row in rows:
+        track_id = _effective_spotify_track_id(row, resolved_by_name)
+        scrobbles.append(
+            ScrobbleListEntry(
+                id=row.id,
+                track_name=row.track_name,
+                artist_name=row.artist_name,
+                source=row.source,
+                played_at=row.played_at,
+                artwork_url=getattr(row, "artwork_url", None),
+                spotify_track_id=track_id,
+                is_liked=track_id in liked_ids if track_id else False,
+            )
         )
-        for row in rows
-    ]
 
     return ScrobbleListResponse(
         user_id=user_id,
@@ -177,7 +227,9 @@ def get_user_charts(
         user_id=user_id, entity=entity, range_key=range_key, limit=limit, start=start, end=end
     )
     rows = db.execute(statement).all()
-    liked_ids = _liked_track_ids(db, user_id, _candidate_track_ids(rows)) if entity == "tracks" else set()
+    resolved_by_name = _resolve_spotify_track_ids_by_name(db, user_id, rows) if entity == "tracks" else {}
+    all_candidate_ids = (_candidate_track_ids(rows) | set(resolved_by_name.values())) if entity == "tracks" else set()
+    liked_ids = _liked_track_ids(db, user_id, all_candidate_ids) if entity == "tracks" else set()
     saved_albums = (
         _saved_albums_by_key(db, user_id, {row.album_name for row in rows if getattr(row, "album_name", None)})
         if entity == "albums"
@@ -198,7 +250,7 @@ def get_user_charts(
                 )
             )
         elif entity == "tracks":
-            track_id = getattr(row, "spotify_track_id", None)
+            track_id = _effective_spotify_track_id(row, resolved_by_name)
             entries.append(
                 ChartEntry(
                     label=row.track_name,
@@ -207,7 +259,7 @@ def get_user_charts(
                     artwork_url=getattr(row, "artwork_url", None),
                     spotify_track_id=track_id,
                     sources=row_sources,
-                    is_liked=track_id in liked_ids,
+                    is_liked=track_id in liked_ids if track_id else False,
                 )
             )
         else:
@@ -256,20 +308,24 @@ def get_library_scrobbles(
     total_count = db.execute(
         build_library_count_query(user_id, start, end, filter_entity, filter_name, filter_secondary, search_query)
     ).scalar_one()
-    liked_ids = _liked_track_ids(db, user_id, _candidate_track_ids(rows))
-    scrobbles = [
-        LibraryScrobbleEntry(
-            id=row.id,
-            track_name=row.track_name,
-            artist_name=row.artist_name,
-            source=row.source,
-            played_at=row.played_at,
-            artwork_url=getattr(row, "artwork_url", None),
-            spotify_track_id=getattr(row, "spotify_track_id", None),
-            is_liked=getattr(row, "spotify_track_id", None) in liked_ids,
+    resolved_by_name = _resolve_spotify_track_ids_by_name(db, user_id, rows)
+    all_candidate_ids = _candidate_track_ids(rows) | set(resolved_by_name.values())
+    liked_ids = _liked_track_ids(db, user_id, all_candidate_ids)
+    scrobbles = []
+    for row in rows:
+        track_id = _effective_spotify_track_id(row, resolved_by_name)
+        scrobbles.append(
+            LibraryScrobbleEntry(
+                id=row.id,
+                track_name=row.track_name,
+                artist_name=row.artist_name,
+                source=row.source,
+                played_at=row.played_at,
+                artwork_url=getattr(row, "artwork_url", None),
+                spotify_track_id=track_id,
+                is_liked=track_id in liked_ids if track_id else False,
+            )
         )
-        for row in rows
-    ]
     return LibraryScrobbleResponse(
         user_id=user_id,
         scrobbles=scrobbles,
@@ -291,7 +347,9 @@ def get_library_entities(
 ) -> LibraryResponse:
     rows = db.execute(build_library_entities_query(user_id, entity, limit, offset, start, end, search_query)).all()
     total_count = db.execute(build_library_entity_count_query(user_id, entity, start, end, search_query)).scalar_one()
-    liked_ids = _liked_track_ids(db, user_id, _candidate_track_ids(rows)) if entity == "tracks" else set()
+    resolved_by_name = _resolve_spotify_track_ids_by_name(db, user_id, rows) if entity == "tracks" else {}
+    all_candidate_ids = (_candidate_track_ids(rows) | set(resolved_by_name.values())) if entity == "tracks" else set()
+    liked_ids = _liked_track_ids(db, user_id, all_candidate_ids) if entity == "tracks" else set()
     saved_albums = (
         _saved_albums_by_key(db, user_id, {row.album_name for row in rows if getattr(row, "album_name", None)})
         if entity == "albums"
@@ -323,7 +381,7 @@ def get_library_entities(
                 )
             )
         else:
-            track_id = getattr(row, "spotify_track_id", None)
+            track_id = _effective_spotify_track_id(row, resolved_by_name)
             entries.append(
                 LibraryEntry(
                     label=row.track_name,
@@ -332,7 +390,7 @@ def get_library_entities(
                     artwork_url=getattr(row, "artwork_url", None),
                     sources=row_sources,
                     spotify_track_id=track_id,
-                    is_liked=track_id in liked_ids,
+                    is_liked=track_id in liked_ids if track_id else False,
                 )
             )
     return LibraryResponse(user_id=user_id, entries=entries, limit=limit, offset=offset, total_count=int(total_count))

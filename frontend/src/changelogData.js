@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.30.3",
+    date: "2026-10-31",
+    changes: [
+      "Multi-Source Spotify Liking: Fixed a query bug where tracks played on both YouTube Music/Setlist.fm and Spotify could inherit the older non-Spotify ID instead of their Spotify track ID.",
+      "Cross-Source Spotify ID Transfer: Any track or scrobble row that has ever been played on Spotify now automatically inherits its Spotify track ID so it can be hearted on Spotify regardless of older scrobble sources.",
+    ],
+  },
+  {
     version: "0.30.2",
     date: "2026-10-31",
     changes: [
