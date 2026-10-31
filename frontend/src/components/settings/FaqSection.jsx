@@ -22,6 +22,32 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "spotify-heart-likes",
+    category: "Sync & Scrobbles",
+    question: "How does liking tracks and albums to Spotify work?",
+    answer: (
+      <>
+        <p>
+          You can tap the heart icon next to any track or album in your Library, Overview top
+          charts, recent scrobbles, or Album Jukebox pick. Tapping an outline heart instantly saves
+          the song to your Spotify <em>Liked Songs</em> or the album to your Spotify{" "}
+          <em>Saved Albums</em>. Tapping a filled red heart removes it.
+        </p>
+        <p>
+          <strong>Why do I see a reconnect prompt?</strong> Saving songs to Spotify requires the{" "}
+          <code>user-library-modify</code> permission scope. If you connected before this feature
+          was added, click <em>Reconnect Spotify</em> in <strong>Settings → Connections</strong> to
+          grant this new permission.
+        </p>
+        <p>
+          <strong>Can I like BBC Sounds or YouTube tracks?</strong> No, songs scrobbled from
+          external radio or video services cannot be saved directly to Spotify; clicking their heart
+          will display a reminder that liking is only supported for music played through Spotify.
+        </p>
+      </>
+    ),
+  },
+  {
     id: "theme-accent-color",
     category: "General & Appearance",
     question: "Can I customize the site theme and accent color?",

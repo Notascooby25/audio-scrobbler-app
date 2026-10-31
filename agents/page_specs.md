@@ -77,14 +77,14 @@ Visual design rules are in `DESIGN.md` and `PRODUCT.md`.
 
 A quick snapshot of listening for the selected range.
 
-| Section | Component | Endpoint |
-|---|---|---|
-| Summary stats (total scrobbles, unique artists) | `SummaryStatsBar` | `GET /stats/summary` |
-| Time Capsule & Rediscover (Forgotten Favorites, On This Day, Spotify Playlist export) | `RediscoverCard` | `GET /analytics/rediscover`, `POST /analytics/rediscover/playlist` |
-| Date range | `DateRangeSelector` | |
-| Top artists (10) | `RankedList` | `GET /stats/top-artists` |
-| Top albums (10) | `RankedList` | `GET /stats/top-albums` |
-| Top tracks (10) | `RankedList` | `GET /stats/top-tracks` |
+| Section                                                                               | Component           | Endpoint                                                                                                         |
+| ------------------------------------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Summary stats (total scrobbles, unique artists)                                       | `SummaryStatsBar`   | `GET /stats/summary`                                                                                             |
+| Time Capsule & Rediscover (Forgotten Favorites, On This Day, Spotify Playlist export) | `RediscoverCard`    | `GET /analytics/rediscover`, `POST /analytics/rediscover/playlist`                                               |
+| Date range                                                                            | `DateRangeSelector` |                                                                                                                  |
+| Top artists (10)                                                                      | `RankedList`        | `GET /stats/top-artists`                                                                                         |
+| Top albums (10)                                                                       | `RankedList`        | `GET /stats/top-albums` (interactive like heart saves/unlikes on Spotify: `PUT/DELETE /spotify/like-album/{id}`) |
+| Top tracks (10)                                                                       | `RankedList`        | `GET /stats/top-tracks` (interactive like heart saves/unlikes on Spotify: `PUT/DELETE /spotify/like-track/{id}`) |
 
 The "Loved Tracks" stat was removed (`8469a4f`).
 
@@ -92,19 +92,19 @@ The "Loved Tracks" stat was removed (`8469a4f`).
 
 The full listening history, with breakdowns by artist, album and track.
 
-| Section | Component | Endpoint |
-|---|---|---|
-| Date range | `DateRangeSelector` | |
-| Tabs: Scrobbles, Artists, Albums, Tracks | `LibraryPage` | |
-| Scrobbles list (search; filter by entity/name) | `LibraryScrobbleList` | `GET /library/scrobbles` |
-| Ranked artists, albums or tracks, with a list/grid toggle | `LibraryRankList`, `LibraryViewToggle` | `GET /library/{artists\|albums\|tracks}` |
-| Scrobbles over time (last 5 years) | `TimelineChart` | `GET /library/timeline` |
-| Per-entry menu: Block, Clear Artwork, Delete | `EntryMenu`, `ConfirmDeleteModal` | `POST /users/me/blocks`, `POST /library/clear-artwork`, `POST /library/delete-entries`, `POST /library/delete-scrobbles` |
-| Share top artists/albums/tracks as an image (grid or list; Download PNG or Share) | `ShareDialog`, `ShareCard` (uses `html-to-image`) | |
-| Bulk selection (Copy / Deselect) | `LibraryViewToggle`, `bulk-action-bar` | Sticky mobile action bar with touch targets ≥ 44pt |
-| Pagination and page size | `Pagination`, `PageSizeSelect` | |
+| Section                                                                           | Component                                         | Endpoint                                                                                                                 |
+| --------------------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Date range                                                                        | `DateRangeSelector`                               |                                                                                                                          |
+| Tabs: Scrobbles, Artists, Albums, Tracks                                          | `LibraryPage`                                     |                                                                                                                          |
+| Scrobbles list (search; filter by entity/name)                                    | `LibraryScrobbleList`                             | `GET /library/scrobbles` (interactive like heart saves/unlikes tracks on Spotify)                                        |
+| Ranked artists, albums or tracks, with a list/grid toggle                         | `LibraryRankList`, `LibraryViewToggle`            | `GET /library/{artists\|albums\|tracks}` (interactive like hearts for tracks and albums)                                 |
+| Scrobbles over time (last 5 years)                                                | `TimelineChart`                                   | `GET /library/timeline`                                                                                                  |
+| Per-entry menu: Block, Clear Artwork, Delete                                      | `EntryMenu`, `ConfirmDeleteModal`                 | `POST /users/me/blocks`, `POST /library/clear-artwork`, `POST /library/delete-entries`, `POST /library/delete-scrobbles` |
+| Share top artists/albums/tracks as an image (grid or list; Download PNG or Share) | `ShareDialog`, `ShareCard` (uses `html-to-image`) |                                                                                                                          |
+| Bulk selection (Copy / Deselect)                                                  | `LibraryViewToggle`, `bulk-action-bar`            | Sticky mobile action bar with touch targets ≥ 44pt                                                                       |
+| Pagination and page size                                                          | `Pagination`, `PageSizeSelect`                    |                                                                                                                          |
 
-`/library/{entity}` also accepts `genres`. Bulk selection controls are fully responsive on mobile touch viewports.
+`/library/{entity}` also accepts `genres`. Bulk selection controls are fully responsive on mobile touch viewports. Two-way heart icons allow immediate saving/unliking to Spotify for tracks and albums in own library (read-only badges when viewing followed friend profiles).
 
 ## 4. Reports: `/reports`
 
@@ -115,19 +115,19 @@ date range switches.
 
 Sections in page order:
 
-| Section | Component | Data |
-|---|---|---|
-| Date range & comparison controls (period compare & friends compare) | `DateRangeSelector`, compare toggle buttons | |
-| Summary stats: period scrobbles, listening minutes, and average per day (all with color-coded comparison % deltas if comparing: green for positive, red for negative) | report facts (3-card grid) | `GET /reports/summary` |
-| Friends comparison section (when toggled open) | `FriendsComparisonSection` | `GET /reports/friends-comparison` |
-| Scrobbles over time | `BarTrendChart` | `GET /reports/charts` → `weekly_scrobbles` |
-| Listening routines (hour × weekday heatmap) | `ListeningHeatmap` | `listening_heatmap` |
-| Listening clock | `ListeningClockChart` | `listening_clock` |
-| Music by decade | `BarTrendChart` | `music_by_decade` |
-| Top genres | `GenreBarList` | `GET /reports/genres` |
-| Top artists, albums, tracks (10 each) | `LibraryRankList` | `GET /reports/{artists\|albums\|tracks}` |
-| Music ratio: Explorer vs. Repeater (scrobbles per artist) | inline panel | summary counts (see the known issue below) |
-| Music ratio: Singles vs. Albums (tracks per album) | inline panel | summary counts (see the known issue below) |
+| Section                                                                                                                                                               | Component                                   | Data                                       |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ------------------------------------------ |
+| Date range & comparison controls (period compare & friends compare)                                                                                                   | `DateRangeSelector`, compare toggle buttons |                                            |
+| Summary stats: period scrobbles, listening minutes, and average per day (all with color-coded comparison % deltas if comparing: green for positive, red for negative) | report facts (3-card grid)                  | `GET /reports/summary`                     |
+| Friends comparison section (when toggled open)                                                                                                                        | `FriendsComparisonSection`                  | `GET /reports/friends-comparison`          |
+| Scrobbles over time                                                                                                                                                   | `BarTrendChart`                             | `GET /reports/charts` → `weekly_scrobbles` |
+| Listening routines (hour × weekday heatmap)                                                                                                                           | `ListeningHeatmap`                          | `listening_heatmap`                        |
+| Listening clock                                                                                                                                                       | `ListeningClockChart`                       | `listening_clock`                          |
+| Music by decade                                                                                                                                                       | `BarTrendChart`                             | `music_by_decade`                          |
+| Top genres                                                                                                                                                            | `GenreBarList`                              | `GET /reports/genres`                      |
+| Top artists, albums, tracks (10 each)                                                                                                                                 | `LibraryRankList`                           | `GET /reports/{artists\|albums\|tracks}`   |
+| Music ratio: Explorer vs. Repeater (scrobbles per artist)                                                                                                             | inline panel                                | summary counts (see the known issue below) |
+| Music ratio: Singles vs. Albums (tracks per album)                                                                                                                    | inline panel                                | summary counts (see the known issue below) |
 
 - `/reports/summary` also returns `following_average_scrobbles`, but it isn't
   shown: friends-average was removed from the UI in `e8df17f`.
@@ -138,8 +138,6 @@ Sections in page order:
     `UnboundLocalError`.
 - **Removed:** the Playlists tab (`2acb98b`). `playlist_cache` and its migration
   remain.
-
-
 
 ## 5. Profile: `/profile` and `/profile/:userId`
 
@@ -157,19 +155,20 @@ Sections in page order:
 
 ## 7. Settings: `/settings`
 
-| Section | Endpoint |
-|---|---|
-| Preferences, e.g. theme, page sizes | `GET` and `PATCH /users/me/settings` |
-| Scrobble settings: `poll_interval_minutes`, realtime sync, and BBC Sounds Scope Creep import tool (create playlist or add to existing, scrobble tracks) | `GET` and `PATCH /users/me/settings/scrobble`, `GET /tools/scope-creep/playlists`, `POST /tools/scope-creep/*` |
-| Data settings: Liked songs sync, Backfill Missing Artwork (Deezer/iTunes, **not** Spotify), Export Listening History (CSV & JSON) | `POST /artwork/backfill`, `PATCH /users/me/settings/scrobble`, `GET /import/export?format={csv\|json}` |
-| User Guide (`?tab=guide`): Plain-English walkthrough of background sync, car trip/party friend scrobble copying, BBC Sounds radio extraction, and library management | Frontend component `UserGuideSection` |
-| FAQ (`?tab=faq`): Searchable, accessible accordion Q&A covering sync delays, duplicate prevention, blocking vs deleting, and mobile push setup | Frontend component `FaqSection` |
-| Blocked items | `GET` and `DELETE /users/me/blocks` |
-| Delete Scrobbles (permanent; confirmation modal) | `/import/*` delete endpoints |
+| Section                                                                                                                                                              | Endpoint                                                                                                       |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Preferences, e.g. theme, page sizes                                                                                                                                  | `GET` and `PATCH /users/me/settings`                                                                           |
+| Scrobble settings: `poll_interval_minutes`, realtime sync, and BBC Sounds Scope Creep import tool (create playlist or add to existing, scrobble tracks)              | `GET` and `PATCH /users/me/settings/scrobble`, `GET /tools/scope-creep/playlists`, `POST /tools/scope-creep/*` |
+| Data settings: Liked songs sync, Backfill Missing Artwork (Deezer/iTunes, **not** Spotify), Export Listening History (CSV & JSON)                                    | `POST /artwork/backfill`, `PATCH /users/me/settings/scrobble`, `GET /import/export?format={csv\|json}`         |
+| User Guide (`?tab=guide`): Plain-English walkthrough of background sync, car trip/party friend scrobble copying, BBC Sounds radio extraction, and library management | Frontend component `UserGuideSection`                                                                          |
+| FAQ (`?tab=faq`): Searchable, accessible accordion Q&A covering sync delays, duplicate prevention, blocking vs deleting, and mobile push setup                       | Frontend component `FaqSection`                                                                                |
+| Blocked items                                                                                                                                                        | `GET` and `DELETE /users/me/blocks`                                                                            |
+| Delete Scrobbles (permanent; confirmation modal)                                                                                                                     | `/import/*` delete endpoints                                                                                   |
 
 ## 8. Connect: `/connect`
 
 Organized into a 3-card Data Sources Hub with an accessible `<h1>` heading ("Connect & Data Sources"):
+
 1. **Spotify Streaming Card:** Active connection status, connect button, and rate-limit notice.
 2. **History File Import Card:** File picker for Spotify and YouTube JSON exports with upload progress bar and summary breakdown.
 3. **Radio & Liked Songs Tools Card:** Direct shortcut to `/settings?tab=scrobble`.
@@ -177,13 +176,13 @@ Organized into a 3-card Data Sources Hub with an accessible `<h1>` heading ("Con
 5. **Analytics Handoff Card:** Direct links to `/overview` and `/reports` (charts pruned from `/connect` to eliminate redundancy).
 6. **Recent Ingestion Feed:** Verified recent plays with source badges confirming sync health and direct link to `/library`.
 
-| Section | Endpoint |
-|---|---|
-| Spotify connection status and connect button | `GET /auth/spotify/status`, `GET /auth/spotify/authorize` |
-| Import listening-history files (Spotify, YouTube) with progress and summary | `POST /import/unified`, `POST /import/scrobbles`; see `docs/import_flow.md` |
-| Monthly archive ledger | `GET /analytics/monthly-summary` |
-| Recent ingestion feed | `GET /analytics/recent-scrobbles` |
-| Developer bypass tools | Development only (`import.meta.env.DEV`), stripped from production builds |
+| Section                                                                     | Endpoint                                                                                   |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Spotify connection status and connect button                                | `GET /auth/spotify/status`, `GET /auth/spotify/authorize`                                  |
+| Import listening-history files (Spotify, YouTube) with progress and summary | `POST /import/unified`, `POST /import/scrobbles`; see `docs/import_flow.md`                |
+| Monthly archive ledger                                                      | `GET /analytics/monthly-summary`                                                           |
+| Recent ingestion feed                                                       | `GET /analytics/recent-scrobbles` (interactive like heart saves/unlikes tracks on Spotify) |
+| Developer bypass tools                                                      | Development only (`import.meta.env.DEV`), stripped from production builds                  |
 
 ## 8a. Set Lists: `/setlists` and gig pages `/gigs/:id`
 
@@ -192,19 +191,19 @@ Setlist.fm-style concert diary. Styled with plain `sfm-*` classes in `styles.css
 `/setlists/`, because nginx and Vite proxy `/setlists/*` to the API. List state
 (tab, page, size, open row, filters) is kept in the URL so Back restores it.
 
-| Section | Component | Endpoint |
-|---|---|---|
-| Tabs: My Gigs, Artists Seen, Songs Heard, Venues; + Log a Gig, Import / Export | `SetlistsPage` | |
-| Gig invites ("Were you there?"; Add to my gigs / Dismiss) at the top of My Gigs | `GigInvites` | `GET /setlists/invites`, `POST /setlists/invites/{id}/add\|dismiss` |
-| My Gigs (All / Attended / Upcoming, paged 10/15/25/50, Remove) | `MyGigsTimeline`, `GigRows` | `GET /setlists/attendances` |
-| Artists, Songs (year/artist sidebar), Venues: ranked bars, expandable rows | `RankedBarList`, `*Leaderboard` | `GET /setlists/stats/{artists\|songs\|venues}` |
-| Log a gig (search, support act prompt, already-logged prompt), manual gig | `GigSearchBar`, `SupportActsPromptModal`, `AlreadyLoggedModal`, `ManualConcertModal` | `GET /setlists/search`, `POST /setlists/attend`, `POST /setlists/manual` |
-| Import / Export (profile, selected, CSV/JSON file; paused-job notice) | `ImportExportModal` | `POST /setlists/import`, `POST /setlists/import/file`, `GET\|DELETE /setlists/import/job`, `GET /setlists/export` |
-| Gig page: header, numbered songs, Refresh / Copy / Edit details / Delete | `SetlistGigPage`, `SetlistSongs`, `EditGigModal`, `DeleteGigConfirmModal` | `GET /setlists/attendances/{id}`, `POST /setlists/{id}/refresh`, `PATCH /setlists/{id}`, `DELETE /setlists/{id}` |
-| My notes | `NotesEditor` (in `SetlistGigPage`) | `PATCH /setlists/{id}/notes` |
-| On the bill (other acts that night, + I was there) | `GigBill` | `GET\|POST /setlists/attendances/{id}/bill` |
-| Went with (people you follow; invited / added; + Add people) | `GigCompanions` | `GET\|POST /setlists/attendances/{id}/companions`, `DELETE .../companions/{friend_id}` |
-| Setlist.fm attribution (required by its terms) at the bottom | `SetlistAttribution` | |
+| Section                                                                         | Component                                                                            | Endpoint                                                                                                          |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Tabs: My Gigs, Artists Seen, Songs Heard, Venues; + Log a Gig, Import / Export  | `SetlistsPage`                                                                       |                                                                                                                   |
+| Gig invites ("Were you there?"; Add to my gigs / Dismiss) at the top of My Gigs | `GigInvites`                                                                         | `GET /setlists/invites`, `POST /setlists/invites/{id}/add\|dismiss`                                               |
+| My Gigs (All / Attended / Upcoming, paged 10/15/25/50, Remove)                  | `MyGigsTimeline`, `GigRows`                                                          | `GET /setlists/attendances`                                                                                       |
+| Artists, Songs (year/artist sidebar), Venues: ranked bars, expandable rows      | `RankedBarList`, `*Leaderboard`                                                      | `GET /setlists/stats/{artists\|songs\|venues}`                                                                    |
+| Log a gig (search, support act prompt, already-logged prompt), manual gig       | `GigSearchBar`, `SupportActsPromptModal`, `AlreadyLoggedModal`, `ManualConcertModal` | `GET /setlists/search`, `POST /setlists/attend`, `POST /setlists/manual`                                          |
+| Import / Export (profile, selected, CSV/JSON file; paused-job notice)           | `ImportExportModal`                                                                  | `POST /setlists/import`, `POST /setlists/import/file`, `GET\|DELETE /setlists/import/job`, `GET /setlists/export` |
+| Gig page: header, numbered songs, Refresh / Copy / Edit details / Delete        | `SetlistGigPage`, `SetlistSongs`, `EditGigModal`, `DeleteGigConfirmModal`            | `GET /setlists/attendances/{id}`, `POST /setlists/{id}/refresh`, `PATCH /setlists/{id}`, `DELETE /setlists/{id}`  |
+| My notes                                                                        | `NotesEditor` (in `SetlistGigPage`)                                                  | `PATCH /setlists/{id}/notes`                                                                                      |
+| On the bill (other acts that night, + I was there)                              | `GigBill`                                                                            | `GET\|POST /setlists/attendances/{id}/bill`                                                                       |
+| Went with (people you follow; invited / added; + Add people)                    | `GigCompanions`                                                                      | `GET\|POST /setlists/attendances/{id}/companions`, `DELETE .../companions/{friend_id}`                            |
+| Setlist.fm attribution (required by its terms) at the bottom                    | `SetlistAttribution`                                                                 |                                                                                                                   |
 
 - Editing a gig moves its scrobbles and support acts; Refresh only updates songs.
 - `?userId=` (a followed user, via "View Gigs" on their profile) makes the list

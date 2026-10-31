@@ -240,6 +240,15 @@ export default function UserGuideSection() {
             150, 200, 250, or 300 records).
           </li>
           <li>
+            <strong>Two-Way Spotify Liking:</strong> Heart icons appear on tracks and albums across
+            the app (in your Library, Overview top charts, Connect recent scrobbles, and the Album
+            Jukebox pick). Tapping an outline heart immediately saves the song to your Spotify Liked
+            Songs or the album to your Spotify Saved Albums. Tapping an active red heart removes it.
+            If a track or album was scrobbled from another source (such as BBC Sounds or YouTube
+            Music), tapping the heart explains that liking is only supported for music played
+            through Spotify.
+          </li>
+          <li>
             <strong>Shareable Image Cards:</strong> Want to brag about your top 5 albums or artists?
             In the Library, click the "Share" button to generate a beautiful, formatted image card
             ready to download or send directly to friends.

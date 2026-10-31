@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.30.0",
+    date: "2026-10-31",
+    changes: [
+      "Two-Way Spotify Liking: Tap the heart icon anywhere tracks or albums appear (Library, Overview top charts, Connect recent scrobbles, and the Album Jukebox pick) to instantly save them to your Spotify Liked Songs or Saved Albums. Tapping a saved heart unlikes it.",
+      "Spotify Scopes & Safe Liking: Added the user-library-modify Spotify permission scope. Songs and albums scrobbled from other sources (e.g. BBC Sounds, YouTube) clearly notify that liking is only available for tracks played through Spotify.",
+    ],
+  },
+  {
     version: "0.29.2",
     date: "2026-10-31",
     changes: [
