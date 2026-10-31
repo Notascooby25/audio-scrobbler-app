@@ -201,9 +201,7 @@ class LikedTrack(Base):
 
 class SavedAlbum(Base):
     __tablename__ = "saved_albums"
-    __table_args__ = (
-        UniqueConstraint("user_id", "spotify_album_id", name="uq_saved_album_user_spotify_id"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "spotify_album_id", name="uq_saved_album_user_spotify_id"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)

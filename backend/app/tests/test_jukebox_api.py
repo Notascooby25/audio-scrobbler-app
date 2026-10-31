@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from backend.app.api.deps import get_current_user
 from backend.app.db import get_db
 from backend.app.main import app
-from backend.app.models import User, SavedAlbum
+from backend.app.models import SavedAlbum, User, UserPreferences
 
 client = TestClient(app)
 
@@ -94,8 +94,6 @@ def test_internal_saved_albums_requires_worker_token():
 
 
 def test_jukebox_albums_library_archive_custom_limit():
-    from backend.app.models import UserPreferences
-
     user = User(id=1, spotify_user_id="sp-1", username="user1", display_name="User", is_active=True)
     prefs = UserPreferences(user_id=1, jukebox_source="library_archive", jukebox_archive_limit=250)
 
@@ -122,4 +120,3 @@ def test_jukebox_albums_library_archive_custom_limit():
     data = response.json()
     assert data["source"] == "library_archive"
     assert LimitTrackingQuery.recorded_limit == 250
-

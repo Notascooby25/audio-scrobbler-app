@@ -483,7 +483,8 @@ export default function SettingsPage() {
           <section className="settings-form" aria-labelledby="jukebox-settings-heading">
             <h2 id="jukebox-settings-heading">Album Jukebox</h2>
             <p>
-              Choose where the Album Jukebox draws its catalog from when spinning for whole-album listening sessions.
+              Choose where the Album Jukebox draws its catalog from when spinning for whole-album
+              listening sessions.
             </p>
             <label>
               Album catalog source
@@ -492,9 +493,26 @@ export default function SettingsPage() {
                 onChange={(event) => changeSetting("jukebox_source", event.target.value)}
               >
                 <option value="spotify_saved">Spotify Saved / Favourited Albums (Default)</option>
-                <option value="library_archive">Library Archive (Top 100 Scrobbled)</option>
+                <option value="library_archive">Library Archive (Top Scrobbled Albums)</option>
               </select>
             </label>
+            {settings.jukebox_source === "library_archive" && (
+              <label style={{ marginTop: "1rem" }}>
+                Archive depth (top albums)
+                <select
+                  value={settings.jukebox_archive_limit || 100}
+                  onChange={(event) =>
+                    changeSetting("jukebox_archive_limit", Number(event.target.value))
+                  }
+                >
+                  <option value={100}>Top 100</option>
+                  <option value={150}>Top 150</option>
+                  <option value={200}>Top 200</option>
+                  <option value={250}>Top 250</option>
+                  <option value={300}>Top 300</option>
+                </select>
+              </label>
+            )}
             {status === "saving" && <p role="status">Saving...</p>}
             {status === "saved" && <p role="status">Saved</p>}
           </section>
@@ -783,11 +801,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <BlockedItemsSection
-            blocks={blocks}
-            error={blocksError}
-            onUnblock={unblock}
-          />
+          <BlockedItemsSection blocks={blocks} error={blocksError} onUnblock={unblock} />
         </section>
       )}
       {activeTab === "notifications" && settings && (

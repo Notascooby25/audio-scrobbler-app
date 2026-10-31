@@ -233,6 +233,13 @@ export default function UserGuideSection() {
             buttons, active tabs, charts, and heatmaps seamlessly.
           </li>
           <li>
+            <strong>Album Jukebox & Archive Depth:</strong> Return to whole-album listening and beat
+            choice paralysis with the Album Jukebox on your Overview page. You can configure its
+            catalog source in <em>Settings → General</em> to draw from your Spotify Saved Albums or
+            your Library Archive (most-scrobbled albums), with customizable archive depth (top 100,
+            150, 200, 250, or 300 records).
+          </li>
+          <li>
             <strong>Shareable Image Cards:</strong> Want to brag about your top 5 albums or artists?
             In the Library, click the "Share" button to generate a beautiful, formatted image card
             ready to download or send directly to friends.

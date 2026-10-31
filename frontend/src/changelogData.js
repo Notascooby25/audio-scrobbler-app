@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.29.1",
+    date: "2026-10-31",
+    changes: [
+      "Album Jukebox Archive Depth: When choosing your Library Archive (scrobbled history) as the Jukebox catalog source, you can now select your archive depth (top 100, 150, 200, 250, or 300 albums) in Settings → General.",
+    ],
+  },
+  {
     version: "0.29.0",
     date: "2026-10-30",
     changes: [
