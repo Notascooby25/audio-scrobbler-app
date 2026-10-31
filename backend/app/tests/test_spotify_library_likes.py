@@ -91,7 +91,7 @@ def test_like_track_success(mock_user):
         patch("requests.request", return_value=mock_resp) as mock_req,
     ):
         res = client.put(
-            "/spotify/like-track/track123",
+            "/spotify/like-track/7JlbrqQVlHh8rnaTlAzy9j",
             json={"track_name": "Song A", "artist_name": "Artist B", "album_name": "Album C"},
         )
         assert res.status_code == 200
@@ -99,17 +99,25 @@ def test_like_track_success(mock_user):
         assert data["success"] is True
         assert data["is_liked"] is True
         assert len(fake_db.liked_tracks) == 1
-        assert fake_db.liked_tracks[0].spotify_track_id == "track123"
+        assert fake_db.liked_tracks[0].spotify_track_id == "7JlbrqQVlHh8rnaTlAzy9j"
         assert fake_db.liked_tracks[0].track_name == "Song A"
         assert mock_req.call_args[0][0] == "PUT"
-        assert mock_req.call_args[1].get("json") == {"ids": ["track123"]}
+        assert (
+            mock_req.call_args[0][1]
+            == "https://api.spotify.com/v1/me/library?uris=spotify:track:7JlbrqQVlHh8rnaTlAzy9j"
+        )
+        assert mock_req.call_args[1].get("json") is None
 
     app.dependency_overrides.clear()
 
 
 def test_unlike_track_success(mock_user):
     existing = LikedTrack(
-        id=1, user_id=mock_user.id, spotify_track_id="track123", track_name="Song A", artist_name="Artist B"
+        id=1,
+        user_id=mock_user.id,
+        spotify_track_id="7JlbrqQVlHh8rnaTlAzy9j",
+        track_name="Song A",
+        artist_name="Artist B",
     )
     fake_db = FakeDB(user=mock_user, liked_tracks=[existing])
     app.dependency_overrides[get_current_user] = lambda: mock_user
@@ -123,12 +131,16 @@ def test_unlike_track_success(mock_user):
         patch("backend.app.services.spotify_library_service._refresh_access_token", return_value="access-token"),
         patch("requests.request", return_value=mock_resp) as mock_req,
     ):
-        res = client.delete("/spotify/like-track/track123")
+        res = client.delete("/spotify/like-track/7JlbrqQVlHh8rnaTlAzy9j")
         assert res.status_code == 200
         data = res.json()
         assert data["success"] is True
         assert data["is_liked"] is False
         assert mock_req.call_args[0][0] == "DELETE"
+        assert (
+            mock_req.call_args[0][1]
+            == "https://api.spotify.com/v1/me/library?uris=spotify:track:7JlbrqQVlHh8rnaTlAzy9j"
+        )
 
     app.dependency_overrides.clear()
 
@@ -148,7 +160,7 @@ def test_like_track_missing_scope(mock_user):
         patch("requests.request", return_value=mock_resp),
     ):
         res = client.put(
-            "/spotify/like-track/track123",
+            "/spotify/like-track/7JlbrqQVlHh8rnaTlAzy9j",
             json={"track_name": "Song A", "artist_name": "Artist B"},
         )
         assert res.status_code == 403
@@ -171,18 +183,22 @@ def test_like_album_success(mock_user):
         patch("requests.request", return_value=mock_resp) as mock_req,
     ):
         res = client.put(
-            "/spotify/like-album/album123",
+            "/spotify/like-album/0ETFjACtuP2ADo6LFhL6HN",
             json={"album_name": "Album C", "artist_name": "Artist B"},
         )
         assert res.status_code == 200
         data = res.json()
         assert data["success"] is True
         assert data["is_liked"] is True
-        assert data["spotify_album_id"] == "album123"
+        assert data["spotify_album_id"] == "0ETFjACtuP2ADo6LFhL6HN"
         assert len(fake_db.saved_albums) == 1
-        assert fake_db.saved_albums[0].spotify_album_id == "album123"
+        assert fake_db.saved_albums[0].spotify_album_id == "0ETFjACtuP2ADo6LFhL6HN"
         assert mock_req.call_args[0][0] == "PUT"
-        assert mock_req.call_args[1].get("json") == {"ids": ["album123"]}
+        assert (
+            mock_req.call_args[0][1]
+            == "https://api.spotify.com/v1/me/library?uris=spotify:album:0ETFjACtuP2ADo6LFhL6HN"
+        )
+        assert mock_req.call_args[1].get("json") is None
 
     app.dependency_overrides.clear()
 
@@ -195,7 +211,7 @@ def test_like_album_search_fallback(mock_user):
     mock_search = MagicMock()
     mock_search.ok = True
     mock_search.json.return_value = {
-        "albums": {"items": [{"id": "resolved-album-456", "images": [{"url": "http://art.jpg"}]}]}
+        "albums": {"items": [{"id": "0ETFjACtuP2ADo6LFhL6HN", "images": [{"url": "http://art.jpg"}]}]}
     }
 
     mock_resp = MagicMock()
@@ -205,7 +221,7 @@ def test_like_album_search_fallback(mock_user):
     with (
         patch("backend.app.services.spotify_library_service._refresh_access_token", return_value="access-token"),
         patch("requests.get", return_value=mock_search),
-        patch("requests.request", return_value=mock_resp),
+        patch("requests.request", return_value=mock_resp) as mock_req,
     ):
         res = client.put(
             "/spotify/like-album/In%20Rainbows",
@@ -215,16 +231,61 @@ def test_like_album_search_fallback(mock_user):
         data = res.json()
         assert data["success"] is True
         assert data["is_liked"] is True
-        assert data["spotify_album_id"] == "resolved-album-456"
+        assert data["spotify_album_id"] == "0ETFjACtuP2ADo6LFhL6HN"
         assert len(fake_db.saved_albums) == 1
-        assert fake_db.saved_albums[0].spotify_album_id == "resolved-album-456"
+        assert fake_db.saved_albums[0].spotify_album_id == "0ETFjACtuP2ADo6LFhL6HN"
+        assert (
+            mock_req.call_args[0][1]
+            == "https://api.spotify.com/v1/me/library?uris=spotify:album:0ETFjACtuP2ADo6LFhL6HN"
+        )
+
+    app.dependency_overrides.clear()
+
+
+def test_like_single_word_album_name_uses_search_fallback(mock_user):
+    fake_db = FakeDB(user=mock_user)
+    app.dependency_overrides[get_current_user] = lambda: mock_user
+    app.dependency_overrides[get_db] = lambda: fake_db
+
+    mock_search = MagicMock()
+    mock_search.ok = True
+    mock_search.json.return_value = {
+        "albums": {"items": [{"id": "0ETFjACtuP2ADo6LFhL6HN", "images": [{"url": "http://art.jpg"}]}]}
+    }
+
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.status_code = 200
+
+    with (
+        patch("backend.app.services.spotify_library_service._refresh_access_token", return_value="access-token"),
+        patch("requests.get", return_value=mock_search) as mock_get,
+        patch("requests.request", return_value=mock_resp) as mock_req,
+    ):
+        res = client.put(
+            "/spotify/like-album/Solarized",
+            json={"album_name": "Solarized", "artist_name": "Ian Brown"},
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert data["success"] is True
+        assert data["spotify_album_id"] == "0ETFjACtuP2ADo6LFhL6HN"
+        assert mock_get.called
+        assert (
+            mock_req.call_args[0][1]
+            == "https://api.spotify.com/v1/me/library?uris=spotify:album:0ETFjACtuP2ADo6LFhL6HN"
+        )
 
     app.dependency_overrides.clear()
 
 
 def test_unlike_album_success(mock_user):
     existing = SavedAlbum(
-        id=1, user_id=mock_user.id, spotify_album_id="album123", album_name="Album C", artist_name="Artist B"
+        id=1,
+        user_id=mock_user.id,
+        spotify_album_id="0ETFjACtuP2ADo6LFhL6HN",
+        album_name="Album C",
+        artist_name="Artist B",
     )
     fake_db = FakeDB(user=mock_user, saved_albums=[existing])
     app.dependency_overrides[get_current_user] = lambda: mock_user
@@ -238,11 +299,64 @@ def test_unlike_album_success(mock_user):
         patch("backend.app.services.spotify_library_service._refresh_access_token", return_value="access-token"),
         patch("requests.request", return_value=mock_resp) as mock_req,
     ):
-        res = client.delete("/spotify/like-album/album123")
+        res = client.delete("/spotify/like-album/0ETFjACtuP2ADo6LFhL6HN")
         assert res.status_code == 200
         data = res.json()
         assert data["success"] is True
         assert data["is_liked"] is False
         assert mock_req.call_args[0][0] == "DELETE"
+        assert (
+            mock_req.call_args[0][1]
+            == "https://api.spotify.com/v1/me/library?uris=spotify:album:0ETFjACtuP2ADo6LFhL6HN"
+        )
+
+    app.dependency_overrides.clear()
+
+
+def test_unlike_album_by_name_resolves_from_saved_album(mock_user):
+    existing = SavedAlbum(
+        id=1,
+        user_id=mock_user.id,
+        spotify_album_id="0ETFjACtuP2ADo6LFhL6HN",
+        album_name="In Rainbows",
+        artist_name="Radiohead",
+    )
+    fake_db = FakeDB(user=mock_user, saved_albums=[existing])
+    app.dependency_overrides[get_current_user] = lambda: mock_user
+    app.dependency_overrides[get_db] = lambda: fake_db
+
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.status_code = 200
+
+    with (
+        patch("backend.app.services.spotify_library_service._refresh_access_token", return_value="access-token"),
+        patch("requests.request", return_value=mock_resp) as mock_req,
+    ):
+        res = client.delete("/spotify/like-album/In%20Rainbows")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["success"] is True
+        assert data["is_liked"] is False
+        assert data["spotify_album_id"] == "0ETFjACtuP2ADo6LFhL6HN"
+        assert mock_req.call_args[0][0] == "DELETE"
+        assert (
+            mock_req.call_args[0][1]
+            == "https://api.spotify.com/v1/me/library?uris=spotify:album:0ETFjACtuP2ADo6LFhL6HN"
+        )
+
+    app.dependency_overrides.clear()
+
+
+def test_like_track_rejects_invalid_track_id_characters(mock_user):
+    fake_db = FakeDB(user=mock_user)
+    app.dependency_overrides[get_current_user] = lambda: mock_user
+    app.dependency_overrides[get_db] = lambda: fake_db
+
+    res = client.put(
+        "/spotify/like-track/bad_id&extra=1",
+        json={"track_name": "Song A", "artist_name": "Artist B"},
+    )
+    assert res.status_code == 400
 
     app.dependency_overrides.clear()

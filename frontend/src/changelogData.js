@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.30.2",
+    date: "2026-10-31",
+    changes: [
+      "Spotify Unified Library API: Migrated track and album liking/unliking to Spotify's unified /v1/me/library?uris=... endpoint so likes save reliably without 403 Forbidden errors.",
+      "Instant Red Heart Feedback: Updated heart button styling so tapped hearts turn bright solid red immediately without dimming while saving or showing a green hover background on mobile.",
+      "Single-Word Album Resolution: Tightened Spotify album ID detection to 22-character Spotify IDs so single-word album titles resolve accurately via your saved albums or Spotify search.",
+    ],
+  },
+  {
     version: "0.30.1",
     date: "2026-10-31",
     changes: [

@@ -251,7 +251,10 @@ export default function LibraryPage() {
         return {
           ...prev,
           scrobbles: (prev.scrobbles || []).map((s) =>
-            s.id === item.id ? { ...s, is_liked: nextLiked } : s
+            s.id === item.id ||
+            (item.spotify_track_id && s.spotify_track_id === item.spotify_track_id)
+              ? { ...s, is_liked: nextLiked }
+              : s
           ),
         };
       }
@@ -271,7 +274,7 @@ export default function LibraryPage() {
         if (wasLiked) {
           await unlikeAlbum({ token: session.accessToken, albumId: albumIdentifier });
         } else {
-          await likeAlbum({
+          const res = await likeAlbum({
             token: session.accessToken,
             albumId: albumIdentifier,
             payload: {
@@ -280,6 +283,19 @@ export default function LibraryPage() {
               artwork_url: item.artwork_url || undefined,
             },
           });
+          if (res?.spotify_album_id) {
+            setData((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                entries: (prev.entries || []).map((e) =>
+                  e.label === item.label && e.secondary === item.secondary
+                    ? { ...e, spotify_album_id: res.spotify_album_id }
+                    : e
+                ),
+              };
+            });
+          }
         }
       } else {
         const trackId = item.spotify_track_id;
@@ -305,7 +321,10 @@ export default function LibraryPage() {
           return {
             ...prev,
             scrobbles: (prev.scrobbles || []).map((s) =>
-              s.id === item.id ? { ...s, is_liked: wasLiked } : s
+              s.id === item.id ||
+              (item.spotify_track_id && s.spotify_track_id === item.spotify_track_id)
+                ? { ...s, is_liked: wasLiked }
+                : s
             ),
           };
         }

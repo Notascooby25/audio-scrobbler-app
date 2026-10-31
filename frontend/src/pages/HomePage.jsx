@@ -219,7 +219,12 @@ export default function HomePage() {
     const nextLiked = !wasLiked;
 
     setScrobbles((prev) =>
-      (prev || []).map((s) => (s.id === scrobble.id ? { ...s, is_liked: nextLiked } : s))
+      (prev || []).map((s) =>
+        s.id === scrobble.id ||
+        (scrobble.spotify_track_id && s.spotify_track_id === scrobble.spotify_track_id)
+          ? { ...s, is_liked: nextLiked }
+          : s
+      )
     );
 
     try {
@@ -239,7 +244,12 @@ export default function HomePage() {
       }
     } catch (err) {
       setScrobbles((prev) =>
-        (prev || []).map((s) => (s.id === scrobble.id ? { ...s, is_liked: wasLiked } : s))
+        (prev || []).map((s) =>
+          s.id === scrobble.id ||
+          (scrobble.spotify_track_id && s.spotify_track_id === scrobble.spotify_track_id)
+            ? { ...s, is_liked: wasLiked }
+            : s
+        )
       );
       if (err?.message?.includes("needs_spotify_reconnect") || err?.status === 403) {
         setActionNotice("needs_spotify_reconnect");

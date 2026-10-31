@@ -267,17 +267,19 @@ def toggle_like_track(
     payload: LikeTrackPayload | None = None,
     like: bool = True,
 ) -> bool:
-    url = f"https://api.spotify.com/v1/me/tracks?ids={track_id}"
+    clean_id = track_id.removeprefix("spotify:track:").strip()
+    if not re.fullmatch(r"[A-Za-z0-9_-]{5,40}", clean_id):
+        raise HTTPException(status_code=400, detail="Invalid Spotify track ID")
+    url = f"https://api.spotify.com/v1/me/library?uris=spotify:track:{clean_id}"
     _call_user_spotify(
         db,
         user,
         "PUT" if like else "DELETE",
         url,
-        json={"ids": [track_id]} if like else None,
     )
     if like:
         record = (
-            db.query(LikedTrack).filter(LikedTrack.user_id == user.id, LikedTrack.spotify_track_id == track_id).first()
+            db.query(LikedTrack).filter(LikedTrack.user_id == user.id, LikedTrack.spotify_track_id == clean_id).first()
         )
         if not record:
             track_name = (payload.track_name if payload else None) or "Unknown Track"
@@ -287,7 +289,7 @@ def toggle_like_track(
             db.add(
                 LikedTrack(
                     user_id=user.id,
-                    spotify_track_id=track_id,
+                    spotify_track_id=clean_id,
                     track_name=track_name,
                     artist_name=artist_name,
                     album_name=album_name,
@@ -300,7 +302,7 @@ def toggle_like_track(
     else:
         db.query(LikedTrack).filter(
             LikedTrack.user_id == user.id,
-            LikedTrack.spotify_track_id == track_id,
+            LikedTrack.spotify_track_id == clean_id,
         ).delete()
         db.commit()
         return False
@@ -313,13 +315,13 @@ def toggle_like_album(
     payload: LikeAlbumPayload | None = None,
     like: bool = True,
 ) -> tuple[bool, str]:
-    resolved_id = album_id_or_name
+    resolved_id = album_id_or_name.removeprefix("spotify:album:").strip()
     album_name = (payload.album_name if payload else None) or album_id_or_name
     artist_name = (payload.artist_name if payload else None) or "Unknown Artist"
     artwork_url = payload.artwork_url if payload else None
 
-    is_valid_id = bool(re.fullmatch(r"[a-zA-Z0-9_-]{5,40}", album_id_or_name))
-    if not is_valid_id and like:
+    is_valid_id = bool(re.fullmatch(r"[A-Za-z0-9]{22}", resolved_id))
+    if not is_valid_id:
         existing_saved = (
             db.query(SavedAlbum)
             .filter(
@@ -328,9 +330,9 @@ def toggle_like_album(
             )
             .first()
         )
-        if existing_saved:
+        if existing_saved and existing_saved.spotify_album_id:
             resolved_id = existing_saved.spotify_album_id
-        else:
+        elif like:
             token = _refresh_access_token(db, user)
             q = f"album:{album_name}"
             if artist_name and artist_name != "Unknown Artist":
@@ -352,13 +354,15 @@ def toggle_like_album(
             else:
                 raise HTTPException(status_code=404, detail="Album not found on Spotify")
 
-    url = f"https://api.spotify.com/v1/me/albums?ids={resolved_id}"
+    if not re.fullmatch(r"[A-Za-z0-9_-]{5,40}", resolved_id):
+        raise HTTPException(status_code=400, detail="Invalid Spotify album ID")
+
+    url = f"https://api.spotify.com/v1/me/library?uris=spotify:album:{resolved_id}"
     _call_user_spotify(
         db,
         user,
         "PUT" if like else "DELETE",
         url,
-        json={"ids": [resolved_id]} if like else None,
     )
     if like:
         record = (

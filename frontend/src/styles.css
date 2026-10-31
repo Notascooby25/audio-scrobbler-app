@@ -2622,12 +2622,20 @@ button.btn-secondary:hover:not(:disabled) {
   cursor: pointer;
   padding: 4px;
   margin: -4px;
+  min-height: 0;
+  min-width: 0;
   border-radius: var(--radius-sm, 4px);
   transition:
     transform 120ms ease,
     opacity 120ms ease,
     color 120ms ease;
   line-height: 0;
+}
+
+.liked-heart-btn:hover:not(:disabled),
+.liked-heart-btn:active:not(:disabled),
+.liked-heart-btn:focus-visible {
+  background: transparent;
 }
 
 .liked-heart-btn:hover:not(:disabled) {
@@ -2643,6 +2651,12 @@ button.btn-secondary:hover:not(:disabled) {
 .liked-heart-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.liked-heart-btn.liked-heart-active,
+.liked-heart-btn.liked-heart-active:disabled {
+  color: var(--color-danger);
+  opacity: 1;
 }
 
 .grid-card-body {

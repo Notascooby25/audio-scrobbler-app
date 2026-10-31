@@ -81,7 +81,7 @@ export default function OverviewPage() {
         if (wasLiked) {
           await unlikeAlbum({ token: session.accessToken, albumId: albumIdentifier });
         } else {
-          await likeAlbum({
+          const res = await likeAlbum({
             token: session.accessToken,
             albumId: albumIdentifier,
             payload: {
@@ -90,6 +90,19 @@ export default function OverviewPage() {
               artwork_url: item.artwork_url || undefined,
             },
           });
+          if (res?.spotify_album_id) {
+            setCharts((prev) => {
+              if (!prev || !prev[kind]) return prev;
+              return {
+                ...prev,
+                [kind]: prev[kind].map((e) =>
+                  e.label === item.label && e.secondary === item.secondary
+                    ? { ...e, spotify_album_id: res.spotify_album_id }
+                    : e
+                ),
+              };
+            });
+          }
         }
       } else {
         const trackId = item.spotify_track_id;
