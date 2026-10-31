@@ -45,6 +45,8 @@ class FakeDB:
             value.notify_system = False
         if getattr(value, "recap_frequency", None) is None:
             value.recap_frequency = "weekly"
+        if getattr(value, "jukebox_source", None) is None:
+            value.jukebox_source = "spotify_saved"
         self.preferences = value
 
     def commit(self):

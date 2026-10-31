@@ -19,6 +19,7 @@ DEFAULTS = {
     "show_artwork": True,
     "show_source_badges": True,
     "timestamp_mode": "relative",
+    "jukebox_source": "spotify_saved",
 }
 
 
@@ -47,6 +48,8 @@ def update(db: Session, user_id: int, changes: dict[str, object]) -> UserPrefere
             raise ValueError("Unsupported Library view")
         if key == "timestamp_mode" and value not in {"relative", "absolute"}:
             raise ValueError("Unsupported timestamp mode")
+        if key == "jukebox_source" and value not in {"spotify_saved", "library_archive"}:
+            raise ValueError("Unsupported jukebox source")
         setattr(preferences, key, value)
     db.commit()
     db.refresh(preferences)

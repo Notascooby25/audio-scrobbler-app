@@ -474,6 +474,16 @@ export default function SettingsPage() {
                 <option value="absolute">Always show date and time</option>
               </select>
             </label>
+            <label>
+              Jukebox album source
+              <select
+                value={settings.jukebox_source || "spotify_saved"}
+                onChange={(event) => changeSetting("jukebox_source", event.target.value)}
+              >
+                <option value="spotify_saved">Spotify Saved / Favourited Albums</option>
+                <option value="library_archive">Library Archive (Top 100 Scrobbled)</option>
+              </select>
+            </label>
             {status === "saving" && <p role="status">Saving...</p>}
             {status === "saved" && <p role="status">Saved</p>}
           </div>
