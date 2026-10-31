@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.29.2",
+    date: "2026-10-31",
+    changes: [
+      "Library Timeline: Limited the 'Scrobbles by year' chart to the last 5 years to eliminate horizontal scrollbars and remove sparse older archive years.",
+    ],
+  },
+  {
     version: "0.29.1",
     date: "2026-10-31",
     changes: [

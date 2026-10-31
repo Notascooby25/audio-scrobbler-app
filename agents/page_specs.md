@@ -98,7 +98,7 @@ The full listening history, with breakdowns by artist, album and track.
 | Tabs: Scrobbles, Artists, Albums, Tracks | `LibraryPage` | |
 | Scrobbles list (search; filter by entity/name) | `LibraryScrobbleList` | `GET /library/scrobbles` |
 | Ranked artists, albums or tracks, with a list/grid toggle | `LibraryRankList`, `LibraryViewToggle` | `GET /library/{artists\|albums\|tracks}` |
-| Scrobbles over time | `TimelineChart` | `GET /library/timeline` |
+| Scrobbles over time (last 5 years) | `TimelineChart` | `GET /library/timeline` |
 | Per-entry menu: Block, Clear Artwork, Delete | `EntryMenu`, `ConfirmDeleteModal` | `POST /users/me/blocks`, `POST /library/clear-artwork`, `POST /library/delete-entries`, `POST /library/delete-scrobbles` |
 | Share top artists/albums/tracks as an image (grid or list; Download PNG or Share) | `ShareDialog`, `ShareCard` (uses `html-to-image`) | |
 | Bulk selection (Copy / Deselect) | `LibraryViewToggle`, `bulk-action-bar` | Sticky mobile action bar with touch targets ≥ 44pt |
