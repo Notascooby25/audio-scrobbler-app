@@ -1,4 +1,5 @@
 import { useState } from "react";
+import LikedHeart from "../LikedHeart";
 import JukeboxFilters from "./JukeboxFilters";
 
 export default function FlatJukebox({
@@ -18,6 +19,8 @@ export default function FlatJukebox({
   onLuckyDip,
   onReroll,
   onCommit,
+  onToggleLike,
+  liking = false,
 }) {
   const [spinning, setSpinning] = useState(false);
 
@@ -178,16 +181,33 @@ export default function FlatJukebox({
           </div>
           <div
             style={{
-              fontSize: "16px",
-              fontWeight: 700,
-              color: "var(--color-ink)",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
               marginTop: "2px",
             }}
           >
-            {currentPick ? currentPick.album_name : "No Album Picked Yet"}
+            <div
+              style={{
+                fontSize: "16px",
+                fontWeight: 700,
+                color: "var(--color-ink)",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {currentPick ? currentPick.album_name : "No Album Picked Yet"}
+            </div>
+            {currentPick && (
+              <LikedHeart
+                liked={Boolean(currentPick.is_liked)}
+                interactive={Boolean(onToggleLike)}
+                label={currentPick.album_name}
+                busy={liking}
+                onToggle={onToggleLike ? () => onToggleLike(currentPick) : undefined}
+              />
+            )}
           </div>
           <div
             style={{

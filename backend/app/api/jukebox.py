@@ -29,6 +29,7 @@ class JukeboxAlbumItem(BaseModel):
     added_at: str
     last_picked_at: str | None = None
     play_count: int = 0
+    is_liked: bool = False
 
 
 class JukeboxAlbumsResponse(BaseModel):
@@ -80,6 +81,7 @@ def get_jukebox_albums(
             .limit(archive_limit)
             .all()
         )
+        saved_names = {a.album_name.lower() for a in saved_albums if a.album_name}
         items = []
         for idx, row in enumerate(scrobble_albums):
             items.append(
@@ -94,6 +96,7 @@ def get_jukebox_albums(
                     else datetime.now(timezone.utc).isoformat(),
                     play_count=row.plays,
                     genres=[],
+                    is_liked=row.album_name.lower() in saved_names,
                 )
             )
         return JukeboxAlbumsResponse(albums=items, source="library_archive")
@@ -133,6 +136,7 @@ def get_jukebox_albums(
                 added_at=a.added_at.isoformat(),
                 last_picked_at=a.last_picked_at.isoformat() if a.last_picked_at else None,
                 play_count=plays,
+                is_liked=True,
             )
         )
     return JukeboxAlbumsResponse(albums=items, source="spotify_saved")

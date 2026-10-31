@@ -1,47 +1,87 @@
-import { render, screen, fireEvent, cleanup, act } from '@testing-library/react'
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
-import FlatJukebox from './FlatJukebox'
+import { render, screen, fireEvent, cleanup, act } from "@testing-library/react";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
+import FlatJukebox from "./FlatJukebox";
 
-describe('FlatJukebox', () => {
+describe("FlatJukebox", () => {
   beforeEach(() => {
-    vi.useFakeTimers()
-  })
+    vi.useFakeTimers();
+  });
 
   afterEach(() => {
-    cleanup()
-    vi.useRealTimers()
-  })
+    cleanup();
+    vi.useRealTimers();
+  });
 
   const defaultProps = {
-    filteredAlbums: [{ id: 1, album_name: 'Abbey Road', artist_name: 'The Beatles', release_year: 1969, play_count: 42 }],
-    pool: [{ id: 1, album_name: 'Abbey Road', artist_name: 'The Beatles', release_year: 1969, play_count: 42 }],
-    currentPick: { id: 1, album_name: 'Abbey Road', artist_name: 'The Beatles', release_year: 1969, play_count: 42, spotify_url: 'https://open.spotify.com/album/1' },
+    filteredAlbums: [
+      {
+        id: 1,
+        album_name: "Abbey Road",
+        artist_name: "The Beatles",
+        release_year: 1969,
+        play_count: 42,
+      },
+    ],
+    pool: [
+      {
+        id: 1,
+        album_name: "Abbey Road",
+        artist_name: "The Beatles",
+        release_year: 1969,
+        play_count: 42,
+      },
+    ],
+    currentPick: {
+      id: 1,
+      album_name: "Abbey Road",
+      artist_name: "The Beatles",
+      release_year: 1969,
+      play_count: 42,
+      spotify_url: "https://open.spotify.com/album/1",
+    },
     rollsLeft: 2,
     sessionActive: true,
     canRoll: true,
     busy: false,
-    mode: 'any',
+    mode: "any",
     setMode: vi.fn(),
     onLuckyDip: vi.fn(),
     onReroll: vi.fn(),
     onCommit: vi.fn(),
-  }
+  };
 
-  it('renders flat vinyl platter, album details, and controls', () => {
-    render(<FlatJukebox {...defaultProps} />)
-    expect(screen.getByText('Abbey Road')).toBeInTheDocument()
-    expect(screen.getByText(/The Beatles/)).toBeInTheDocument()
-    expect(screen.getByText(/Re-roll \(2 left\)/)).toBeInTheDocument()
-    expect(screen.getByText('Open in Spotify ↗')).toBeInTheDocument()
-  })
+  it("renders flat vinyl platter, album details, and controls", () => {
+    render(<FlatJukebox {...defaultProps} />);
+    expect(screen.getByText("Abbey Road")).toBeInTheDocument();
+    expect(screen.getByText(/The Beatles/)).toBeInTheDocument();
+    expect(screen.getByText(/Re-roll \(2 left\)/)).toBeInTheDocument();
+    expect(screen.getByText("Open in Spotify ↗")).toBeInTheDocument();
+  });
 
-  it('triggers onReroll when reroll button clicked', () => {
-    render(<FlatJukebox {...defaultProps} />)
-    const rerollBtn = screen.getByRole('button', { name: /Re-roll/ })
-    fireEvent.click(rerollBtn)
+  it("triggers onReroll when reroll button clicked", () => {
+    render(<FlatJukebox {...defaultProps} />);
+    const rerollBtn = screen.getByRole("button", { name: /Re-roll/ });
+    fireEvent.click(rerollBtn);
     act(() => {
-      vi.advanceTimersByTime(500)
-    })
-    expect(defaultProps.onReroll).toHaveBeenCalled()
-  })
-})
+      vi.advanceTimersByTime(500);
+    });
+    expect(defaultProps.onReroll).toHaveBeenCalled();
+  });
+
+  it("renders interactive heart for current pick and calls onToggleLike", () => {
+    const onToggleLike = vi.fn();
+    render(
+      <FlatJukebox
+        {...defaultProps}
+        currentPick={{ ...defaultProps.currentPick, is_liked: false }}
+        onToggleLike={onToggleLike}
+      />
+    );
+    const heartBtn = screen.getByRole("button", { name: "Like on Spotify" });
+    expect(heartBtn).toBeInTheDocument();
+    fireEvent.click(heartBtn);
+    expect(onToggleLike).toHaveBeenCalledWith(
+      expect.objectContaining({ album_name: "Abbey Road" })
+    );
+  });
+});

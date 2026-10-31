@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchJukeboxAlbums, recordJukeboxPick } from "../../api";
+import { fetchJukeboxAlbums, likeAlbum, recordJukeboxPick, unlikeAlbum } from "../../api";
 import FlatJukebox from "./FlatJukebox";
 import RetroJukebox from "./RetroJukebox";
 import { useJukeboxEngine } from "./useJukeboxEngine";
@@ -11,8 +11,45 @@ export default function JukeboxCard({ token }) {
     () => localStorage.getItem("jukebox_theme_mode") || "flat"
   );
   const [error, setError] = useState("");
+  const [liking, setLiking] = useState(false);
 
   const engine = useJukeboxEngine(albums);
+
+  const handleToggleLike = async (pick) => {
+    if (!token || !pick) return;
+    const wasLiked = Boolean(pick.is_liked);
+    const nextLiked = !wasLiked;
+    const albumIdentifier = pick.spotify_album_id || pick.album_name;
+
+    setLiking(true);
+    if (engine.setCurrentPick) {
+      engine.setCurrentPick((prev) => (prev ? { ...prev, is_liked: nextLiked } : prev));
+    }
+    setAlbums((prev) => prev.map((a) => (a.id === pick.id ? { ...a, is_liked: nextLiked } : a)));
+
+    try {
+      if (wasLiked) {
+        await unlikeAlbum({ token, albumId: albumIdentifier });
+      } else {
+        await likeAlbum({
+          token,
+          albumId: albumIdentifier,
+          payload: {
+            album_name: pick.album_name,
+            artist_name: pick.artist_name,
+            artwork_url: pick.artwork_url || undefined,
+          },
+        });
+      }
+    } catch {
+      if (engine.setCurrentPick) {
+        engine.setCurrentPick((prev) => (prev ? { ...prev, is_liked: wasLiked } : prev));
+      }
+      setAlbums((prev) => prev.map((a) => (a.id === pick.id ? { ...a, is_liked: wasLiked } : a)));
+    } finally {
+      setLiking(false);
+    }
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -73,7 +110,9 @@ export default function JukeboxCard({ token }) {
           marginBottom: "24px",
         }}
       >
-        <span style={{ fontWeight: 600, color: "var(--color-text-primary, #111111)" }}>Album Jukebox: </span>
+        <span style={{ fontWeight: 600, color: "var(--color-text-primary, #111111)" }}>
+          Album Jukebox:{" "}
+        </span>
         {error}
       </div>
     );
@@ -118,6 +157,8 @@ export default function JukeboxCard({ token }) {
           onLuckyDip={engine.luckyDip}
           onReroll={engine.reroll}
           onCommit={handleRollCommit}
+          onToggleLike={handleToggleLike}
+          liking={liking}
         />
       ) : (
         <RetroJukebox
