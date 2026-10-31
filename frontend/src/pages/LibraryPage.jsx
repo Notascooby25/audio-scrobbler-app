@@ -1,255 +1,482 @@
-import { useEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import AnalyticsPage from '../components/AnalyticsPage'
-import DateRangeSelector from '../components/DateRangeSelector'
-import LibraryRankList from '../components/LibraryRankList'
-import LibraryScrobbleList from '../components/LibraryScrobbleList'
-import LibraryViewToggle from '../components/LibraryViewToggle'
-import PageSizeSelect from '../components/PageSizeSelect'
-import Pagination from '../components/Pagination'
-import ShareDialog from '../components/ShareDialog'
-import TimelineChart from '../components/TimelineChart'
-import { createBlock, deleteLibraryEntries, deleteLibraryScrobbles, fetchLibraryCollection, fetchLibraryScrobbles, fetchLibraryTimeline, fetchUserProfile, fetchUserSettings } from '../api'
-import { createDefaultDateRange, isValidDateRange } from '../dateRange'
-import { readSession } from '../session'
-import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import AnalyticsPage from "../components/AnalyticsPage";
+import DateRangeSelector from "../components/DateRangeSelector";
+import LibraryRankList from "../components/LibraryRankList";
+import LibraryScrobbleList from "../components/LibraryScrobbleList";
+import LibraryViewToggle from "../components/LibraryViewToggle";
+import PageSizeSelect from "../components/PageSizeSelect";
+import Pagination from "../components/Pagination";
+import ShareDialog from "../components/ShareDialog";
+import TimelineChart from "../components/TimelineChart";
+import {
+  createBlock,
+  deleteLibraryEntries,
+  deleteLibraryScrobbles,
+  fetchLibraryCollection,
+  fetchLibraryScrobbles,
+  fetchLibraryTimeline,
+  fetchUserProfile,
+  fetchUserSettings,
+  likeAlbum,
+  likeTrack,
+  unlikeAlbum,
+  unlikeTrack,
+} from "../api";
+import { createDefaultDateRange, isValidDateRange } from "../dateRange";
+import { readSession } from "../session";
+import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 
 const TABS = [
-  ['scrobbles', 'Scrobbles'],
-  ['artists', 'Artists'],
-  ['albums', 'Albums'],
-  ['tracks', 'Tracks'],
-]
+  ["scrobbles", "Scrobbles"],
+  ["artists", "Artists"],
+  ["albums", "Albums"],
+  ["tracks", "Tracks"],
+];
 
 export default function LibraryPage() {
-  const session = readSession()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const routeUserId = searchParams.get('userId')
-  const targetUserId = routeUserId ? Number(routeUserId) : undefined
-  const isOwnLibrary = !routeUserId || Number(routeUserId) === session?.userId
-  const [targetProfile, setTargetProfile] = useState(null)
-  const [tab, setTab] = useState(() => searchParams.get('filter_name') ? 'scrobbles' : 'scrobbles')
-  const [dateRange, setDateRange] = useState(createDefaultDateRange())
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(50)
-  const [view, setView] = useState(() => localStorage.getItem('audio-scrobbler-library-view') || 'list')
-  const [settings, setSettings] = useState(null)
-  const [preferencesReady, setPreferencesReady] = useState(!session?.accessToken)
-  const [totalCount, setTotalCount] = useState(0)
-  const [data, setData] = useState(null)
-  const [loadedTab, setLoadedTab] = useState(null)
-  const [timeline, setTimeline] = useState([])
-  const [status, setStatus] = useState(session?.accessToken ? 'loading' : 'idle')
-  const [error, setError] = useState('')
-  const [actionNotice, setActionNotice] = useState('')
-  const [bulkBusy, setBulkBusy] = useState(false)
-  const [bulkError, setBulkError] = useState('')
-  const [selectedScrobbleIds, setSelectedScrobbleIds] = useState(new Set())
-  const [selectedEntries, setSelectedEntries] = useState(new Map())
+  const session = readSession();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const routeUserId = searchParams.get("userId");
+  const targetUserId = routeUserId ? Number(routeUserId) : undefined;
+  const isOwnLibrary = !routeUserId || Number(routeUserId) === session?.userId;
+  const [targetProfile, setTargetProfile] = useState(null);
+  const [tab, setTab] = useState(() =>
+    searchParams.get("filter_name") ? "scrobbles" : "scrobbles"
+  );
+  const [dateRange, setDateRange] = useState(createDefaultDateRange());
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [view, setView] = useState(
+    () => localStorage.getItem("audio-scrobbler-library-view") || "list"
+  );
+  const [settings, setSettings] = useState(null);
+  const [preferencesReady, setPreferencesReady] = useState(!session?.accessToken);
+  const [totalCount, setTotalCount] = useState(0);
+  const [data, setData] = useState(null);
+  const [loadedTab, setLoadedTab] = useState(null);
+  const [timeline, setTimeline] = useState([]);
+  const [status, setStatus] = useState(session?.accessToken ? "loading" : "idle");
+  const [error, setError] = useState("");
+  const [actionNotice, setActionNotice] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkError, setBulkError] = useState("");
+  const [selectedScrobbleIds, setSelectedScrobbleIds] = useState(new Set());
+  const [selectedEntries, setSelectedEntries] = useState(new Map());
+  const [likingKeys, setLikingKeys] = useState(() => new Set());
   const [scrobbleFilter, setScrobbleFilter] = useState(() => ({
-    entity: searchParams.get('filter_entity') || null,
-    name: searchParams.get('filter_name') || null,
-    secondary: searchParams.get('filter_secondary') || null,
-  }))
-  const [searchQuery, setSearchQuery] = useState('')
-  const [activeSearchQuery, setActiveSearchQuery] = useState('')
-  const [refreshKey, setRefreshKey] = useState(0)
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
-  const [selectMode, setSelectMode] = useState(false)
-  const [shareOpen, setShareOpen] = useState(false)
-  const filterKeyRef = useRef(null)
+    entity: searchParams.get("filter_entity") || null,
+    name: searchParams.get("filter_name") || null,
+    secondary: searchParams.get("filter_secondary") || null,
+  }));
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeSearchQuery, setActiveSearchQuery] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const filterKeyRef = useRef(null);
 
   useEffect(() => {
     const filter = {
-      entity: searchParams.get('filter_entity') || null,
-      name: searchParams.get('filter_name') || null,
-      secondary: searchParams.get('filter_secondary') || null,
-    }
-    setScrobbleFilter(filter)
-    if (filter.name) setTab('scrobbles')
-  }, [searchParams])
+      entity: searchParams.get("filter_entity") || null,
+      name: searchParams.get("filter_name") || null,
+      secondary: searchParams.get("filter_secondary") || null,
+    };
+    setScrobbleFilter(filter);
+    if (filter.name) setTab("scrobbles");
+  }, [searchParams]);
 
   useEffect(() => {
     if (!session?.accessToken || isOwnLibrary) {
-      setTargetProfile(null)
-      return
+      setTargetProfile(null);
+      return;
     }
     fetchUserProfile({ token: session.accessToken, userId: targetUserId })
       .then(setTargetProfile)
-      .catch(() => {})
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [routeUserId])
+  }, [routeUserId]);
 
   useEffect(() => {
-    if (!session?.accessToken) return
+    if (!session?.accessToken) return;
     fetchUserSettings({ token: session.accessToken })
       .then((userSettings) => {
-        setSettings(userSettings)
-        setDateRange((current) => ({ ...current, range: userSettings.default_date_range }))
-        setPageSize(userSettings.default_page_size)
-        setView(userSettings.scrobbles_view || userSettings.default_library_view)
-        setPreferencesReady(true)
+        setSettings(userSettings);
+        setDateRange((current) => ({ ...current, range: userSettings.default_date_range }));
+        setPageSize(userSettings.default_page_size);
+        setView(userSettings.scrobbles_view || userSettings.default_library_view);
+        setPreferencesReady(true);
       })
-      .catch(() => setPreferencesReady(true))
-  }, [])
+      .catch(() => setPreferencesReady(true));
+  }, []);
 
   useEffect(() => {
-    if (!session?.accessToken) return
-    if (!preferencesReady) return
-    if (!isValidDateRange(dateRange)) return
+    if (!session?.accessToken) return;
+    if (!preferencesReady) return;
+    if (!isValidDateRange(dateRange)) return;
 
-    const filterKey = `${tab}|${JSON.stringify(dateRange)}|${pageSize}|${activeSearchQuery}`
+    const filterKey = `${tab}|${JSON.stringify(dateRange)}|${pageSize}|${activeSearchQuery}`;
     if (filterKeyRef.current !== null && filterKeyRef.current !== filterKey && page !== 1) {
-      filterKeyRef.current = filterKey
-      setPage(1)
-      return
+      filterKeyRef.current = filterKey;
+      setPage(1);
+      return;
     }
-    filterKeyRef.current = filterKey
+    filterKeyRef.current = filterKey;
 
-    setStatus('loading')
-    setData(null)
-    const offset = (page - 1) * pageSize
-    const rangeArg = dateRange
-    const request = tab === 'scrobbles'
-      ? fetchLibraryScrobbles({ token: session.accessToken, limit: pageSize, offset, dateRange: rangeArg, filterEntity: scrobbleFilter.entity, filterName: scrobbleFilter.name, filterSecondary: scrobbleFilter.secondary, search: activeSearchQuery || undefined, userId: targetUserId })
-      : fetchLibraryCollection({ token: session.accessToken, entity: tab, limit: pageSize, offset, dateRange: rangeArg, search: activeSearchQuery || undefined, userId: targetUserId })
-    Promise.all([request, fetchLibraryTimeline({ token: session.accessToken, userId: targetUserId })])
+    setStatus("loading");
+    setData(null);
+    const offset = (page - 1) * pageSize;
+    const rangeArg = dateRange;
+    const request =
+      tab === "scrobbles"
+        ? fetchLibraryScrobbles({
+            token: session.accessToken,
+            limit: pageSize,
+            offset,
+            dateRange: rangeArg,
+            filterEntity: scrobbleFilter.entity,
+            filterName: scrobbleFilter.name,
+            filterSecondary: scrobbleFilter.secondary,
+            search: activeSearchQuery || undefined,
+            userId: targetUserId,
+          })
+        : fetchLibraryCollection({
+            token: session.accessToken,
+            entity: tab,
+            limit: pageSize,
+            offset,
+            dateRange: rangeArg,
+            search: activeSearchQuery || undefined,
+            userId: targetUserId,
+          });
+    Promise.all([
+      request,
+      fetchLibraryTimeline({ token: session.accessToken, userId: targetUserId }),
+    ])
       .then(([result, chart]) => {
-        setData(result)
-        setLoadedTab(tab)
-        setTotalCount(result.total_count ?? 0)
-        setTimeline(chart.entries)
-        setStatus('ready')
+        setData(result);
+        setLoadedTab(tab);
+        setTotalCount(result.total_count ?? 0);
+        setTimeline(chart.entries);
+        setStatus("ready");
       })
       .catch((requestError) => {
-        setError(requestError.status === 403 ? "Follow this user to see their library." : requestError.message)
-        setStatus('error')
-      })
-  }, [tab, dateRange, pageSize, page, preferencesReady, refreshKey, scrobbleFilter, activeSearchQuery, routeUserId])
+        setError(
+          requestError.status === 403
+            ? "Follow this user to see their library."
+            : requestError.message
+        );
+        setStatus("error");
+      });
+  }, [
+    tab,
+    dateRange,
+    pageSize,
+    page,
+    preferencesReady,
+    refreshKey,
+    scrobbleFilter,
+    activeSearchQuery,
+    routeUserId,
+  ]);
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
-  const rankedEntries = data && loadedTab === tab && tab !== 'scrobbles' ? data.entries : []
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const rankedEntries = data && loadedTab === tab && tab !== "scrobbles" ? data.entries : [];
 
   const changeView = (nextView) => {
-    setView(nextView)
-    setSettings((current) => current ? { ...current, [`${tab}_view`]: nextView } : current)
-    localStorage.setItem('audio-scrobbler-library-view', nextView)
-  }
+    setView(nextView);
+    setSettings((current) => (current ? { ...current, [`${tab}_view`]: nextView } : current));
+    localStorage.setItem("audio-scrobbler-library-view", nextView);
+  };
 
-  const activeView = tab === 'scrobbles' ? 'list' : (settings?.[`${tab}_view`] || view)
-  const visibleScrobbles = data && loadedTab === tab && tab === 'scrobbles' ? data.scrobbles : []
-  const selectedCount = tab === 'scrobbles' ? selectedScrobbleIds.size : selectedEntries.size
+  const activeView = tab === "scrobbles" ? "list" : settings?.[`${tab}_view`] || view;
+  const visibleScrobbles = data && loadedTab === tab && tab === "scrobbles" ? data.scrobbles : [];
+  const selectedCount = tab === "scrobbles" ? selectedScrobbleIds.size : selectedEntries.size;
 
   const clearSelection = () => {
-    setSelectedScrobbleIds(new Set())
-    setSelectedEntries(new Map())
-    setBulkError('')
-  }
+    setSelectedScrobbleIds(new Set());
+    setSelectedEntries(new Map());
+    setBulkError("");
+  };
 
   const handleEntryChanged = (message) => {
-    setActionNotice(message)
-    setRefreshKey((current) => current + 1)
-  }
+    setActionNotice(message);
+    setRefreshKey((current) => current + 1);
+  };
+
+  const handleToggleLike = async (item, itemKind) => {
+    if (!session?.accessToken || !isOwnLibrary) return;
+
+    const isAlbum = itemKind === "albums";
+    const isTrack = itemKind === "tracks" || itemKind === "scrobbles" || itemKind === "scrobble";
+
+    if (isTrack) {
+      const isSpotify = Boolean(
+        item.spotify_track_id ||
+        (item.sources && item.sources.includes("spotify")) ||
+        item.source === "spotify"
+      );
+      if (!isSpotify || !item.spotify_track_id) {
+        setActionNotice("Only able to like tracks played through Spotify");
+        return;
+      }
+    } else if (isAlbum) {
+      const isSpotify = Boolean(
+        item.spotify_album_id ||
+        (item.sources && item.sources.includes("spotify")) ||
+        item.source === "spotify"
+      );
+      if (!isSpotify) {
+        setActionNotice("Only able to like albums played through Spotify");
+        return;
+      }
+    }
+
+    const itemKey =
+      itemKind === "scrobble" || itemKind === "scrobbles"
+        ? item.id
+        : `${itemKind}:${item.label}:${item.secondary || ""}`;
+
+    setLikingKeys((prev) => new Set(prev).add(itemKey));
+
+    const wasLiked = Boolean(item.is_liked);
+    const nextLiked = !wasLiked;
+
+    setData((prev) => {
+      if (!prev) return prev;
+      if (itemKind === "scrobble" || itemKind === "scrobbles") {
+        return {
+          ...prev,
+          scrobbles: (prev.scrobbles || []).map((s) =>
+            s.id === item.id ? { ...s, is_liked: nextLiked } : s
+          ),
+        };
+      }
+      return {
+        ...prev,
+        entries: (prev.entries || []).map((e) =>
+          e.label === item.label && e.secondary === item.secondary
+            ? { ...e, is_liked: nextLiked }
+            : e
+        ),
+      };
+    });
+
+    try {
+      if (isAlbum) {
+        const albumIdentifier = item.spotify_album_id || item.label;
+        if (wasLiked) {
+          await unlikeAlbum({ token: session.accessToken, albumId: albumIdentifier });
+        } else {
+          await likeAlbum({
+            token: session.accessToken,
+            albumId: albumIdentifier,
+            payload: {
+              album_name: item.label,
+              artist_name: item.secondary || undefined,
+              artwork_url: item.artwork_url || undefined,
+            },
+          });
+        }
+      } else {
+        const trackId = item.spotify_track_id;
+        if (wasLiked) {
+          await unlikeTrack({ token: session.accessToken, trackId });
+        } else {
+          await likeTrack({
+            token: session.accessToken,
+            trackId,
+            payload: {
+              track_name: item.track_name || item.label,
+              artist_name: item.artist_name || item.secondary || undefined,
+              album_name: item.album_name || undefined,
+              artwork_url: item.artwork_url || undefined,
+            },
+          });
+        }
+      }
+    } catch (err) {
+      setData((prev) => {
+        if (!prev) return prev;
+        if (itemKind === "scrobble" || itemKind === "scrobbles") {
+          return {
+            ...prev,
+            scrobbles: (prev.scrobbles || []).map((s) =>
+              s.id === item.id ? { ...s, is_liked: wasLiked } : s
+            ),
+          };
+        }
+        return {
+          ...prev,
+          entries: (prev.entries || []).map((e) =>
+            e.label === item.label && e.secondary === item.secondary
+              ? { ...e, is_liked: wasLiked }
+              : e
+          ),
+        };
+      });
+
+      if (err?.message?.includes("needs_spotify_reconnect") || err?.status === 403) {
+        setActionNotice("Please reconnect your Spotify account in Settings to enable liking.");
+      } else {
+        setActionNotice(err?.message || "Failed to update Spotify like.");
+      }
+    } finally {
+      setLikingKeys((prev) => {
+        const next = new Set(prev);
+        next.delete(itemKey);
+        return next;
+      });
+    }
+  };
 
   const toggleScrobbleSelection = (id) => {
     setSelectedScrobbleIds((current) => {
-      const next = new Set(current)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const toggleEntrySelection = (entry) => {
     setSelectedEntries((current) => {
-      const next = new Map(current)
-      if (next.has(entry.key)) next.delete(entry.key)
-      else next.set(entry.key, entry)
-      return next
-    })
-  }
+      const next = new Map(current);
+      if (next.has(entry.key)) next.delete(entry.key);
+      else next.set(entry.key, entry);
+      return next;
+    });
+  };
 
   const toggleVisibleSelection = () => {
-    if (tab === 'scrobbles') {
-      const visibleIds = visibleScrobbles.map((scrobble) => scrobble.id)
-      const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedScrobbleIds.has(id))
-      setSelectedScrobbleIds(allSelected ? new Set() : new Set(visibleIds))
-      return
+    if (tab === "scrobbles") {
+      const visibleIds = visibleScrobbles.map((scrobble) => scrobble.id);
+      const allSelected =
+        visibleIds.length > 0 && visibleIds.every((id) => selectedScrobbleIds.has(id));
+      setSelectedScrobbleIds(allSelected ? new Set() : new Set(visibleIds));
+      return;
     }
 
-    const entityType = tab === 'artists' ? 'artist' : tab === 'albums' ? 'album' : tab === 'tracks' ? 'track' : null
-    if (!entityType) return
-    const visibleEntries = rankedEntries.map((entry) => ({ key: `${entityType}:${entry.label}:${entry.secondary || ''}`, entityType, name: entry.label, secondary: entry.secondary }))
-    const allSelected = visibleEntries.length > 0 && visibleEntries.every((entry) => selectedEntries.has(entry.key))
-    setSelectedEntries(allSelected ? new Map() : new Map(visibleEntries.map((entry) => [entry.key, entry])))
-  }
+    const entityType =
+      tab === "artists" ? "artist" : tab === "albums" ? "album" : tab === "tracks" ? "track" : null;
+    if (!entityType) return;
+    const visibleEntries = rankedEntries.map((entry) => ({
+      key: `${entityType}:${entry.label}:${entry.secondary || ""}`,
+      entityType,
+      name: entry.label,
+      secondary: entry.secondary,
+    }));
+    const allSelected =
+      visibleEntries.length > 0 && visibleEntries.every((entry) => selectedEntries.has(entry.key));
+    setSelectedEntries(
+      allSelected ? new Map() : new Map(visibleEntries.map((entry) => [entry.key, entry]))
+    );
+  };
 
   const promptBulkDelete = () => {
-    setConfirmDeleteOpen(true)
-  }
+    setConfirmDeleteOpen(true);
+  };
 
   const executeBulkDelete = async () => {
-    setBulkBusy(true)
-    setBulkError('')
+    setBulkBusy(true);
+    setBulkError("");
     try {
-      if (tab === 'scrobbles') {
-        const result = await deleteLibraryScrobbles({ token: session.accessToken, ids: Array.from(selectedScrobbleIds) })
-        handleEntryChanged(`Deleted ${result.deleted} selected scrobbles.`)
-      } else {
-        const entries = Array.from(selectedEntries.values())
-        const results = await Promise.all(entries.map((entry) => deleteLibraryEntries({
+      if (tab === "scrobbles") {
+        const result = await deleteLibraryScrobbles({
           token: session.accessToken,
-          entityType: entry.entityType,
-          name: entry.name,
-          secondary: entry.entityType === 'track' ? entry.secondary : undefined,
-        })))
-        const deleted = results.reduce((total, result) => total + (result.deleted || 0), 0)
-        handleEntryChanged(`Deleted ${deleted} scrobbles for ${entries.length} selected entries.`)
+          ids: Array.from(selectedScrobbleIds),
+        });
+        handleEntryChanged(`Deleted ${result.deleted} selected scrobbles.`);
+      } else {
+        const entries = Array.from(selectedEntries.values());
+        const results = await Promise.all(
+          entries.map((entry) =>
+            deleteLibraryEntries({
+              token: session.accessToken,
+              entityType: entry.entityType,
+              name: entry.name,
+              secondary: entry.entityType === "track" ? entry.secondary : undefined,
+            })
+          )
+        );
+        const deleted = results.reduce((total, result) => total + (result.deleted || 0), 0);
+        handleEntryChanged(`Deleted ${deleted} scrobbles for ${entries.length} selected entries.`);
       }
-      clearSelection()
-      setConfirmDeleteOpen(false)
+      clearSelection();
+      setConfirmDeleteOpen(false);
     } catch (requestError) {
-      setBulkError(requestError.message || 'Bulk delete failed')
-      setConfirmDeleteOpen(false)
+      setBulkError(requestError.message || "Bulk delete failed");
+      setConfirmDeleteOpen(false);
     } finally {
-      setBulkBusy(false)
+      setBulkBusy(false);
     }
-  }
+  };
 
   const bulkBlock = async () => {
-    setBulkBusy(true)
-    setBulkError('')
+    setBulkBusy(true);
+    setBulkError("");
     try {
-      const entries = Array.from(selectedEntries.values())
-      await Promise.all(entries.map((entry) => createBlock({ token: session.accessToken, entityType: entry.entityType, name: entry.name })))
-      handleEntryChanged(`Blocked ${entries.length} selected entries.`)
-      clearSelection()
+      const entries = Array.from(selectedEntries.values());
+      await Promise.all(
+        entries.map((entry) =>
+          createBlock({
+            token: session.accessToken,
+            entityType: entry.entityType,
+            name: entry.name,
+          })
+        )
+      );
+      handleEntryChanged(`Blocked ${entries.length} selected entries.`);
+      clearSelection();
     } catch (requestError) {
-      setBulkError(requestError.message || 'Bulk block failed')
+      setBulkError(requestError.message || "Bulk block failed");
     } finally {
-      setBulkBusy(false)
+      setBulkBusy(false);
     }
-  }
+  };
 
   return (
-    <AnalyticsPage eyebrow="Personal archive" title={isOwnLibrary ? 'Library' : `@${targetProfile?.username || '...'}'s Library`}>
-      {!session?.accessToken && <p className="notice">Connect Spotify from the <a href="/connect">connection page</a> to browse your library.</p>}
-      {status === 'loading' && <p className="notice">Loading your library...</p>}
-      {status === 'error' && <p className="notice notice-error" role="alert">{error}</p>}
-      {actionNotice && <p className="notice" role="status">{actionNotice}</p>}
+    <AnalyticsPage
+      eyebrow="Personal archive"
+      title={isOwnLibrary ? "Library" : `@${targetProfile?.username || "..."}'s Library`}
+    >
+      {!session?.accessToken && (
+        <p className="notice">
+          Connect Spotify from the <a href="/connect">connection page</a> to browse your library.
+        </p>
+      )}
+      {status === "loading" && <p className="notice">Loading your library...</p>}
+      {status === "error" && (
+        <p className="notice notice-error" role="alert">
+          {error}
+        </p>
+      )}
+      {actionNotice && (
+        <p className="notice" role="status">
+          {actionNotice}
+        </p>
+      )}
       {session?.accessToken && (
         <>
           <div className="library-segmented-group">
             <span className="library-segmented-label">View</span>
-            <div className="segmented-tabs library-tabs" role="tablist" aria-label="Library sections">
+            <div
+              className="segmented-tabs library-tabs"
+              role="tablist"
+              aria-label="Library sections"
+            >
               {TABS.map(([value, label]) => (
                 <button
                   key={value}
                   type="button"
                   role="tab"
                   aria-selected={tab === value}
-                  className={`segmented-tab ${tab === value ? 'active' : ''}`}
-                  onClick={() => { setTab(value); setSearchParams(routeUserId ? { userId: routeUserId } : {}) }}
+                  className={`segmented-tab ${tab === value ? "active" : ""}`}
+                  onClick={() => {
+                    setTab(value);
+                    setSearchParams(routeUserId ? { userId: routeUserId } : {});
+                  }}
                 >
                   {label}
                 </button>
@@ -259,7 +486,13 @@ export default function LibraryPage() {
           <div className="library-controls-bar">
             <DateRangeSelector value={dateRange} onChange={setDateRange} showCompare={false} />
             <div className="library-toolbar">
-              <form onSubmit={(e) => { e.preventDefault(); setActiveSearchQuery(searchQuery); }} className="library-search-form">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setActiveSearchQuery(searchQuery);
+                }}
+                className="library-search-form"
+              >
                 <input
                   type="search"
                   placeholder="Search library..."
@@ -274,10 +507,14 @@ export default function LibraryPage() {
                 onChange={changeView}
                 selectMode={selectMode}
                 onToggleSelectMode={isOwnLibrary ? () => setSelectMode((prev) => !prev) : undefined}
-                allowGrid={tab !== 'scrobbles'}
+                allowGrid={tab !== "scrobbles"}
               />
-              {tab !== 'scrobbles' && (
-                <button type="button" className="share-trigger-button" onClick={() => setShareOpen(true)}>
+              {tab !== "scrobbles" && (
+                <button
+                  type="button"
+                  className="share-trigger-button"
+                  onClick={() => setShareOpen(true)}
+                >
                   Share
                 </button>
               )}
@@ -286,17 +523,66 @@ export default function LibraryPage() {
           {isOwnLibrary && selectedCount > 0 && (
             <div className="bulk-action-bar" role="status">
               <strong>{selectedCount.toLocaleString()} selected</strong>
-              <button type="button" disabled={bulkBusy} onClick={toggleVisibleSelection}>Select visible</button>
-              <button type="button" disabled={bulkBusy} onClick={promptBulkDelete}>Delete selected</button>
-              {tab !== 'scrobbles' && <button type="button" disabled={bulkBusy} onClick={bulkBlock}>Block selected</button>}
-              <button type="button" className="bulk-action-secondary" disabled={bulkBusy} onClick={clearSelection}>Clear</button>
+              <button type="button" disabled={bulkBusy} onClick={toggleVisibleSelection}>
+                Select visible
+              </button>
+              <button type="button" disabled={bulkBusy} onClick={promptBulkDelete}>
+                Delete selected
+              </button>
+              {tab !== "scrobbles" && (
+                <button type="button" disabled={bulkBusy} onClick={bulkBlock}>
+                  Block selected
+                </button>
+              )}
+              <button
+                type="button"
+                className="bulk-action-secondary"
+                disabled={bulkBusy}
+                onClick={clearSelection}
+              >
+                Clear
+              </button>
               {bulkError && <span role="alert">{bulkError}</span>}
             </div>
           )}
           <div className="library-layout">
-            {tab === 'scrobbles'
-              ? <LibraryScrobbleList scrobbles={visibleScrobbles} token={session.accessToken} view={activeView} showArtwork={settings?.show_artwork !== false} showSourceBadges={settings?.show_source_badges !== false} timestampMode={settings?.timestamp_mode || 'relative'} filterLabel={scrobbleFilter.name} selectedIds={selectedScrobbleIds} onToggleSelection={isOwnLibrary ? toggleScrobbleSelection : undefined} selectMode={isOwnLibrary && selectMode} />
-              : <LibraryRankList entries={rankedEntries} kind={tab} token={session.accessToken} page={page} pageSize={pageSize} totalCount={totalCount} view={activeView} showArtwork={settings?.show_artwork !== false} showSourceBadges={settings?.show_source_badges !== false} selectedKeys={selectedEntries} onToggleSelection={isOwnLibrary ? toggleEntrySelection : undefined} onEntryChanged={isOwnLibrary ? handleEntryChanged : undefined} selectMode={isOwnLibrary && selectMode} userId={targetUserId} />}
+            {tab === "scrobbles" ? (
+              <LibraryScrobbleList
+                scrobbles={visibleScrobbles}
+                token={session.accessToken}
+                view={activeView}
+                showArtwork={settings?.show_artwork !== false}
+                showSourceBadges={settings?.show_source_badges !== false}
+                timestampMode={settings?.timestamp_mode || "relative"}
+                filterLabel={scrobbleFilter.name}
+                selectedIds={selectedScrobbleIds}
+                onToggleSelection={isOwnLibrary ? toggleScrobbleSelection : undefined}
+                selectMode={isOwnLibrary && selectMode}
+                isOwnLibrary={isOwnLibrary}
+                onToggleLike={handleToggleLike}
+                likingKeys={likingKeys}
+              />
+            ) : (
+              <LibraryRankList
+                entries={rankedEntries}
+                kind={tab}
+                token={session.accessToken}
+                page={page}
+                pageSize={pageSize}
+                totalCount={totalCount}
+                view={activeView}
+                showArtwork={settings?.show_artwork !== false}
+                showSourceBadges={settings?.show_source_badges !== false}
+                selectedKeys={selectedEntries}
+                onToggleSelection={isOwnLibrary ? toggleEntrySelection : undefined}
+                onEntryChanged={isOwnLibrary ? handleEntryChanged : undefined}
+                selectMode={isOwnLibrary && selectMode}
+                userId={targetUserId}
+                isOwnLibrary={isOwnLibrary}
+                onToggleLike={handleToggleLike}
+                likingKeys={likingKeys}
+              />
+            )}
             <TimelineChart entries={timeline} />
           </div>
           <div className="library-pagination-bar">
@@ -306,9 +592,9 @@ export default function LibraryPage() {
 
           <ConfirmDeleteModal
             isOpen={confirmDeleteOpen}
-            title={tab === 'scrobbles' ? 'Delete Selected Scrobbles' : 'Delete Selected Entries'}
+            title={tab === "scrobbles" ? "Delete Selected Scrobbles" : "Delete Selected Entries"}
             description={
-              tab === 'scrobbles'
+              tab === "scrobbles"
                 ? `You are about to permanently delete ${selectedScrobbleIds.size.toLocaleString()} selected scrobbles.`
                 : `You are about to permanently delete all scrobbles associated with the ${selectedEntries.size.toLocaleString()} selected ${tab}.`
             }
@@ -320,7 +606,7 @@ export default function LibraryPage() {
             onCancel={() => setConfirmDeleteOpen(false)}
           />
 
-          {tab !== 'scrobbles' && (
+          {tab !== "scrobbles" && (
             <ShareDialog
               open={shareOpen}
               onClose={() => setShareOpen(false)}
@@ -335,5 +621,5 @@ export default function LibraryPage() {
         </>
       )}
     </AnalyticsPage>
-  )
+  );
 }

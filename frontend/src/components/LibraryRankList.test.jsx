@@ -1,269 +1,431 @@
-import { cleanup, render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, it } from 'vitest'
-import LibraryRankList from './LibraryRankList'
+import { cleanup, render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import LibraryRankList from "./LibraryRankList";
 
-describe('LibraryRankList', () => {
-  afterEach(() => cleanup())
+describe("LibraryRankList", () => {
+  afterEach(() => cleanup());
 
-  it('renders track metadata, rank offset, and count bars', () => {
+  it("renders track metadata, rank offset, and count bars", () => {
     render(
-      <MemoryRouter><LibraryRankList
-        entries={[{
-          label: 'Slow Show',
-          secondary: 'The National',
-          play_count: 12,
-          artwork_url: '/cover.jpg',
-          spotify_track_id: 'track-1',
-        }]}
-        kind="tracks"
-        token="token"
-        page={2}
-        pageSize={50}
-        totalCount={61}
-        view="list"
-      /></MemoryRouter>,
-    )
+      <MemoryRouter>
+        <LibraryRankList
+          entries={[
+            {
+              label: "Slow Show",
+              secondary: "The National",
+              play_count: 12,
+              artwork_url: "/cover.jpg",
+              spotify_track_id: "track-1",
+            },
+          ]}
+          kind="tracks"
+          token="token"
+          page={2}
+          pageSize={50}
+          totalCount={61}
+          view="list"
+        />
+      </MemoryRouter>
+    );
 
-    expect(screen.getByText('61')).toBeInTheDocument()
-    expect(screen.getByText('Slow Show')).toBeInTheDocument()
-    expect(screen.getByText('The National')).toBeInTheDocument()
-    expect(screen.getByText('51')).toBeInTheDocument()
-    const countLink = screen.getByRole('link', { name: 'Show 12 scrobbles for Slow Show' })
-    expect(countLink).toHaveTextContent('12 scrobbles')
-    expect(countLink).toHaveAttribute('href', '/library?filter_entity=track&filter_name=Slow%20Show&filter_secondary=The%20National')
-  })
+    expect(screen.getByText("61")).toBeInTheDocument();
+    expect(screen.getByText("Slow Show")).toBeInTheDocument();
+    expect(screen.getByText("The National")).toBeInTheDocument();
+    expect(screen.getByText("51")).toBeInTheDocument();
+    const countLink = screen.getByRole("link", { name: "Show 12 scrobbles for Slow Show" });
+    expect(countLink).toHaveTextContent("12 scrobbles");
+    expect(countLink).toHaveAttribute(
+      "href",
+      "/library?filter_entity=track&filter_name=Slow%20Show&filter_secondary=The%20National"
+    );
+  });
 
-  it('uses artwork and count bars for artist rows', () => {
+  it("uses artwork and count bars for artist rows", () => {
     const { container } = render(
-      <MemoryRouter><LibraryRankList
-        entries={[{ label: 'M83', play_count: 4, artwork_url: '/artist.jpg' }]}
-        kind="artists"
-        token="token"
-        page={1}
-        pageSize={50}
-        totalCount={1}
-        view="grid"
-      /></MemoryRouter>,
-    )
+      <MemoryRouter>
+        <LibraryRankList
+          entries={[{ label: "M83", play_count: 4, artwork_url: "/artist.jpg" }]}
+          kind="artists"
+          token="token"
+          page={1}
+          pageSize={50}
+          totalCount={1}
+          view="grid"
+        />
+      </MemoryRouter>
+    );
 
-    expect(screen.getByText('Artists scrobbled')).toBeInTheDocument()
-    expect(container.querySelector('img')).toHaveAttribute('src', '/artist.jpg')
-  })
+    expect(screen.getByText("Artists scrobbled")).toBeInTheDocument();
+    expect(container.querySelector("img")).toHaveAttribute("src", "/artist.jpg");
+  });
 
-  it('keeps long artist and album names in the card content', () => {
+  it("keeps long artist and album names in the card content", () => {
     render(
-      <MemoryRouter><LibraryRankList
-        entries={[{
-          label: 'An Extremely Long Album Name That Must Stay Readable On A Phone',
-          secondary: 'The Artist With A Long Name',
-          play_count: 8,
-          artwork_url: '/album.jpg',
-        }]}
-        kind="albums"
-        page={1}
-        pageSize={50}
-        totalCount={1}
-        view="grid"
-      /></MemoryRouter>,
-    )
+      <MemoryRouter>
+        <LibraryRankList
+          entries={[
+            {
+              label: "An Extremely Long Album Name That Must Stay Readable On A Phone",
+              secondary: "The Artist With A Long Name",
+              play_count: 8,
+              artwork_url: "/album.jpg",
+            },
+          ]}
+          kind="albums"
+          page={1}
+          pageSize={50}
+          totalCount={1}
+          view="grid"
+        />
+      </MemoryRouter>
+    );
 
-    expect(screen.getByText('An Extremely Long Album Name That Must Stay Readable On A Phone')).toBeInTheDocument()
-    expect(screen.getByText('The Artist With A Long Name')).toBeInTheDocument()
-  })
+    expect(
+      screen.getByText("An Extremely Long Album Name That Must Stay Readable On A Phone")
+    ).toBeInTheDocument();
+    expect(screen.getByText("The Artist With A Long Name")).toBeInTheDocument();
+  });
 
-  it('renders full-bleed grid cards without checkboxes or menus in default grid mode', () => {
-    const onToggleSelection = () => {}
-    const onEntryChanged = () => {}
+  it("renders full-bleed grid cards without checkboxes or menus in default grid mode", () => {
+    const onToggleSelection = () => {};
+    const onEntryChanged = () => {};
     const { container } = render(
-      <MemoryRouter><LibraryRankList
-        entries={[
-          { label: 'In Rainbows', secondary: 'Radiohead', play_count: 100, artwork_url: '/in-rainbows.jpg' },
-          { label: 'OK Computer', secondary: 'Radiohead', play_count: 50, artwork_url: '/ok-computer.jpg' },
-        ]}
-        kind="albums"
-        token="test-token"
-        page={1}
-        pageSize={50}
-        totalCount={2}
-        view="grid"
-        selectMode={false}
-        onToggleSelection={onToggleSelection}
-        onEntryChanged={onEntryChanged}
-      /></MemoryRouter>,
-    )
+      <MemoryRouter>
+        <LibraryRankList
+          entries={[
+            {
+              label: "In Rainbows",
+              secondary: "Radiohead",
+              play_count: 100,
+              artwork_url: "/in-rainbows.jpg",
+            },
+            {
+              label: "OK Computer",
+              secondary: "Radiohead",
+              play_count: 50,
+              artwork_url: "/ok-computer.jpg",
+            },
+          ]}
+          kind="albums"
+          token="test-token"
+          page={1}
+          pageSize={50}
+          totalCount={2}
+          view="grid"
+          selectMode={false}
+          onToggleSelection={onToggleSelection}
+          onEntryChanged={onEntryChanged}
+        />
+      </MemoryRouter>
+    );
 
     // Checkbox should NOT be present when selectMode is false
-    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
 
     // Three-dot menu button should NOT be present in grid mode
-    expect(screen.queryByLabelText(/Actions for/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Actions for/)).not.toBeInTheDocument();
 
     // Rank, title, artist, count should be present
-    expect(screen.getByText('1.')).toBeInTheDocument()
-    expect(screen.getByText('In Rainbows')).toBeInTheDocument()
-    expect(screen.getByText('2.')).toBeInTheDocument()
-    expect(screen.getByText('OK Computer')).toBeInTheDocument()
-    expect(screen.getByText('100 scrobbles')).toBeInTheDocument()
-    expect(screen.getByText('50 scrobbles')).toBeInTheDocument()
+    expect(screen.getByText("1.")).toBeInTheDocument();
+    expect(screen.getByText("In Rainbows")).toBeInTheDocument();
+    expect(screen.getByText("2.")).toBeInTheDocument();
+    expect(screen.getByText("OK Computer")).toBeInTheDocument();
+    expect(screen.getByText("100 scrobbles")).toBeInTheDocument();
+    expect(screen.getByText("50 scrobbles")).toBeInTheDocument();
 
     // Relative proportion bars: max count is 100 -> first is 100%, second is 50%
-    const bars = container.querySelectorAll('[data-testid="grid-card-bar-fill"]')
-    expect(bars).toHaveLength(2)
-    expect(bars[0]).toHaveStyle({ width: '100%' })
-    expect(bars[1]).toHaveStyle({ width: '50%' })
-  })
+    const bars = container.querySelectorAll('[data-testid="grid-card-bar-fill"]');
+    expect(bars).toHaveLength(2);
+    expect(bars[0]).toHaveStyle({ width: "100%" });
+    expect(bars[1]).toHaveStyle({ width: "50%" });
+  });
 
-  it('renders checkbox overlays with scrim when selectMode is enabled in grid mode', () => {
-    const onToggleSelection = () => {}
+  it("renders checkbox overlays with scrim when selectMode is enabled in grid mode", () => {
+    const onToggleSelection = () => {};
     render(
-      <MemoryRouter><LibraryRankList
-        entries={[
-          { label: 'Kid A', secondary: 'Radiohead', play_count: 30, artwork_url: '/kid-a.jpg' },
-        ]}
-        kind="albums"
-        token="test-token"
-        page={1}
-        pageSize={50}
-        totalCount={1}
-        view="grid"
-        selectMode={true}
-        onToggleSelection={onToggleSelection}
-      /></MemoryRouter>,
-    )
+      <MemoryRouter>
+        <LibraryRankList
+          entries={[
+            { label: "Kid A", secondary: "Radiohead", play_count: 30, artwork_url: "/kid-a.jpg" },
+          ]}
+          kind="albums"
+          token="test-token"
+          page={1}
+          pageSize={50}
+          totalCount={1}
+          view="grid"
+          selectMode={true}
+          onToggleSelection={onToggleSelection}
+        />
+      </MemoryRouter>
+    );
 
-    const checkbox = screen.getByRole('checkbox', { name: 'Select Kid A' })
-    expect(checkbox).toBeInTheDocument()
-    expect(checkbox.closest('label')).toHaveClass('grid-select-scrim')
-  })
+    const checkbox = screen.getByRole("checkbox", { name: "Select Kid A" });
+    expect(checkbox).toBeInTheDocument();
+    expect(checkbox.closest("label")).toHaveClass("grid-select-scrim");
+  });
 
-  it('renders source attribution badges in grid mode including split badge for multi-source', () => {
+  it("renders source attribution badges in grid mode including split badge for multi-source", () => {
     render(
-      <MemoryRouter><LibraryRankList
-        entries={[
-          { label: 'In Rainbows', secondary: 'Radiohead', play_count: 100, artwork_url: '/in-rainbows.jpg', sources: ['spotify', 'youtube'] },
-          { label: 'OK Computer', secondary: 'Radiohead', play_count: 50, artwork_url: '/ok-computer.jpg', sources: ['spotify'] },
-        ]}
-        kind="albums"
-        token="test-token"
-        page={1}
-        pageSize={50}
-        totalCount={2}
-        view="grid"
-      /></MemoryRouter>,
-    )
+      <MemoryRouter>
+        <LibraryRankList
+          entries={[
+            {
+              label: "In Rainbows",
+              secondary: "Radiohead",
+              play_count: 100,
+              artwork_url: "/in-rainbows.jpg",
+              sources: ["spotify", "youtube"],
+            },
+            {
+              label: "OK Computer",
+              secondary: "Radiohead",
+              play_count: 50,
+              artwork_url: "/ok-computer.jpg",
+              sources: ["spotify"],
+            },
+          ]}
+          kind="albums"
+          token="test-token"
+          page={1}
+          pageSize={50}
+          totalCount={2}
+          view="grid"
+        />
+      </MemoryRouter>
+    );
 
-    expect(screen.getByRole('img', { name: 'Scrobbled via Spotify and YouTube' })).toBeInTheDocument()
-    expect(screen.getByRole('img', { name: 'Scrobbled via Spotify' })).toBeInTheDocument()
-  })
+    expect(
+      screen.getByRole("img", { name: "Scrobbled via Spotify and YouTube" })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Scrobbled via Spotify" })).toBeInTheDocument();
+  });
 
-  it('renders source attribution badges in list mode', () => {
+  it("renders source attribution badges in list mode", () => {
     render(
-      <MemoryRouter><LibraryRankList
-        entries={[
-          { label: 'Videotape', secondary: 'Radiohead', play_count: 80, artwork_url: '/videotape.jpg', sources: ['youtube'] },
-        ]}
-        kind="tracks"
-        token="test-token"
-        page={1}
-        pageSize={50}
-        totalCount={1}
-        view="list"
-      /></MemoryRouter>,
-    )
+      <MemoryRouter>
+        <LibraryRankList
+          entries={[
+            {
+              label: "Videotape",
+              secondary: "Radiohead",
+              play_count: 80,
+              artwork_url: "/videotape.jpg",
+              sources: ["youtube"],
+            },
+          ]}
+          kind="tracks"
+          token="test-token"
+          page={1}
+          pageSize={50}
+          totalCount={1}
+          view="list"
+        />
+      </MemoryRouter>
+    );
 
-    expect(screen.getByRole('img', { name: 'Scrobbled via YouTube Music' })).toBeInTheDocument()
-  })
+    expect(screen.getByRole("img", { name: "Scrobbled via YouTube Music" })).toBeInTheDocument();
+  });
 
-  it('respects showSourceBadges=false', () => {
+  it("respects showSourceBadges=false", () => {
     render(
-      <MemoryRouter><LibraryRankList
-        entries={[
-          { label: 'Videotape', secondary: 'Radiohead', play_count: 80, artwork_url: '/videotape.jpg', sources: ['youtube'] },
-        ]}
-        kind="tracks"
-        token="test-token"
-        page={1}
-        pageSize={50}
-        totalCount={1}
-        view="list"
-        showSourceBadges={false}
-      /></MemoryRouter>,
-    )
+      <MemoryRouter>
+        <LibraryRankList
+          entries={[
+            {
+              label: "Videotape",
+              secondary: "Radiohead",
+              play_count: 80,
+              artwork_url: "/videotape.jpg",
+              sources: ["youtube"],
+            },
+          ]}
+          kind="tracks"
+          token="test-token"
+          page={1}
+          pageSize={50}
+          totalCount={1}
+          view="list"
+          showSourceBadges={false}
+        />
+      </MemoryRouter>
+    );
 
-    expect(screen.queryByRole('img', { name: 'Scrobbled via YouTube Music' })).not.toBeInTheDocument()
-  })
+    expect(
+      screen.queryByRole("img", { name: "Scrobbled via YouTube Music" })
+    ).not.toBeInTheDocument();
+  });
 
-  it('shows a heart on every track, filled red only when liked, in both list and grid view', () => {
+  it("shows a heart on every track, filled red only when liked, in both list and grid view", () => {
     const { rerender } = render(
-      <MemoryRouter><LibraryRankList
-        entries={[
-          { label: 'Slow Show', secondary: 'The National', play_count: 12, spotify_track_id: 'track-1', is_liked: true },
-          { label: 'Fake Empire', secondary: 'The National', play_count: 8, spotify_track_id: 'track-2', is_liked: false },
-        ]}
-        kind="tracks"
-        token="token"
-        page={1}
-        pageSize={50}
-        totalCount={2}
-        view="list"
-      /></MemoryRouter>,
-    )
-    expect(screen.getAllByTitle('Liked on Spotify')).toHaveLength(1)
-    expect(screen.getAllByTitle('Not liked on Spotify')).toHaveLength(1)
+      <MemoryRouter>
+        <LibraryRankList
+          entries={[
+            {
+              label: "Slow Show",
+              secondary: "The National",
+              play_count: 12,
+              spotify_track_id: "track-1",
+              is_liked: true,
+            },
+            {
+              label: "Fake Empire",
+              secondary: "The National",
+              play_count: 8,
+              spotify_track_id: "track-2",
+              is_liked: false,
+            },
+          ]}
+          kind="tracks"
+          token="token"
+          page={1}
+          pageSize={50}
+          totalCount={2}
+          view="list"
+        />
+      </MemoryRouter>
+    );
+    expect(screen.getAllByTitle("Liked on Spotify")).toHaveLength(1);
+    expect(screen.getAllByTitle("Not liked on Spotify")).toHaveLength(1);
 
     rerender(
-      <MemoryRouter><LibraryRankList
-        entries={[
-          { label: 'Slow Show', secondary: 'The National', play_count: 12, artwork_url: '/cover.jpg', spotify_track_id: 'track-1', is_liked: true },
-          { label: 'Fake Empire', secondary: 'The National', play_count: 8, artwork_url: '/cover2.jpg', spotify_track_id: 'track-2', is_liked: false },
-        ]}
-        kind="tracks"
-        token="token"
-        page={1}
-        pageSize={50}
-        totalCount={2}
-        view="grid"
-      /></MemoryRouter>,
-    )
-    expect(screen.getAllByTitle('Liked on Spotify')).toHaveLength(1)
-    expect(screen.getAllByTitle('Not liked on Spotify')).toHaveLength(1)
-  })
+      <MemoryRouter>
+        <LibraryRankList
+          entries={[
+            {
+              label: "Slow Show",
+              secondary: "The National",
+              play_count: 12,
+              artwork_url: "/cover.jpg",
+              spotify_track_id: "track-1",
+              is_liked: true,
+            },
+            {
+              label: "Fake Empire",
+              secondary: "The National",
+              play_count: 8,
+              artwork_url: "/cover2.jpg",
+              spotify_track_id: "track-2",
+              is_liked: false,
+            },
+          ]}
+          kind="tracks"
+          token="token"
+          page={1}
+          pageSize={50}
+          totalCount={2}
+          view="grid"
+        />
+      </MemoryRouter>
+    );
+    expect(screen.getAllByTitle("Liked on Spotify")).toHaveLength(1);
+    expect(screen.getAllByTitle("Not liked on Spotify")).toHaveLength(1);
+  });
 
-  it('does not show a heart for artists or albums', () => {
+  it("does not show a heart for artists", () => {
     render(
-      <MemoryRouter><LibraryRankList
-        entries={[{ label: 'The National', play_count: 12 }]}
-        kind="artists"
-        token="token"
-        page={1}
-        pageSize={50}
-        totalCount={1}
-        view="list"
-      /></MemoryRouter>,
-    )
-    expect(screen.queryByTitle('Not liked on Spotify')).not.toBeInTheDocument()
-    expect(screen.queryByTitle('Liked on Spotify')).not.toBeInTheDocument()
-  })
+      <MemoryRouter>
+        <LibraryRankList
+          entries={[{ label: "The National", play_count: 12 }]}
+          kind="artists"
+          token="token"
+          page={1}
+          pageSize={50}
+          totalCount={1}
+          view="list"
+        />
+      </MemoryRouter>
+    );
+    expect(screen.queryByTitle("Not liked on Spotify")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("Liked on Spotify")).not.toBeInTheDocument();
+  });
 
-  it('carries the viewed userId through into entity links', () => {
+  it("renders interactive heart button for albums and calls onToggleLike", () => {
+    const onToggleLike = vi.fn();
+    const albumEntry = {
+      label: "Boxer",
+      secondary: "The National",
+      play_count: 20,
+      is_liked: false,
+      spotify_album_id: "album-1",
+    };
     render(
-      <MemoryRouter><LibraryRankList
-        entries={[{ label: 'Slow Show', secondary: 'The National', play_count: 12, spotify_track_id: 'track-1' }]}
-        kind="tracks"
-        token="token"
-        page={1}
-        pageSize={50}
-        totalCount={1}
-        view="list"
-        userId={7}
-      /></MemoryRouter>,
-    )
+      <MemoryRouter>
+        <LibraryRankList
+          entries={[albumEntry]}
+          kind="albums"
+          token="token"
+          page={1}
+          pageSize={50}
+          totalCount={1}
+          view="list"
+          isOwnLibrary={true}
+          onToggleLike={onToggleLike}
+        />
+      </MemoryRouter>
+    );
 
-    expect(screen.getByRole('link', { name: 'Show 12 scrobbles for Slow Show' })).toHaveAttribute(
-      'href',
-      '/library?filter_entity=track&filter_name=Slow%20Show&filter_secondary=The%20National&userId=7',
-    )
-  })
-})
+    const btn = screen.getByRole("button", { name: "Like on Spotify" });
+    expect(btn).toBeInTheDocument();
+    btn.click();
+    expect(onToggleLike).toHaveBeenCalledWith(albumEntry, "albums");
+  });
 
+  it("renders read-only heart span when isOwnLibrary is false", () => {
+    render(
+      <MemoryRouter>
+        <LibraryRankList
+          entries={[
+            {
+              label: "Boxer",
+              secondary: "The National",
+              play_count: 20,
+              is_liked: true,
+              spotify_album_id: "album-1",
+            },
+          ]}
+          kind="albums"
+          token="token"
+          page={1}
+          pageSize={50}
+          totalCount={1}
+          view="list"
+          isOwnLibrary={false}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByRole("button", { name: /Boxer/i })).not.toBeInTheDocument();
+    expect(screen.getByTitle("Liked on Spotify")).toBeInTheDocument();
+  });
+
+  it("carries the viewed userId through into entity links", () => {
+    render(
+      <MemoryRouter>
+        <LibraryRankList
+          entries={[
+            {
+              label: "Slow Show",
+              secondary: "The National",
+              play_count: 12,
+              spotify_track_id: "track-1",
+            },
+          ]}
+          kind="tracks"
+          token="token"
+          page={1}
+          pageSize={50}
+          totalCount={1}
+          view="list"
+          userId={7}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole("link", { name: "Show 12 scrobbles for Slow Show" })).toHaveAttribute(
+      "href",
+      "/library?filter_entity=track&filter_name=Slow%20Show&filter_secondary=The%20National&userId=7"
+    );
+  });
+});
