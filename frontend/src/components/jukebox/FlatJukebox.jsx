@@ -40,9 +40,9 @@ export default function FlatJukebox({
   return (
     <div
       style={{
-        border: "1px solid var(--color-border, #E5E5E5)",
+        border: "1px solid var(--color-border)",
         borderRadius: "12px",
-        background: "var(--color-surface, #FFFFFF)",
+        background: "var(--color-surface)",
         padding: "20px",
       }}
     >
@@ -51,7 +51,7 @@ export default function FlatJukebox({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          borderBottom: "1px solid var(--color-border, #E5E5E5)",
+          borderBottom: "1px solid var(--color-border)",
           paddingBottom: "12px",
           marginBottom: "16px",
         }}
@@ -63,7 +63,7 @@ export default function FlatJukebox({
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: "0.05em",
-              background: "var(--color-primary, #0066FF)",
+              background: "var(--color-primary)",
               color: "#FFFFFF",
               padding: "3px 8px",
               borderRadius: "4px",
@@ -75,14 +75,14 @@ export default function FlatJukebox({
             style={{
               fontSize: "13px",
               fontWeight: 600,
-              color: "var(--color-text-primary, #111111)",
+              color: "var(--color-ink)",
               marginLeft: "10px",
             }}
           >
             Lucky Dip Mode
           </span>
         </div>
-        <span style={{ fontSize: "12px", color: "var(--color-text-secondary, #888888)" }}>
+        <span style={{ fontSize: "12px", color: "var(--color-muted)" }}>
           <strong>{filteredAlbums.length}</strong> records available{" "}
           {mode !== "any" && `(pool: ${pool.length})`}
         </span>
@@ -99,8 +99,8 @@ export default function FlatJukebox({
 
       <div
         style={{
-          background: "var(--color-neutral-bg, #F7F7F7)",
-          border: "1px solid var(--color-border, #E5E5E5)",
+          background: "var(--color-surface-hover, var(--color-canvas))",
+          border: "1px solid var(--color-border)",
           borderRadius: "8px",
           padding: "16px",
           display: "flex",
@@ -120,7 +120,7 @@ export default function FlatJukebox({
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
-            border: "2px solid var(--color-border, #E5E5E5)",
+            border: "2px solid var(--color-border)",
             transform: spinning ? "rotate(720deg)" : "none",
             transition: "transform 0.45s cubic-bezier(0.2, 0.8, 0.3, 1)",
           }}
@@ -141,7 +141,7 @@ export default function FlatJukebox({
                 width: "28px",
                 height: "28px",
                 borderRadius: "50%",
-                background: "var(--color-primary, #0066FF)",
+                background: "var(--color-primary)",
                 color: "#FFFFFF",
                 fontSize: "9px",
                 fontWeight: 700,
@@ -168,7 +168,7 @@ export default function FlatJukebox({
           <div
             style={{
               fontSize: "11px",
-              color: "var(--color-text-secondary, #888888)",
+              color: "var(--color-muted)",
               textTransform: "uppercase",
               fontWeight: 700,
               letterSpacing: "0.04em",
@@ -180,7 +180,7 @@ export default function FlatJukebox({
             style={{
               fontSize: "16px",
               fontWeight: 700,
-              color: "var(--color-text-primary, #111111)",
+              color: "var(--color-ink)",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -192,7 +192,7 @@ export default function FlatJukebox({
           <div
             style={{
               fontSize: "13px",
-              color: "var(--color-text-secondary, #666666)",
+              color: "var(--color-muted)",
               marginTop: "2px",
             }}
           >
@@ -204,7 +204,7 @@ export default function FlatJukebox({
             <div
               style={{
                 fontSize: "11px",
-                color: "var(--color-text-secondary, #888888)",
+                color: "var(--color-muted)",
                 marginTop: "4px",
               }}
             >
@@ -225,7 +225,7 @@ export default function FlatJukebox({
           style={{
             flex: 2,
             padding: "10px 16px",
-            background: "var(--color-primary, #0066FF)",
+            background: "var(--color-primary)",
             color: "#FFFFFF",
             border: "none",
             borderRadius: "6px",
@@ -244,9 +244,9 @@ export default function FlatJukebox({
           style={{
             flex: 1,
             padding: "10px 12px",
-            background: "var(--color-surface, #FFFFFF)",
-            color: "var(--color-text-primary, #111111)",
-            border: "1px solid var(--color-border, #E5E5E5)",
+            background: "var(--color-surface)",
+            color: "var(--color-ink)",
+            border: "1px solid var(--color-border)",
             borderRadius: "6px",
             fontWeight: 600,
             fontSize: "13px",

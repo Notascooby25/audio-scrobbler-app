@@ -86,13 +86,13 @@ export default function JukeboxCard({ token }) {
           type="button"
           onClick={toggleThemeMode}
           style={{
-            fontSize: "11px",
-            fontWeight: 700,
-            padding: "4px 10px",
+            fontSize: "12px",
+            fontWeight: 600,
+            padding: "6px 12px",
             borderRadius: "999px",
-            border: "1px solid var(--color-border, #E5E5E5)",
-            background: themeMode === "arcade" ? "#ff9a83" : "var(--color-surface, #FFFFFF)",
-            color: themeMode === "arcade" ? "#394651" : "var(--color-text-primary, #111111)",
+            border: "1px solid var(--color-border)",
+            background: themeMode === "arcade" ? "#ff9a83" : "var(--color-surface)",
+            color: themeMode === "arcade" ? "#394651" : "var(--color-ink)",
             cursor: "pointer",
           }}
         >

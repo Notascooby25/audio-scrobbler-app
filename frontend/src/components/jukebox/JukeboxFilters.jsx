@@ -66,9 +66,9 @@ export default function JukeboxFilters({
             fontWeight: 600,
             padding: "6px 12px",
             borderRadius: "6px",
-            border: "1px solid var(--color-border, #E5E5E5)",
-            background: activeFilterCount > 0 ? "var(--color-primary, #0066FF)" : "var(--color-surface, #FFFFFF)",
-            color: activeFilterCount > 0 ? "#FFFFFF" : "var(--color-text-primary, #111111)",
+            border: "1px solid var(--color-border)",
+            background: activeFilterCount > 0 ? "var(--color-primary)" : "var(--color-surface)",
+            color: activeFilterCount > 0 ? "#FFFFFF" : "var(--color-ink)",
             cursor: "pointer",
             display: "inline-flex",
             alignItems: "center",
@@ -88,7 +88,7 @@ export default function JukeboxFilters({
             }}
             style={{
               fontSize: "11px",
-              color: "#E11D48",
+              color: "var(--color-danger, #E11D48)",
               background: "transparent",
               border: "none",
               cursor: "pointer",
@@ -105,9 +105,9 @@ export default function JukeboxFilters({
           style={{
             marginTop: "10px",
             padding: "14px",
-            background: "var(--color-neutral-bg, #F7F7F7)",
+            background: "var(--color-surface-hover, var(--color-canvas))",
             borderRadius: "8px",
-            border: "1px solid var(--color-border, #E5E5E5)",
+            border: "1px solid var(--color-border)",
             display: "flex",
             flexDirection: "column",
             gap: "12px",
@@ -116,7 +116,7 @@ export default function JukeboxFilters({
         >
           {/* Mode Selector */}
           <div>
-            <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-text-secondary, #888888)" }}>
+            <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-muted)" }}>
               POOL SELECTION MODE
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
@@ -132,9 +132,9 @@ export default function JukeboxFilters({
                       borderRadius: "6px",
                       fontSize: "11px",
                       fontWeight: 600,
-                      border: active ? "1px solid var(--color-primary, #0066FF)" : "1px solid var(--color-border, #E5E5E5)",
-                      background: active ? "var(--color-primary, #0066FF)" : "var(--color-surface, #FFFFFF)",
-                      color: active ? "#FFFFFF" : "var(--color-text-primary, #111111)",
+                      border: active ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
+                      background: active ? "var(--color-primary)" : "var(--color-surface)",
+                      color: active ? "#FFFFFF" : "var(--color-ink)",
                       cursor: "pointer",
                     }}
                   >
@@ -147,7 +147,7 @@ export default function JukeboxFilters({
 
           {/* Artist Search */}
           <div>
-            <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-text-secondary, #888888)" }}>
+            <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-muted)" }}>
               ARTIST SEARCH
             </div>
             <input
@@ -159,10 +159,10 @@ export default function JukeboxFilters({
                 width: "100%",
                 padding: "8px 10px",
                 borderRadius: "6px",
-                border: "1px solid var(--color-border, #E5E5E5)",
+                border: "1px solid var(--color-border)",
                 fontSize: "12px",
-                background: "var(--color-surface, #FFFFFF)",
-                color: "var(--color-text-primary, #111111)",
+                background: "var(--color-surface)",
+                color: "var(--color-ink)",
                 boxSizing: "border-box",
               }}
             />
@@ -171,7 +171,7 @@ export default function JukeboxFilters({
           {/* Decade Filters */}
           {availableDecades.length > 0 && (
             <div>
-              <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-text-secondary, #888888)" }}>
+              <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-muted)" }}>
                 DECADE
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
@@ -188,9 +188,9 @@ export default function JukeboxFilters({
                         borderRadius: "4px",
                         fontSize: "11px",
                         fontWeight: 600,
-                        border: active ? "1px solid var(--color-primary, #0066FF)" : "1px solid var(--color-border, #E5E5E5)",
-                        background: active ? "var(--color-primary, #0066FF)" : "var(--color-surface, #FFFFFF)",
-                        color: active ? "#FFFFFF" : "var(--color-text-primary, #111111)",
+                        border: active ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
+                        background: active ? "var(--color-primary)" : "var(--color-surface)",
+                        color: active ? "#FFFFFF" : "var(--color-ink)",
                         cursor: "pointer",
                       }}
                     >
@@ -204,7 +204,7 @@ export default function JukeboxFilters({
 
           {/* Length Filters */}
           <div>
-            <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-text-secondary, #888888)" }}>
+            <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-muted)" }}>
               ALBUM LENGTH
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
@@ -220,9 +220,9 @@ export default function JukeboxFilters({
                       borderRadius: "4px",
                       fontSize: "11px",
                       fontWeight: 600,
-                      border: active ? "1px solid var(--color-primary, #0066FF)" : "1px solid var(--color-border, #E5E5E5)",
-                      background: active ? "var(--color-primary, #0066FF)" : "var(--color-surface, #FFFFFF)",
-                      color: active ? "#FFFFFF" : "var(--color-text-primary, #111111)",
+                      border: active ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
+                      background: active ? "var(--color-primary)" : "var(--color-surface)",
+                      color: active ? "#FFFFFF" : "var(--color-ink)",
                       cursor: "pointer",
                     }}
                   >
@@ -236,7 +236,7 @@ export default function JukeboxFilters({
           {/* Top Genres (if available) */}
           {availableGenres.length > 0 && (
             <div>
-              <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-text-secondary, #888888)" }}>
+              <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-muted)" }}>
                 GENRE
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
@@ -252,9 +252,9 @@ export default function JukeboxFilters({
                         borderRadius: "4px",
                         fontSize: "11px",
                         fontWeight: 600,
-                        border: active ? "1px solid var(--color-primary, #0066FF)" : "1px solid var(--color-border, #E5E5E5)",
-                        background: active ? "var(--color-primary, #0066FF)" : "var(--color-surface, #FFFFFF)",
-                        color: active ? "#FFFFFF" : "var(--color-text-primary, #111111)",
+                        border: active ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
+                        background: active ? "var(--color-primary)" : "var(--color-surface)",
+                        color: active ? "#FFFFFF" : "var(--color-ink)",
                         cursor: "pointer",
                         textTransform: "capitalize",
                       }}
