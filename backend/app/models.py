@@ -35,7 +35,25 @@ class UserPreferences(Base):
     __tablename__ = "user_preferences"
     __table_args__ = (
         UniqueConstraint("user_id", name="uq_user_preferences_user_id"),
-        CheckConstraint("default_page_size IN (10, 25, 50, 100, 150, 200, 250)", name="ck_user_preferences_page_size"),
+        CheckConstraint(
+            "default_page_size IN (5, 10, 20, 25, 50, 100, 150, 200, 250)", name="ck_user_preferences_page_size"
+        ),
+        CheckConstraint(
+            "scrobbles_page_size IS NULL OR scrobbles_page_size IN (5, 10, 20, 25, 50, 100, 150, 200, 250)",
+            name="ck_user_preferences_scrobbles_page_size",
+        ),
+        CheckConstraint(
+            "artists_page_size IS NULL OR artists_page_size IN (5, 10, 20, 25, 50, 100, 150, 200, 250)",
+            name="ck_user_preferences_artists_page_size",
+        ),
+        CheckConstraint(
+            "albums_page_size IS NULL OR albums_page_size IN (5, 10, 20, 25, 50, 100, 150, 200, 250)",
+            name="ck_user_preferences_albums_page_size",
+        ),
+        CheckConstraint(
+            "tracks_page_size IS NULL OR tracks_page_size IN (5, 10, 20, 25, 50, 100, 150, 200, 250)",
+            name="ck_user_preferences_tracks_page_size",
+        ),
         CheckConstraint("default_library_view IN ('list', 'grid')", name="ck_user_preferences_library_view"),
         CheckConstraint("theme IN ('light', 'dark', 'system')", name="ck_user_preferences_theme"),
         CheckConstraint(
@@ -61,11 +79,16 @@ class UserPreferences(Base):
     jukebox_source: Mapped[str] = mapped_column(String(32), nullable=False, default="spotify_saved")
     jukebox_archive_limit: Mapped[int] = mapped_column(Integer, nullable=False, default=100)
     default_page_size: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
+    scrobbles_page_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    artists_page_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    albums_page_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    tracks_page_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
     default_library_view: Mapped[str] = mapped_column(String(16), nullable=False, default="list")
     scrobbles_view: Mapped[str | None] = mapped_column(String(16), nullable=True)
     artists_view: Mapped[str | None] = mapped_column(String(16), nullable=True)
     albums_view: Mapped[str | None] = mapped_column(String(16), nullable=True)
     tracks_view: Mapped[str | None] = mapped_column(String(16), nullable=True)
+
     show_artwork: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     show_source_badges: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     timestamp_mode: Mapped[str] = mapped_column(String(16), nullable=False, default="relative")

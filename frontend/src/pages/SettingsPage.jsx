@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import AnalyticsPage from "../components/AnalyticsPage";
 import {
@@ -40,13 +40,18 @@ const SETTINGS_TABS = [
 ];
 
 const POLL_INTERVAL_OPTIONS = [5, 10, 15, 30, 60];
+const PAGE_SIZE_OPTIONS = [5, 10, 20, 50, 100, 250];
 
-const VIEW_OPTIONS = [
-  ["default_library_view", "Default library view"],
-  ["scrobbles_view", "Scrobbles view"],
-  ["artists_view", "Artists view"],
-  ["albums_view", "Albums view"],
-  ["tracks_view", "Tracks view"],
+const CATEGORY_VIEW_OPTIONS = [
+  {
+    key: "scrobbles",
+    name: "Scrobbles",
+    viewKey: "scrobbles_view",
+    sizeKey: "scrobbles_page_size",
+  },
+  { key: "artists", name: "Artists", viewKey: "artists_view", sizeKey: "artists_page_size" },
+  { key: "albums", name: "Albums", viewKey: "albums_view", sizeKey: "albums_page_size" },
+  { key: "tracks", name: "Tracks", viewKey: "tracks_view", sizeKey: "tracks_page_size" },
 ];
 
 const ACCENT_PRESETS = [
@@ -461,7 +466,7 @@ export default function SettingsPage() {
                 value={settings.default_page_size}
                 onChange={(event) => changeSetting("default_page_size", Number(event.target.value))}
               >
-                {[10, 25, 50, 100, 150, 200, 250].map((size) => (
+                {PAGE_SIZE_OPTIONS.map((size) => (
                   <option key={size} value={size}>
                     {size}
                   </option>
@@ -551,17 +556,58 @@ export default function SettingsPage() {
           id="settings-panel-views"
           aria-labelledby="settings-tab-views"
         >
-          {VIEW_OPTIONS.map(([key, label]) => (
-            <label key={key}>
-              {label}
-              <select
-                value={settings[key] || settings.default_library_view}
-                onChange={(event) => changeSetting(key, event.target.value)}
-              >
-                <option value="list">List</option>
-                <option value="grid">Grid</option>
-              </select>
-            </label>
+          <label>
+            Default library view
+            <select
+              value={settings.default_library_view}
+              onChange={(event) => changeSetting("default_library_view", event.target.value)}
+            >
+              <option value="list">List</option>
+              <option value="grid">Grid</option>
+            </select>
+          </label>
+          <label>
+            Default visible amount per page
+            <select
+              value={settings.default_page_size}
+              onChange={(event) => changeSetting("default_page_size", Number(event.target.value))}
+            >
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          </label>
+          {CATEGORY_VIEW_OPTIONS.map(({ key, name, viewKey, sizeKey }) => (
+            <Fragment key={key}>
+              <label>
+                {name} view
+                <select
+                  value={settings[viewKey] || settings.default_library_view}
+                  onChange={(event) => changeSetting(viewKey, event.target.value)}
+                >
+                  <option value="list">List</option>
+                  <option value="grid">Grid</option>
+                </select>
+              </label>
+              <label>
+                {name} per page
+                <select
+                  value={settings[sizeKey] ?? ""}
+                  onChange={(event) =>
+                    changeSetting(sizeKey, event.target.value ? Number(event.target.value) : null)
+                  }
+                >
+                  <option value="">Default ({settings.default_page_size})</option>
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </Fragment>
           ))}
           {status === "saving" && <p role="status">Saving...</p>}
           {status === "saved" && <p role="status">Saved</p>}

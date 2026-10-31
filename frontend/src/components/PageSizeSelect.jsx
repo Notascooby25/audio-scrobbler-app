@@ -1,5 +1,5 @@
-const PAGE_SIZE_OPTIONS = [25, 50, 100, 250]
-const ALL_OPTIONS = [10, 25, 50, 100, 150, 200, 250]
+const PAGE_SIZE_OPTIONS = [5, 10, 20, 50, 100, 250];
+const ALL_OPTIONS = [5, 10, 20, 50, 100, 250];
 
 export default function PageSizeSelect({ value, onChange }) {
   return (
@@ -12,7 +12,7 @@ export default function PageSizeSelect({ value, onChange }) {
             type="button"
             role="tab"
             aria-selected={value === option}
-            className={`segmented-tab ${value === option ? 'active' : ''}`}
+            className={`segmented-tab ${value === option ? "active" : ""}`}
             onClick={() => onChange(option)}
           >
             {option}
@@ -26,9 +26,11 @@ export default function PageSizeSelect({ value, onChange }) {
         className="visually-hidden-accessible"
       >
         {ALL_OPTIONS.map((option) => (
-          <option key={option} value={option}>{option}</option>
+          <option key={option} value={option}>
+            {option}
+          </option>
         ))}
       </select>
     </div>
-  )
+  );
 }

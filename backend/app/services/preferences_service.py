@@ -11,6 +11,10 @@ DEFAULTS = {
     "theme": "system",
     "accent_color": "blue_monday",
     "default_page_size": 50,
+    "scrobbles_page_size": None,
+    "artists_page_size": None,
+    "albums_page_size": None,
+    "tracks_page_size": None,
     "default_library_view": "list",
     "scrobbles_view": None,
     "artists_view": None,
@@ -43,6 +47,8 @@ def update(db: Session, user_id: int, changes: dict[str, object]) -> UserPrefere
             raise ValueError("Unsupported theme")
         if key == "accent_color" and value not in ACCENT_COLORS:
             raise ValueError("Unsupported accent color")
+        if key.endswith("_page_size") and value is not None and value not in PAGE_SIZES:
+            raise ValueError("Unsupported page size")
         if key == "default_page_size" and value not in PAGE_SIZES:
             raise ValueError("Unsupported default page size")
         if key.endswith("_view") and value is not None and value not in VIEWS:
@@ -54,6 +60,7 @@ def update(db: Session, user_id: int, changes: dict[str, object]) -> UserPrefere
         if key == "jukebox_archive_limit" and value not in {100, 150, 200, 250, 300}:
             raise ValueError("Unsupported jukebox archive limit")
         setattr(preferences, key, value)
+
     db.commit()
     db.refresh(preferences)
     return preferences

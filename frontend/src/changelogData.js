@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.30.5",
+    date: "2026-10-31",
+    changes: [
+      "Customizable Visible Amounts Per Category: In Settings → Views, you can now set your preferred visible items per page individually for Scrobbles, Artists, Albums, and Tracks, or have them inherit a global default.",
+      "Expanded Page Size Options: Library pagination controls now offer 5, 10, 20, 50, 100, and 250 visible items per page, with instant on-the-fly switching at the bottom of the page and automatic page size adjustment when switching tabs.",
+    ],
+  },
+  {
     version: "0.30.4",
     date: "2026-10-31",
     changes: [

@@ -36,6 +36,16 @@ const TABS = [
   ["tracks", "Tracks"],
 ];
 
+function getPageSizeForTab(tabName, userSettings) {
+  if (userSettings && userSettings[`${tabName}_page_size`]) {
+    return userSettings[`${tabName}_page_size`];
+  }
+  if (userSettings && userSettings.default_page_size) {
+    return userSettings.default_page_size;
+  }
+  return 50;
+}
+
 export default function LibraryPage() {
   const session = readSession();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -106,7 +116,7 @@ export default function LibraryPage() {
       .then((userSettings) => {
         setSettings(userSettings);
         setDateRange((current) => ({ ...current, range: userSettings.default_date_range }));
-        setPageSize(userSettings.default_page_size);
+        setPageSize(getPageSizeForTab(tab, userSettings));
         setView(userSettings.scrobbles_view || userSettings.default_library_view);
         setPreferencesReady(true);
       })
@@ -556,6 +566,8 @@ export default function LibraryPage() {
                   className={`segmented-tab ${tab === value ? "active" : ""}`}
                   onClick={() => {
                     setTab(value);
+                    setPageSize(getPageSizeForTab(value, settings));
+                    setPage(1);
                     setSearchParams(routeUserId ? { userId: routeUserId } : {});
                   }}
                 >

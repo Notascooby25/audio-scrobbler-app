@@ -49,6 +49,16 @@ class FakeDB:
             value.jukebox_source = "spotify_saved"
         if getattr(value, "jukebox_archive_limit", None) is None:
             value.jukebox_archive_limit = 100
+        if getattr(value, "default_page_size", None) is None:
+            value.default_page_size = 50
+        if not hasattr(value, "scrobbles_page_size"):
+            value.scrobbles_page_size = None
+        if not hasattr(value, "artists_page_size"):
+            value.artists_page_size = None
+        if not hasattr(value, "albums_page_size"):
+            value.albums_page_size = None
+        if not hasattr(value, "tracks_page_size"):
+            value.tracks_page_size = None
         self.preferences = value
 
     def commit(self):
@@ -89,10 +99,31 @@ def test_settings_updates_theme():
 def test_settings_rejects_invalid_page_size():
     response = client.patch(
         "/users/me/settings",
-        json={"default_page_size": 20},
+        json={"default_page_size": 33},
         headers={"Authorization": "Bearer demo"},
     )
     assert response.status_code == 400
+
+
+def test_settings_updates_page_size_and_category_page_sizes():
+    response = client.patch(
+        "/users/me/settings",
+        json={
+            "default_page_size": 20,
+            "scrobbles_page_size": 100,
+            "artists_page_size": 10,
+            "albums_page_size": 5,
+            "tracks_page_size": 50,
+        },
+        headers={"Authorization": "Bearer demo"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["default_page_size"] == 20
+    assert data["scrobbles_page_size"] == 100
+    assert data["artists_page_size"] == 10
+    assert data["albums_page_size"] == 5
+    assert data["tracks_page_size"] == 50
 
 
 def test_settings_returns_blue_monday_default():
@@ -143,4 +174,3 @@ def test_settings_rejects_invalid_jukebox_archive_limit():
         headers={"Authorization": "Bearer demo"},
     )
     assert response.status_code == 400
-

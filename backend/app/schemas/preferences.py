@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 DATE_RANGES = {"last.week", "last.month", "last.year", "all.time", "custom"}
 VIEWS = {"list", "grid"}
-PAGE_SIZES = {10, 25, 50, 100}
+PAGE_SIZES = {5, 10, 20, 25, 50, 100, 150, 200, 250}
 ACCENT_COLORS = {
     "blue_monday",
     "spotify_green",
@@ -29,6 +29,10 @@ class UserPreferencesResponse(BaseModel):
     theme: str
     accent_color: str = "blue_monday"
     default_page_size: int
+    scrobbles_page_size: int | None = None
+    artists_page_size: int | None = None
+    albums_page_size: int | None = None
+    tracks_page_size: int | None = None
     default_library_view: str
     scrobbles_view: str | None
     artists_view: str | None
@@ -54,6 +58,10 @@ class UserPreferencesUpdate(BaseModel):
     jukebox_source: str | None = None
     jukebox_archive_limit: int | None = None
     default_page_size: int | None = Field(default=None)
+    scrobbles_page_size: int | None = None
+    artists_page_size: int | None = None
+    albums_page_size: int | None = None
+    tracks_page_size: int | None = None
     default_library_view: str | None = None
     scrobbles_view: str | None = None
     artists_view: str | None = None

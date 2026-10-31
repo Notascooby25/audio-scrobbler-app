@@ -227,6 +227,20 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "visible-amounts-per-page",
+    category: "Library & Data Maintenance",
+    question: "Can I customize how many items appear on each page in the Library?",
+    answer: (
+      <p>
+        <strong>Yes.</strong> At the bottom of any Library tab, you can quickly toggle between{" "}
+        <strong>5, 10, 20, 50, 100, or 250</strong> visible items per page using the segmented bar.
+        To customize your permanent defaults, visit <strong>Settings → Views</strong>. There you can
+        choose your global default visible amount per page as well as distinct default amounts for{" "}
+        <em>Scrobbles</em>, <em>Artists</em>, <em>Albums</em>, and <em>Tracks</em>.
+      </p>
+    ),
+  },
+  {
     id: "mobile-push",
     category: "Mobile & Notifications",
     question: "How do I enable device push notifications on iPhone or Android?",

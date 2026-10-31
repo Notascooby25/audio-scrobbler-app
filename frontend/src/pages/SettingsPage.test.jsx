@@ -44,6 +44,10 @@ const settings = {
   show_source_badges: true,
   timestamp_mode: "relative",
   accent_color: "blue_monday",
+  scrobbles_page_size: null,
+  artists_page_size: null,
+  albums_page_size: null,
+  tracks_page_size: null,
 };
 
 const scrobbleSettings = {
@@ -460,6 +464,35 @@ describe("SettingsPage", () => {
     fireEvent.click(jsonButton);
     await waitFor(() =>
       expect(downloadScrobblesExport).toHaveBeenCalledWith({ token: "token", format: "json" })
+    );
+  });
+
+  it("allows configuring default and category visible amounts in Views tab", async () => {
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>
+    );
+
+    const viewsTab = await screen.findByRole("tab", { name: "Views" });
+    fireEvent.click(viewsTab);
+
+    expect(screen.getByLabelText("Default visible amount per page")).toBeInTheDocument();
+    expect(screen.getByLabelText("Scrobbles per page")).toBeInTheDocument();
+    expect(screen.getByLabelText("Artists per page")).toBeInTheDocument();
+    expect(screen.getByLabelText("Albums per page")).toBeInTheDocument();
+    expect(screen.getByLabelText("Tracks per page")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Artists per page"), {
+      target: { value: "20" },
+    });
+    await waitFor(
+      () =>
+        expect(updateUserSettings).toHaveBeenCalledWith({
+          token: "token",
+          changes: { artists_page_size: 20 },
+        }),
+      { timeout: 1000 }
     );
   });
 });

@@ -240,6 +240,14 @@ export default function UserGuideSection() {
             150, 200, 250, or 300 records).
           </li>
           <li>
+            <strong>Customizable Visible Amounts & Pagination:</strong> In the Library, you can
+            select how many items appear on each page (5, 10, 20, 50, 100, or 250) using the
+            segmented buttons at the bottom. In <em>Settings → Views</em>, you can also set your
+            global default visible amount per page, or customize default visible amounts
+            individually for Scrobbles, Artists, Albums, and Tracks so each tab opens at your
+            preferred density.
+          </li>
+          <li>
             <strong>Two-Way Spotify Liking:</strong> Heart icons appear on tracks and albums across
             the app (in your Library, Overview top charts, Connect recent scrobbles, and the Album
             Jukebox pick). Tapping an outline heart immediately saves the song to your Spotify Liked
