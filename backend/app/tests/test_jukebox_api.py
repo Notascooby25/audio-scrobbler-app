@@ -72,7 +72,7 @@ def teardown_function():
 
 
 def test_jukebox_albums_unauthorized():
-    response = client.get("/api/jukebox/albums")
+    response = client.get("/jukebox/albums")
     assert response.status_code == 401
 
 
@@ -81,7 +81,7 @@ def test_jukebox_albums_authorized():
     app.dependency_overrides[get_current_user] = lambda: user
     app.dependency_overrides[get_db] = lambda: FakeDB(user=user)
 
-    response = client.get("/api/jukebox/albums")
+    response = client.get("/jukebox/albums")
     assert response.status_code == 200
     data = response.json()
     assert "albums" in data

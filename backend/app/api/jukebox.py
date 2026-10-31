@@ -11,7 +11,7 @@ from ..api.deps import get_current_user
 from ..db import get_db
 from ..models import ListeningEvent, SavedAlbum, User, UserPreferences
 
-router = APIRouter(prefix="/api/jukebox", tags=["jukebox"])
+router = APIRouter(prefix="/jukebox", tags=["jukebox"])
 
 
 class JukeboxAlbumItem(BaseModel):

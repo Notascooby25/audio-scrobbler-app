@@ -61,7 +61,22 @@ export default function JukeboxCard({ token }) {
   }
 
   if (error) {
-    return null;
+    return (
+      <div
+        style={{
+          border: "1px solid var(--color-border, #E5E5E5)",
+          borderRadius: "12px",
+          padding: "16px",
+          background: "var(--color-surface, #FFFFFF)",
+          color: "var(--color-text-secondary, #888888)",
+          fontSize: "13px",
+          marginBottom: "24px",
+        }}
+      >
+        <span style={{ fontWeight: 600, color: "var(--color-text-primary, #111111)" }}>Album Jukebox: </span>
+        {error}
+      </div>
+    );
   }
 
   return (

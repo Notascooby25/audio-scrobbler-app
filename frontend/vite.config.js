@@ -62,6 +62,7 @@ export default defineConfig({
       "/readyz": { target: backendUrl, changeOrigin: true },
       "/tools": { target: backendUrl, changeOrigin: true },
       "/notifications": { target: backendUrl, changeOrigin: true },
+      "/jukebox": { target: backendUrl, changeOrigin: true },
     },
   },
 });

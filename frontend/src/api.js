@@ -565,14 +565,14 @@ export async function createRediscoverPlaylist({ token, mode = 'forgotten', titl
 }
 
 export async function fetchJukeboxAlbums({ token }) {
-  const response = await fetch(`${API_BASE_URL}/api/jukebox/albums`, {
+  const response = await fetch(`${API_BASE_URL}/jukebox/albums`, {
     headers: { Authorization: `Bearer ${token}` },
   })
   return parseResponse(response)
 }
 
 export async function recordJukeboxPick({ token, albumId, mode }) {
-  const response = await fetch(`${API_BASE_URL}/api/jukebox/record-pick`, {
+  const response = await fetch(`${API_BASE_URL}/jukebox/record-pick`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
