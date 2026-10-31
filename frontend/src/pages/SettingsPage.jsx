@@ -15,6 +15,8 @@ import {
   subscribeToPushNotifications,
   sendTestNotification,
   downloadScrobblesExport,
+  requestSpotifyAuthorization,
+  redirectToAuthorization,
 } from "../api";
 import { readSession } from "../session";
 import ImportProgressBar from "../components/ImportProgressBar";
@@ -214,6 +216,22 @@ export default function SettingsPage() {
         })
         .catch(() => setScrobbleStatus("error"));
     }, 350);
+  };
+
+  const [reconnectingSpotify, setReconnectingSpotify] = useState(false);
+  const [reconnectError, setReconnectError] = useState("");
+
+  const reconnectSpotify = async () => {
+    setReconnectingSpotify(true);
+    setReconnectError("");
+    try {
+      sessionStorage.setItem("spotify_auth_return_to", "/settings?tab=scrobble");
+      const { authorization_url: authUrl } = await requestSpotifyAuthorization(true);
+      redirectToAuthorization(authUrl);
+    } catch (err) {
+      setReconnectError(err.message || "Failed to start Spotify authorization");
+      setReconnectingSpotify(false);
+    }
   };
 
   const triggerLikedTracksSync = async () => {
@@ -618,6 +636,62 @@ export default function SettingsPage() {
               )}
               {scrobbleStatus === "saving" && <p role="status">Saving...</p>}
               {scrobbleStatus === "saved" && <p role="status">Saved</p>}
+
+              <div
+                style={{
+                  marginTop: "1.5rem",
+                  padding: "1rem",
+                  backgroundColor: "var(--color-surface)",
+                  border: "0.5px solid var(--color-border)",
+                  borderRadius: "var(--radius-sm)",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: "0.75rem",
+                  }}
+                >
+                  <div>
+                    <strong style={{ display: "block", fontSize: "0.95rem" }}>
+                      Spotify Permissions & Account
+                    </strong>
+                    <p
+                      style={{
+                        margin: "0.25rem 0 0 0",
+                        fontSize: "0.85rem",
+                        color: "var(--color-muted)",
+                      }}
+                    >
+                      Update Spotify authorization to ensure liking, playlists, and scrobbling
+                      permissions are up-to-date.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="button button-primary"
+                    style={{ fontSize: "0.85rem", padding: "0.45rem 1rem" }}
+                    onClick={reconnectSpotify}
+                    disabled={reconnectingSpotify}
+                  >
+                    {reconnectingSpotify ? "Connecting..." : "Reconnect Spotify"}
+                  </button>
+                </div>
+                {reconnectError && (
+                  <p
+                    style={{
+                      color: "var(--color-danger)",
+                      fontSize: "0.85rem",
+                      marginTop: "0.5rem",
+                    }}
+                  >
+                    {reconnectError}
+                  </p>
+                )}
+              </div>
             </>
           ) : (
             <p className="panel-meta">Loading scrobble settings...</p>

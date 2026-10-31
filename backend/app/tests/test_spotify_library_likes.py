@@ -102,6 +102,7 @@ def test_like_track_success(mock_user):
         assert fake_db.liked_tracks[0].spotify_track_id == "track123"
         assert fake_db.liked_tracks[0].track_name == "Song A"
         assert mock_req.call_args[0][0] == "PUT"
+        assert mock_req.call_args[1].get("json") == {"ids": ["track123"]}
 
     app.dependency_overrides.clear()
 
@@ -181,6 +182,7 @@ def test_like_album_success(mock_user):
         assert len(fake_db.saved_albums) == 1
         assert fake_db.saved_albums[0].spotify_album_id == "album123"
         assert mock_req.call_args[0][0] == "PUT"
+        assert mock_req.call_args[1].get("json") == {"ids": ["album123"]}
 
     app.dependency_overrides.clear()
 

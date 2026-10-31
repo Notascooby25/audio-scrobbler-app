@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.30.1",
+    date: "2026-10-31",
+    changes: [
+      "Spotify Scope Alignment: Aligned default Spotify authorization scopes across Docker Compose configuration to reliably grant library modify permissions.",
+      "1-Click Reconnect: Added a direct 'Reconnect Spotify' button in Settings → Scrobble and inside error banners to effortlessly refresh Spotify permissions for track and album liking.",
+      "Enhanced Spotify API Diagnostics: Updated track and album liking endpoints with resilient JSON payload delivery and detailed response logging.",
+    ],
+  },
+  {
     version: "0.30.0",
     date: "2026-10-31",
     changes: [

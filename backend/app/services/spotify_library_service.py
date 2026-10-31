@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 import time
 from datetime import datetime
@@ -22,6 +23,7 @@ from ..security import decrypt_refresh_token, encrypt_refresh_token
 
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
 SPOTIFY_TRACKS_URL = "https://api.spotify.com/v1/tracks"
+logger = logging.getLogger("audio-scrobbler-api")
 
 
 def _request(method: str, url: str, **kwargs: Any) -> requests.Response:
@@ -241,10 +243,19 @@ def _call_user_spotify(db: Session, user: User, method: str, url: str, **kwargs:
     headers = {"Authorization": f"Bearer {token}", **kwargs.pop("headers", {})}
     resp = requests.request(method, url, headers=headers, timeout=15, **kwargs)
     if resp.status_code == 403:
+        logger.warning(
+            "Spotify user call %s %s returned 403 Forbidden for user %s: %s",
+            method,
+            url,
+            user.id,
+            resp.text,
+        )
         raise HTTPException(status_code=403, detail="needs_spotify_reconnect")
     if resp.status_code == 429:
+        logger.warning("Spotify rate limit reached on %s %s: %s", method, url, resp.text)
         raise HTTPException(status_code=429, detail="Spotify rate limit reached; please try again later")
     if not resp.ok:
+        logger.warning("Spotify user call %s %s returned %s: %s", method, url, resp.status_code, resp.text)
         raise HTTPException(status_code=resp.status_code, detail=f"Spotify error: {resp.text}")
     return resp
 
@@ -257,7 +268,13 @@ def toggle_like_track(
     like: bool = True,
 ) -> bool:
     url = f"https://api.spotify.com/v1/me/tracks?ids={track_id}"
-    _call_user_spotify(db, user, "PUT" if like else "DELETE", url)
+    _call_user_spotify(
+        db,
+        user,
+        "PUT" if like else "DELETE",
+        url,
+        json={"ids": [track_id]} if like else None,
+    )
     if like:
         record = (
             db.query(LikedTrack).filter(LikedTrack.user_id == user.id, LikedTrack.spotify_track_id == track_id).first()
@@ -336,7 +353,13 @@ def toggle_like_album(
                 raise HTTPException(status_code=404, detail="Album not found on Spotify")
 
     url = f"https://api.spotify.com/v1/me/albums?ids={resolved_id}"
-    _call_user_spotify(db, user, "PUT" if like else "DELETE", url)
+    _call_user_spotify(
+        db,
+        user,
+        "PUT" if like else "DELETE",
+        url,
+        json={"ids": [resolved_id]} if like else None,
+    )
     if like:
         record = (
             db.query(SavedAlbum)

@@ -11,6 +11,8 @@ import {
   fetchStatsSummary,
   likeAlbum,
   likeTrack,
+  redirectToAuthorization,
+  requestSpotifyAuthorization,
   unlikeAlbum,
   unlikeTrack,
 } from "../api";
@@ -119,7 +121,7 @@ export default function OverviewPage() {
       });
 
       if (err?.message?.includes("needs_spotify_reconnect") || err?.status === 403) {
-        setActionNotice("Please reconnect your Spotify account in Settings to enable liking.");
+        setActionNotice("needs_spotify_reconnect");
       } else {
         setActionNotice(err?.message || "Failed to update Spotify like.");
       }
@@ -183,11 +185,46 @@ export default function OverviewPage() {
           <RediscoverCard token={session?.accessToken} />
           <JukeboxCard token={session?.accessToken} />
           <DateRangeSelector value={dateRange} onChange={setDateRange} showCompare={false} />
-          {actionNotice && (
+          {actionNotice === "needs_spotify_reconnect" ? (
+            <div
+              className="notice notice-info"
+              role="status"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: "0.5rem",
+              }}
+            >
+              <span>Please reconnect Spotify to grant library liking permissions.</span>
+              <button
+                type="button"
+                className="button button-primary"
+                style={{ fontSize: "0.8rem", padding: "0.3rem 0.75rem" }}
+                onClick={async () => {
+                  try {
+                    sessionStorage.setItem(
+                      "spotify_auth_return_to",
+                      window.location.pathname + window.location.search
+                    );
+                    const { authorization_url: authUrl } = await requestSpotifyAuthorization(true);
+                    redirectToAuthorization(authUrl);
+                  } catch (reconnectErr) {
+                    setActionNotice(
+                      reconnectErr.message || "Failed to start Spotify authorization"
+                    );
+                  }
+                }}
+              >
+                Reconnect Spotify
+              </button>
+            </div>
+          ) : actionNotice ? (
             <p className="notice notice-info" role="status">
               {actionNotice}
             </p>
-          )}
+          ) : null}
           {charts && (
             <div className="overview-grid">
               <RankedList title="Top artists" entries={charts.artists} kind="artists" />

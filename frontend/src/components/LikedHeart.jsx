@@ -5,6 +5,7 @@ export default function LikedHeart({
   busy = false,
   disabled = false,
   title,
+  label: _ignoredLabel,
   className = "",
 }) {
   const label =
