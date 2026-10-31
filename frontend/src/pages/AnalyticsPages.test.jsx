@@ -14,21 +14,19 @@ vi.mock("../api", () => ({
   fetchReportsSummary: vi.fn(),
   fetchReportsCharts: vi.fn(),
   fetchReportsEntity: vi.fn().mockResolvedValue({ entries: [] }),
-  fetchUserSettings: vi
-    .fn()
-    .mockResolvedValue({
-      default_date_range: "last.week",
-      theme: "system",
-      default_page_size: 50,
-      default_library_view: "list",
-      scrobbles_view: null,
-      artists_view: null,
-      albums_view: null,
-      tracks_view: null,
-      show_artwork: true,
-      show_source_badges: true,
-      timestamp_mode: "relative",
-    }),
+  fetchUserSettings: vi.fn().mockResolvedValue({
+    default_date_range: "last.week",
+    theme: "system",
+    default_page_size: 50,
+    default_library_view: "list",
+    scrobbles_view: null,
+    artists_view: null,
+    albums_view: null,
+    tracks_view: null,
+    show_artwork: true,
+    show_source_badges: true,
+    timestamp_mode: "relative",
+  }),
   createBlock: vi.fn(),
   deleteLibraryEntries: vi.fn(),
   deleteLibraryScrobbles: vi.fn(),
@@ -408,6 +406,7 @@ describe("library pagination", () => {
     );
     await waitFor(() => expect(screen.getByText("Slow Show")).toBeInTheDocument());
 
+    fireEvent.click(screen.getByRole("button", { name: "Select" }));
     fireEvent.click(screen.getByLabelText("Select Slow Show"));
     fireEvent.click(screen.getByRole("button", { name: "Delete selected" }));
 
@@ -438,6 +437,7 @@ describe("library pagination", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Artists" }));
     await waitFor(() => expect(screen.getByText("The National")).toBeInTheDocument());
 
+    fireEvent.click(screen.getByRole("button", { name: "Select" }));
     fireEvent.click(screen.getByLabelText("Select The National"));
     fireEvent.click(screen.getByRole("button", { name: "Block selected" }));
 

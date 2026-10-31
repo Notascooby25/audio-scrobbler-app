@@ -457,4 +457,62 @@ describe("LibraryRankList", () => {
       "/library?filter_entity=track&filter_name=Slow%20Show&filter_secondary=The%20National&userId=7"
     );
   });
+
+  it("gates checkboxes and EntryMenu behind selectMode in list view", () => {
+    const onToggleSelection = vi.fn();
+    const onEntryChanged = vi.fn();
+    const { rerender } = render(
+      <MemoryRouter>
+        <LibraryRankList
+          entries={[
+            {
+              label: "Slow Show",
+              secondary: "The National",
+              play_count: 12,
+              artwork_url: "/cover.jpg",
+            },
+          ]}
+          kind="tracks"
+          token="token"
+          page={1}
+          pageSize={50}
+          totalCount={1}
+          view="list"
+          selectMode={false}
+          onToggleSelection={onToggleSelection}
+          onEntryChanged={onEntryChanged}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Options for Slow Show/)).not.toBeInTheDocument();
+
+    rerender(
+      <MemoryRouter>
+        <LibraryRankList
+          entries={[
+            {
+              label: "Slow Show",
+              secondary: "The National",
+              play_count: 12,
+              artwork_url: "/cover.jpg",
+            },
+          ]}
+          kind="tracks"
+          token="token"
+          page={1}
+          pageSize={50}
+          totalCount={1}
+          view="list"
+          selectMode={true}
+          onToggleSelection={onToggleSelection}
+          onEntryChanged={onEntryChanged}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole("checkbox", { name: "Select Slow Show" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Options for Slow Show")).toBeInTheDocument();
+  });
 });

@@ -118,4 +118,47 @@ describe("LibraryScrobbleList", () => {
     expect(screen.queryByRole("button", { name: /Video Games/i })).not.toBeInTheDocument();
     expect(screen.getByTitle("Liked on Spotify")).toBeInTheDocument();
   });
+
+  it("gates checkboxes behind selectMode in scrobble list", () => {
+    const onToggleSelection = vi.fn();
+    const { rerender } = render(
+      <LibraryScrobbleList
+        token="token"
+        view="list"
+        onToggleSelection={onToggleSelection}
+        selectMode={false}
+        scrobbles={[
+          {
+            id: 1,
+            track_name: "Video Games",
+            artist_name: "Lana Del Rey",
+            source: "spotify",
+            played_at: new Date().toISOString(),
+          },
+        ]}
+      />
+    );
+
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+
+    rerender(
+      <LibraryScrobbleList
+        token="token"
+        view="list"
+        onToggleSelection={onToggleSelection}
+        selectMode={true}
+        scrobbles={[
+          {
+            id: 1,
+            track_name: "Video Games",
+            artist_name: "Lana Del Rey",
+            source: "spotify",
+            played_at: new Date().toISOString(),
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getByRole("checkbox", { name: "Select Video Games" })).toBeInTheDocument();
+  });
 });

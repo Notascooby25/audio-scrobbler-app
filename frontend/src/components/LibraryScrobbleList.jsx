@@ -53,7 +53,7 @@ export default function LibraryScrobbleList({
             <ul className="library-scrobble-list">
               {entries.map((scrobble) => (
                 <li className="library-scrobble-row" key={scrobble.id}>
-                  {onToggleSelection && (view !== "grid" || selectMode) && (
+                  {selectMode && onToggleSelection && (
                     <label className="bulk-select-control scrobble-grid-select">
                       <input
                         type="checkbox"

@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.30.7",
+    date: "2026-10-31",
+    changes: [
+      "Slim, High-Density Library List Rows: Streamlined list row height from 64px to 48px, compacting artwork (38px) and row padding while preserving full typography, heart actions, and proportional play count bars.",
+      "Clean Default Rows & Selection/Menu Toggle: Selection checkboxes and three-dots context menus are now hidden by default to keep browsing clean and minimal, and appear on demand when clicking the 'Select' toggle button next to List/Grid.",
+      "Single-Line Mobile Layout: Mobile list rows now remain neatly on a single line with truncated text rather than wrapping into multiple vertical lines, dramatically increasing the number of visible albums and artists per screen.",
+    ],
+  },
+  {
     version: "0.30.6",
     date: "2026-10-31",
     changes: [

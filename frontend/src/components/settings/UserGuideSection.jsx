@@ -214,7 +214,9 @@ export default function UserGuideSection() {
           <li>
             <strong>Library:</strong> Browse every play you've ever logged. Filter by entity, toggle
             between list and grid views, view proportional frequency bars showing play distributions
-            at a glance, search by keyword, and filter by custom date ranges.
+            at a glance, search by keyword, and filter by custom date ranges. Rows in list view are
+            streamlined for high information density; clicking the <strong>Select</strong> toggle
+            reveals row checkboxes and item options (Block, Delete, Clear Artwork) on demand.
           </li>
           <li>
             <strong>Reports:</strong> Deep analytical insights. Explore your listening heatmap (what

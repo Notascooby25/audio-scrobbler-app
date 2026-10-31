@@ -168,7 +168,7 @@ export default function LibraryRankList({
 
             return (
               <li className="library-rank-row" key={`${entry.label}-${entry.secondary || ""}`}>
-                {onToggleSelection && entityType && (
+                {selectMode && onToggleSelection && entityType && (
                   <label className="bulk-select-control">
                     <input
                       type="checkbox"
@@ -225,7 +225,7 @@ export default function LibraryRankList({
                       <span>{entry.play_count.toLocaleString()}</span>
                     </Link>
                   </div>
-                  {onEntryChanged && entityType && (
+                  {selectMode && onEntryChanged && entityType && (
                     <EntryMenu
                       token={token}
                       entityType={entityType}
