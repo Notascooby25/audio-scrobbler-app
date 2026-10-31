@@ -56,6 +56,7 @@ def get_jukebox_albums(
 ) -> JukeboxAlbumsResponse:
     prefs = db.query(UserPreferences).filter(UserPreferences.user_id == current_user.id).first()
     source = prefs.jukebox_source if prefs else "spotify_saved"
+    archive_limit = getattr(prefs, "jukebox_archive_limit", 100) or 100
 
     saved_albums = db.query(SavedAlbum).filter(SavedAlbum.user_id == current_user.id).all()
 
@@ -76,7 +77,7 @@ def get_jukebox_albums(
             )
             .group_by(ListeningEvent.album_name, ListeningEvent.artist_name)
             .order_by(func.count().desc())
-            .limit(100)
+            .limit(archive_limit)
             .all()
         )
         items = []

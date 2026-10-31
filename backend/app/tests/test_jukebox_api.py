@@ -91,3 +91,35 @@ def test_jukebox_albums_authorized():
 def test_internal_saved_albums_requires_worker_token():
     response = client.post("/spotify/internal/saved-albums", json={"user_id": 1, "albums": []})
     assert response.status_code == 401
+
+
+def test_jukebox_albums_library_archive_custom_limit():
+    from backend.app.models import UserPreferences
+
+    user = User(id=1, spotify_user_id="sp-1", username="user1", display_name="User", is_active=True)
+    prefs = UserPreferences(user_id=1, jukebox_source="library_archive", jukebox_archive_limit=250)
+
+    class LimitTrackingQuery(FakeQuery):
+        recorded_limit = None
+
+        def limit(self, val):
+            LimitTrackingQuery.recorded_limit = val
+            return self
+
+    class ArchiveDB(FakeDB):
+        def query(self, *models):
+            if models and models[0] is UserPreferences:
+                return FakeQuery([prefs])
+            if models and models[0] is User:
+                return FakeQuery([user])
+            return LimitTrackingQuery([])
+
+    app.dependency_overrides[get_current_user] = lambda: user
+    app.dependency_overrides[get_db] = lambda: ArchiveDB(user=user)
+
+    response = client.get("/jukebox/albums")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["source"] == "library_archive"
+    assert LimitTrackingQuery.recorded_limit == 250
+
