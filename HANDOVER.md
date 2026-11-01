@@ -42,11 +42,10 @@ section 1.
   - don't switch branches
   - run `git status` first; if everything in it is yours, `git add -A` is fine.
 - **Never commit `HANDOVER.private.md`.** It is gitignored; keep it that way.
-- **Pushing to `main` deploys to production.** `ci.yml` builds and pushes images
-  to GHCR, and Watchtower on the server redeploys within about 5 minutes. For
-  docs-only or script-only commits, put **`[skip ci]`** in the commit message so
-  nothing rebuilds or restarts. Code that should deploy must not use
-  `[skip ci]`. Pushing to a feature branch publishes nothing.
+- **Merging to `main` deploys to production.** `ci.yml` builds and pushes images
+  to GHCR, and Watchtower on the server redeploys within about 5 minutes. Docs-only
+  merges don't redeploy. Pushing to a feature branch publishes nothing. `main` is
+  protected: changes arrive by pull request, once checks pass.
 - Commit style is conventional: `feat(scope): …`, `fix(scope): …`, `docs: …`.
   PRs have been squash-merged.
 
@@ -277,9 +276,8 @@ Host address, SSH user and public hostname: see `HANDOVER.private.md`.
       `docker-compose.prod.yml`, and a mode change on
       `push_backups_to_synology.sh`). **Never delete that script upstream**, or
       the pull will conflict.
-    - Its CI runs on every push to `main` and redeploys it; use `[skip ci]` for
-      docs-only commits.
-  - **Expense** is a private repo, and the server can't `git pull` it. Scripts
+    - Its CI runs on every merge to `main` and redeploys it.
+  - **Expense** is a public repo, and the server can't `git pull` it. Scripts
     are copied with `scp` to `/srv/UK-Expense-Tracker/scripts/`. The app runs
     from its image.
 - **rclone** is configured on the server with `gdrive` and `gdrive-crypt`

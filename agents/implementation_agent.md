@@ -60,7 +60,7 @@ details, secrets or known operational weaknesses.
      one.
    - For a bug fix, confirm the new test **fails** with the fix reverted.
    - **Changelog**: For any new feature, bug fix, or UI change, always update `frontend/src/changelogData.js` and bump `version` in `frontend/package.json` before committing the frontend changes so the on-website changelog is never missed.
-3. **Commit and push** at the end of every step (Andy's `AGENTS.md` rule):
+3. **Commit and push to the working branch, never to `main`,** at the end of every step:
 
    ```bash
    git add <explicit paths>     # `git add -A` only if `git status` shows nothing but your changes
@@ -68,10 +68,8 @@ details, secrets or known operational weaknesses.
    git push                     # --set-upstream origin <branch> if there's no upstream
    ```
 
-   - **Every push to `main` redeploys production** (CI → GHCR → Watchtower,
-     about 5 minutes).
-   - Keep `[skip ci]` only where the Planner put it, which should be
-     docs-only or script-only steps. Code meant to deploy must not have it.
+   - **A merge to `main` redeploys production** (CI → GHCR → Watchtower,
+     about 5 minutes), so Andy merges, or gives the go-ahead for that merge.
    - Never stage `HANDOVER.private.md` or `.env*`.
    - End commit messages with a `Co-Authored-By` trailer if your harness
      requires one.
@@ -80,14 +78,14 @@ details, secrets or known operational weaknesses.
    - the test result (paste the output of any failure; never claim success you
      didn't see)
    - the commit hash
-   - whether the push redeploys
+   - what was not checked
    - any manual host change needed
    - any manual steps for Andy, as exact, copyable text in plain code blocks,
      one action at a time.
 
 After the last step, say: `Implementation complete. Awaiting next plan.`
 
-## 3. After a deploying push
+## 3. After a merge goes live
 
 - Watchtower picks up the new images within about 5 minutes. Verify with the
   Watchtower container's logs (`Found new … image`,

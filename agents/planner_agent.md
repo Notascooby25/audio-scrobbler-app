@@ -40,10 +40,8 @@ committed.
    - **Tests:** tests to add or update, and the exact command (§6)
    - **Risks and regression notes**
    - **Commit message:** conventional (`feat(scope): …`, `fix(scope): …`,
-     `docs: …`), imperative, ending with `(Planner Step N)`. Add `[skip ci]`
-     **only** to docs-only or script-only steps, because every push to `main`
-     redeploys production.
-   - **Deploy impact:** does pushing this step redeploy? Does
+     `docs: …`), imperative, ending with `(Planner Step N)`.
+   - **Deploy impact:** does merging this redeploy? Does
      `docker-compose.prod.yml` or `.env.production` on the host need a manual
      change?
 4. **Verification:** post-deploy checks (§7), marked as agent-doable or
@@ -91,7 +89,7 @@ These are mirrored in `~/.claude/agents/planner.md`.
 - **Python scoping trap:** a name imported or assigned anywhere in a function
   is local to the whole function, so an earlier use raises `UnboundLocalError`.
   That crashed `range=all.time`. Plan module-level imports.
-- **Git:** Andy's rule is to commit **and push** after every step. If the tree
+- **Git:** commit and push each step to the working branch, never to `main`. If the tree
   may be shared, stage by explicit path, not `git add -A`, and don't switch
   branches. Never stage `HANDOVER.private.md` or `.env*`.
 - **Destructive actions** (`down -v`, volume removal, prune, `rm -rf`, DB
@@ -275,7 +273,7 @@ Include each item that applies:
 
 ## 7. Deployment and verification
 
-- **Push to `main`:** CI builds `ghcr.io/notascooby25/audio-scrobbler-app-{backend,worker,frontend}:latest`,
+- **Merge to `main`:** Andy merges, or gives the go-ahead for that merge. CI builds `ghcr.io/notascooby25/audio-scrobbler-app-{backend,worker,frontend}:latest`,
   and Watchtower on the production server redeploys changed services within
   about 5 minutes. A feature-branch push deploys nothing.
 - **Verify:** check the Watchtower container logs for `Found new … image` and

@@ -1,9 +1,16 @@
+# Set-up answers
+- **What it is and who uses it:** a personal music-listening tracker for the owner and a few followers.
+- **GitHub:** public. **Real data:** on the production server only, never in this repo.
+- **How it goes live:** merging to `main` builds images and Watchtower updates production. **Master copy:** GitHub.
+- **Preview:** `scripts/preview.sh`. **Process:** full (`safe-change` skill).
+
 # How to Work on This Repo
 - Every time you have an issue, bug, or update to make: Follow `agents/planner_agent.md` to plan it and wait for the user's approval, then follow `agents/implementation_agent.md` to implement it.
 - When presenting a plan, if you recommend native execution, execute via native directly upon plan approval instead of prompting for execution approaches. Only prompt when there is a genuine choice without a clear recommendation.
 - Before any code change, read `HANDOVER.md` (and `HANDOVER.private.md` if it exists; it is gitignored, so never commit or quote it).
 - For page work, check `agents/page_specs.md` and `DESIGN.md`. See `agents/agents.md` for the overall workflow.
-- If the user explicitly says to skip planning for a small fix, skip the plan, but still follow the testing, security review, commit, and safety rules below.
+- Follow the shared `safe-change` skill for every change: probe, agree, build on a branch, check, screenshots, try the preview, fix on the same branch, go live, live check.
+- If the user explicitly says to skip planning for a small fix, skip the plan and the questions, but still follow the branch, preview, testing, security review and safety rules below.
 - For manual steps in the browser or UI, provide the exact text in a plain chat code block, NOT buried in an `AskUserQuestion` option, so the user can easily copy it.
 
 # Coding Standards & Style
@@ -42,6 +49,13 @@
   cd frontend && npm run lint && npm test && npm run build
   ```
 - **Runtime Verification:** After every change, run all applicable linters and tests above. For any runtime or UI behavior not covered by automated tests, run the app (`docker compose up -d`) and describe what you checked.
+- **Preview (before handing any change over):** see the shared `safe-change` skill.
+  ```bash
+  scripts/preview.sh up            # add --phone for home Wi-Fi access; a private copy using real data
+  scripts/preview.sh down          # stop it and delete its data copy
+  bash scripts/preview_settings_check.sh   # settings this branch expects versus live; no values leave the server
+  cd frontend && node e2e/preview-shots.mjs <folder-outside-this-repo> /reports /library   # desktop and phone screenshots; they show real data
+  ```
 - **Frontend End-to-End Tests (when changing navigation or date filtering):**
   ```bash
   cd frontend && npm run test:e2e
@@ -68,11 +82,11 @@
 
 # Pre-Commit Security Review, Changelog & Version Control
 - **Mandatory Security Review:** Always run the `differential-review` skill on every change before anything is committed or merged, and report findings by severity.
-- **Changelog & User Guide:** Whenever implementing a new feature, improvement, or bug fix, update `frontend/src/changelogData.js` with a new version entry at the top and bump `version` in `frontend/package.json`. If adding or changing user-facing capabilities, also update `frontend/src/components/settings/UserGuideSection.jsx` and `frontend/src/components/settings/FaqSection.jsx`.
-- **Commit & Push:** Check `git status` first. At the end of every task or major step that modifies files, stage your changes, commit with a descriptive conventional message (`feat:`, `fix:`, `docs:`), and push to GitHub. Pushing to `main` automatically deploys to production via GHCR and Watchtower; add `[skip ci]` to docs-only commits.
+- **Changelog & User Guide:** Once per release, on the branch just before the go-ahead, for any new feature, improvement, or bug fix, update `frontend/src/changelogData.js` with a new version entry at the top and bump `version` in `frontend/package.json`. If adding or changing user-facing capabilities, also update `frontend/src/components/settings/UserGuideSection.jsx` and `frontend/src/components/settings/FaqSection.jsx`.
+- **Commit & Push:** Check `git status` first. Commit with a descriptive conventional message (`feat:`, `fix:`, `docs:`) and push to the working branch, never to `main`. A merge to `main` deploys to production via GHCR and Watchtower, so the owner merges, or gives the go-ahead for that specific merge. Never use `[skip ci]` in a pull request, as it would leave required checks waiting. Docs-only merges don't redeploy.
 
 # Files, Folders & Systems That Must Never Be Edited
 - **Dead / Legacy Code:** Never edit `backend/app/db/queries/analytics_queries.py` (it is a dead copy from the initial commit; the live file is `backend/app/queries/analytics_queries.py`).
 - **Local Secrets, Data & Build Artifacts:** Never edit or commit `.env`, `.env.production`, `HANDOVER.private.md`, `backups/`, `*.db`, `monitoring/*.prom`, `frontend/node_modules/`, `frontend/dist/`, `.venv/`, or `backend/venv/`.
 - **Applied Migrations:** Never rewrite existing Alembic migration files in `backend/migrations/versions/` that have already run in production; create a new numbered migration instead.
-- **Shared NUC Host (`192.168.68.126`) & Volumes:** The NUC is a shared production server also running `/srv/sleepwell` and `/srv/UK-Expense-Tracker`—never touch their containers, volumes, Tailscale Funnels, or NAS sync scripts. Always use `docker compose --env-file .env.production -f docker-compose.prod.yml` on the NUC, and **never** run `docker compose down -v` or delete volumes without checking `docker volume ls` and `docker ps -a` and getting explicit user confirmation (local dev and prod compose files share the `postgres_data` volume name). When giving the user terminal commands to deploy or reload updated services on the NUC, always specify `docker compose ... pull <service> && docker compose ... up -d <service>` so the container does not restart with a stale cached image while waiting for Watchtower's background poll cycle.
+- **Shared NUC Host & Volumes:** The NUC is a shared production server also running `/srv/sleepwell` and `/srv/UK-Expense-Tracker`—never touch their containers, volumes, Tailscale Funnels, or NAS sync scripts. Always use `docker compose --env-file .env.production -f docker-compose.prod.yml` on the NUC, and **never** run `docker compose down -v` or delete volumes without checking `docker volume ls` and `docker ps -a` and getting explicit user confirmation (local dev and prod compose files share the `postgres_data` volume name). When giving the user terminal commands to deploy or reload updated services on the NUC, always specify `docker compose ... pull <service> && docker compose ... up -d <service>` so the container does not restart with a stale cached image while waiting for Watchtower's background poll cycle.
