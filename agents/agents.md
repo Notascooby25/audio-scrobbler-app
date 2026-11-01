@@ -17,12 +17,12 @@ as a system prompt, or point the agent at the file.
    `Confirm to proceed.`
 3. Andy approves.
 4. The **Implementation Agent** carries out each step. It edits, runs the tests,
-   commits and pushes, then reports.
-5. Every push to `main` redeploys production (CI → GHCR → Watchtower), except
-   commits marked `[skip ci]`, which are for docs-only changes.
+   commits and pushes to the working branch, then reports.
+5. Andy tries the preview and merges. A merge to `main` redeploys production
+   (CI → GHCR → Watchtower), except docs-only merges.
 
-A small, obvious fix can skip the formal plan if Andy says so. The testing,
-commit and safety rules still apply.
+A small, obvious fix can skip the formal plan if Andy says so. The branch,
+preview, testing and safety rules still apply. See the shared `safe-change` skill.
 
 ## Related files
 
@@ -37,7 +37,7 @@ commit and safety rules still apply.
 ## Keeping these in step
 
 - When a rule changes, update the planner and implementer here **and** the
-  global agents in `~/.claude/agents/`.
+  shared `safe-change` skill.
 - When a page changes, update [page_specs.md](page_specs.md) in the same commit.
 - This repo is **public**. Never add IPs, hostnames, account or user IDs, NAS
   details, secrets or known operational weaknesses to these files. Those

@@ -3,6 +3,11 @@ name: CI
 on:
   push:
     branches: [main]
+    # Only on push: pull request checks must still run and report for docs-only
+    # changes, but merging them needn't rebuild and redeploy production.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   pull_request:
 
 # Without this, two pushes to main race each other and whichever
@@ -58,6 +63,11 @@ jobs:
       - name: Run backup restore drill tests
         run: bash scripts/tests/test_restore_drill.sh
 
+      - name: Run preview script tests
+        run: |
+          bash scripts/tests/test_preview.sh
+          bash scripts/tests/test_preview_settings_check.sh
+
       - name: Run backend and worker tests
         run: PYTHONPATH=worker python -m pytest backend/app/tests worker/tests -q
 
@@ -95,6 +105,34 @@ jobs:
 
       - name: Build frontend
         run: npm run build
+
+  # Reports only for now: not needed by publish-images. Make it a required check
+  # once it has passed on 5 pull requests.
+  browser-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser tests
+        run: npm run test:e2e
 
   compose:
     runs-on: ubuntu-latest
