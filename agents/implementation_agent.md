@@ -59,7 +59,7 @@ details, secrets or known operational weaknesses.
      drops its **own uniquely named database**, never the shared `scrobbler`
      one.
    - For a bug fix, confirm the new test **fails** with the fix reverted.
-   - **Changelog**: For any new feature, bug fix, or UI change, always update `frontend/src/changelogData.js` and bump `version` in `frontend/package.json` before committing the frontend changes so the on-website changelog is never missed.
+   - **Changelog:** once per release, on the branch just before the go-ahead, update `frontend/src/changelogData.js` and bump `version` in `frontend/package.json`. Not on every step.
 3. **Commit and push to the working branch, never to `main`,** at the end of every step:
 
    ```bash

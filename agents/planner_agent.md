@@ -104,7 +104,7 @@ These are mirrored in `~/.claude/agents/planner.md`.
   (`base64 -w0 <file>; echo`) and verify it with a hash check.
 - **Docs:** update affected docs (`docs/`, `HANDOVER.md`, these agent files) in
   the same piece of work.
-- **Changelog & User Guide:** Whenever you plan a new feature or a significant change, always include a step to update `frontend/src/changelogData.js` with a new version entry summarizing the change in simple terms. If adding or changing user-facing capabilities, also include updating `frontend/src/components/settings/UserGuideSection.jsx` and `frontend/src/components/settings/FaqSection.jsx`.
+- **Changelog & User Guide:** plan one changelog and version update per release, as the last step before the go-ahead, not one per step. If user-facing behaviour changes, also update the user guide and FAQ.
 
 ## 4. Architecture: what actually exists
 
