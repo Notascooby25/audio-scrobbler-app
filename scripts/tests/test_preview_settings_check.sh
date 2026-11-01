@@ -24,6 +24,7 @@ services:
       APP_ENV: production
       JWT_SECRET: ${JWT_SECRET}
       NEW_SETTING: ${NEW_SETTING}
+      HAS_DEFAULT: ${HAS_DEFAULT:-30}
       SPOTIFY_SCOPES: ${SPOTIFY_SCOPES:-user-library-read user-library-modify}
   worker:
     environment:
@@ -55,6 +56,16 @@ check "names the missing setting" grep -q "NEW_SETTING" "$T/out.txt"
 check "doesn't flag settings live has" hasnt "$T/out.txt" "WORKER_ONLY"
 check "never prints a value" hasnt "$T/out.txt" "leaked-secret-value"
 check "reports scopes matching" grep -qi "SPOTIFY_SCOPES.*same" "$T/out.txt"
+
+echo "a missing setting with a safe default is not a problem"
+check "explains the default" grep -qi "uses the default: HAS_DEFAULT" "$T/out.txt"
+check "not reported as missing" bash -c "! grep -q 'MISSING.*HAS_DEFAULT' '$T/out.txt'"
+check "not counted as a problem" grep -q "^1 setting" "$T/out.txt"
+sed -i '/NEW_SETTING/d' "$T/compose.yml"
+run; rc=$?
+check "defaults alone pass" test "$rc" -eq 0
+check "says settings match" grep -q "Settings match" "$T/out.txt"
+check "still mentions the default" grep -qi "uses the default: HAS_DEFAULT" "$T/out.txt"
 
 echo "a live value differs from what this branch expects"
 FAKE_SCOPES=old-scopes run
