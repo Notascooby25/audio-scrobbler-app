@@ -77,9 +77,10 @@ check "-> verify never ran on a stale dump"            bash -c "! test -e '$D/ve
 DRILL_MAX_AGE_HOURS=30 drill local; check "DRILL_MAX_AGE_HOURS=30 lets 20h pass" test $RC -eq 0
 DRILL_MAX_AGE_HOURS=abc drill local; check "non-numeric max age rejected"  test $RC -eq 1
 
-reset; for a in "20 hours" "2 hours" "50 hours" "10 hours"; do head -c 100 /dev/urandom > "$R/backups/$(name "$a")"; done
+# Keep the newest name: working it out again later can land on the next second.
+reset; newest=$(name "2 hours"); for f in "$(name "20 hours")" "$newest" "$(name "50 hours")" "$(name "10 hours")"; do head -c 100 /dev/urandom > "$R/backups/$f"; done
 touch "$R/backups/manual-20260915-201039.sql.gz"; drill local
-check "newest of several is chosen (by name)"          has "$D/verify_arg" "$(name '2 hours')"
+check "newest of several is chosen (by name)"          has "$D/verify_arg" "$newest"
 reset; drill local;                                    check "no dumps at all -> fail"   test $RC -eq 1
 reset; : > "$R/backups/$(name '1 hours')"; drill local; check "empty dump file -> fail"  test $RC -eq 1
 reset; head -c 100 /dev/urandom > "$R/backups/$(name '1 hours')"; STUB_VERIFY_FAIL=1 drill local
