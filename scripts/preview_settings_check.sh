@@ -4,7 +4,8 @@
 #
 # Values never leave the server: names are cut off there, and the few non-secret
 # settings compared by value are compared as hashes. Only reads from the server.
-# Exits non-zero when a setting is missing or different.
+# Exits non-zero when a setting is missing or different. A setting the compose
+# file gives a default for isn't a problem when live leaves it unset.
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -35,14 +36,22 @@ expected_names() {
     ' "$COMPOSE"
 }
 
+has_default() {
+    grep -Eq "^ +$1: +\\\$\{$1:-" "$COMPOSE"
+}
+
 for service in "${SERVICES[@]}"; do
     container="audio-scrobbler-app-$service-1"
     live=$(on_server "docker exec $container env | cut -d= -f1 | sort" | cut -d= -f1)
     while read -r name; do
         [ -n "$name" ] || continue
         if ! grep -qx -- "$name" <<< "$live"; then
-            echo "MISSING on live ($service): $name"
-            problems=$((problems + 1))
+            if has_default "$name"; then
+                echo "Not set on live ($service), uses the default: $name"
+            else
+                echo "MISSING on live ($service): $name"
+                problems=$((problems + 1))
+            fi
         fi
     done < <(expected_names "$service")
 done
