@@ -109,7 +109,7 @@ export default function Albums1001ChecklistModal({
           borderRadius: "10px",
           width: "100%",
           maxWidth: "680px",
-          maxHeight: "85vh",
+          maxHeight: "min(85vh, 90dvh)",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
@@ -307,7 +307,15 @@ export default function Albums1001ChecklistModal({
                   }}
                 />
 
-                <div style={{ width: "40px", height: "40px", flexShrink: 0 }}>
+                <div
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    flexShrink: 0,
+                    overflow: "hidden",
+                    borderRadius: "4px",
+                  }}
+                >
                   <Artwork
                     src={album.artwork_url}
                     label={album.album_name}
@@ -325,9 +333,8 @@ export default function Albums1001ChecklistModal({
                       color: "var(--color-ink)",
                       cursor: "pointer",
                       textDecoration: album.is_completed ? "line-through" : "none",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
+                      wordBreak: "break-word",
+                      lineHeight: 1.3,
                     }}
                   >
                     {album.album_name}
@@ -336,9 +343,9 @@ export default function Albums1001ChecklistModal({
                     style={{
                       fontSize: "11px",
                       color: "var(--color-muted)",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
+                      wordBreak: "break-word",
+                      lineHeight: 1.3,
+                      marginTop: "2px",
                     }}
                   >
                     {album.artist_name} • {album.release_year}

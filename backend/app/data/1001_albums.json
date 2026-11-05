@@ -2547,16 +2547,17 @@
   },
   {
     "id": 178,
-    "album_name": "D\u00c3\u2021j\u00c3\u2013 Vu",
+    "album_name": "Déjà Vu",
     "artist_name": "Crosby, Stills, Nash & Young",
     "release_year": 1970,
     "decade": 1970,
     "genres": [
-      "Hip Hop"
+      "Folk",
+      "Rock"
     ],
     "track_count": 9,
     "spotify_album_id": "",
-    "spotify_url": "https://open.spotify.com/search/Crosby%2C%20Stills%2C%20Nash%20%26%20Young%20D%C3%83%E2%80%A1j%C3%83%E2%80%93%20Vu",
+    "spotify_url": "https://open.spotify.com/search/Crosby%2C%20Stills%2C%20Nash%20%26%20Young%20D%C3%A9j%C3%A0%20Vu",
     "artwork_url": ""
   },
   {
@@ -4818,16 +4819,16 @@
   },
   {
     "id": 337,
-    "album_name": "The K\u00c3\u00aeln Concert",
+    "album_name": "The Köln Concert",
     "artist_name": "Keith Jarrett",
     "release_year": 1975,
     "decade": 1970,
     "genres": [
-      "Rock"
+      "Jazz"
     ],
     "track_count": 9,
     "spotify_album_id": "",
-    "spotify_url": "https://open.spotify.com/search/Keith%20Jarrett%20The%20K%C3%83%C2%AEln%20Concert",
+    "spotify_url": "https://open.spotify.com/search/Keith%20Jarrett%20The%20K%C3%B6ln%20Concert",
     "artwork_url": ""
   },
   {
@@ -6132,17 +6133,17 @@
   },
   {
     "id": 429,
-    "album_name": "Risqu\u00c3\u2021",
+    "album_name": "Risqué",
     "artist_name": "Chic",
     "release_year": 1979,
     "decade": 1970,
     "genres": [
       "Funk",
-      "Rock"
+      "Soul"
     ],
     "track_count": 9,
     "spotify_album_id": "",
-    "spotify_url": "https://open.spotify.com/search/Chic%20Risqu%C3%83%E2%80%A1",
+    "spotify_url": "https://open.spotify.com/search/Chic%20Risqu%C3%A9",
     "artwork_url": ""
   },
   {
@@ -6649,15 +6650,16 @@
   {
     "id": 465,
     "album_name": "Ace of Spades",
-    "artist_name": "Mot\u00c3\u00aerhead",
+    "artist_name": "Motörhead",
     "release_year": 1980,
     "decade": 1980,
     "genres": [
+      "Metal",
       "Rock"
     ],
     "track_count": 9,
     "spotify_album_id": "",
-    "spotify_url": "https://open.spotify.com/search/Mot%C3%83%C2%AErhead%20Ace%20of%20Spades",
+    "spotify_url": "https://open.spotify.com/search/Mot%C3%B6rhead%20Ace%20of%20Spades",
     "artwork_url": ""
   },
   {
@@ -6960,15 +6962,16 @@
   {
     "id": 487,
     "album_name": "No Sleep 'til Hammersmith",
-    "artist_name": "Mot\u00c3\u00aerhead",
+    "artist_name": "Motörhead",
     "release_year": 1981,
     "decade": 1980,
     "genres": [
+      "Metal",
       "Rock"
     ],
     "track_count": 9,
     "spotify_album_id": "",
-    "spotify_url": "https://open.spotify.com/search/Mot%C3%83%C2%AErhead%20No%20Sleep%20%27til%20Hammersmith",
+    "spotify_url": "https://open.spotify.com/search/Mot%C3%B6rhead%20No%20Sleep%20%27til%20Hammersmith",
     "artwork_url": ""
   },
   {
@@ -7723,16 +7726,17 @@
   },
   {
     "id": 541,
-    "album_name": "Caf\u00c3\u2021 Bleu",
+    "album_name": "Café Bleu",
     "artist_name": "Style Council",
     "release_year": 1984,
     "decade": 1980,
     "genres": [
-      "Rock"
+      "Soul",
+      "Pop"
     ],
     "track_count": 9,
     "spotify_album_id": "",
-    "spotify_url": "https://open.spotify.com/search/Style%20Council%20Caf%C3%83%E2%80%A1%20Bleu",
+    "spotify_url": "https://open.spotify.com/search/Style%20Council%20Caf%C3%A9%20Bleu",
     "artwork_url": ""
   },
   {
@@ -7793,16 +7797,17 @@
   },
   {
     "id": 546,
-    "album_name": "Immigr\u00c3\u2021s",
+    "album_name": "Immigrés",
     "artist_name": "Youssou N'Dour",
     "release_year": 1984,
     "decade": 1980,
     "genres": [
-      "Rock"
+      "Folk",
+      "Soul"
     ],
     "track_count": 9,
     "spotify_album_id": "",
-    "spotify_url": "https://open.spotify.com/search/Youssou%20N%27Dour%20Immigr%C3%83%E2%80%A1s",
+    "spotify_url": "https://open.spotify.com/search/Youssou%20N%27Dour%20Immigr%C3%A9s",
     "artwork_url": ""
   },
   {
@@ -8460,15 +8465,16 @@
   {
     "id": 593,
     "album_name": "Warehouse: Songs & Stories",
-    "artist_name": "H\u00c3\u2026sker D\u00c3\u2026",
+    "artist_name": "Hüsker Dü",
     "release_year": 1987,
     "decade": 1980,
     "genres": [
+      "Punk",
       "Rock"
     ],
     "track_count": 9,
     "spotify_album_id": "",
-    "spotify_url": "https://open.spotify.com/search/H%C3%83%E2%80%A6sker%20D%C3%83%E2%80%A6%20Warehouse%3A%20Songs%20%26%20Stories",
+    "spotify_url": "https://open.spotify.com/search/H%C3%BCsker%20D%C3%BC%20Warehouse%3A%20Songs%20%26%20Stories",
     "artwork_url": ""
   },
   {
@@ -10136,16 +10142,17 @@
   },
   {
     "id": 712,
-    "album_name": "Ing\u00c3\u2021nue",
+    "album_name": "Ingénue",
     "artist_name": "k.d. lang",
     "release_year": 1992,
     "decade": 1990,
     "genres": [
-      "Rock"
+      "Pop",
+      "Folk"
     ],
     "track_count": 11,
     "spotify_album_id": "",
-    "spotify_url": "https://open.spotify.com/search/k.d.%20lang%20Ing%C3%83%E2%80%A1nue",
+    "spotify_url": "https://open.spotify.com/search/k.d.%20lang%20Ing%C3%A9nue",
     "artwork_url": ""
   },
   {
@@ -10390,15 +10397,16 @@
   {
     "id": 730,
     "album_name": "Debut",
-    "artist_name": "Bj\u00c3\u00aerk",
+    "artist_name": "Björk",
     "release_year": 1993,
     "decade": 1990,
     "genres": [
-      "Rock"
+      "Electronic",
+      "Pop"
     ],
     "track_count": 11,
     "spotify_album_id": "",
-    "spotify_url": "https://open.spotify.com/search/Bj%C3%83%C2%AErk%20Debut",
+    "spotify_url": "https://open.spotify.com/search/Bj%C3%B6rk%20Debut",
     "artwork_url": ""
   },
   {
@@ -13195,15 +13203,16 @@
   {
     "id": 929,
     "album_name": "Vespertine",
-    "artist_name": "Bj\u00c3\u00aerk",
+    "artist_name": "Björk",
     "release_year": 2001,
     "decade": 2000,
     "genres": [
-      "Rock"
+      "Electronic",
+      "Pop"
     ],
     "track_count": 11,
     "spotify_album_id": "",
-    "spotify_url": "https://open.spotify.com/search/Bj%C3%83%C2%AErk%20Vespertine",
+    "spotify_url": "https://open.spotify.com/search/Bj%C3%B6rk%20Vespertine",
     "artwork_url": ""
   },
   {
@@ -13714,15 +13723,16 @@
   {
     "id": 966,
     "album_name": "Medulla",
-    "artist_name": "Bj\u00c3\u00aerk",
+    "artist_name": "Björk",
     "release_year": 2004,
     "decade": 2000,
     "genres": [
-      "Rock"
+      "Electronic",
+      "Pop"
     ],
     "track_count": 11,
     "spotify_album_id": "",
-    "spotify_url": "https://open.spotify.com/search/Bj%C3%83%C2%AErk%20Medulla",
+    "spotify_url": "https://open.spotify.com/search/Bj%C3%B6rk%20Medulla",
     "artwork_url": ""
   },
   {
@@ -14011,15 +14021,16 @@
   {
     "id": 987,
     "album_name": "Savane",
-    "artist_name": "Ali Farka Tour\u00c3\u2021",
+    "artist_name": "Ali Farka Touré",
     "release_year": 2006,
     "decade": 2000,
     "genres": [
-      "Rock"
+      "Folk",
+      "Soul"
     ],
     "track_count": 11,
     "spotify_album_id": "",
-    "spotify_url": "https://open.spotify.com/search/Ali%20Farka%20Tour%C3%83%E2%80%A1%20Savane",
+    "spotify_url": "https://open.spotify.com/search/Ali%20Farka%20Tour%C3%A9%20Savane",
     "artwork_url": ""
   },
   {

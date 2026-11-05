@@ -96,4 +96,30 @@ describe("JukeboxCard", () => {
     const confirmBtn = screen.getByRole("button", { name: /Yes, mark played/i });
     fireEvent.click(confirmBtn);
   });
+
+  it("renders 1001 completion controls in Arcade View when in 1001 mode", async () => {
+    render(<JukeboxCard token="mock-token" />);
+    expect(await screen.findByText(/Album Jukebox/i)).toBeInTheDocument();
+
+    // Switch to 1001 mode
+    const mode1001Btn = screen.getByRole("button", { name: /1001 Albums/i });
+    fireEvent.click(mode1001Btn);
+    expect(await screen.findByText(/Progress:/i)).toBeInTheDocument();
+
+    // Switch to Arcade view
+    const toggleArcadeBtn = screen.getByRole("button", { name: /Arcade View/i });
+    fireEvent.click(toggleArcadeBtn);
+
+    // Verify Arcade marquee is present
+    expect(screen.getByText("JUKEBOX")).toBeInTheDocument();
+
+    // Click Lucky Dip in Arcade view
+    const luckyDipBtn = screen.getByRole("button", { name: /Lucky Dip/i });
+    fireEvent.click(luckyDipBtn);
+
+    // Verify Mark Played / Played button exists in Arcade view
+    expect(
+      await screen.findByRole("button", { name: /Mark .* as (?:played|unplayed)|✓ Played/i })
+    ).toBeInTheDocument();
+  });
 });

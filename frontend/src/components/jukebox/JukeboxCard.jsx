@@ -448,6 +448,7 @@ export default function JukeboxCard({ token }) {
           sourceMode={sourceMode}
           excludeCompleted={engine.excludeCompleted}
           setExcludeCompleted={engine.setExcludeCompleted}
+          onToggle1001Completed={handleToggle1001Completed}
         />
       )}
 

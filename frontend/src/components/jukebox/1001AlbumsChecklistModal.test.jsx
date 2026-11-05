@@ -66,4 +66,37 @@ describe("1001AlbumsChecklistModal", () => {
     );
     expect(screen.queryByText(/1001 Albums Progress/i)).not.toBeInTheDocument();
   });
+
+  it("renders thumbnail with .jukebox-checklist-thumb and does not force whiteSpace nowrap on title", () => {
+    const albums = [
+      {
+        id: 1,
+        album_name: "In The Wee Small Hours of the Morning (Expanded Edition)",
+        artist_name: "Frank Sinatra with Nelson Riddle Orchestra",
+        release_year: 1955,
+        decade: 1950,
+        is_completed: false,
+        artwork_url: "https://example.com/wee.jpg",
+      },
+    ];
+
+    render(
+      <Albums1001ChecklistModal
+        isOpen={true}
+        onClose={vi.fn()}
+        albums={albums}
+        completedCount={0}
+        totalCount={1}
+        onToggleCompleted={vi.fn()}
+      />
+    );
+
+    const img = screen.getByRole("img", { name: /In The Wee Small Hours/i });
+    expect(img).toHaveClass("jukebox-checklist-thumb");
+    const thumbWrapper = img.parentElement;
+    expect(thumbWrapper).toHaveStyle({ overflow: "hidden" });
+
+    const titleLabel = screen.getByText("In The Wee Small Hours of the Morning (Expanded Edition)");
+    expect(titleLabel.style.whiteSpace).not.toBe("nowrap");
+  });
 });

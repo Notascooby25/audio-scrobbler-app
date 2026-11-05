@@ -25,3 +25,17 @@ def test_get_1001_album_by_id_found_and_missing():
     assert album["id"] == 1
     missing = get_1001_album_by_id(999999)
     assert missing is None
+
+
+def test_zero_mojibake_in_catalog():
+    albums = get_canonical_1001_albums()
+    for a in albums:
+        assert "Ã" not in a.get("artist_name", ""), f"Mojibake in artist: {a.get('artist_name')}"
+        assert "Ã" not in a.get("album_name", ""), f"Mojibake in album: {a.get('album_name')}"
+        assert "%C3%83" not in a.get("spotify_url", ""), f"Mojibake in spotify_url: {a.get('spotify_url')}"
+
+    debut = get_1001_album_by_id(730)
+    assert debut is not None
+    assert debut["artist_name"] == "Björk"
+    assert "Debut" in debut["album_name"]
+    assert "Bj%C3%B6rk" in debut["spotify_url"]

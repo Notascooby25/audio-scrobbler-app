@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import LikedHeart from "../LikedHeart";
 import JukeboxFilters from "./JukeboxFilters";
 
@@ -27,6 +27,11 @@ export default function FlatJukebox({
   onToggle1001Completed,
 }) {
   const [spinning, setSpinning] = useState(false);
+  const [artFailed, setArtFailed] = useState(false);
+
+  useEffect(() => {
+    setArtFailed(false);
+  }, [currentPick?.id, currentPick?.artwork_url]);
 
   const handleRoll = (actionFn) => {
     if (busy || !canRoll) return;
@@ -147,10 +152,11 @@ export default function FlatJukebox({
               overflow: "hidden",
             }}
           >
-            {currentPick?.artwork_url ? (
+            {currentPick?.artwork_url && !artFailed ? (
               <img
                 src={currentPick.artwork_url}
                 alt={currentPick.album_name}
+                onError={() => setArtFailed(true)}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
               />
             ) : (
@@ -197,26 +203,43 @@ export default function FlatJukebox({
               ? `Lucky Dip Pick • ${sourceMode === "1001" ? "1001 Albums" : mode}`
               : "Today's Featured Pick"}
           </div>
+
+          <div
+            style={{
+              fontSize: "16px",
+              fontWeight: 700,
+              color: "var(--color-ink)",
+              wordBreak: "break-word",
+              lineHeight: 1.25,
+              marginTop: "2px",
+            }}
+          >
+            {currentPick ? currentPick.album_name : "No Album Picked Yet"}
+          </div>
+
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "8px",
-              marginTop: "2px",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "6px",
+              marginTop: "4px",
             }}
           >
             <div
               style={{
-                fontSize: "16px",
-                fontWeight: 700,
-                color: "var(--color-ink)",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
+                fontSize: "13px",
+                color: "var(--color-muted)",
+                wordBreak: "break-word",
+                lineHeight: 1.3,
               }}
             >
-              {currentPick ? currentPick.album_name : "No Album Picked Yet"}
+              {currentPick
+                ? `${currentPick.artist_name} • ${currentPick.release_year || "Unknown Year"}`
+                : "Select Lucky Dip to spin"}
             </div>
+
             {sourceMode === "1001" && currentPick && (
               <button
                 type="button"
@@ -228,10 +251,10 @@ export default function FlatJukebox({
                   background: currentPick.is_completed
                     ? "var(--color-primary)"
                     : "var(--color-surface)",
-                  color: currentPick.is_completed ? "#FFFFFF" : "var(--color-muted)",
+                  color: currentPick.is_completed ? "#FFFFFF" : "var(--color-ink)",
                   border: "1px solid var(--color-border)",
                   borderRadius: "4px",
-                  padding: "2px 8px",
+                  padding: "3px 8px",
                   fontSize: "11px",
                   fontWeight: 600,
                   cursor: "pointer",
@@ -244,6 +267,7 @@ export default function FlatJukebox({
                 {currentPick.is_completed ? "✓ Played" : "Mark Played"}
               </button>
             )}
+
             {sourceMode !== "1001" && currentPick && (
               <LikedHeart
                 liked={Boolean(currentPick.is_liked)}
@@ -253,17 +277,6 @@ export default function FlatJukebox({
                 onToggle={onToggleLike ? () => onToggleLike(currentPick) : undefined}
               />
             )}
-          </div>
-          <div
-            style={{
-              fontSize: "13px",
-              color: "var(--color-muted)",
-              marginTop: "2px",
-            }}
-          >
-            {currentPick
-              ? `${currentPick.artist_name} • ${currentPick.release_year || "Unknown Year"}`
-              : "Select Lucky Dip to spin"}
           </div>
           {currentPick && sourceMode !== "1001" && (
             <div
