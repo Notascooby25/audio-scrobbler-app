@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.31.2",
+    date: "2026-11-05",
+    changes: [
+      "BBC Sounds Repeat Scrobble & Duplicate Fix: Resolved an HTTP 500 error when scrobbling BBC Sounds radio shows. Show scrobbles now embed the session timestamp (matching the YouTube scrobbler) so legitimate repeat listens over time are fully supported, and duplicate uniqueness conflicts are gracefully recognized and skipped rather than crashing.",
+    ],
+  },
+  {
     version: "0.31.1",
     date: "2026-11-05",
     changes: [

@@ -676,3 +676,34 @@ def test_import_spotify_extended_streaming_history_with_exact_user_format():
     assert events[1].track_name == "Crossfire"
     assert events[1].track_id.startswith("spotify:track:local-")
     db.close()
+
+
+def test_ingest_duplicate_source_play_id_different_played_at():
+    db = TestingSession()
+    db.query(ListeningEvent).delete()
+    db.commit()
+
+    event1 = ListeningEventCreate(
+        track_id="spotify:track:test1",
+        track_name="Test Track",
+        artist_name="Test Artist",
+        played_at=datetime(2026, 11, 5, 7, 0, 0),
+        source="bbc_sounds",
+        play_id="bbc_show1_seg1",
+    )
+    res1 = ingest_listening_event(db, user_id=1, event=event1)
+    assert res1.duplicate is False
+
+    # Event 2 with same user, source and play_id, but different played_at
+    event2 = ListeningEventCreate(
+        track_id="spotify:track:test1",
+        track_name="Test Track",
+        artist_name="Test Artist",
+        played_at=datetime(2026, 11, 5, 8, 0, 0),
+        source="bbc_sounds",
+        play_id="bbc_show1_seg1",
+    )
+    res2 = ingest_listening_event(db, user_id=1, event=event2)
+    assert res2.duplicate is True
+    assert res2.event_id == res1.event_id
+    db.close()

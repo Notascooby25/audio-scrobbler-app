@@ -504,7 +504,8 @@ def scope_creep_scrobble(
 
     for track in req.tracks:
         played_at = base_time + timedelta(seconds=track.offset_seconds)
-        canonical_play_id = f"bbc_{req.play_id}_{track.segment_id}"
+        # Embed session timestamp in play_id so repeat listens over time are fully supported
+        canonical_play_id = f"bbc_{req.play_id}_{track.segment_id}_{int(played_at.timestamp())}"
         track_id = track.spotify_uri or f"bbc:{track.segment_id}"
         duration_ms = (track.duration_seconds * 1000) if track.duration_seconds else None
         artwork = track.artwork_url or resolve_artwork(track.artist, track.title, db, track_id)
