@@ -28,4 +28,17 @@ describe('RetroJukebox', () => {
     expect(screen.getByRole('button', { name: /Lucky Dip/i })).toBeInTheDocument()
     expect(screen.getByText('Abbey Road')).toBeInTheDocument()
   })
+
+  it('renders album title and artist with explicit high-contrast retro colors', () => {
+    render(<RetroJukebox {...defaultProps} />)
+    const titleEl = screen.getByRole('heading', { level: 3, name: 'Abbey Road' })
+    expect(titleEl).toHaveStyle({ color: '#24212b' })
+
+    const artistEl = screen.getByText(/The Beatles \(1969\)/)
+    expect(artistEl).toHaveStyle({ color: '#394651' })
+
+    const countEl = screen.getByText(/records match filters/i)
+    expect(countEl).toHaveStyle({ color: '#24212b' })
+  })
 })
+
