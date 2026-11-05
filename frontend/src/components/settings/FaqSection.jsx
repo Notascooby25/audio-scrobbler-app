@@ -48,6 +48,29 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "jukebox-1001-albums",
+    category: "General & Appearance",
+    question: "How does the 1001 Albums generator in the Jukebox work?",
+    answer: (
+      <>
+        <p>
+          The Album Jukebox features a <strong>1001 Albums</strong> mode that pulls from the
+          acclaimed <em>1001 Albums You Must Hear Before You Die</em> list. You can roll random
+          records across all eras or filter down by decade and 10 unified parent genres (Rock, Pop,
+          Electronic, Soul, Jazz, Punk, Hip Hop, Folk, Metal, Funk).
+        </p>
+        <p>
+          <strong>What counts as played?</strong> To ensure casual single-track shuffle plays don't
+          accidentally credit an entire album, the app requires you to have scrobbled at least{" "}
+          <strong>90% of the distinct tracks</strong> on that album. When you open a 1001 pick in
+          Spotify, the app also presents a quick confirmation prompt on your next visit asking if
+          you listened to the full album. You can also view your overall progress and manually check
+          off records anytime by clicking the progress button in the Jukebox header.
+        </p>
+      </>
+    ),
+  },
+  {
     id: "theme-accent-color",
     category: "General & Appearance",
     question: "Can I customize the site theme and accent color?",

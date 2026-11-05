@@ -236,11 +236,17 @@ export default function UserGuideSection() {
             buttons, active tabs, charts, and heatmaps seamlessly.
           </li>
           <li>
-            <strong>Album Jukebox & Archive Depth:</strong> Return to whole-album listening and beat
-            choice paralysis with the Album Jukebox on your Overview page. You can configure its
-            catalog source in <em>Settings → General</em> to draw from your Spotify Saved Albums or
-            your Library Archive (most-scrobbled albums), with customizable archive depth (top 100,
-            150, 200, 250, or 300 records).
+            <strong>Album Jukebox & 1001 Albums Challenge:</strong> Return to whole-album listening
+            and beat choice paralysis with the Album Jukebox on your Overview page. You can toggle
+            between
+            <strong>My Library</strong> (drawing from your Spotify Saved Albums or most-scrobbled
+            Library Archive) and <strong>1001 Albums</strong> (the full canonical{" "}
+            <em>1001 Albums You Must Hear Before You Die</em> list). Both modes offer unified decade
+            and parent genre filtering (Rock, Pop, Electronic, Soul, Jazz, Punk, Hip Hop, Folk,
+            Metal, Funk). In 1001 mode, you can exclude previously played records, track overall
+            completion via the progress button, open a decade-tabbed checklist modal to manually
+            check off records, and confirm completed albums via the post-listen prompt when you open
+            a pick in Spotify.
           </li>
           <li>
             <strong>Customizable Visible Amounts & Pagination:</strong> In the Library, you can
