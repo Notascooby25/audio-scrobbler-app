@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.31.3",
+    date: "2026-11-05",
+    changes: [
+      "Classic Jukebox Dark-Mode Text Contrast Fix: Fixed an issue in the Classic (Retro) Jukebox view where the album title inherited white text in dark mode and became invisible against the light cream pick card. Explicit high-contrast retro ink styling ensures the album title and artist name remain crisp and fully legible across all themes.",
+      "Arcade-Themed Filter Button & Drawer: Aligned the Jukebox filter button and expanded drawer in Classic view with the retro arcade cabinet aesthetic, featuring custom 2px slate borders, pastel highlights, and retro buttons instead of modern flat dark pills.",
+    ],
+  },
+  {
     version: "0.31.2",
     date: "2026-11-05",
     changes: [
