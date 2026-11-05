@@ -1,5 +1,16 @@
 export const CHANGELOG = [
   {
+    version: "0.31.1",
+    date: "2026-11-05",
+    changes: [
+      "Jukebox Mobile Text Wrapping & Legibility: Ensured album titles, artist names, and release years wrap naturally onto multiple lines across mobile screen sizes instead of cutting off or squashing against adjacent controls, allowing long titles like 'After The Gold Rush' to remain fully readable.",
+      "1001 Checklist Artwork Dimensions & Overflow Protection: Constrained album artwork in the 1001 Albums decade checklist modal to strict 40×40px dimensions with clipped boundaries, preventing large cover images from expanding across adjacent list items.",
+      "Exclude Completed Filter Alignment: Fixed an inherited CSS styling collision that caused the 'Exclude previously played albums' filter checkbox to render centered above its text label, restoring clean inline horizontal alignment.",
+      "1001 Albums Dataset Character Encoding Cleanup: Repaired 13 double-encoded UTF-8 records in the canonical 1001 Albums dataset (such as Björk, Motörhead, and Déjà Vu) so accented artist names, album titles, and Spotify search URLs display correctly without mojibake.",
+      "Retro Jukebox Long-Title Support & Action Parity: Added responsive text wrapping and 1001 completion toggle controls to the Retro Arcade Jukebox view while strictly preserving its original retro cabinet styling.",
+    ],
+  },
+  {
     version: "0.31.0",
     date: "2026-11-05",
     changes: [

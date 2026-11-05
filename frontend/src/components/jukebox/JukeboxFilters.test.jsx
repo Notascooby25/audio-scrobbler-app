@@ -87,4 +87,3 @@ describe("JukeboxFilters", () => {
     expect(label).toHaveStyle({ flexDirection: "row" });
   });
 });
-

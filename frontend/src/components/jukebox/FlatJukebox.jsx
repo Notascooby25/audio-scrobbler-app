@@ -33,7 +33,6 @@ export default function FlatJukebox({
     setArtFailed(false);
   }, [currentPick?.id, currentPick?.artwork_url]);
 
-
   const handleRoll = (actionFn) => {
     if (busy || !canRoll) return;
     setSpinning(true);

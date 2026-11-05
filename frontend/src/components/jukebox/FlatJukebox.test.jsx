@@ -131,4 +131,3 @@ describe("FlatJukebox", () => {
     expect(artistEl.style.whiteSpace).not.toBe("nowrap");
   });
 });
-

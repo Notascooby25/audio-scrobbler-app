@@ -39,4 +39,3 @@ def test_zero_mojibake_in_catalog():
     assert debut["artist_name"] == "Björk"
     assert "Debut" in debut["album_name"]
     assert "Bj%C3%B6rk" in debut["spotify_url"]
-

@@ -2362,7 +2362,6 @@ button.btn-secondary:hover:not(:disabled) {
   display: block;
 }
 
-
 .library-row-copy {
   display: flex;
   flex-direction: column;

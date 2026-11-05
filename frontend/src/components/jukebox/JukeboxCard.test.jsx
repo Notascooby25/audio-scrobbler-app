@@ -123,5 +123,3 @@ describe("JukeboxCard", () => {
     ).toBeInTheDocument();
   });
 });
-
-

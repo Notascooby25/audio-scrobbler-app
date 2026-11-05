@@ -100,4 +100,3 @@ describe("1001AlbumsChecklistModal", () => {
     expect(titleLabel.style.whiteSpace).not.toBe("nowrap");
   });
 });
-

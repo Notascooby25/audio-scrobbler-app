@@ -162,7 +162,6 @@ export default function RetroJukebox({
           </div>
         )}
 
-
         <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
           <button
             type="button"
