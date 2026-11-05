@@ -58,7 +58,7 @@ export default function RetroJukebox({
         </div>
       </div>
 
-      <div style={{ textAlign: "center", marginBottom: "10px" }}>
+      <div style={{ textAlign: "center", marginBottom: "10px", color: "#24212b", fontWeight: 600 }}>
         <strong>{filteredAlbums.length}</strong> records match filters
       </div>
 
@@ -72,6 +72,7 @@ export default function RetroJukebox({
         sourceMode={sourceMode}
         excludeCompleted={excludeCompleted}
         setExcludeCompleted={setExcludeCompleted}
+        variant="retro"
       />
 
       <button
@@ -100,6 +101,8 @@ export default function RetroJukebox({
           style={{
             margin: "4px 0 2px",
             fontSize: "16px",
+            fontWeight: 800,
+            color: "#24212b",
             wordBreak: "break-word",
             lineHeight: 1.25,
           }}
@@ -110,7 +113,8 @@ export default function RetroJukebox({
           style={{
             margin: 0,
             fontSize: "13px",
-            color: "#666",
+            fontWeight: 600,
+            color: "#394651",
             wordBreak: "break-word",
             lineHeight: 1.3,
           }}
@@ -131,7 +135,7 @@ export default function RetroJukebox({
               gap: "6px",
             }}
           >
-            <div style={{ fontSize: "11px", color: "#666" }}>
+            <div style={{ fontSize: "11px", color: "#555555", fontWeight: 600 }}>
               Decade: {currentPick.decade ? `${currentPick.decade}s` : "Unknown"}
               {currentPick.genres &&
                 currentPick.genres.length > 0 &&
