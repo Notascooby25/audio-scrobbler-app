@@ -22,6 +22,7 @@ export default function RetroJukebox({
   sourceMode = "library",
   excludeCompleted = false,
   setExcludeCompleted,
+  onToggle1001Completed,
 }) {
   const [spinning, setSpinning] = useState(false);
 
@@ -91,16 +92,76 @@ export default function RetroJukebox({
             textTransform: "uppercase",
           }}
         >
-          {sessionActive ? `Lucky Dip Pick • ${mode}` : "Today's Featured Pick"}
+          {sessionActive
+            ? `Lucky Dip Pick • ${sourceMode === "1001" ? "1001 Albums" : mode}`
+            : "Today's Featured Pick"}
         </div>
-        <h3 style={{ margin: "4px 0 2px", fontSize: "16px" }}>
+        <h3
+          style={{
+            margin: "4px 0 2px",
+            fontSize: "16px",
+            wordBreak: "break-word",
+            lineHeight: 1.25,
+          }}
+        >
           {currentPick ? currentPick.album_name : "No Album Picked"}
         </h3>
-        <p style={{ margin: 0, fontSize: "13px", color: "#666" }}>
+        <p
+          style={{
+            margin: 0,
+            fontSize: "13px",
+            color: "#666",
+            wordBreak: "break-word",
+            lineHeight: 1.3,
+          }}
+        >
           {currentPick
             ? `${currentPick.artist_name} (${currentPick.release_year || "Unknown"})`
             : ""}
         </p>
+
+        {currentPick && sourceMode === "1001" && (
+          <div
+            style={{
+              marginTop: "6px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "6px",
+            }}
+          >
+            <div style={{ fontSize: "11px", color: "#666" }}>
+              Decade: {currentPick.decade ? `${currentPick.decade}s` : "Unknown"}
+              {currentPick.genres &&
+                currentPick.genres.length > 0 &&
+                ` • ${currentPick.genres.join(", ")}`}
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                onToggle1001Completed &&
+                onToggle1001Completed(currentPick.id, !currentPick.is_completed)
+              }
+              style={{
+                border: "2px solid #394651",
+                borderRadius: "6px",
+                padding: "3px 8px",
+                fontSize: "11px",
+                fontWeight: 700,
+                background: currentPick.is_completed ? "#3cc8b4" : "#fff",
+                color: currentPick.is_completed ? "#fff" : "#394651",
+                cursor: "pointer",
+              }}
+              aria-label={`Mark ${currentPick.album_name} as ${
+                currentPick.is_completed ? "unplayed" : "played"
+              }`}
+            >
+              {currentPick.is_completed ? "✓ Played" : "Mark Played"}
+            </button>
+          </div>
+        )}
+
 
         <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
           <button
