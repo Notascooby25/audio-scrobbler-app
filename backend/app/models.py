@@ -428,7 +428,7 @@ class User1001AlbumCompletion(Base):
     album_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
     is_completed: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     source: Mapped[str] = mapped_column(String(32), default="manual", nullable=False)
-    completed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 

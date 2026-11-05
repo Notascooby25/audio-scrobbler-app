@@ -26,7 +26,7 @@ def upgrade() -> None:
         sa.Column("album_id", sa.Integer(), nullable=False),
         sa.Column("is_completed", sa.Boolean(), server_default=sa.true(), nullable=False),
         sa.Column("source", sa.String(length=32), server_default="manual", nullable=False),
-        sa.Column("completed_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
+        sa.Column("completed_at", sa.DateTime(), nullable=True),
         sa.Column("created_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
