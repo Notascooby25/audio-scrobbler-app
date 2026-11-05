@@ -11,8 +11,10 @@ export default function JukeboxFilters({
   sourceMode = "library",
   excludeCompleted = false,
   setExcludeCompleted,
+  variant = "flat",
 }) {
   const [expanded, setExpanded] = useState(false);
+  const isRetro = variant === "retro";
 
   // Extract available decades dynamically from loaded albums
   const availableDecades = useMemo(() => {
@@ -51,6 +53,42 @@ export default function JukeboxFilters({
     { key: "long", label: "Epic (> 50m)" },
   ];
 
+  const sectionHeadingStyle = {
+    fontWeight: isRetro ? 800 : 600,
+    marginBottom: "6px",
+    color: isRetro ? "#394651" : "var(--color-muted)",
+    letterSpacing: isRetro ? "0.03em" : "normal",
+  };
+
+  const getChipStyle = (active, isLarge = false) => ({
+    padding: isLarge ? "6px 10px" : "4px 8px",
+    minHeight: isLarge ? "32px" : "auto",
+    borderRadius: isRetro ? "6px" : "4px",
+    fontSize: "11px",
+    fontWeight: isRetro ? (active ? 700 : 600) : 600,
+    border: isRetro
+      ? "2px solid #394651"
+      : active
+        ? "1px solid var(--color-primary)"
+        : "1px solid var(--color-border)",
+    background: isRetro
+      ? active
+        ? "#3cc8b4"
+        : "#FFFFFF"
+      : active
+        ? "var(--color-primary)"
+        : "var(--color-surface)",
+    color: isRetro
+      ? active
+        ? "#FFFFFF"
+        : "#24212b"
+      : active
+        ? "#FFFFFF"
+        : "var(--color-ink)",
+    boxShadow: isRetro ? "0 1px 0 #394651" : "none",
+    cursor: "pointer",
+  });
+
   return (
     <div style={{ marginTop: "12px", marginBottom: "16px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -59,12 +97,25 @@ export default function JukeboxFilters({
           onClick={() => setExpanded((prev) => !prev)}
           style={{
             fontSize: "12px",
-            fontWeight: 600,
+            fontWeight: 700,
             padding: "6px 12px",
             borderRadius: "6px",
-            border: "1px solid var(--color-border)",
-            background: activeFilterCount > 0 ? "var(--color-primary)" : "var(--color-surface)",
-            color: activeFilterCount > 0 ? "#FFFFFF" : "var(--color-ink)",
+            border: isRetro ? "2px solid #394651" : "1px solid var(--color-border)",
+            background: isRetro
+              ? activeFilterCount > 0
+                ? "#3cc8b4"
+                : "#fffdf8"
+              : activeFilterCount > 0
+                ? "var(--color-primary)"
+                : "var(--color-surface)",
+            color: isRetro
+              ? activeFilterCount > 0
+                ? "#FFFFFF"
+                : "#24212b"
+              : activeFilterCount > 0
+                ? "#FFFFFF"
+                : "var(--color-ink)",
+            boxShadow: isRetro ? "0 2px 0 #394651" : "none",
             cursor: "pointer",
             display: "inline-flex",
             alignItems: "center",
@@ -85,11 +136,11 @@ export default function JukeboxFilters({
             }}
             style={{
               fontSize: "11px",
-              color: "var(--color-danger, #E11D48)",
+              color: isRetro ? "#c94032" : "var(--color-danger, #E11D48)",
               background: "transparent",
               border: "none",
               cursor: "pointer",
-              fontWeight: 600,
+              fontWeight: 700,
             }}
           >
             Clear all filters
@@ -99,21 +150,29 @@ export default function JukeboxFilters({
 
       {expanded && (
         <div
+          data-testid="jukebox-filters-drawer"
           style={{
             marginTop: "10px",
             padding: "14px",
-            background: "var(--color-surface-hover, var(--color-canvas))",
-            borderRadius: "8px",
-            border: "1px solid var(--color-border)",
+            background: isRetro ? "#fffdf8" : "var(--color-surface-hover, var(--color-canvas))",
+            borderRadius: isRetro ? "10px" : "8px",
+            border: isRetro ? "2px solid #394651" : "1px solid var(--color-border)",
+            boxShadow: isRetro ? "0 4px 0 #394651" : "none",
             display: "flex",
             flexDirection: "column",
             gap: "12px",
             fontSize: "12px",
+            color: isRetro ? "#24212b" : "var(--color-ink)",
           }}
         >
           {/* Exclude Played Checkbox (1001 Albums mode) */}
           {sourceMode === "1001" && (
-            <div style={{ paddingBottom: "4px", borderBottom: "1px solid var(--color-border)" }}>
+            <div
+              style={{
+                paddingBottom: "4px",
+                borderBottom: isRetro ? "2px solid #394651" : "1px solid var(--color-border)",
+              }}
+            >
               <label
                 htmlFor="exclude-completed-checkbox"
                 style={{
@@ -123,7 +182,7 @@ export default function JukeboxFilters({
                   gap: "8px",
                   cursor: "pointer",
                   fontWeight: 600,
-                  color: "var(--color-ink)",
+                  color: isRetro ? "#24212b" : "var(--color-ink)",
                 }}
               >
                 <input
@@ -141,9 +200,7 @@ export default function JukeboxFilters({
           {/* Mode Selector (in Library mode) */}
           {sourceMode !== "1001" && (
             <div>
-              <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-muted)" }}>
-                POOL SELECTION MODE
-              </div>
+              <div style={sectionHeadingStyle}>POOL SELECTION MODE</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {MODES.map((m) => {
                   const active = mode === m.key;
@@ -152,18 +209,7 @@ export default function JukeboxFilters({
                       key={m.key}
                       type="button"
                       onClick={() => setMode && setMode(m.key)}
-                      style={{
-                        padding: "5px 10px",
-                        borderRadius: "6px",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        border: active
-                          ? "1px solid var(--color-primary)"
-                          : "1px solid var(--color-border)",
-                        background: active ? "var(--color-primary)" : "var(--color-surface)",
-                        color: active ? "#FFFFFF" : "var(--color-ink)",
-                        cursor: "pointer",
-                      }}
+                      style={getChipStyle(active, false)}
                     >
                       {m.label}
                     </button>
@@ -175,9 +221,7 @@ export default function JukeboxFilters({
 
           {/* Artist Search */}
           <div>
-            <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-muted)" }}>
-              ARTIST SEARCH
-            </div>
+            <div style={sectionHeadingStyle}>ARTIST SEARCH</div>
             <input
               type="text"
               placeholder="Filter by artist name..."
@@ -187,10 +231,10 @@ export default function JukeboxFilters({
                 width: "100%",
                 padding: "8px 10px",
                 borderRadius: "6px",
-                border: "1px solid var(--color-border)",
+                border: isRetro ? "2px solid #394651" : "1px solid var(--color-border)",
                 fontSize: "12px",
-                background: "var(--color-surface)",
-                color: "var(--color-ink)",
+                background: isRetro ? "#FFFFFF" : "var(--color-surface)",
+                color: isRetro ? "#24212b" : "var(--color-ink)",
                 boxSizing: "border-box",
               }}
             />
@@ -199,9 +243,7 @@ export default function JukeboxFilters({
           {/* Decade Filters */}
           {availableDecades.length > 0 && (
             <div>
-              <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-muted)" }}>
-                DECADE
-              </div>
+              <div style={sectionHeadingStyle}>DECADE</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {availableDecades.map((dec) => {
                   const decStr = String(dec);
@@ -211,19 +253,7 @@ export default function JukeboxFilters({
                       key={dec}
                       type="button"
                       onClick={() => toggleFilter("decade", decStr)}
-                      style={{
-                        padding: "6px 10px",
-                        minHeight: "32px",
-                        borderRadius: "4px",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        border: active
-                          ? "1px solid var(--color-primary)"
-                          : "1px solid var(--color-border)",
-                        background: active ? "var(--color-primary)" : "var(--color-surface)",
-                        color: active ? "#FFFFFF" : "var(--color-ink)",
-                        cursor: "pointer",
-                      }}
+                      style={getChipStyle(active, true)}
                     >
                       {dec}s
                     </button>
@@ -236,9 +266,7 @@ export default function JukeboxFilters({
           {/* Length Filters (Library mode) */}
           {sourceMode !== "1001" && (
             <div>
-              <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-muted)" }}>
-                ALBUM LENGTH
-              </div>
+              <div style={sectionHeadingStyle}>ALBUM LENGTH</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {LENGTHS.map((len) => {
                   const active = filters.length.has(len.key);
@@ -247,18 +275,7 @@ export default function JukeboxFilters({
                       key={len.key}
                       type="button"
                       onClick={() => toggleFilter("length", len.key)}
-                      style={{
-                        padding: "4px 8px",
-                        borderRadius: "4px",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        border: active
-                          ? "1px solid var(--color-primary)"
-                          : "1px solid var(--color-border)",
-                        background: active ? "var(--color-primary)" : "var(--color-surface)",
-                        color: active ? "#FFFFFF" : "var(--color-ink)",
-                        cursor: "pointer",
-                      }}
+                      style={getChipStyle(active, false)}
                     >
                       {len.label}
                     </button>
@@ -270,9 +287,7 @@ export default function JukeboxFilters({
 
           {/* Unified Top 10 Parent Genres */}
           <div>
-            <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-muted)" }}>
-              GENRE
-            </div>
+            <div style={sectionHeadingStyle}>GENRE</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
               {PARENT_GENRES.map((g) => {
                 const active = filters.genre.has(g);
@@ -281,19 +296,7 @@ export default function JukeboxFilters({
                     key={g}
                     type="button"
                     onClick={() => toggleFilter("genre", g)}
-                    style={{
-                      padding: "6px 10px",
-                      minHeight: "32px",
-                      borderRadius: "4px",
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      border: active
-                        ? "1px solid var(--color-primary)"
-                        : "1px solid var(--color-border)",
-                      background: active ? "var(--color-primary)" : "var(--color-surface)",
-                      color: active ? "#FFFFFF" : "var(--color-ink)",
-                      cursor: "pointer",
-                    }}
+                    style={getChipStyle(active, true)}
                   >
                     {g}
                   </button>

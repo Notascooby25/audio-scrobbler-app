@@ -86,4 +86,33 @@ describe("JukeboxFilters", () => {
     const label = checkbox.closest("label");
     expect(label).toHaveStyle({ flexDirection: "row" });
   });
+
+  it("renders retro variant with arcade borders and colors", () => {
+    render(
+      <JukeboxFilters
+        albums={[]}
+        filters={defaultFilters}
+        toggleFilter={vi.fn()}
+        clearFilters={vi.fn()}
+        mode="any"
+        setMode={vi.fn()}
+        variant="retro"
+      />
+    );
+
+    const filterBtn = screen.getByRole("button", { name: /Filters/i });
+    expect(filterBtn).toHaveStyle({
+      border: "2px solid #394651",
+      background: "#fffdf8",
+      color: "#24212b",
+    });
+
+    fireEvent.click(filterBtn);
+    const drawer = screen.getByTestId("jukebox-filters-drawer");
+    expect(drawer).toHaveStyle({
+      background: "#fffdf8",
+      border: "2px solid #394651",
+    });
+  });
 });
+
