@@ -62,4 +62,29 @@ describe("JukeboxFilters", () => {
     fireEvent.click(checkbox);
     expect(setExcludeCompleted).toHaveBeenCalledWith(true);
   });
+
+  it("renders exclude played checkbox label with flexDirection row", () => {
+    render(
+      <JukeboxFilters
+        albums={[]}
+        filters={defaultFilters}
+        toggleFilter={vi.fn()}
+        clearFilters={vi.fn()}
+        mode="any"
+        setMode={vi.fn()}
+        sourceMode="1001"
+        excludeCompleted={false}
+        setExcludeCompleted={vi.fn()}
+      />
+    );
+
+    // Expand filters
+    const filterBtn = screen.getByRole("button", { name: /Filters/i });
+    fireEvent.click(filterBtn);
+
+    const checkbox = screen.getByLabelText(/Exclude previously played albums/i);
+    const label = checkbox.closest("label");
+    expect(label).toHaveStyle({ flexDirection: "row" });
+  });
 });
+

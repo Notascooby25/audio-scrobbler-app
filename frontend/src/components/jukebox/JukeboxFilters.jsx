@@ -118,6 +118,7 @@ export default function JukeboxFilters({
                 htmlFor="exclude-completed-checkbox"
                 style={{
                   display: "inline-flex",
+                  flexDirection: "row",
                   alignItems: "center",
                   gap: "8px",
                   cursor: "pointer",
@@ -211,7 +212,8 @@ export default function JukeboxFilters({
                       type="button"
                       onClick={() => toggleFilter("decade", decStr)}
                       style={{
-                        padding: "4px 8px",
+                        padding: "6px 10px",
+                        minHeight: "32px",
                         borderRadius: "4px",
                         fontSize: "11px",
                         fontWeight: 600,
@@ -280,7 +282,8 @@ export default function JukeboxFilters({
                     type="button"
                     onClick={() => toggleFilter("genre", g)}
                     style={{
-                      padding: "4px 8px",
+                      padding: "6px 10px",
+                      minHeight: "32px",
                       borderRadius: "4px",
                       fontSize: "11px",
                       fontWeight: 600,
