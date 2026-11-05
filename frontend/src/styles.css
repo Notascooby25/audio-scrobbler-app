@@ -2353,6 +2353,16 @@ button.btn-secondary:hover:not(:disabled) {
   border-radius: 4px;
 }
 
+.jukebox-checklist-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+  display: block;
+}
+
+
 .library-row-copy {
   display: flex;
   flex-direction: column;
