@@ -110,4 +110,25 @@ describe("FlatJukebox", () => {
     expect(img).toBeInTheDocument();
     expect(img).toHaveAttribute("src", "https://example.com/cover.jpg");
   });
+
+  it("does not force whiteSpace nowrap on album title and artist, allowing wrapping", () => {
+    render(
+      <FlatJukebox
+        {...defaultProps}
+        sourceMode="1001"
+        currentPick={{
+          ...defaultProps.currentPick,
+          album_name: "After the Gold Rush (Expanded Edition with Extra Tracks)",
+          artist_name: "Neil Young & Crazy Horse Featuring Guests",
+          is_completed: false,
+        }}
+      />
+    );
+    const titleEl = screen.getByText("After the Gold Rush (Expanded Edition with Extra Tracks)");
+    expect(titleEl.style.whiteSpace).not.toBe("nowrap");
+
+    const artistEl = screen.getByText(/Neil Young & Crazy Horse/);
+    expect(artistEl.style.whiteSpace).not.toBe("nowrap");
+  });
 });
+
