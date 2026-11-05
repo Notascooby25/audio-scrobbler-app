@@ -201,10 +201,10 @@ def test_scope_creep_scrobble():
     assert len(events) == 2
     assert events[0].artist_name == "Lana Del Rey"
     assert events[0].source == "bbc_sounds"
-    assert events[0].play_id == "bbc_m0031tc6_seg_1"
+    assert events[0].play_id.startswith("bbc_m0031tc6_seg_1_")
     assert events[0].artwork_url == "https://example.com/art.jpg"
     assert events[1].artist_name == "Radiohead"
-    assert events[1].play_id == "bbc_m0031tc6_seg_2"
+    assert events[1].play_id.startswith("bbc_m0031tc6_seg_2_")
     # Verify timestamp offset
     assert events[1].played_at > events[0].played_at
 
@@ -215,6 +215,46 @@ def test_scope_creep_scrobble():
     assert dup_data["scrobbled_count"] == 0
     assert dup_data["duplicate_count"] == 2
     db.close()
+
+
+def test_scope_creep_scrobble_repeat_listen_supported():
+    setup_function()
+    req1 = {
+        "play_id": "m00332ry",
+        "listened_at": "2026-11-05T07:05:00.000Z",
+        "tracks": [
+            {
+                "segment_id": "seg_1",
+                "artist": "Test Artist",
+                "title": "Test Title",
+                "offset_seconds": 0,
+                "duration_seconds": 180,
+                "spotify_uri": "spotify:track:test1234",
+                "artwork_url": None,
+            }
+        ],
+    }
+    res1 = client.post("/tools/scope-creep/scrobble", json=req1)
+    assert res1.status_code == 200
+    assert res1.json()["scrobbled_count"] == 1
+
+    # Repeat listen at a later date/time
+    req2 = {
+        "play_id": "m00332ry",
+        "listened_at": "2026-11-06T19:00:00.000Z",
+        "tracks": req1["tracks"],
+    }
+    res2 = client.post("/tools/scope-creep/scrobble", json=req2)
+    assert res2.status_code == 200
+    assert res2.json()["scrobbled_count"] == 1
+    assert res2.json()["duplicate_count"] == 0
+
+    # Re-submitting exact same listen at 2026-11-06T19:00:00.000Z
+    res3 = client.post("/tools/scope-creep/scrobble", json=req2)
+    assert res3.status_code == 200
+    assert res3.json()["scrobbled_count"] == 0
+    assert res3.json()["duplicate_count"] == 1
+
 
 
 @patch("backend.app.services.spotify_playlist_service._refresh_access_token")
