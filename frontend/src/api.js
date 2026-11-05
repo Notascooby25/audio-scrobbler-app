@@ -688,3 +688,46 @@ export async function recordJukeboxPick({ token, albumId, mode }) {
   });
   return parseResponse(response);
 }
+
+export async function fetch1001Albums({ token }) {
+  const response = await fetch(`${API_BASE_URL}/jukebox/1001-albums`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function toggle1001AlbumCompleted({ token, albumId, isCompleted, source = "manual" }) {
+  const response = await fetch(`${API_BASE_URL}/jukebox/1001-albums/${albumId}/toggle-completed`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ is_completed: isCompleted, source }),
+  });
+  return parseResponse(response);
+}
+
+export async function record1001PendingPlay({ token, albumId }) {
+  const response = await fetch(`${API_BASE_URL}/jukebox/1001-albums/pending-play`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ album_id: albumId }),
+  });
+  return parseResponse(response);
+}
+
+export async function dismiss1001PendingPlay({ token, albumId = null }) {
+  const response = await fetch(`${API_BASE_URL}/jukebox/1001-albums/dismiss-pending`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(albumId !== null ? { album_id: albumId } : {}),
+  });
+  return parseResponse(response);
+}

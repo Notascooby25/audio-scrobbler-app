@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { PARENT_GENRES } from "./useJukeboxEngine";
 
 export default function JukeboxFilters({
   albums = [],
@@ -7,6 +8,9 @@ export default function JukeboxFilters({
   clearFilters,
   mode,
   setMode,
+  sourceMode = "library",
+  excludeCompleted = false,
+  setExcludeCompleted,
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -14,32 +18,24 @@ export default function JukeboxFilters({
   const availableDecades = useMemo(() => {
     const set = new Set();
     albums.forEach((a) => {
-      if (a.release_year) {
-        set.add(Math.floor(a.release_year / 10) * 10);
+      const year = a.release_year || a.decade;
+      if (year) {
+        set.add(Math.floor(year / 10) * 10);
       }
     });
+    // In 1001 mode, guarantee decades from 1950 to 2020 if none or few present
+    if (sourceMode === "1001" && set.size === 0) {
+      [1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020].forEach((d) => set.add(d));
+    }
     return Array.from(set).sort((a, b) => b - a);
-  }, [albums]);
-
-  // Extract top genres dynamically
-  const availableGenres = useMemo(() => {
-    const counts = {};
-    albums.forEach((a) => {
-      (a.genres || []).forEach((g) => {
-        counts[g] = (counts[g] || 0) + 1;
-      });
-    });
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 15)
-      .map(([g]) => g);
-  }, [albums]);
+  }, [albums, sourceMode]);
 
   const activeFilterCount =
     (filters.artist.trim() ? 1 : 0) +
     filters.decade.size +
     filters.genre.size +
     filters.length.size +
+    (excludeCompleted ? 1 : 0) +
     (mode !== "any" ? 1 : 0);
 
   const MODES = [
@@ -85,6 +81,7 @@ export default function JukeboxFilters({
             onClick={() => {
               clearFilters();
               if (setMode) setMode("any");
+              if (setExcludeCompleted) setExcludeCompleted(false);
             }}
             style={{
               fontSize: "11px",
@@ -114,36 +111,66 @@ export default function JukeboxFilters({
             fontSize: "12px",
           }}
         >
-          {/* Mode Selector */}
-          <div>
-            <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-muted)" }}>
-              POOL SELECTION MODE
+          {/* Exclude Played Checkbox (1001 Albums mode) */}
+          {sourceMode === "1001" && (
+            <div style={{ paddingBottom: "4px", borderBottom: "1px solid var(--color-border)" }}>
+              <label
+                htmlFor="exclude-completed-checkbox"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  color: "var(--color-ink)",
+                }}
+              >
+                <input
+                  id="exclude-completed-checkbox"
+                  type="checkbox"
+                  checked={excludeCompleted}
+                  onChange={(e) => setExcludeCompleted && setExcludeCompleted(e.target.checked)}
+                  style={{ cursor: "pointer", width: "16px", height: "16px" }}
+                />
+                <span>Exclude previously played albums</span>
+              </label>
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-              {MODES.map((m) => {
-                const active = mode === m.key;
-                return (
-                  <button
-                    key={m.key}
-                    type="button"
-                    onClick={() => setMode && setMode(m.key)}
-                    style={{
-                      padding: "5px 10px",
-                      borderRadius: "6px",
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      border: active ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
-                      background: active ? "var(--color-primary)" : "var(--color-surface)",
-                      color: active ? "#FFFFFF" : "var(--color-ink)",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {m.label}
-                  </button>
-                );
-              })}
+          )}
+
+          {/* Mode Selector (in Library mode) */}
+          {sourceMode !== "1001" && (
+            <div>
+              <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-muted)" }}>
+                POOL SELECTION MODE
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                {MODES.map((m) => {
+                  const active = mode === m.key;
+                  return (
+                    <button
+                      key={m.key}
+                      type="button"
+                      onClick={() => setMode && setMode(m.key)}
+                      style={{
+                        padding: "5px 10px",
+                        borderRadius: "6px",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        border: active
+                          ? "1px solid var(--color-primary)"
+                          : "1px solid var(--color-border)",
+                        background: active ? "var(--color-primary)" : "var(--color-surface)",
+                        color: active ? "#FFFFFF" : "var(--color-ink)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {m.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Artist Search */}
           <div>
@@ -177,7 +204,7 @@ export default function JukeboxFilters({
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {availableDecades.map((dec) => {
                   const decStr = String(dec);
-                  const active = filters.decade.has(decStr);
+                  const active = filters.decade.has(decStr) || filters.decade.has(`${decStr}s`);
                   return (
                     <button
                       key={dec}
@@ -188,7 +215,9 @@ export default function JukeboxFilters({
                         borderRadius: "4px",
                         fontSize: "11px",
                         fontWeight: 600,
-                        border: active ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
+                        border: active
+                          ? "1px solid var(--color-primary)"
+                          : "1px solid var(--color-border)",
                         background: active ? "var(--color-primary)" : "var(--color-surface)",
                         color: active ? "#FFFFFF" : "var(--color-ink)",
                         cursor: "pointer",
@@ -202,70 +231,73 @@ export default function JukeboxFilters({
             </div>
           )}
 
-          {/* Length Filters */}
-          <div>
-            <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-muted)" }}>
-              ALBUM LENGTH
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-              {LENGTHS.map((len) => {
-                const active = filters.length.has(len.key);
-                return (
-                  <button
-                    key={len.key}
-                    type="button"
-                    onClick={() => toggleFilter("length", len.key)}
-                    style={{
-                      padding: "4px 8px",
-                      borderRadius: "4px",
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      border: active ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
-                      background: active ? "var(--color-primary)" : "var(--color-surface)",
-                      color: active ? "#FFFFFF" : "var(--color-ink)",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {len.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Top Genres (if available) */}
-          {availableGenres.length > 0 && (
+          {/* Length Filters (Library mode) */}
+          {sourceMode !== "1001" && (
             <div>
               <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-muted)" }}>
-                GENRE
+                ALBUM LENGTH
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                {availableGenres.map((g) => {
-                  const active = filters.genre.has(g);
+                {LENGTHS.map((len) => {
+                  const active = filters.length.has(len.key);
                   return (
                     <button
-                      key={g}
+                      key={len.key}
                       type="button"
-                      onClick={() => toggleFilter("genre", g)}
+                      onClick={() => toggleFilter("length", len.key)}
                       style={{
                         padding: "4px 8px",
                         borderRadius: "4px",
                         fontSize: "11px",
                         fontWeight: 600,
-                        border: active ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
+                        border: active
+                          ? "1px solid var(--color-primary)"
+                          : "1px solid var(--color-border)",
                         background: active ? "var(--color-primary)" : "var(--color-surface)",
                         color: active ? "#FFFFFF" : "var(--color-ink)",
                         cursor: "pointer",
-                        textTransform: "capitalize",
                       }}
                     >
-                      {g}
+                      {len.label}
                     </button>
                   );
                 })}
               </div>
             </div>
           )}
+
+          {/* Unified Top 10 Parent Genres */}
+          <div>
+            <div style={{ fontWeight: 600, marginBottom: "6px", color: "var(--color-muted)" }}>
+              GENRE
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+              {PARENT_GENRES.map((g) => {
+                const active = filters.genre.has(g);
+                return (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => toggleFilter("genre", g)}
+                    style={{
+                      padding: "4px 8px",
+                      borderRadius: "4px",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      border: active
+                        ? "1px solid var(--color-primary)"
+                        : "1px solid var(--color-border)",
+                      background: active ? "var(--color-primary)" : "var(--color-surface)",
+                      color: active ? "#FFFFFF" : "var(--color-ink)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {g}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
     </div>
