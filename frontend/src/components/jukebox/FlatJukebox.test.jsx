@@ -84,4 +84,30 @@ describe("FlatJukebox", () => {
       expect.objectContaining({ album_name: "Abbey Road" })
     );
   });
+
+  it("renders 1001 completion toggle button and calls onToggle1001Completed", () => {
+    const onToggle1001Completed = vi.fn();
+    render(
+      <FlatJukebox
+        {...defaultProps}
+        sourceMode="1001"
+        currentPick={{
+          ...defaultProps.currentPick,
+          id: 42,
+          is_completed: false,
+          artwork_url: "https://example.com/cover.jpg",
+        }}
+        onToggle1001Completed={onToggle1001Completed}
+      />
+    );
+    const tickBtn = screen.getByRole("button", { name: /Mark Abbey Road as played/i });
+    expect(tickBtn).toBeInTheDocument();
+    fireEvent.click(tickBtn);
+    expect(onToggle1001Completed).toHaveBeenCalledWith(42, true);
+
+    // Verify artwork img rendered
+    const img = screen.getByAltText("Abbey Road");
+    expect(img).toBeInTheDocument();
+    expect(img).toHaveAttribute("src", "https://example.com/cover.jpg");
+  });
 });

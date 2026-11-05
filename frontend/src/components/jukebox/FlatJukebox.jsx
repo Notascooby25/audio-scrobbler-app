@@ -21,6 +21,10 @@ export default function FlatJukebox({
   onCommit,
   onToggleLike,
   liking = false,
+  sourceMode = "library",
+  excludeCompleted = false,
+  setExcludeCompleted,
+  onToggle1001Completed,
 }) {
   const [spinning, setSpinning] = useState(false);
 
@@ -72,7 +76,7 @@ export default function FlatJukebox({
               borderRadius: "4px",
             }}
           >
-            Album Jukebox
+            {sourceMode === "1001" ? "1001 Albums" : "Album Jukebox"}
           </span>
           <span
             style={{
@@ -87,7 +91,7 @@ export default function FlatJukebox({
         </div>
         <span style={{ fontSize: "12px", color: "var(--color-muted)" }}>
           <strong>{filteredAlbums.length}</strong> records available{" "}
-          {mode !== "any" && `(pool: ${pool.length})`}
+          {mode !== "any" && sourceMode !== "1001" && `(pool: ${pool.length})`}
         </span>
       </div>
 
@@ -98,6 +102,9 @@ export default function FlatJukebox({
         clearFilters={clearFilters}
         mode={mode}
         setMode={setMode}
+        sourceMode={sourceMode}
+        excludeCompleted={excludeCompleted}
+        setExcludeCompleted={setExcludeCompleted}
       />
 
       <div
@@ -137,24 +144,33 @@ export default function FlatJukebox({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              overflow: "hidden",
             }}
           >
-            <div
-              style={{
-                width: "28px",
-                height: "28px",
-                borderRadius: "50%",
-                background: "var(--color-primary)",
-                color: "#FFFFFF",
-                fontSize: "9px",
-                fontWeight: 700,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              LP
-            </div>
+            {currentPick?.artwork_url ? (
+              <img
+                src={currentPick.artwork_url}
+                alt={currentPick.album_name}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "50%",
+                  background: "var(--color-primary)",
+                  color: "#FFFFFF",
+                  fontSize: "9px",
+                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                LP
+              </div>
+            )}
           </div>
           <div
             style={{
@@ -177,7 +193,9 @@ export default function FlatJukebox({
               letterSpacing: "0.04em",
             }}
           >
-            {sessionActive ? `Lucky Dip Pick • ${mode}` : "Today's Featured Pick"}
+            {sessionActive
+              ? `Lucky Dip Pick • ${sourceMode === "1001" ? "1001 Albums" : mode}`
+              : "Today's Featured Pick"}
           </div>
           <div
             style={{
@@ -199,7 +217,34 @@ export default function FlatJukebox({
             >
               {currentPick ? currentPick.album_name : "No Album Picked Yet"}
             </div>
-            {currentPick && (
+            {sourceMode === "1001" && currentPick && (
+              <button
+                type="button"
+                onClick={() =>
+                  onToggle1001Completed &&
+                  onToggle1001Completed(currentPick.id, !currentPick.is_completed)
+                }
+                style={{
+                  background: currentPick.is_completed
+                    ? "var(--color-primary)"
+                    : "var(--color-surface)",
+                  color: currentPick.is_completed ? "#FFFFFF" : "var(--color-muted)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "4px",
+                  padding: "2px 8px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
+                aria-label={`Mark ${currentPick.album_name} as ${
+                  currentPick.is_completed ? "unplayed" : "played"
+                }`}
+              >
+                {currentPick.is_completed ? "✓ Played" : "Mark Played"}
+              </button>
+            )}
+            {sourceMode !== "1001" && currentPick && (
               <LikedHeart
                 liked={Boolean(currentPick.is_liked)}
                 interactive={Boolean(onToggleLike)}
@@ -220,7 +265,7 @@ export default function FlatJukebox({
               ? `${currentPick.artist_name} • ${currentPick.release_year || "Unknown Year"}`
               : "Select Lucky Dip to spin"}
           </div>
-          {currentPick && (
+          {currentPick && sourceMode !== "1001" && (
             <div
               style={{
                 fontSize: "11px",
@@ -232,6 +277,20 @@ export default function FlatJukebox({
               {currentPick.last_picked_at
                 ? new Date(currentPick.last_picked_at).toLocaleDateString()
                 : "Never"}
+            </div>
+          )}
+          {currentPick && sourceMode === "1001" && (
+            <div
+              style={{
+                fontSize: "11px",
+                color: "var(--color-muted)",
+                marginTop: "4px",
+              }}
+            >
+              Decade: {currentPick.decade ? `${currentPick.decade}s` : "Unknown"}
+              {currentPick.genres &&
+                currentPick.genres.length > 0 &&
+                ` • ${currentPick.genres.join(", ")}`}
             </div>
           )}
         </div>

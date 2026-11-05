@@ -3,7 +3,45 @@ import { useState, useMemo, useCallback } from "react";
 const MAX_ROLLS = 3;
 const POOL_FRACTION = 0.25;
 
+export const PARENT_GENRES = [
+  "Rock",
+  "Pop",
+  "Electronic",
+  "Soul",
+  "Jazz",
+  "Punk",
+  "Hip Hop",
+  "Folk",
+  "Metal",
+  "Funk",
+];
+
+export const GENRE_KEYWORDS = {
+  Rock: ["rock", "grunge", "indie", "alternative", "psychedelic", "prog"],
+  Pop: ["pop", "synthpop", "europop", "dance-pop", "indie pop"],
+  Electronic: [
+    "electronic",
+    "techno",
+    "house",
+    "ambient",
+    "electro",
+    "dance",
+    "synth",
+    "trance",
+    "idm",
+  ],
+  Soul: ["soul", "r&b", "motown", "doo-wop", "gospel"],
+  Jazz: ["jazz", "bop", "swing", "fusion", "modal"],
+  Punk: ["punk", "hardcore", "post-punk", "emo", "garage"],
+  "Hip Hop": ["hip hop", "rap", "trap", "boom bap"],
+  Folk: ["folk", "singer-songwriter", "acoustic", "americana", "bluegrass"],
+  Metal: ["metal", "thrash", "doom", "heavy metal", "death metal", "black metal"],
+  Funk: ["funk", "disco", "groove", "boogie"],
+};
+
 export function useJukeboxEngine(albums = []) {
+  const [sourceMode, setSourceMode] = useState("library"); // "library" | "1001"
+  const [excludeCompleted, setExcludeCompleted] = useState(false);
   const [filters, setFilters] = useState({
     artist: "",
     decade: new Set(),
@@ -48,19 +86,31 @@ export function useJukeboxEngine(albums = []) {
 
   const filteredAlbums = useMemo(() => {
     return (albums || []).filter((album) => {
-      if (filters.artist.trim()) {
+      if (excludeCompleted && album.is_completed) {
+        return false;
+      }
+      if (filters.artist && filters.artist.trim()) {
         const q = filters.artist.trim().toLowerCase();
-        if (!album.artist_name.toLowerCase().includes(q)) return false;
+        if (!album.artist_name || !album.artist_name.toLowerCase().includes(q)) return false;
       }
       if (filters.decade.size > 0) {
-        if (!album.release_year) return false;
-        const decadeStr = String(Math.floor(album.release_year / 10) * 10);
-        if (!filters.decade.has(decadeStr)) return false;
+        const year = album.release_year || album.decade;
+        if (!year) return false;
+        const decadeStr = String(Math.floor(year / 10) * 10);
+        const decadeWithS = `${decadeStr}s`;
+        if (!filters.decade.has(decadeStr) && !filters.decade.has(decadeWithS)) return false;
       }
       if (filters.genre.size > 0) {
         const albumGenres = album.genres || [];
-        const match = albumGenres.some((g) => filters.genre.has(g));
-        if (!match) return false;
+        const matches = Array.from(filters.genre).some((selectedParent) => {
+          const keywords = GENRE_KEYWORDS[selectedParent] || [selectedParent.toLowerCase()];
+          return albumGenres.some((g) => {
+            const gLower = (g || "").toLowerCase();
+            if (gLower === selectedParent.toLowerCase()) return true;
+            return keywords.some((kw) => gLower.includes(kw));
+          });
+        });
+        if (!matches) return false;
       }
       if (filters.length.size > 0) {
         const minutes = album.duration_ms ? album.duration_ms / 60000 : 0;
@@ -74,7 +124,7 @@ export function useJukeboxEngine(albums = []) {
       }
       return true;
     });
-  }, [albums, filters]);
+  }, [albums, filters, excludeCompleted]);
 
   const pool = useMemo(() => {
     if (!filteredAlbums.length) return [];
@@ -127,6 +177,10 @@ export function useJukeboxEngine(albums = []) {
   const canRoll = pool.length > 0 && (!sessionActive || rollsLeft > 0);
 
   return {
+    sourceMode,
+    setSourceMode,
+    excludeCompleted,
+    setExcludeCompleted,
     filters,
     mode,
     sessionActive,

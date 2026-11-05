@@ -1,5 +1,17 @@
 export const CHANGELOG = [
   {
+    version: "0.31.0",
+    date: "2026-11-05",
+    changes: [
+      "1001 Albums Generator in Jukebox: Added a dedicated '1001 Albums' mode to the Album Jukebox alongside 'My Library', letting you discover, roll, and play albums from the canonical '1001 Albums You Must Hear Before You Die' list.",
+      "Decade & Unified Parent-Genre Filtering: Filter 1001 picks or your personal library albums by decade (1950s through 2020s) and top 10 parent genres (Rock, Pop, Electronic, Soul, Jazz, Punk, Hip Hop, Folk, Metal, Funk) with intelligent subgenre keyword matching.",
+      "Exclude Previously Played Albums: Added an optional checkbox in 1001 mode to omit records you've already completed from the Lucky Dip pool so every spin gives you a fresh discovery.",
+      "Interactive Decade Checklist Modal: Tapping the progress button in the Jukebox header opens an interactive modal with decade tabs, album artwork thumbnails, search filtering, and manual completion checkboxes to track your journey through all 1001 records.",
+      "Automatic 90% Scrobble Threshold & Manual Unmarking: Historical listening data auto-credits an album as completed only when you have scrobbled at least 90% of its distinct track listing, preventing casual single-track shuffle listens from counting. If you manually unmark an album, your choice is permanently respected.",
+      "Post-Listen Confirmation Prompt: When you tap 'Open in Spotify' on a 1001 pick, the app remembers and presents a quick prompt on your next visit asking 'Did you listen to this album?' to easily confirm and log your completed record.",
+    ],
+  },
+  {
     version: "0.30.8",
     date: "2026-10-31",
     changes: [

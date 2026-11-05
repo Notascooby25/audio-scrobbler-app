@@ -19,6 +19,9 @@ export default function RetroJukebox({
   onLuckyDip,
   onReroll,
   onCommit,
+  sourceMode = "library",
+  excludeCompleted = false,
+  setExcludeCompleted,
 }) {
   const [spinning, setSpinning] = useState(false);
 
@@ -65,6 +68,9 @@ export default function RetroJukebox({
         clearFilters={clearFilters}
         mode={mode}
         setMode={setMode}
+        sourceMode={sourceMode}
+        excludeCompleted={excludeCompleted}
+        setExcludeCompleted={setExcludeCompleted}
       />
 
       <button
