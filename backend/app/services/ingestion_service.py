@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import timedelta
 import json
 
+from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -66,8 +67,16 @@ def ingest_listening_event(
             db.query(ListeningEvent)
             .filter(
                 ListeningEvent.user_id == user_id,
-                ListeningEvent.track_id == event.track_id,
-                ListeningEvent.played_at == event.played_at,
+                or_(
+                    and_(
+                        ListeningEvent.track_id == event.track_id,
+                        ListeningEvent.played_at == event.played_at,
+                    ),
+                    and_(
+                        ListeningEvent.source == event.source,
+                        ListeningEvent.play_id == canonical_play_id,
+                    ),
+                ),
             )
             .first()
         )
