@@ -16,13 +16,20 @@ Visual design rules are in `DESIGN.md` and `PRODUCT.md`.
 ### 1.1 Layout and navigation
 
 - Every route in `frontend/src/App.jsx` renders inside `Layout`, which contains
-  `HeaderNav`.
+  `HeaderNav` and `Footer`.
 - The header links to **Play** (`/overview`), **Library** (`/library`),
   **Reports** (`/reports`), and **Gigs** (`/setlists`, also active on `/gigs/*`)
   as text links, and groups outline SVG icons for **Profile** (`/profile`),
   **Connect** (`/connect`), and **Notifications** (`/settings?tab=notifications`)
-  on the far right across both desktop and mobile. It highlights the active page,
-  collapses text links to a menu on mobile, and is accessible (ARIA and focus states).
+  on the far right across both desktop and mobile. It highlights the active page
+  and is accessible (ARIA and focus states).
+- **Mobile Header (`@media (max-width: 720px)`):** Arranged via a 3-row CSS Grid:
+  - Row 1: Brand title on left, 3 outline action icons on top-right.
+  - Row 2: `Menu` toggle button on the right directly below the action icons.
+  - Row 3: Expanded navigation links aligned horizontally in a row beneath the `Menu` toggle button.
+- **Footer:** Renders brand title on the left and an interactive `vX.Y.Z • What's new` button
+  on the right. Clicking it opens `<WhatsNewModal>`, which highlights the newest release notes
+  from `CHANGELOG[0]` and includes a "View all changes" button navigating to `/changelog`.
 - Settings is at `/settings`.
 - Analytics pages use the `AnalyticsPage` wrapper (eyebrow and title).
 
