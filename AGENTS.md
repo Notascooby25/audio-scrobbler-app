@@ -79,12 +79,27 @@
 
 # Security Risks & How to Avoid Them
 - **Spotify OAuth & Token Theft:** Always encrypt Spotify refresh tokens at rest using `REFRESH_TOKEN_KEY` via `backend/app/security.py` (Fernet/AES). Persist rotated refresh tokens immediately. Keep `ALLOWED_SPOTIFY_USER_IDS` set on any publicly reachable tunnel (e.g. Tailscale Funnel) so unauthorized Spotify accounts cannot register.
+- **Token Rotation & Transaction Commits:** Never rely on `db.flush()` for rotated OAuth tokens or security credentials. When a rotated refresh token is received, the persistence helper must execute an immediate `db.commit()` so credentials are never discarded if the calling request finishes without writing data or encounters an error.
 - **Spotify API Rate-Limit Bans:** Never call the Spotify API inline during an HTTP web request. Use background worker jobs (`worker/`) + database cache tables, check `spotify_rate_limit_blocked_until()`, throttle bulk/paginated fetches, and honor HTTP `429` `Retry-After` headers.
+- **Background Worker Loop Quotas & In-Memory Token Caching:** Never call token refresh endpoints on recurring polling loop ticks (e.g. 10-second sync). Maintain active access tokens in memory until their TTL approaches expiration (e.g. within 5 minutes of expiry), eliminating redundant API requests.
+- **Service Worker & Client Cache Isolation:** Service workers must only cache static application shell assets (`/`, `/assets/*`, `manifest.json`). Never cache authenticated, private API endpoints (`/library`, `/setlists`, `/reports`, `/notifications`, `/preferences`, etc.) in browser CacheStorage. Ensure sign-out actions explicitly purge all client-side CacheStorage entries.
+- **Production UI Invariants:** Essential authentication and session controls (such as "Sign out") must be accessible to everyday users in production and must never be scoped inside development-only conditional blocks (`import.meta.env.DEV`).
+- **Reverse Proxy Path Shielding & Ingress:** Never expose worker-internal routes (`/internal/`) or raw diagnostic/metrics endpoints (`/metrics`, `/worker-metrics`) to public internet ingress. Explicitly return 404 for `/internal/` in Nginx and restrict metrics to the internal Docker network. Always use constant-time comparison (`secrets.compare_digest` or `hmac.compare_digest`) for token headers.
 - **Broken Access Control & Privacy Leaks:** Require signed JWT bearer tokens on user routes and `WORKER_INGESTION_TOKEN` on `/internal/` worker routes. Enforce follower permission checks (`403 Forbidden`) when viewing another user's data (`?userId=`), exclude blocked items (`not_blocked_clause`), and filter background syncs by `is_active == True`.
 - **Untrusted Input, Injection & CORS:** Validate and sanitize all user inputs, uploaded history exports (Spotify/YouTube JSON), and external metadata (BBC Sounds/iTunes/Deezer) using Pydantic schemas and parameterized SQLAlchemy queries. Never use raw string-interpolated SQL, and never allow wildcard (`*`) `CORS_ORIGINS` in production.
 
 # Pre-Commit Security Review, Changelog & Version Control
 - **Mandatory Security Review:** Always run the `differential-review` skill on every change before anything is committed or merged, and report findings by severity.
+- **Differential Review vs. Full Site Integrity Audits:**
+  - A *Differential Review* (`differential-review` skill) is for reviewing specific PRs or branch changes against the main branch.
+  - When the user asks for a *Site Integrity Check*, *Security Check*, or *Architecture Audit*, you MUST NOT restrict analysis to recent git diffs. A full audit requires a whole-system review covering:
+    1. Dependency vulnerability scans (`pip-audit` on backend/worker and `npm audit` on frontend).
+    2. Client caching and service worker boundaries (`service-worker.js`).
+    3. Production ingress, reverse proxy routing, and exposed ports (`nginx.conf`, `docker-compose.prod.yml`).
+    4. Database transaction lifecycles (verifying `db.commit()` occurs on sensitive state).
+    5. Scheduled background job quotas and external rate limits.
+    6. Container startup and migration rollback safety.
+    7. Production build parity (verifying production builds do not compile out critical UI controls).
 - **Changelog & User Guide:** Once per release, on the branch just before the go-ahead, for any new feature, improvement, or bug fix, update `frontend/src/changelogData.js` with a new version entry at the top and bump `version` in `frontend/package.json`. If adding or changing user-facing capabilities, also update `frontend/src/components/settings/UserGuideSection.jsx` and `frontend/src/components/settings/FaqSection.jsx`.
 - **Commit & Push:** Check `git status` first. Commit with a descriptive conventional message (`feat:`, `fix:`, `docs:`) and push to the working branch, never to `main`. A merge to `main` deploys to production via GHCR and Watchtower, so the owner merges, or gives the go-ahead for that specific merge. Never use `[skip ci]` in a pull request, as it would leave required checks waiting. Docs-only merges don't redeploy.
 
