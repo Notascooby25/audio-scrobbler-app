@@ -46,8 +46,6 @@ import {
   fetchReportsCharts,
   fetchReportsEntity,
   fetchReportsSummary,
-  fetchStatsChart,
-  fetchStatsSummary,
   fetchUserSettings,
 } from "../api";
 
@@ -55,13 +53,13 @@ describe("analytics pages", () => {
   beforeEach(() => localStorage.clear());
   afterEach(() => cleanup());
 
-  it("renders the Overview entry point", () => {
+  it("renders the Play entry point", () => {
     render(
       <MemoryRouter>
         <OverviewPage />
       </MemoryRouter>
     );
-    expect(screen.getByRole("heading", { name: "Overview" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Play" })).toBeInTheDocument();
   });
 
   it("renders the Library entry point", () => {
@@ -168,25 +166,24 @@ describe("date filtering", () => {
     expect(fetchReportsSummary).toHaveBeenCalledTimes(1);
   });
 
-  it("refetches Overview top artists when the date range changes", async () => {
-    fetchStatsSummary.mockResolvedValue({ total_scrobbles: 10, unique_artists: 2 });
-    fetchStatsChart.mockImplementation(({ entity, dateRange }) =>
-      Promise.resolve({
-        entries:
-          entity === "artists" ? [{ label: dateRange.range, secondary: null, play_count: 1 }] : [],
-      })
-    );
-
+  it("renders Album Jukebox above Time Capsule & Rediscover on the Play page without duplicate stats or top charts", async () => {
     render(
       <MemoryRouter>
         <OverviewPage />
       </MemoryRouter>
     );
-    await waitFor(() => expect(screen.getByText("last.week")).toBeInTheDocument());
 
-    fireEvent.change(screen.getByLabelText("Range"), { target: { value: "last.year" } });
+    const rediscoverHeading = await screen.findByRole("heading", {
+      name: "Time Capsule & Rediscover",
+    });
+    const jukeboxButton = await screen.findByRole("button", { name: /My Library/i });
+    expect(
+      jukeboxButton.compareDocumentPosition(rediscoverHeading) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
 
-    await waitFor(() => expect(screen.getByText("last.year")).toBeInTheDocument());
+    expect(screen.queryByLabelText("Listening summary")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Range")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Top artists" })).not.toBeInTheDocument();
   });
 
   it("refetches the Library entity tab on date range change", async () => {

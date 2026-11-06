@@ -13,16 +13,23 @@ describe("HeaderNav", () => {
     localStorage.clear();
   });
 
-  it("renders links to all primary sections", () => {
+  it("renders links to all primary sections and right-grouped outline icon links", () => {
     render(
       <MemoryRouter>
         <HeaderNav />
       </MemoryRouter>
     );
 
-    ["Overview", "Library", "Reports", "Set Lists", "Profile", "Connect"].forEach((label) => {
+    ["Play", "Library", "Reports", "Gigs", "Profile", "Connect"].forEach((label) => {
       expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
     });
+
+    const profileLink = screen.getByRole("link", { name: "Profile" });
+    const connectLink = screen.getByRole("link", { name: "Connect" });
+    expect(profileLink.querySelector("svg")).not.toBeNull();
+    expect(connectLink.querySelector("svg")).not.toBeNull();
+    expect(profileLink).toHaveClass("nav-icon-link");
+    expect(connectLink).toHaveClass("nav-icon-link");
   });
 
   it("marks the active page link based on the current route", () => {
@@ -33,7 +40,17 @@ describe("HeaderNav", () => {
     );
 
     expect(screen.getByRole("link", { name: "Library" })).toHaveClass("nav-link-active");
-    expect(screen.getByRole("link", { name: "Overview" })).not.toHaveClass("nav-link-active");
+    expect(screen.getByRole("link", { name: "Play" })).not.toHaveClass("nav-link-active");
+  });
+
+  it("marks Gigs active when viewing a gig setlist page", () => {
+    render(
+      <MemoryRouter initialEntries={["/gigs/42"]}>
+        <HeaderNav />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole("link", { name: "Gigs" })).toHaveClass("nav-link-active");
   });
 
   it("toggles the mobile navigation menu open and closed", () => {

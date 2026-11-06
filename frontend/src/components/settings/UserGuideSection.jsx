@@ -31,7 +31,7 @@ export default function UserGuideSection() {
           Privacy & Ownership
         </a>
         <a href="#guide-setlists" className="guide-pill">
-          Set Lists & Concerts
+          Gigs & Concerts
         </a>
       </nav>
 
@@ -206,10 +206,10 @@ export default function UserGuideSection() {
         <p>Your music comes alive through dedicated dashboards:</p>
         <ul>
           <li>
-            <strong>Overview:</strong> Your quick command center. Features your top artists, albums,
-            and tracks, plus the <strong>Time Capsule</strong>
-            (rediscover "Forgotten Favorites" and "On This Day" moments, with one-click export to
-            Spotify).
+            <strong>Play:</strong> Your active listening and discovery hub. Features the{" "}
+            <strong>Album Jukebox</strong> at the top followed by the{" "}
+            <strong>Time Capsule &amp; Rediscover</strong> section (rediscover "Forgotten Favorites"
+            and "On This Day" moments, with one-click export to Spotify).
           </li>
           <li>
             <strong>Library:</strong> Browse every play you've ever logged. Filter by entity, toggle
@@ -237,7 +237,7 @@ export default function UserGuideSection() {
           </li>
           <li>
             <strong>Album Jukebox & 1001 Albums Challenge:</strong> Return to whole-album listening
-            and beat choice paralysis with the Album Jukebox on your Overview page. You can toggle
+            and beat choice paralysis with the Album Jukebox on your Play page. You can toggle
             between
             <strong>My Library</strong> (drawing from your Spotify Saved Albums or most-scrobbled
             Library Archive) and <strong>1001 Albums</strong> (the full canonical{" "}
@@ -258,12 +258,11 @@ export default function UserGuideSection() {
           </li>
           <li>
             <strong>Two-Way Spotify Liking:</strong> Heart icons appear on tracks and albums across
-            the app (in your Library, Overview top charts, Connect recent scrobbles, and the Album
-            Jukebox pick). Tapping an outline heart immediately saves the song to your Spotify Liked
-            Songs or the album to your Spotify Saved Albums. Tapping an active red heart removes it.
-            If a track or album was scrobbled from another source (such as BBC Sounds or YouTube
-            Music), tapping the heart explains that liking is only supported for music played
-            through Spotify.
+            the app (in your Library, Connect recent scrobbles, and the Album Jukebox pick). Tapping
+            an outline heart immediately saves the song to your Spotify Liked Songs or the album to
+            your Spotify Saved Albums. Tapping an active red heart removes it. If a track or album
+            was scrobbled from another source (such as BBC Sounds or YouTube Music), tapping the
+            heart explains that liking is only supported for music played through Spotify.
           </li>
           <li>
             <strong>Shareable Image Cards:</strong> Want to brag about your top 5 albums or artists?
@@ -306,14 +305,14 @@ export default function UserGuideSection() {
 
       {/* Chapter 7 */}
       <article id="guide-setlists" className="guide-chapter">
-        <h3>7. Set Lists & Live Concert Tracking</h3>
+        <h3>7. Gigs & Live Concert Tracking</h3>
         <p>
           Audio Scrobbler lets you track in-person concerts and gigs you attend, powered by
           Setlist.fm:
         </p>
         <ul>
           <li>
-            <strong>Find &amp; Log a Gig:</strong> Head to the <em>Set Lists</em> tab and tap{" "}
+            <strong>Find &amp; Log a Gig:</strong> Head to the <em>Gigs</em> tab and tap{" "}
             <em>+ Log a Gig</em>. Search by artist name with optional filters for country, venue,
             month, or year. You can also paste direct Setlist.fm show/setlist links (e.g.{" "}
             <code>https://www.setlist.fm/show/...</code> or <code>/setlist/...</code>) or

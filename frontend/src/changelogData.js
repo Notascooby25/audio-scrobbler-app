@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.32.0",
+    date: "2026-11-06",
+    changes: [
+      "Header Navigation Polish & Right-Grouped Outline Icons: Renamed 'Overview' to 'Play' and 'Set Lists' to 'Gigs' so every primary section uses a crisp one-word label, and converted 'Profile' and 'Connect' into accessible outline SVG icons grouped on the far right alongside Notifications on both desktop and mobile.",
+      "Focused Play Page Layout: Streamlined the Play page (formerly Overview) by placing the Album Jukebox at the top followed directly by Time Capsule & Rediscover, removing duplicate summary counters and top artist/album/track lists already covered by Library and Reports.",
+      "Gigs Page Heading Alignment: Updated the Set Lists page heading to 'Gigs' (and '@username's Gigs' when viewing a followed friend's concerts) to match the primary navigation.",
+    ],
+  },
+  {
     version: "0.31.3",
     date: "2026-11-05",
     changes: [

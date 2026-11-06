@@ -17,15 +17,18 @@ Visual design rules are in `DESIGN.md` and `PRODUCT.md`.
 
 - Every route in `frontend/src/App.jsx` renders inside `Layout`, which contains
   `HeaderNav`.
-- The header links to Overview, Library, Reports, Profile, Following and
-  Connect. It highlights the active page, collapses to a menu on mobile, and is
-  accessible (ARIA and focus states).
+- The header links to **Play** (`/overview`), **Library** (`/library`),
+  **Reports** (`/reports`), and **Gigs** (`/setlists`, also active on `/gigs/*`)
+  as text links, and groups outline SVG icons for **Profile** (`/profile`),
+  **Connect** (`/connect`), and **Notifications** (`/settings?tab=notifications`)
+  on the far right across both desktop and mobile. It highlights the active page,
+  collapses text links to a menu on mobile, and is accessible (ARIA and focus states).
 - Settings is at `/settings`.
 - Analytics pages use the `AnalyticsPage` wrapper (eyebrow and title).
 
 ### 1.2 Date ranges
 
-- Every analytics view has a `DateRangeSelector` using the shared model from
+- Analytics views (Library and Reports) have a `DateRangeSelector` using the shared model from
   `dateRange.js`: `{ range, start_date, end_date, compare_to_previous }`.
 - Presets: `last.week`, `last.month`, `last.year`, `all.time`, `custom`.
 - Changing the range re-fetches every panel with no page reload.
@@ -33,7 +36,7 @@ Visual design rules are in `DESIGN.md` and `PRODUCT.md`.
 
 ### 1.3 Viewing another user
 
-- Library, Reports, Set Lists, gig pages and Profile accept `?userId=` (or
+- Library, Reports, Gigs (`/setlists`), gig pages and Profile accept `?userId=` (or
   `/profile/:userId`) to show a **followed** user's data.
 - The backend returns 403 when you don't follow them. The page shows "Follow
   this user to see their reports." or its equivalent.
@@ -73,20 +76,16 @@ Visual design rules are in `DESIGN.md` and `PRODUCT.md`.
 
 ---
 
-## 2. Overview: `/` and `/overview`
+## 2. Play: `/` and `/overview`
 
-A quick snapshot of listening for the selected range.
+Active album discovery and musical memories hub (`<h1>Play</h1>`).
 
-| Section                                                                               | Component           | Endpoint                                                                                                         |
-| ------------------------------------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Summary stats (total scrobbles, unique artists)                                       | `SummaryStatsBar`   | `GET /stats/summary`                                                                                             |
-| Time Capsule & Rediscover (Forgotten Favorites, On This Day, Spotify Playlist export) | `RediscoverCard`    | `GET /analytics/rediscover`, `POST /analytics/rediscover/playlist`                                               |
-| Date range                                                                            | `DateRangeSelector` |                                                                                                                  |
-| Top artists (10)                                                                      | `RankedList`        | `GET /stats/top-artists`                                                                                         |
-| Top albums (10)                                                                       | `RankedList`        | `GET /stats/top-albums` (interactive like heart saves/unlikes on Spotify: `PUT/DELETE /spotify/like-album/{id}`) |
-| Top tracks (10)                                                                       | `RankedList`        | `GET /stats/top-tracks` (interactive like heart saves/unlikes on Spotify: `PUT/DELETE /spotify/like-track/{id}`) |
+| Section                                                                               | Component        | Endpoint                                                                                                                           |
+| ------------------------------------------------------------------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Album Jukebox (My Library & 1001 Albums Generator, Flat & Retro Arcade views)         | `JukeboxCard`    | `GET /jukebox/albums`, `POST /jukebox/pick`, `GET /jukebox/1001`, `POST /jukebox/1001/*`, `PUT/DELETE /spotify/like-album/{id}`    |
+| Time Capsule & Rediscover (Forgotten Favorites, On This Day, Spotify Playlist export) | `RediscoverCard` | `GET /analytics/rediscover`, `POST /analytics/rediscover/playlist`                                                                 |
 
-The "Loved Tracks" stat was removed (`8469a4f`).
+Summary stats and top artist/album/track charts were removed from this page to avoid duplicating Library and Reports.
 
 ## 3. Library: `/library`
 
@@ -184,9 +183,9 @@ Organized into a 3-card Data Sources Hub with an accessible `<h1>` heading ("Con
 | Recent ingestion feed                                                       | `GET /analytics/recent-scrobbles` (interactive like heart saves/unlikes tracks on Spotify) |
 | Developer bypass tools                                                      | Development only (`import.meta.env.DEV`), stripped from production builds                  |
 
-## 8a. Set Lists: `/setlists` and gig pages `/gigs/:id`
+## 8a. Gigs: `/setlists` and gig pages `/gigs/:id`
 
-Setlist.fm-style concert diary. Styled with plain `sfm-*` classes in `styles.css`
+Setlist.fm-style concert diary (`<h1>Gigs</h1>` or `<h1>@username's Gigs</h1>`). Styled with plain `sfm-*` classes in `styles.css`
 (Tailwind is **not** installed). Gig pages live at `/gigs/:id`, not under
 `/setlists/`, because nginx and Vite proxy `/setlists/*` to the API. List state
 (tab, page, size, open row, filters) is kept in the URL so Back restores it.

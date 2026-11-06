@@ -230,9 +230,10 @@ Include each item that applies:
 
 - All routes are defined in `App.jsx` and wrapped in `Layout`, so a new page
   automatically gets the header.
-- `HeaderNav` links to Overview, Library, Reports, Profile, Following and
-  Connect. It highlights the active page, is responsive with a mobile menu,
-  and is accessible.
+- `HeaderNav` links to Play (`/overview`), Library (`/library`), Reports
+  (`/reports`), and Gigs (`/setlists`), with outline icon links for Profile
+  (`/profile`), Connect (`/connect`), and Notifications grouped on the far right.
+  It highlights the active page, is responsive with a mobile menu, and is accessible.
 - Settings is reached by its route, not the header.
 - Any plan that adds or changes pages must keep all of this and extend
   `HeaderNav.test.jsx`, `App.test.jsx` and `frontend/e2e/navigation.spec.js`.

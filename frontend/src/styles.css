@@ -256,6 +256,21 @@ p {
   gap: 0.5rem;
 }
 
+.topbar-links {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.topbar-icons {
+  align-items: center;
+  display: flex;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+  padding-left: 0.75rem;
+  border-left: 0.5px solid var(--color-border);
+}
+
 .topbar-nav a {
   color: var(--color-muted);
   font:
@@ -272,6 +287,15 @@ p {
   transition:
     background-color 140ms ease,
     color 140ms ease;
+}
+
+.nav-icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  min-width: 36px;
+  min-height: 36px;
 }
 
 .nav-link:hover {
@@ -299,14 +323,31 @@ p {
 }
 
 @media (max-width: 720px) {
-  /* Logo stays left, the toggle button stays right, on one row; the opened
-     menu (flex-basis: 100%) wraps onto its own full-width line below rather
-     than fighting the logo and toggle for space as a third row item. */
+  /* Logo stays left, the icon group + toggle button stay right on one row;
+     the opened text links wrap onto their own full-width line below. */
   .topbar {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .topbar-nav {
+    display: contents;
+  }
+
+  .topbar-icons {
+    margin-left: auto;
+    padding-left: 0;
+    border-left: none;
+    gap: 0.25rem;
+    order: 2;
+  }
+
+  .nav-icon-link {
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .nav-menu-toggle {
@@ -319,6 +360,7 @@ p {
     justify-content: center;
     min-height: 44px;
     min-width: 44px;
+    margin-left: 0.25rem;
     font:
       600 0.75rem inherit,
       sans-serif;
@@ -327,17 +369,18 @@ p {
     cursor: pointer;
   }
 
-  .topbar-nav {
+  .topbar-links {
     display: none;
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
-    margin-top: 1rem;
+    margin-top: 0.75rem;
     width: 100%;
     flex-basis: 100%;
+    order: 3;
   }
 
-  .topbar-nav-open {
+  .topbar-nav-open .topbar-links {
     display: flex;
   }
 }
@@ -4395,22 +4438,6 @@ dd {
 
 .liked-heart-active svg {
   animation: heart-burst 240ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.desktop-bell {
-  display: block;
-}
-.mobile-bell {
-  display: none;
-}
-
-@media (max-width: 720px) {
-  .desktop-bell {
-    display: none;
-  }
-  .mobile-bell {
-    display: block;
-  }
 }
 
 /* ==========================================================================
