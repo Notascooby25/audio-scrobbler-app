@@ -194,17 +194,18 @@ export default function HeaderNav() {
               </span>
             </NavLink>
           )}
-          <button
-            type="button"
-            className="nav-menu-toggle"
-            aria-label="Toggle navigation menu"
-            aria-expanded={isMenuOpen}
-            aria-controls="primary-navigation"
-            onClick={() => setIsMenuOpen((open) => !open)}
-          >
-            Menu
-          </button>
         </div>
+
+        <button
+          type="button"
+          className="nav-menu-toggle"
+          aria-label="Toggle navigation menu"
+          aria-expanded={isMenuOpen}
+          aria-controls="primary-navigation"
+          onClick={() => setIsMenuOpen((open) => !open)}
+        >
+          Menu
+        </button>
       </nav>
     </header>
   );

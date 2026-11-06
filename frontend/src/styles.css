@@ -230,6 +230,15 @@ p {
   color: var(--color-primary);
 }
 
+.app-footer-version-btn {
+  background: transparent;
+  border: none;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+  text-transform: none;
+}
+
 /* ─── Topbar Navigation ────────────────────────────────────────────────────────── */
 .topbar {
   display: flex;
@@ -323,14 +332,32 @@ p {
 }
 
 @media (max-width: 720px) {
-  /* Logo stays left, the icon group + toggle button stay right on one row;
-     the opened text links wrap onto their own full-width line below. */
+  /* Row 1: Logo on left, outline icons (Profile, Connect, Notifications) on top right.
+     Row 2: Menu toggle button on the right directly below icons.
+     Row 3: Opened text navigation links expand full width below. */
   .topbar {
-    flex-direction: row;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "brand icons"
+      ". toggle"
+      "links links";
     align-items: center;
-    flex-wrap: wrap;
-    gap: 0.75rem;
+    row-gap: 0.5rem;
+    column-gap: 0.75rem;
+  }
+
+  .topbar-brand {
+    grid-area: brand;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .topbar-brand .topbar-logo {
+    height: 44px;
+    max-width: 100%;
+    object-fit: contain;
   }
 
   .topbar-nav {
@@ -338,11 +365,14 @@ p {
   }
 
   .topbar-icons {
-    margin-left: auto;
+    grid-area: icons;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    margin-left: 0;
     padding-left: 0;
     border-left: none;
-    gap: 0.25rem;
-    order: 2;
   }
 
   .nav-icon-link {
@@ -351,6 +381,8 @@ p {
   }
 
   .nav-menu-toggle {
+    grid-area: toggle;
+    justify-self: end;
     background: transparent;
     border: 0.5px solid var(--color-border);
     border-radius: var(--radius-sm);
@@ -360,7 +392,6 @@ p {
     justify-content: center;
     min-height: 44px;
     min-width: 44px;
-    margin-left: 0.25rem;
     font:
       600 0.75rem inherit,
       sans-serif;
@@ -370,14 +401,15 @@ p {
   }
 
   .topbar-links {
+    grid-area: links;
     display: none;
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 0.5rem;
-    margin-top: 0.75rem;
+    margin-top: 0.5rem;
     width: 100%;
-    flex-basis: 100%;
-    order: 3;
   }
 
   .topbar-nav-open .topbar-links {
@@ -3647,6 +3679,108 @@ dd {
 
 .modal-cancel-button:hover:not(:disabled) {
   background: rgba(0, 0, 0, 0.04);
+}
+
+/* ─── What's New Dialog ─────────────────────────────────────────────────────── */
+.modal-dialog.whats-new-dialog {
+  max-width: 560px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+}
+
+.whats-new-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 0.5px solid var(--color-border);
+}
+
+.whats-new-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.whats-new-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.whats-new-date {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.whats-new-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease;
+}
+
+.whats-new-close-btn:hover {
+  color: var(--color-ink);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.whats-new-body {
+  overflow-y: auto;
+  flex: 1 1 auto;
+  margin-bottom: 1.25rem;
+  padding-right: 0.25rem;
+}
+
+.whats-new-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  color: var(--color-ink);
+}
+
+.whats-new-item {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.whats-new-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 0.5px solid var(--color-border);
+}
+
+.whats-new-view-all-link {
+  font-size: 0.85rem;
+  padding: 0.5rem 0.85rem;
+  text-decoration: none;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .modal-confirm-button {

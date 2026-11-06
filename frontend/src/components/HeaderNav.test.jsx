@@ -30,6 +30,11 @@ describe("HeaderNav", () => {
     expect(connectLink.querySelector("svg")).not.toBeNull();
     expect(profileLink).toHaveClass("nav-icon-link");
     expect(connectLink).toHaveClass("nav-icon-link");
+
+    const toggle = screen.getByRole("button", { name: "Toggle navigation menu" });
+    const iconsGroup = screen.getByRole("group", { name: "Account and connections" });
+    expect(toggle.parentElement).toBe(screen.getByLabelText("Primary navigation"));
+    expect(iconsGroup.contains(toggle)).toBe(false);
   });
 
   it("marks the active page link based on the current route", () => {
