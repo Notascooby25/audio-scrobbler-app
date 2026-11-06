@@ -40,12 +40,20 @@ export default function App() {
         <Route element={<Layout />}>
           <Route
             path="/"
-            element={session?.accessToken ? <OverviewPage /> : <Navigate to="/connect" replace />}
+            element={
+              session?.accessToken ? (
+                <Navigate to="/play" replace />
+              ) : (
+                <Navigate to="/connect" replace />
+              )
+            }
           />
           <Route path="/connect" element={<HomePage />} />
-          <Route path="/overview" element={<OverviewPage />} />
+          <Route path="/play" element={<OverviewPage />} />
+          <Route path="/overview" element={<Navigate to="/play" replace />} />
           <Route path="/library" element={<LibraryPage />} />
-          <Route path="/setlists" element={<SetlistsPage />} />
+          <Route path="/gigs" element={<SetlistsPage />} />
+          <Route path="/setlists" element={<Navigate to="/gigs" replace />} />
           {/* Not under /setlists/: that prefix is proxied to the API by nginx and Vite */}
           <Route path="/gigs/:concertId" element={<SetlistGigPage />} />
           <Route path="/reports" element={<ReportsPage />} />

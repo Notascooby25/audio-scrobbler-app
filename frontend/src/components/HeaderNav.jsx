@@ -4,11 +4,11 @@ import { readSession, clearSession } from "../session";
 import { fetchUnreadNotificationCount } from "../api";
 
 const NAV_LINKS = [
-  { to: "/overview", label: "Play", alsoActive: "/" },
+  { to: "/play", label: "Play", alsoActive: "/overview" },
   { to: "/library", label: "Library" },
   { to: "/reports", label: "Reports" },
   // A gig's setlist page (/gigs/:id) belongs to the Gigs section
-  { to: "/setlists", label: "Gigs", alsoActive: "/gigs/" },
+  { to: "/gigs", label: "Gigs", alsoActive: "/setlists" },
 ];
 
 function UserIcon({ className }) {

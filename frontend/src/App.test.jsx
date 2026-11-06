@@ -71,6 +71,40 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: "Play" })).toBeInTheDocument();
   });
 
+  it("renders the Play page at /play when authenticated", () => {
+    localStorage.setItem(
+      "audio-scrobbler-session",
+      JSON.stringify({ userId: 1, accessToken: "token-123" })
+    );
+    window.history.pushState({}, "", "/play");
+    render(<App />);
+    expect(screen.getByRole("heading", { name: "Play" })).toBeInTheDocument();
+  });
+
+  it("redirects /overview to /play", () => {
+    localStorage.setItem(
+      "audio-scrobbler-session",
+      JSON.stringify({ userId: 1, accessToken: "token-123" })
+    );
+    window.history.pushState({}, "", "/overview");
+    render(<App />);
+    expect(window.location.pathname).toBe("/play");
+    expect(screen.getByRole("heading", { name: "Play" })).toBeInTheDocument();
+  });
+
+  it("renders the Gigs page at /gigs", () => {
+    window.history.pushState({}, "", "/gigs");
+    render(<App />);
+    expect(screen.getByRole("heading", { name: "Gigs" })).toBeInTheDocument();
+  });
+
+  it("redirects /setlists to /gigs", () => {
+    window.history.pushState({}, "", "/setlists");
+    render(<App />);
+    expect(window.location.pathname).toBe("/gigs");
+    expect(screen.getByRole("heading", { name: "Gigs" })).toBeInTheDocument();
+  });
+
   it("shows an error after Spotify authorization is cancelled", () => {
     renderConnectPage("#auth_error=spotify_authorization_denied");
     expect(screen.getByText("Spotify authorization was cancelled.")).toBeInTheDocument();
