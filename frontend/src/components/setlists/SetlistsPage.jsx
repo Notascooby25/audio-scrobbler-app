@@ -344,6 +344,7 @@ export default function SetlistsPage() {
       )}
 
       <header className="sfm-page-header">
+        <p className="section-kicker">Live music</p>
         {isViewing ? (
           <>
             <h1>@{viewedProfile?.username || "..."}&apos;s Gigs</h1>

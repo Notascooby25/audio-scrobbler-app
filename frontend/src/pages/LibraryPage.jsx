@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import AnalyticsPage from "../components/AnalyticsPage";
 import DateRangeSelector from "../components/DateRangeSelector";
 import LibraryRankList from "../components/LibraryRankList";
@@ -496,12 +496,12 @@ export default function LibraryPage() {
 
   return (
     <AnalyticsPage
-      eyebrow="Personal archive"
+      eyebrow="Collection"
       title={isOwnLibrary ? "Library" : `@${targetProfile?.username || "..."}'s Library`}
     >
       {!session?.accessToken && (
         <p className="notice">
-          Connect Spotify from the <a href="/connect">connection page</a> to browse your library.
+          Connect Spotify from the <Link to="/connect">Connect page</Link> to browse your library.
         </p>
       )}
       {status === "loading" && <p className="notice">Loading your library...</p>}

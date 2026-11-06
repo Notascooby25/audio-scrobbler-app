@@ -128,8 +128,8 @@ export default function ProfilePage() {
     <section className="dashboard" aria-labelledby="profile-heading">
       <div className="section-heading">
         <div>
-          <p className="section-kicker">Personal archive</p>
-          <h2 id="profile-heading">Profile</h2>
+          <p className="section-kicker">Profile</p>
+          <h1 id="profile-heading">Profile</h1>
         </div>
       </div>
 
@@ -173,7 +173,7 @@ export default function ProfilePage() {
       {token && targetUserId && profile && (
         <div className="profile-card">
           <div className="profile-header">
-            <h3 className="profile-username">@{profile.username}</h3>
+            <h2 className="profile-username">@{profile.username}</h2>
             <p className="profile-display-name">{profile.display_name}</p>
           </div>
 

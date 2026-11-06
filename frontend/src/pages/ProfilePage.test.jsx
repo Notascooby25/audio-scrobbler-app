@@ -44,6 +44,11 @@ describe("ProfilePage", () => {
     expect(screen.getByText(/Connect Spotify from the/i)).toBeInTheDocument();
   });
 
+  it("renders a level 1 heading for Profile", () => {
+    renderProfile();
+    expect(screen.getByRole("heading", { level: 1, name: "Profile" })).toBeInTheDocument();
+  });
+
   it("starts Spotify authorization from the connect button", async () => {
     renderProfile();
     fireEvent.click(screen.getByRole("button", { name: "Connect Spotify" }));

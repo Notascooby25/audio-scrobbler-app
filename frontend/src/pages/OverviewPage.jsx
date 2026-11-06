@@ -8,7 +8,7 @@ export default function OverviewPage() {
   const session = readSession();
 
   return (
-    <AnalyticsPage eyebrow="Personal archive" title="Play">
+    <AnalyticsPage eyebrow="Jukebox" title="Play">
       {!session?.accessToken ? (
         <p className="notice">
           Connect Spotify from the <Link to="/connect">connection page</Link> to spin your Album
