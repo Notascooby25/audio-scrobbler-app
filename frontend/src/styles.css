@@ -3670,6 +3670,108 @@ dd {
   background: rgba(0, 0, 0, 0.04);
 }
 
+/* ─── What's New Dialog ─────────────────────────────────────────────────────── */
+.modal-dialog.whats-new-dialog {
+  max-width: 560px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+}
+
+.whats-new-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 0.5px solid var(--color-border);
+}
+
+.whats-new-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.whats-new-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.whats-new-date {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.whats-new-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease;
+}
+
+.whats-new-close-btn:hover {
+  color: var(--color-ink);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.whats-new-body {
+  overflow-y: auto;
+  flex: 1 1 auto;
+  margin-bottom: 1.25rem;
+  padding-right: 0.25rem;
+}
+
+.whats-new-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  color: var(--color-ink);
+}
+
+.whats-new-item {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.whats-new-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 0.5px solid var(--color-border);
+}
+
+.whats-new-view-all-link {
+  font-size: 0.85rem;
+  padding: 0.5rem 0.85rem;
+  text-decoration: none;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .modal-confirm-button {
   border-radius: var(--radius-sm);
   font:
