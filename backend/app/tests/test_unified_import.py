@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime
 import json
 
 import pytest
@@ -10,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.app.api import imports as imports_module
+from backend.app.datetime_utils import utc_now
 from backend.app.db import Base
 from backend.app.main import app
 from backend.app.models import ArtworkCache, ListeningEvent, User
@@ -181,7 +181,7 @@ def test_process_unified_import_persists_and_reuses_artwork_cache(db_session):
     cached_art = ArtworkCache(
         track_id=track_id,
         artwork_url="https://images.example.com/boxer.jpg",
-        cached_at=datetime.utcnow(),
+        cached_at=utc_now(),
     )
     db_session.add(cached_art)
     db_session.commit()

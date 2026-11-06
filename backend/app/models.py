@@ -17,6 +17,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
+from .datetime_utils import utc_now
 from .db import Base
 
 
@@ -29,7 +30,7 @@ class User(Base):
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     refresh_token_cipher: Mapped[str] = mapped_column(Text, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class UserPreferences(Base):
@@ -100,9 +101,9 @@ class UserPreferences(Base):
     home_lng: Mapped[float | None] = mapped_column(Float, nullable=True)
     notify_system: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     recap_frequency: Mapped[str] = mapped_column(String(16), nullable=False, default="weekly")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
     )
 
 
@@ -127,7 +128,7 @@ class ListeningEvent(Base):
     play_id: Mapped[str] = mapped_column(String(255), index=True, nullable=False, default="")
     payload: Mapped[str] = mapped_column(Text, nullable=True)
     raw_metadata: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class BlockedItem(Base):
@@ -140,7 +141,7 @@ class BlockedItem(Base):
     user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
     entity_type: Mapped[str] = mapped_column(String(16), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class Follow(Base):
@@ -153,7 +154,7 @@ class Follow(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     follower_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
     followee_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class IngestionCheckpoint(Base):
@@ -162,7 +163,7 @@ class IngestionCheckpoint(Base):
     user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     last_played_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     last_polled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class RealtimePlaybackState(Base):
@@ -176,7 +177,7 @@ class RealtimePlaybackState(Base):
     raw_metadata: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
     is_playing: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
     )
 
 
@@ -198,9 +199,9 @@ class UserScrobbleSettings(Base):
     saved_albums_last_synced_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     realtime_sync_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     scrobble_threshold_percent: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
     )
 
 
@@ -219,7 +220,7 @@ class LikedTrack(Base):
     added_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     raw_metadata: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
     )
 
 
@@ -241,7 +242,7 @@ class SavedAlbum(Base):
     spotify_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     added_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     last_picked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class ArtworkCache(Base):
@@ -249,7 +250,7 @@ class ArtworkCache(Base):
 
     track_id: Mapped[str] = mapped_column(String(255), primary_key=True, index=True)
     artwork_url: Mapped[str] = mapped_column(Text, nullable=False)
-    cached_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    cached_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 # Kept intentionally, unreferenced, for reversibility
@@ -258,14 +259,14 @@ class PlaylistCache(Base):
 
     playlist_uri: Mapped[str] = mapped_column(String(255), primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    cached_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    cached_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class GenreCache(Base):
     __tablename__ = "genre_cache"
     artist_spotify_id: Mapped[str] = mapped_column(String(255), primary_key=True, index=True)
     genres: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
-    cached_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    cached_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class FollowedShow(Base):
@@ -278,7 +279,7 @@ class FollowedShow(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     synopsis: Mapped[str | None] = mapped_column(Text, nullable=True)
     image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class Notification(Base):
@@ -290,7 +291,7 @@ class Notification(Base):
     message: Mapped[str] = mapped_column(Text, nullable=False)
     type: Mapped[str] = mapped_column(String(32), nullable=False, default="general")
     is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class PushSubscription(Base):
@@ -302,7 +303,7 @@ class PushSubscription(Base):
     endpoint: Mapped[str] = mapped_column(Text, nullable=False)
     p256dh: Mapped[str] = mapped_column(String(255), nullable=False)
     auth: Mapped[str] = mapped_column(String(255), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class FollowedYouTubeChannel(Base):
@@ -315,7 +316,7 @@ class FollowedYouTubeChannel(Base):
     channel_handle: Mapped[str | None] = mapped_column(String(128), nullable=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class GeoCache(Base):
@@ -352,7 +353,7 @@ class AttendedConcert(Base):
     raw_data: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
     song_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class SetlistCache(Base):
@@ -361,7 +362,7 @@ class SetlistCache(Base):
     cache_key: Mapped[str] = mapped_column(String(255), primary_key=True)
     response_json: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime, index=True, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class SetlistImportJob(Base):
@@ -382,9 +383,9 @@ class SetlistImportJob(Base):
     total: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
     resume_after: Mapped[datetime] = mapped_column(DateTime, index=True, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
     )
 
 
@@ -402,9 +403,9 @@ class GigCompanion(Base):
     # "pending", "added" or "dismissed"
     status: Mapped[str] = mapped_column(String(16), default="pending", index=True, nullable=False)
     friend_concert_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
     )
 
 
@@ -429,7 +430,7 @@ class User1001AlbumCompletion(Base):
     is_completed: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     source: Mapped[str] = mapped_column(String(32), default="manual", nullable=False)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class User1001PendingConfirmation(Base):
@@ -441,5 +442,5 @@ class User1001PendingConfirmation(Base):
         Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
     )
     album_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
-    opened_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    opened_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     dismissed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

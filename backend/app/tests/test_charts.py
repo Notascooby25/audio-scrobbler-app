@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.app.api import analytics as analytics_module
+from backend.app.datetime_utils import utc_now
 from backend.app.db import Base
 from backend.app.main import app
 from backend.app.models import Follow, ListeningEvent, User
@@ -36,7 +37,7 @@ def _seed(db):
     db.add(User(id=2, spotify_user_id="target", username="music-fan", display_name="Music Fan", refresh_token_cipher="c", is_active=True))
     db.commit()
 
-    now = datetime.utcnow()
+    now = utc_now()
     events = [
         ("The National", "Slow Show", "Trouble Will Find Me", now - timedelta(days=1)),
         ("The National", "Slow Show", "Trouble Will Find Me", now - timedelta(days=2)),

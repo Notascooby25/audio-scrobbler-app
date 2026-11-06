@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import datetime
+
+from ..datetime_utils import utc_now
 from functools import lru_cache
 import json
 from pathlib import Path
@@ -110,7 +111,7 @@ def get_user_1001_catalog(db: Session, user_id: int) -> dict[str, Any]:
                 album_id=aid,
                 is_completed=True,
                 source="scrobble_90pct",
-                completed_at=datetime.utcnow(),
+                completed_at=utc_now(),
             )
             db.add(rec)
             completions_map[aid] = rec
@@ -191,7 +192,7 @@ def toggle_user_1001_album_completion(
             album_id=album_id,
             is_completed=is_completed,
             source=source,
-            completed_at=datetime.utcnow() if is_completed else None,
+            completed_at=utc_now() if is_completed else None,
         )
         db.add(record)
     else:
@@ -199,7 +200,7 @@ def toggle_user_1001_album_completion(
         record.source = source
         if is_completed:
             if not record.completed_at:
-                record.completed_at = datetime.utcnow()
+                record.completed_at = utc_now()
         else:
             record.completed_at = None
 
@@ -218,12 +219,12 @@ def record_user_1001_pending_play(db: Session, user_id: int, album_id: int) -> d
         record = User1001PendingConfirmation(
             user_id=user_id,
             album_id=album_id,
-            opened_at=datetime.utcnow(),
+            opened_at=utc_now(),
             dismissed=False,
         )
         db.add(record)
     else:
-        record.opened_at = datetime.utcnow()
+        record.opened_at = utc_now()
         record.dismissed = False
     db.commit()
     return {"status": "ok", "album_id": album_id}

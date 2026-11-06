@@ -6,7 +6,9 @@ import logging
 import time
 import urllib.parse
 import urllib.request
-from datetime import datetime, timedelta
+from datetime import timedelta
+
+from ..datetime_utils import utc_now
 
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
@@ -84,11 +86,11 @@ def _cached(db: Session, key: str) -> tuple[bool, str | None]:
         return False, None
     if _usable(entry.artwork_url):
         return True, entry.artwork_url
-    return entry.cached_at > datetime.utcnow() - MISS_RETRY_AFTER, None
+    return entry.cached_at > utc_now() - MISS_RETRY_AFTER, None
 
 
 def _remember(db: Session, key: str, url: str | None) -> None:
-    db.merge(ArtworkCache(track_id=key, artwork_url=url or "", cached_at=datetime.utcnow()))
+    db.merge(ArtworkCache(track_id=key, artwork_url=url or "", cached_at=utc_now()))
 
 
 def deezer_artist_picture(artist: str, timeout: float = 3.0) -> str | None:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -10,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.app.api import analytics as analytics_module
+from backend.app.datetime_utils import utc_now
 from backend.app.db import Base
 from backend.app.main import app
 from backend.app.models import ListeningEvent, User
@@ -52,7 +53,7 @@ def override_dependencies():
 
 
 def _decade_counts(db, user_id=1, days_back=3650):
-    now = datetime.utcnow()
+    now = utc_now()
     rows = db.execute(build_report_decade_query(user_id, now - timedelta(days=days_back), now + timedelta(days=1))).all()
     return {f"{int(r.label)}s": int(r.count) for r in rows}
 
@@ -63,7 +64,7 @@ def test_music_by_decade_buckets_by_release_date_and_ignores_undated_history(ove
     # real Postgres function SQLite doesn't implement at all -- unrelated to (and
     # unaffected by) the decade fix under test here, so it would only get in the way.
     db = override_dependencies
-    now = datetime.utcnow()
+    now = utc_now()
     db.add(_event("s1", "spotify", now - timedelta(days=1), _spotify_meta("1994-03-14")))
     db.add(_event("s2", "spotify", now - timedelta(days=2), _spotify_meta("1999-11-02")))  # same decade as s1
     db.add(_event("s3", "spotify", now - timedelta(days=3), _spotify_meta("2021-06-01")))
@@ -81,7 +82,7 @@ def test_music_by_decade_buckets_by_release_date_and_ignores_undated_history(ove
 
 def test_music_by_decade_is_empty_not_broken_when_nothing_has_a_release_date(override_dependencies):
     db = override_dependencies
-    db.add(_event("yt1", "youtube", datetime.utcnow(), {"source": "YouTube Music"}))
+    db.add(_event("yt1", "youtube", utc_now(), {"source": "YouTube Music"}))
     db.commit()
 
     assert _decade_counts(db) == {}
@@ -144,7 +145,7 @@ def pg_session():
 
 def test_decade_query_survives_an_empty_release_date_on_real_postgres(pg_session):
     db = pg_session
-    now = datetime.utcnow()
+    now = utc_now()
     db.add(_event("good", "spotify", now - timedelta(days=1), _spotify_meta("1994-03-14")))
     db.add(_event("empty", "spotify", now - timedelta(days=2), _spotify_meta("")))  # the crashing case
     db.commit()
@@ -156,7 +157,7 @@ def test_decade_query_survives_an_empty_release_date_on_real_postgres(pg_session
 
 def test_decade_query_survives_junk_that_isnt_a_date_at_all_on_real_postgres(pg_session):
     db = pg_session
-    now = datetime.utcnow()
+    now = utc_now()
     db.add(_event("good", "spotify", now - timedelta(days=1), _spotify_meta("1994-03-14")))
     db.add(_event("junk", "spotify", now - timedelta(days=2), _spotify_meta("not-a-date")))
     db.commit()

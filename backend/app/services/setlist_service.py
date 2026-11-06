@@ -4,9 +4,11 @@ import logging
 import os
 import re
 import time
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Any
 from urllib.parse import urlparse
+
+from ..datetime_utils import utc_now
 
 import httpx
 from sqlalchemy.orm import Session
@@ -104,7 +106,7 @@ class SetlistService:
         self.api_key = (api_key or os.getenv("SETLIST_FM_API_KEY", "")).strip("'\" \r\n")
 
     def get_status(self) -> dict[str, Any]:
-        today_str = datetime.utcnow().strftime("%Y-%m-%d")
+        today_str = utc_now().strftime("%Y-%m-%d")
         usage = self.db.query(SetlistApiUsage).filter_by(id=1).first()
         daily_count = usage.daily_count if usage and usage.daily_date == today_str else 0
         return {
@@ -114,8 +116,8 @@ class SetlistService:
         }
 
     def _acquire_rate_limit(self) -> None:
-        today_str = datetime.utcnow().strftime("%Y-%m-%d")
-        now = datetime.utcnow()
+        today_str = utc_now().strftime("%Y-%m-%d")
+        now = utc_now()
 
         usage = self.db.query(SetlistApiUsage).filter_by(id=1).with_for_update().first()
         if not usage:
@@ -145,7 +147,7 @@ class SetlistService:
             sleep_needed = MIN_INTERVAL_SECONDS - elapsed
             time.sleep(sleep_needed)
 
-        usage.last_call_at = datetime.utcnow()
+        usage.last_call_at = utc_now()
         usage.daily_count += 1
         self.db.commit()
 
@@ -189,7 +191,7 @@ class SetlistService:
     def get_setlist(self, setlist_id: str, force_refresh: bool = False) -> dict[str, Any]:
         """One setlist, served from the cache unless `force_refresh` (Refresh from Setlist.fm)."""
         cache_key = f"setlist:{setlist_id}"
-        now = datetime.utcnow()
+        now = utc_now()
         if not force_refresh:
             cached = (
                 self.db.query(SetlistCache)
@@ -219,7 +221,7 @@ class SetlistService:
         """
         if not isinstance(items, list):
             return
-        expires_at = datetime.utcnow() + timedelta(days=7)
+        expires_at = utc_now() + timedelta(days=7)
         stored = False
         for item in items:
             if not isinstance(item, dict) or not isinstance(item.get("id"), str) or not item["id"]:
@@ -276,7 +278,7 @@ class SetlistService:
             f"p:{p}",
         ]
         cache_key = f"search:{':'.join(query_parts)}"
-        now = datetime.utcnow()
+        now = utc_now()
 
         cached = (
             self.db.query(SetlistCache)
@@ -340,7 +342,7 @@ class SetlistService:
         Setlist.fm hasn't indexed yet isn't hidden for long.
         """
         cache_key = f"venue-date:{venue_id}:{event_date_str}"
-        now = datetime.utcnow()
+        now = utc_now()
         cached = (
             self.db.query(SetlistCache)
             .filter(SetlistCache.cache_key == cache_key, SetlistCache.expires_at > now)
@@ -386,7 +388,7 @@ class SetlistService:
     def _cached_attended_page(self, username: str, page: int) -> dict[str, Any] | None:
         """A profile page fetched within the last day. Preview, import and export share it,
         so one profile costs its pages once a day, not once per step."""
-        now = datetime.utcnow()
+        now = utc_now()
         cached = (
             self.db.query(SetlistCache)
             .filter(SetlistCache.cache_key == f"attended:{username}:{page}", SetlistCache.expires_at > now)
@@ -402,7 +404,7 @@ class SetlistService:
             SetlistCache(
                 cache_key=f"attended:{username}:{page}",
                 response_json=data,
-                expires_at=datetime.utcnow() + ATTENDED_PAGE_TTL,
+                expires_at=utc_now() + ATTENDED_PAGE_TTL,
             )
         )
         self.db.commit()

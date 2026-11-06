@@ -24,6 +24,12 @@ SPOTIFY_SAVED_ALBUMS_URL = "https://api.spotify.com/v1/me/albums"
 SPOTIFY_SAVED_ALBUMS_LIMIT = 50
 Base = declarative_base()
 
+
+def _utc_now() -> datetime:
+    """Returns the current UTC datetime without tzinfo for database compatibility."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 # Spotify's quota is per-app (client_id), not per-user, so this is process-wide
 # state shared by every SpotifyClient instance and every poll cycle.
 _spotify_blocked_until: datetime | None = None
@@ -409,7 +415,7 @@ def sync_currently_playing(
     access_token, rotated_refresh_token = client.refresh_access_token(refresh_token)
     
     current = client.currently_playing(access_token)
-    now = datetime.utcnow()
+    now = _utc_now()
     
     state = session.query(RealtimePlaybackStateRecord).filter(RealtimePlaybackStateRecord.user_id == user.id).first()
     if not state:
@@ -503,7 +509,7 @@ def sync_user(session, user: UserRecord, client: SpotifyClient, backend_url: str
     if rotated_refresh_token:
         user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)
     newest = max((datetime.fromisoformat(event["played_at"]) for event in events), default=None)
-    now = datetime.utcnow()
+    now = _utc_now()
     if checkpoint is None:
         checkpoint = CheckpointRecord(user_id=user.id, last_played_at=newest, last_polled_at=now, updated_at=now)
         session.add(checkpoint)
@@ -589,7 +595,7 @@ def sync_liked_tracks_for_user(
     else:
         liked_settings.liked_tracks_backfill_offset = None
         liked_settings.liked_tracks_catch_up_floor = None
-        liked_settings.liked_tracks_last_synced_at = datetime.utcnow()
+        liked_settings.liked_tracks_last_synced_at = _utc_now()
 
     if rotated_refresh_token:
         user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)
@@ -658,7 +664,7 @@ def sync_saved_albums_for_user(
         settings.saved_albums_backfill_offset = offset + len(raw_items)
     else:
         settings.saved_albums_backfill_offset = None
-        settings.saved_albums_last_synced_at = datetime.utcnow()
+        settings.saved_albums_last_synced_at = _utc_now()
 
     if rotated_refresh_token:
         user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)

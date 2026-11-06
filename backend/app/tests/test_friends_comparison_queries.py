@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from backend.app.datetime_utils import utc_now
 from backend.app.db import Base
 from backend.app.models import BlockedItem, Follow, ListeningEvent, User
 from backend.app.queries.analytics_queries import get_friends_comparison_data
@@ -29,7 +30,7 @@ def test_get_friends_comparison_no_following(db_session):
     db_session.add(user)
     db_session.commit()
 
-    now = datetime.utcnow()
+    now = utc_now()
     res = get_friends_comparison_data(
         db_session,
         user_id=1,
@@ -63,7 +64,7 @@ def test_get_friends_comparison_shared_overlap_and_leaderboard(db_session):
     )
     db_session.commit()
 
-    now = datetime.utcnow()
+    now = utc_now()
     events = []
 
     # Shared Artist: Lime Garden (Alice 3 plays, Bob 2 plays, Charlie 1 play)
@@ -210,7 +211,7 @@ def test_get_friends_comparison_blocked_item(db_session):
     db_session.add(BlockedItem(user_id=1, entity_type="artist", name="Lime Garden"))
     db_session.commit()
 
-    now = datetime.utcnow()
+    now = utc_now()
     # Both listened to Lime Garden and Yard Act
     for u in (1, 2):
         db_session.add(

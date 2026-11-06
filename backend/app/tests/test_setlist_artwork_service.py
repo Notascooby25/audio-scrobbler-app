@@ -9,6 +9,7 @@ import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
+from backend.app.datetime_utils import utc_now
 from backend.app.db import Base
 from backend.app.models import ArtworkCache, ListeningEvent, User
 from backend.app.services import blocks_service
@@ -239,7 +240,7 @@ def test_misses_are_retried_only_after_a_while(db_session: Session, lookups):
     assert _backfill(db_session)["lookups"] == 0
 
     for entry in db_session.query(ArtworkCache):
-        entry.cached_at = datetime.utcnow() - artwork.MISS_RETRY_AFTER - timedelta(minutes=1)
+        entry.cached_at = utc_now() - artwork.MISS_RETRY_AFTER - timedelta(minutes=1)
     db_session.commit()
     assert _backfill(db_session)["lookups"] == 2
 

@@ -5,6 +5,7 @@ from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+from backend.app.datetime_utils import utc_now
 from backend.app.db import Base
 from backend.app.models import AttendedConcert, SetlistApiUsage, SetlistCache
 
@@ -45,7 +46,7 @@ def test_setlist_models_crud() -> None:
         # Test SetlistApiUsage
         usage = SetlistApiUsage(
             id=1,
-            last_call_at=datetime.utcnow(),
+            last_call_at=utc_now(),
             daily_date="2026-10-28",
             daily_count=5,
         )

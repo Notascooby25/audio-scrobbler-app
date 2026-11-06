@@ -6,6 +6,8 @@ from collections import Counter
 from datetime import datetime, timedelta
 from typing import Any
 
+from ..datetime_utils import utc_now
+
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
@@ -119,7 +121,7 @@ class GigReportsService:
 
     def get_gig_bump(self, user_id: int, now: datetime | None = None) -> dict[str, Any]:
         """Average plays in the two weeks before and after each past gig."""
-        now = now or datetime.utcnow()
+        now = now or utc_now()
         window = timedelta(days=GIG_WINDOW_DAYS)
         one_day = timedelta(days=1)
         # Only gigs whose full "after" window has already passed

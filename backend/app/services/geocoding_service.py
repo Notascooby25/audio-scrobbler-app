@@ -4,7 +4,9 @@ import hashlib
 import logging
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import timedelta
+
+from ..datetime_utils import utc_now
 
 import httpx
 from sqlalchemy.orm import Session
@@ -47,7 +49,7 @@ def find_cached(db: Session, query: str) -> tuple[bool, tuple[float, float] | No
     and (False, None) when it hasn't been looked up or the answer has expired."""
     cached = (
         db.query(GeoCache)
-        .filter(GeoCache.cache_key == cache_key(query), GeoCache.expires_at > datetime.utcnow())
+        .filter(GeoCache.cache_key == cache_key(query), GeoCache.expires_at > utc_now())
         .first()
     )
     if cached is None:
@@ -87,7 +89,7 @@ def locate(db: Session, query: str) -> tuple[float, float] | None:
         except (KeyError, TypeError, ValueError):
             point = None
 
-    expires_at = datetime.utcnow() + (FOUND_TTL if point else MISS_TTL)
+    expires_at = utc_now() + (FOUND_TTL if point else MISS_TTL)
     db.merge(
         GeoCache(
             cache_key=cache_key(query),
