@@ -86,6 +86,18 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "whats-new-updates",
+    category: "General & Appearance",
+    question: "Where can I see what has changed in the latest update?",
+    answer: (
+      <p>
+        At the bottom of every page, click the <strong>vX.X.X • What's new</strong> link in the
+        footer. This opens a pop-up dialog highlighting the newest features and fixes in the current
+        version, with a button to view the full changelog history anytime.
+      </p>
+    ),
+  },
+  {
     id: "sync-closed-browser",
     category: "Sync & Scrobbles",
     question: "Does the app keep scrobbling if I close the browser?",

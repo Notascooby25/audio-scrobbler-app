@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.33.0",
+    date: "2026-11-06",
+    changes: [
+      "Footer What's New Dialog: Replaced the static changelog link in the footer with an interactive version button ('v0.33.0 • What's new') that opens a modal dialog highlighting the latest release changes with a direct link to view full historical changelog updates.",
+      "Mobile Header Navigation Alignment: Repositioned mobile navigation elements into a clean two-row header, placing the brand logo on the left with Profile, Connect, and Notifications outline icons in the top right, and the Menu toggle button neatly below the icons.",
+    ],
+  },
+  {
     version: "0.32.0",
     date: "2026-11-06",
     changes: [

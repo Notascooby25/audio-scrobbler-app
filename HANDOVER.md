@@ -429,6 +429,11 @@ the NAS listing.** The live setup has drifted from the repos before.
   outline SVG icons alongside `Notifications`. The `Play` page (`/overview`) now
   displays only `JukeboxCard` above `RediscoverCard`, and `SetlistsPage` uses the
   `Gigs` heading.
+- **v0.33.0 (2026-11-06):** Footer changelog link replaced with interactive
+  `v0.33.0 • What's new` button opening a modal dialog displaying latest release
+  changes with a shortcut to view all changes. Mobile header navigation aligned
+  so the logo and outline icons sit on the top row with the Menu toggle directly
+  below the icons.
 - **Also 2026-09-22/23:** listening heatmap, frontend redesign, nginx
   `client_max_body_size` raised for large imports, listening clock restored,
   friends-average removed from the UI, Library share-image feature,
