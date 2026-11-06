@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.33.1",
+    date: "2026-11-06",
+    changes: [
+      "Site Integrity & Backend Modernization: Modernized datetime handling across all backend services, queries, models, and background workers to use naive UTC helpers, eliminating over 1,600 Python 3.12+ deprecation warnings while ensuring 100% database schema compatibility.",
+      "Frontend Build & Navigation Cleanups: Resolved Vite dynamic import warnings in the Settings notifications panel with clean static imports, and enabled React Router v7 future flags (v7_startTransition and v7_relativeSplatPath) for future-proof route navigation.",
+    ],
+  },
+  {
     version: "0.33.0",
     date: "2026-11-06",
     changes: [
