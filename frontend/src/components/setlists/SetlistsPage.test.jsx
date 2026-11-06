@@ -427,7 +427,7 @@ describe("SetlistsPage", () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByRole("heading", { name: "@sam's Set Lists" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "@sam's Gigs" })).toBeInTheDocument();
     expect(await screen.findByText(/Rock City, Nottingham/i)).toBeInTheDocument();
     expect(setlistsApi.fetchAttendances).toHaveBeenCalledWith({ token: "test-token", userId: 2 });
     expect(screen.getByRole("tab", { name: /^gigs/i })).toBeInTheDocument();

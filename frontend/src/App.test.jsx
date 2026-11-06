@@ -24,8 +24,8 @@ vi.mock("./api", () => ({
   fetchStatsSummary: vi.fn().mockResolvedValue({ total_scrobbles: 0, top_artist: null }),
   fetchStatsChart: vi.fn().mockResolvedValue({ entries: [] }),
   fetchRediscoverTracks: vi.fn().mockResolvedValue({ tracks: [] }),
-  fetchJukeboxAlbums: vi.fn().mockResolvedValue({ albums: [], source: 'spotify_saved' }),
-  recordJukeboxPick: vi.fn().mockResolvedValue({ status: 'ok' }),
+  fetchJukeboxAlbums: vi.fn().mockResolvedValue({ albums: [], source: "spotify_saved" }),
+  recordJukeboxPick: vi.fn().mockResolvedValue({ status: "ok" }),
 }));
 
 import {
@@ -55,9 +55,9 @@ describe("App", () => {
     return render(<App />);
   }
 
-  it("renders the new Overview page at the root route", () => {
+  it("renders the Play page at the root route", () => {
     render(<App />);
-    expect(screen.getByRole("heading", { name: "Overview" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Play" })).toBeInTheDocument();
   });
 
   it("shows an error after Spotify authorization is cancelled", () => {

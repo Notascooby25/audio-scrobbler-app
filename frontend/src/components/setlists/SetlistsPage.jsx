@@ -346,7 +346,7 @@ export default function SetlistsPage() {
       <header className="sfm-page-header">
         {isViewing ? (
           <>
-            <h1>@{viewedProfile?.username || "..."}&apos;s Set Lists</h1>
+            <h1>@{viewedProfile?.username || "..."}&apos;s Gigs</h1>
             <p className="sfm-page-intro">
               The gigs they&apos;ve logged. Their notes stay private.{" "}
               <Link className="sfm-link" to={`/profile/${viewUserId}`}>
@@ -356,7 +356,7 @@ export default function SetlistsPage() {
           </>
         ) : (
           <>
-            <h1>Set Lists</h1>
+            <h1>Gigs</h1>
             <p className="sfm-page-intro">
               Track your concert attendances, live song history, and artist stats
             </p>

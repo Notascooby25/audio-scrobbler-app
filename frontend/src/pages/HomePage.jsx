@@ -628,15 +628,15 @@ export default function HomePage() {
       {status === "ready" && (
         <div className="connect-handoff-card">
           <div className="connect-handoff-content">
-            <h4>Explore Analytics & Reports</h4>
+            <h4>Explore Play & Reports</h4>
             <p>
-              Looking for deeper insights? Explore listening charts in Overview or view breakdown
-              reports in Reports.
+              Looking for something to spin or deeper insights? Open the Jukebox & Time Capsule in
+              Play or view breakdown reports in Reports.
             </p>
           </div>
           <div className="connect-handoff-actions">
             <Link to="/overview" className="btn-secondary">
-              Overview →
+              Play →
             </Link>
             <Link to="/reports" className="btn-secondary">
               Reports →
