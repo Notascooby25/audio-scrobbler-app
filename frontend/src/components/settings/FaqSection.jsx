@@ -98,6 +98,18 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "sign-out-cache",
+    category: "General & Appearance",
+    question: "How do I sign out, and does it clear my browser cache?",
+    answer: (
+      <p>
+        You can sign out anytime using the <strong>Sign out</strong> button on your Profile page or
+        from the Spotify connection card on the Home page. Signing out removes your local session
+        tokens and automatically purges all offline application cache storage from your browser.
+      </p>
+    ),
+  },
+  {
     id: "sync-closed-browser",
     category: "Sync & Scrobbles",
     question: "Does the app keep scrobbling if I close the browser?",

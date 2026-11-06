@@ -440,6 +440,16 @@ the NAS listing.** The live setup has drifted from the repos before.
   over 1,600 Python 3.12+ warnings. Cleaned up Vite frontend bundle dynamic
   imports in `SettingsPage.jsx` and added React Router v7 future flags
   (`v7_startTransition`, `v7_relativeSplatPath`).
+- **v0.34.0 (2026-11-06):** Data protection, security, and Spotify connection
+  resilience (Phase 1). Hardened Spotify OAuth token rotation with immediate
+  transaction commits (`db.commit()`), added in-memory access token caching in
+  the 10-second playback polling loop to eliminate over 17,000 API calls/day,
+  isolated service worker offline caching strictly to static shell assets with
+  CacheStorage purging upon sign-out, added accessible Sign Out buttons to
+  Profile and Home, added SSRF protection to YouTube lookups and push
+  subscriptions, shielded worker-internal routes and metrics from Nginx ingress,
+  switched worker token auth to constant-time comparison, and added pre-migration
+  database snapshot safety checks.
 - **Also 2026-09-22/23:** listening heatmap, frontend redesign, nginx
   `client_max_body_size` raised for large imports, listening clock restored,
   friends-average removed from the UI, Library share-image feature,

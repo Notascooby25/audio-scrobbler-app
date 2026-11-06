@@ -53,16 +53,12 @@ def test_realtime_sync_reuses_cached_access_token(monkeypatch):
     )
 
     # First call: must call refresh_access_token
-    res1 = sync_currently_playing(
-        session, user, settings, client, "http://backend:8000", "token"
-    )
+    res1 = sync_currently_playing(session, user, settings, client, "http://backend:8000", "token")
     assert res1 is True
     assert client.refresh_access_token.call_count == 1
 
     # Second call immediately after: should reuse cached token and NOT call refresh_access_token again
-    res2 = sync_currently_playing(
-        session, user, settings, client, "http://backend:8000", "token"
-    )
+    res2 = sync_currently_playing(session, user, settings, client, "http://backend:8000", "token")
     assert res2 is True
     assert client.refresh_access_token.call_count == 1, (
         "Expected access token to be cached in memory, but refresh_access_token was called again"
@@ -110,10 +106,7 @@ def test_realtime_sync_refreshes_on_401(monkeypatch):
         lambda cipher, key: "plain-refresh-token",
     )
 
-    res = sync_currently_playing(
-        session, user, settings, client, "http://backend:8000", "token"
-    )
+    res = sync_currently_playing(session, user, settings, client, "http://backend:8000", "token")
     assert res is True
     assert client.refresh_access_token.call_count == 2
     session.close()
-

@@ -300,6 +300,12 @@ export default function UserGuideSection() {
             <em>Settings → Data</em> to download your complete listening history anytime as a clean
             spreadsheet CSV or structured JSON file.
           </li>
+          <li>
+            <strong>Signing Out &amp; Cache Privacy:</strong> Need to switch accounts or sign out on
+            a shared computer? You can sign out at any time from your Profile page or from the Home
+            page Spotify card. Signing out clears your local session tokens and automatically wipes
+            all offline application CacheStorage data from your browser.
+          </li>
         </ul>
       </article>
 
