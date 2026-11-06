@@ -28,10 +28,10 @@ const FAQ_DATA = [
     answer: (
       <>
         <p>
-          You can tap the heart icon next to any track or album in your Library, Overview top
-          charts, recent scrobbles, or Album Jukebox pick. Tapping an outline heart instantly saves
-          the song to your Spotify <em>Liked Songs</em> or the album to your Spotify{" "}
-          <em>Saved Albums</em>. Tapping a filled red heart removes it.
+          You can tap the heart icon next to any track or album in your Library, recent scrobbles,
+          or Album Jukebox pick. Tapping an outline heart instantly saves the song to your Spotify{" "}
+          <em>Liked Songs</em> or the album to your Spotify <em>Saved Albums</em>. Tapping a filled
+          red heart removes it.
         </p>
         <p>
           <strong>Why do I see a reconnect prompt?</strong> Saving songs to Spotify requires the{" "}
@@ -310,7 +310,7 @@ const FAQ_DATA = [
     answer: (
       <>
         <p>
-          When you log attendance for a concert under the <strong>Set Lists</strong> tab, the app
+          When you log attendance for a concert under the <strong>Gigs</strong> tab, the app
           retrieves the artist's full setlist and checks for any support bands who played at that
           venue that evening.
         </p>
@@ -329,8 +329,8 @@ const FAQ_DATA = [
     question: "Can I import past attended gigs from my Setlist.fm profile (or a friend's profile)?",
     answer: (
       <p>
-        <strong>Yes!</strong> Click the <strong>Import / Export</strong> button in the Set Lists
-        tab, enter their Setlist.fm username or paste their full profile link (e.g.{" "}
+        <strong>Yes!</strong> Click the <strong>Import / Export</strong> button in the Gigs tab,
+        enter their Setlist.fm username or paste their full profile link (e.g.{" "}
         <code>crispylettuce</code> or <code>https://www.setlist.fm/user/crispylettuce</code>), and
         click Preview Gigs. You can review the full concert list and tick checkboxes for only the
         gigs you actually attended before importing, or use Select All / Deselect All. The app will

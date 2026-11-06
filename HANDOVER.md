@@ -424,6 +424,11 @@ the NAS listing.** The live setup has drifted from the repos before.
 - **v0.28.4:** CSV and JSON exports carry `is_festival` and `festival_name`.
   File import reads them, and `update_existing` (`FileImportRequest`) lets an
   edited export update festival fields on gigs already logged.
+- **v0.32.0 (2026-11-06):** Header navigation renamed `Overview` → `Play` and
+  `Set Lists` → `Gigs`, with `Profile` and `Connect` converted to right-grouped
+  outline SVG icons alongside `Notifications`. The `Play` page (`/overview`) now
+  displays only `JukeboxCard` above `RediscoverCard`, and `SetlistsPage` uses the
+  `Gigs` heading.
 - **Also 2026-09-22/23:** listening heatmap, frontend redesign, nginx
   `client_max_body_size` raised for large imports, listening clock restored,
   friends-average removed from the UI, Library share-image feature,
