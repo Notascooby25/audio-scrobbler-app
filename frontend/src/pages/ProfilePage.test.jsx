@@ -201,4 +201,30 @@ describe("ProfilePage", () => {
     );
     expect(screen.getByRole("link", { name: "Following" })).toHaveAttribute("href", "/following");
   });
+
+  it("renders a Sign out button when viewing own profile and clears session on click", async () => {
+    localStorage.setItem(
+      "audio-scrobbler-session",
+      JSON.stringify({ userId: 1, accessToken: "demo-token" })
+    );
+    fetchUserProfile.mockResolvedValue({
+      id: 1,
+      username: "test-user",
+      display_name: "Test User",
+      follower_count: 5,
+      following_count: 3,
+      is_self: true,
+      is_following: false,
+      can_view_details: true,
+      last_scrobble: null,
+    });
+
+    renderProfile(1);
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    expect(localStorage.getItem("audio-scrobbler-session")).toBeNull();
+  });
 });
