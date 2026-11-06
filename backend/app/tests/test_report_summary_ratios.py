@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
+from backend.app.datetime_utils import utc_now
 from backend.app.db import Base
 from backend.app.models import ListeningEvent, User
 from backend.app.services.analytics_service import get_report_summary
@@ -46,7 +47,7 @@ def pg_session():
 
 def test_report_summary_exposes_unique_counts(pg_session):
     db = pg_session
-    now = datetime.utcnow()
+    now = utc_now()
     
     # 4 scrobbles
     # 2 unique artists (A1, A2)

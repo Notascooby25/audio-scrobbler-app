@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.app.api import analytics as analytics_module
+from backend.app.datetime_utils import utc_now
 from backend.app.db import Base
 from backend.app.main import app
 from backend.app.models import Follow, ListeningEvent, User
@@ -32,7 +33,7 @@ def _seed(db):
     db.add(User(id=1, spotify_user_id="demo", username="demo", display_name="Demo", refresh_token_cipher="c", is_active=True))
     db.commit()
 
-    now = datetime.utcnow()
+    now = utc_now()
     offsets_days = [1, 1, 1, 10, 10, 100, 400]
     for index, days_ago in enumerate(offsets_days):
         db.add(
@@ -133,7 +134,7 @@ def test_reports_summary_last_month_includes_broader_window():
 
 
 def test_reports_summary_custom_range_filters_explicitly():
-    now = datetime.utcnow()
+    now = utc_now()
     start_date = (now - timedelta(days=150)).date().isoformat()
     end_date = now.date().isoformat()
     response = client.get(f"/reports/summary?range=custom&start_date={start_date}&end_date={end_date}")
@@ -203,7 +204,7 @@ def test_reports_summary_following_average_reflects_a_followed_users_scrobbles()
     db.add(User(id=2, spotify_user_id="friend", username="frienduser", display_name="Friend", refresh_token_cipher="c", is_active=True))
     db.add(Follow(follower_id=1, followee_id=2))
     db.commit()
-    now = datetime.utcnow()
+    now = utc_now()
     # 3 plays inside the last.month window (matches the demo user's own window),
     # 1 well outside it, so the average must reflect 3, not 4.
     for i, days_ago in enumerate([1, 5, 10, 200]):

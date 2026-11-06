@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from ..datetime_utils import utc_now
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -114,7 +114,7 @@ def export_rediscover_playlist(
             detail="No Spotify tracks found to create a playlist.",
         )
 
-    now = datetime.utcnow()
+    now = utc_now()
     if body.title:
         title = body.title
     elif body.mode == "anniversary":

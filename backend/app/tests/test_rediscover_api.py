@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
@@ -10,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.app.api.deps import get_current_user
+from backend.app.datetime_utils import utc_now
 from backend.app.db import Base, get_db
 from backend.app.main import app
 from backend.app.models import BlockedItem, ListeningEvent
@@ -78,7 +79,7 @@ def test_rediscover_requires_authentication(db_session):
 
 
 def test_rediscover_forgotten_favorites(client, db_session):
-    now = datetime.utcnow()
+    now = utc_now()
 
     # Track A: 4 plays, all > 100 days ago -> Qualified forgotten favorite
     for i in range(4):
@@ -181,7 +182,7 @@ def test_rediscover_forgotten_favorites(client, db_session):
 
 
 def test_rediscover_on_this_day(client, db_session):
-    now = datetime.utcnow()
+    now = utc_now()
 
     # Track 1yr: played exactly 365 days ago
     db_session.add(
@@ -253,7 +254,7 @@ def test_rediscover_on_this_day(client, db_session):
 
 
 def test_export_rediscover_playlist_success(client, db_session):
-    now = datetime.utcnow()
+    now = utc_now()
 
     # Seed 2 forgotten favorites
     for i in range(3):

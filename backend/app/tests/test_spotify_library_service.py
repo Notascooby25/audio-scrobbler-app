@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 import requests
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from backend.app.datetime_utils import utc_now
 from backend.app.db import Base
 from backend.app.models import ListeningEvent, User
 from backend.app.services import spotify_library_service
@@ -129,7 +128,7 @@ def test_backfill_scrobble_artwork_updates_events_missing_artwork(monkeypatch):
         track_id="spotify:track:track-1",
         track_name="Track One",
         artist_name="Artist One",
-        played_at=datetime.utcnow(),
+        played_at=utc_now(),
         source="spotify",
         play_id="track-1:1",
     )

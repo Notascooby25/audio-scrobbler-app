@@ -5,6 +5,7 @@ from datetime import datetime
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
+from ..datetime_utils import utc_now
 from ..models import Follow, ListeningEvent, User
 from ..queries.analytics_queries import build_report_period_count_query
 from ..schemas.users import LastScrobble, UserProfileResponse
@@ -232,7 +233,7 @@ def copy_scrobbles(db: Session, target_user_id: int, current_user_id: int, start
                     play_id=ev.play_id,
                     payload=ev.payload,
                     raw_metadata=ev.raw_metadata,
-                    created_at=datetime.utcnow()
+                    created_at=utc_now(),
                 )
             )
             

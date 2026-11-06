@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.app.api import analytics as analytics_module
+from backend.app.datetime_utils import utc_now
 from backend.app.db import Base
 from backend.app.main import app
 from backend.app.models import Follow, ListeningEvent, User
@@ -38,7 +39,7 @@ def setup_function():
     db.commit()
 
     db.add(Follow(follower_id=1, followee_id=2))
-    now = datetime.utcnow()
+    now = utc_now()
     # Both listened to Lime Garden
     db.add(
         ListeningEvent(
@@ -99,8 +100,8 @@ def test_friends_comparison_route_custom_dates():
     app.dependency_overrides[analytics_module.get_db] = lambda: db
     app.dependency_overrides[analytics_module.get_current_user] = lambda: MockUser(1)
 
-    start_date = (datetime.utcnow() - timedelta(days=2)).date().isoformat()
-    end_date = (datetime.utcnow() + timedelta(days=1)).date().isoformat()
+    start_date = (utc_now() - timedelta(days=2)).date().isoformat()
+    end_date = (utc_now() + timedelta(days=1)).date().isoformat()
 
     response = client.get(f"/reports/friends-comparison?range=custom&start_date={start_date}&end_date={end_date}")
     assert response.status_code == 200

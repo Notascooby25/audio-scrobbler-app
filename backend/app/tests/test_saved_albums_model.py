@@ -1,4 +1,4 @@
-from datetime import datetime
+from backend.app.datetime_utils import utc_now
 from backend.app.models import SavedAlbum
 
 
@@ -15,7 +15,7 @@ def test_saved_album_instantiation():
         label="Apple Records",
         artwork_url="https://img.spotify.com/123",
         spotify_url="https://open.spotify.com/album/album123",
-        added_at=datetime.utcnow(),
+        added_at=utc_now(),
     )
     assert album.album_name == "Abbey Road"
     assert album.release_year == 1969

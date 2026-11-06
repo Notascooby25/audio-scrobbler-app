@@ -4,6 +4,8 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any
 
+from ..datetime_utils import utc_now
+
 from sqlalchemy.orm import Session
 
 from ..models import Notification, SetlistImportJob
@@ -19,7 +21,7 @@ MAX_GIGS_PER_RUN = 200
 
 def next_quota_reset(now: datetime | None = None) -> datetime:
     """The Setlist.fm daily count resets at midnight UTC; resume a few minutes after."""
-    now = now or datetime.utcnow()
+    now = now or utc_now()
     return datetime.combine(now.date() + timedelta(days=1), datetime.min.time()) + timedelta(minutes=5)
 
 
@@ -72,7 +74,7 @@ def save_paused_import(
     job.total = max(job.total or 0, int(result.get("total_found") or 0))
     job.message = result.get("message")
     # Quota: wait for the reset. Budget: carry on at the next worker run.
-    job.resume_after = next_quota_reset() if quota_hit else datetime.utcnow()
+    job.resume_after = next_quota_reset() if quota_hit else utc_now()
     db.commit()
     return job
 
@@ -125,7 +127,7 @@ def resume_due_jobs(db: Session, setlist_service: SetlistService | None = None, 
     svc = setlist_service or SetlistService(db=db)
     jobs = (
         db.query(SetlistImportJob)
-        .filter(SetlistImportJob.status == "paused", SetlistImportJob.resume_after <= datetime.utcnow())
+        .filter(SetlistImportJob.status == "paused", SetlistImportJob.resume_after <= utc_now())
         .order_by(SetlistImportJob.resume_after)
         .limit(limit)
         .all()

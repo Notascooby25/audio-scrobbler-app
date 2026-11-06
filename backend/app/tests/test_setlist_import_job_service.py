@@ -7,6 +7,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+from backend.app.datetime_utils import utc_now
 from backend.app.db import Base
 from backend.app.models import AttendedConcert, Notification, SetlistImportJob
 from backend.app.services import setlist_import_job_service as jobs
@@ -53,7 +54,7 @@ def _service(fail_page: int | None = None) -> MagicMock:
 
 
 def _make_due(db: Session, job: SetlistImportJob) -> None:
-    job.resume_after = datetime.utcnow() - timedelta(minutes=1)
+    job.resume_after = utc_now() - timedelta(minutes=1)
     db.commit()
 
 
@@ -93,7 +94,7 @@ def test_large_selective_import_is_spread_across_runs(db_session: Session):
         assert first["repaused"] == 1
         assert job.payload == ["cc03"]
         # Budget pauses carry on at the next run, not tomorrow
-        assert job.resume_after <= datetime.utcnow()
+        assert job.resume_after <= utc_now()
 
         second = jobs.resume_due_jobs(db_session, setlist_service=_service())
     db_session.refresh(job)

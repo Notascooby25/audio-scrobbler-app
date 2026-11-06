@@ -434,6 +434,12 @@ the NAS listing.** The live setup has drifted from the repos before.
   changes with a shortcut to view all changes. Mobile header navigation aligned
   so the logo and outline icons sit on the top row with the Menu toggle directly
   below the icons.
+- **v0.33.1 (2026-11-06):** Site integrity audit cleanups. Modernized all backend
+  services, queries, models, background workers, and unit tests to replace
+  deprecated `datetime.utcnow()` with naive UTC helper `utc_now()`, eliminating
+  over 1,600 Python 3.12+ warnings. Cleaned up Vite frontend bundle dynamic
+  imports in `SettingsPage.jsx` and added React Router v7 future flags
+  (`v7_startTransition`, `v7_relativeSplatPath`).
 - **Also 2026-09-22/23:** listening heatmap, frontend redesign, nginx
   `client_max_body_size` raised for large imports, listening clock restored,
   friends-average removed from the UI, Library share-image feature,

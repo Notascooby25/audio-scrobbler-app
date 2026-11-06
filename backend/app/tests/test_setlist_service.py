@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+from backend.app.datetime_utils import utc_now
 from backend.app.db import Base
 from backend.app.models import SetlistApiUsage, SetlistCache
 from backend.app.services.setlist_service import (
@@ -59,7 +60,7 @@ def test_get_setlist_uses_cache(db_session: Session):
     cache = SetlistCache(
         cache_key="setlist:abc12345",
         response_json=mock_response,
-        expires_at=datetime.utcnow() + timedelta(days=7),
+        expires_at=utc_now() + timedelta(days=7),
     )
     db_session.add(cache)
     db_session.commit()
@@ -246,13 +247,13 @@ def test_venue_date_lookup_is_cached_and_empty_results_expire_quickly(db_session
     assert mock_search.call_count == 1
     assert [s["id"] for s in again] == ["sp_1"]
     found = db_session.get(SetlistCache, "venue-date:v1:27-06-2026")
-    assert found.expires_at > datetime.utcnow() + timedelta(days=6)
+    assert found.expires_at > utc_now() + timedelta(days=6)
 
     with patch.object(service, "search_setlists_raw", return_value={}):
         assert service.get_venue_date_setlists(venue_id="v2", event_date_str="01-01-2027") == []
     empty = db_session.get(SetlistCache, "venue-date:v2:01-01-2027")
     # Never cache an empty answer for long (Setlist.fm may index the show later)
-    assert empty.expires_at < datetime.utcnow() + timedelta(hours=2)
+    assert empty.expires_at < utc_now() + timedelta(hours=2)
 
 
 def _fake_response(payload: dict, status_code: int = 200) -> MagicMock:

@@ -17,6 +17,8 @@ import {
   downloadScrobblesExport,
   requestSpotifyAuthorization,
   redirectToAuthorization,
+  fetchNotifications,
+  markNotificationsRead,
 } from "../api";
 import { readSession } from "../session";
 import ImportProgressBar from "../components/ImportProgressBar";
@@ -136,23 +138,21 @@ export default function SettingsPage() {
   useEffect(() => {
     if (activeTab === "notifications" && session?.accessToken) {
       setNotificationsLoading(true);
-      import("../api").then(({ fetchNotifications, markNotificationsRead }) => {
-        fetchNotifications({ token: session.accessToken })
-          .then((data) => {
-            setNotifications(data);
-            setNotificationsLoading(false);
-            // Mark them as read if there are unread ones
-            if (data.some((n) => !n.is_read)) {
-              markNotificationsRead({ token: session.accessToken }).then(() => {
-                window.dispatchEvent(new Event("notifications_read"));
-              });
-            }
-          })
-          .catch((e) => {
-            console.error(e);
-            setNotificationsLoading(false);
-          });
-      });
+      fetchNotifications({ token: session.accessToken })
+        .then((data) => {
+          setNotifications(data);
+          setNotificationsLoading(false);
+          // Mark them as read if there are unread ones
+          if (data.some((n) => !n.is_read)) {
+            markNotificationsRead({ token: session.accessToken }).then(() => {
+              window.dispatchEvent(new Event("notifications_read"));
+            });
+          }
+        })
+        .catch((e) => {
+          console.error(e);
+          setNotificationsLoading(false);
+        });
     }
   }, [activeTab, session?.accessToken]);
 

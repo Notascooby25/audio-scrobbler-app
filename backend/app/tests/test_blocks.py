@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.app.api import blocks as blocks_module
+from backend.app.datetime_utils import utc_now
 from backend.app.db import Base
 from backend.app.main import app
 from backend.app.models import BlockedItem, ListeningEvent, User
@@ -29,7 +30,7 @@ def _seed(db):
     db.query(User).delete()
     db.commit()
     db.add(User(id=1, spotify_user_id="demo", username="demo", display_name="Demo", refresh_token_cipher="c", is_active=True))
-    now = datetime.utcnow()
+    now = utc_now()
     rows = [
         ("Football Weekly", "The Guardian", "Football Weekly Podcast", 1),
         ("Football Weekly Extra", "The Guardian", "Football Weekly Podcast", 2),
@@ -128,7 +129,7 @@ def test_delete_selected_scrobbles_only_removes_current_user_rows():
         track_name="Other",
         artist_name="Other Artist",
         album_name="Other Album",
-        played_at=datetime.utcnow(),
+        played_at=utc_now(),
         source="spotify",
         play_id="other-user-track",
     ))

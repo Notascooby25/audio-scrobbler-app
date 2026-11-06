@@ -25,6 +25,10 @@ class ListeningEvent(Base):
     artist_name = Column(String, nullable=False)
     played_at = Column(DateTime, nullable=False)
 
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 class Notification(Base):
     __tablename__ = "notifications"
     id = Column(Integer, primary_key=True)
@@ -33,7 +37,8 @@ class Notification(Base):
     message = Column(Text, nullable=False)
     type = Column(String, nullable=False, default="general")
     is_read = Column(Boolean, nullable=False, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now)
+
 
 class PushSubscription(Base):
     __tablename__ = "push_subscriptions"

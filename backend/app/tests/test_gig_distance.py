@@ -7,6 +7,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+from backend.app.datetime_utils import utc_now
 from backend.app.db import Base
 from backend.app.models import AttendedConcert, GeoCache, UserPreferences
 from backend.app.services import gig_distance_service, geocoding_service
@@ -39,7 +40,7 @@ def _cache_place(db: Session, query: str, point: tuple[float, float] | None) -> 
             cache_key=cache_key(query),
             lat=point[0] if point else None,
             lng=point[1] if point else None,
-            expires_at=datetime.utcnow() + timedelta(days=1),
+            expires_at=utc_now() + timedelta(days=1),
         )
     )
     db.commit()

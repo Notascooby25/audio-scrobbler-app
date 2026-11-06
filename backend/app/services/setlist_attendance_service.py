@@ -5,6 +5,8 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
+from ..datetime_utils import utc_now
+
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
@@ -59,7 +61,7 @@ def extract_songs_from_setlist_data(data: dict[str, Any]) -> list[str]:
 
 def parse_event_date(date_str: str | None) -> datetime:
     if not date_str:
-        return datetime.utcnow()
+        return utc_now()
     # Setlist.fm format is typically "dd-MM-yyyy" (e.g., "27-06-2026")
     try:
         return datetime.strptime(date_str, "%d-%m-%Y")
@@ -67,7 +69,7 @@ def parse_event_date(date_str: str | None) -> datetime:
         try:
             return datetime.fromisoformat(date_str)
         except ValueError:
-            return datetime.utcnow()
+            return utc_now()
 
 
 class SetlistAttendanceService:

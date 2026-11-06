@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta
 
+from ..datetime_utils import utc_now
+
 from sqlalchemy import Select, Text, case, cast, exists, func, or_, select
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session
@@ -231,7 +233,7 @@ def build_top_entities_query(
     else:
         days = CHART_RANGE_TO_DAYS.get(range_key)
         if days is not None:
-            cutoff = datetime.utcnow() - timedelta(days=days)
+            cutoff = utc_now() - timedelta(days=days)
             statement = statement.where(ListeningEvent.played_at >= cutoff)
         elif range_key != "overall":
             raise ValueError(f"Unsupported chart range: {range_key!r}")
@@ -246,7 +248,7 @@ def resolve_date_range(
     now: datetime | None = None,
 ) -> tuple[datetime, datetime, datetime, datetime, str]:
     """Resolve a preset or custom date range into (period_start, period_end, previous_start, previous_end, granularity)."""
-    now = now or datetime.utcnow()
+    now = now or utc_now()
 
     if range_key == "last.week":
         period_start, period_end, granularity = now - timedelta(days=7), now, "day"
@@ -803,7 +805,7 @@ def get_forgotten_favorites(
     now: datetime | None = None,
 ) -> list[dict]:
     if now is None:
-        now = datetime.utcnow()
+        now = utc_now()
     cutoff_date = now - timedelta(days=days_unplayed)
 
     spotify_track_id_expr = func.coalesce(
@@ -867,7 +869,7 @@ def get_on_this_day_tracks(
     now: datetime | None = None,
 ) -> list[dict]:
     if now is None:
-        now = datetime.utcnow()
+        now = utc_now()
 
     windows = []
     for years_back in years_back_range:

@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import re
 import time
-from datetime import datetime
 from typing import Any
 
 from fastapi import HTTPException
@@ -12,6 +11,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..config import settings
+from ..datetime_utils import utc_now
 from ..models import GenreCache, LikedTrack, ListeningEvent, SavedAlbum, User
 from ..queries.analytics_queries import build_pending_genre_artist_ids_query
 from ..schemas.spotify_library import (
@@ -232,9 +232,9 @@ def upsert_genre_cache(db: Session, items: list[dict[str, object]]) -> int:
         row = existing_by_id.get(artist_id)
         if row:
             row.genres = genres
-            row.cached_at = datetime.utcnow()
+            row.cached_at = utc_now()
         else:
-            db.add(GenreCache(artist_spotify_id=artist_id, genres=genres, cached_at=datetime.utcnow()))
+            db.add(GenreCache(artist_spotify_id=artist_id, genres=genres, cached_at=utc_now()))
     db.commit()
     return len(items)
 
@@ -368,7 +368,7 @@ def toggle_like_track(
                     artist_name=artist_name,
                     album_name=album_name,
                     artwork_url=artwork_url,
-                    added_at=datetime.utcnow(),
+                    added_at=utc_now(),
                 )
             )
             db.commit()
@@ -452,7 +452,7 @@ def toggle_like_album(
                     album_name=album_name,
                     artist_name=artist_name,
                     artwork_url=artwork_url,
-                    added_at=datetime.utcnow(),
+                    added_at=utc_now(),
                 )
             )
             db.commit()
