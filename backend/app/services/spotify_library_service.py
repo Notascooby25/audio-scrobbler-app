@@ -60,7 +60,7 @@ def _refresh_access_token(db: Session, user: User) -> str:
     rotated_token = token_data.get("refresh_token")
     if isinstance(rotated_token, str) and rotated_token:
         user.refresh_token_cipher = encrypt_refresh_token(rotated_token)
-        db.flush()
+        db.commit()
     return token_data["access_token"]
 
 

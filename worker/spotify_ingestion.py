@@ -413,6 +413,9 @@ def sync_currently_playing(
         return False
         
     access_token, rotated_refresh_token = client.refresh_access_token(refresh_token)
+    if rotated_refresh_token:
+        user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)
+        session.commit()
     
     current = client.currently_playing(access_token)
     now = _utc_now()
@@ -480,9 +483,6 @@ def sync_currently_playing(
             except Exception:
                 pass # will retry next tick if not skipped
                 
-    if rotated_refresh_token:
-        user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)
-        
     session.commit()
     return True
 
@@ -495,6 +495,9 @@ def sync_user(session, user: UserRecord, client: SpotifyClient, backend_url: str
     checkpoint = session.get(CheckpointRecord, user.id)
     after = checkpoint.last_played_at - timedelta(seconds=60) if checkpoint and checkpoint.last_played_at else None
     access_token, rotated_refresh_token = client.refresh_access_token(refresh_token)
+    if rotated_refresh_token:
+        user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)
+        session.commit()
     items = client.recently_played(access_token, after)
     events = []
     for item in items:
@@ -506,8 +509,6 @@ def sync_user(session, user: UserRecord, client: SpotifyClient, backend_url: str
             events.append(event)
     for event in events:
         submit_event_with_retries(backend_url, worker_token, event)
-    if rotated_refresh_token:
-        user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)
     newest = max((datetime.fromisoformat(event["played_at"]) for event in events), default=None)
     now = _utc_now()
     if checkpoint is None:
@@ -560,6 +561,9 @@ def sync_liked_tracks_for_user(
     except InvalidToken:
         return 0
     access_token, rotated_refresh_token = client.refresh_access_token(refresh_token)
+    if rotated_refresh_token:
+        user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)
+        session.commit()
 
     if starting_new_walk:
         liked_settings.liked_tracks_catch_up_floor = liked_settings.liked_tracks_watermark
@@ -597,8 +601,6 @@ def sync_liked_tracks_for_user(
         liked_settings.liked_tracks_catch_up_floor = None
         liked_settings.liked_tracks_last_synced_at = _utc_now()
 
-    if rotated_refresh_token:
-        user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)
     session.commit()
     return len(normalized)
 
@@ -623,6 +625,9 @@ def sync_saved_albums_for_user(
     except InvalidToken:
         return 0
     access_token, rotated_refresh_token = client.refresh_access_token(refresh_token)
+    if rotated_refresh_token:
+        user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)
+        session.commit()
 
     offset = settings.saved_albums_backfill_offset or 0
     raw_items = client.saved_albums(access_token, offset=offset)
@@ -666,8 +671,6 @@ def sync_saved_albums_for_user(
         settings.saved_albums_backfill_offset = None
         settings.saved_albums_last_synced_at = _utc_now()
 
-    if rotated_refresh_token:
-        user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)
     session.commit()
     return len(normalized)
 
