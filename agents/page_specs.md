@@ -17,12 +17,16 @@ Visual design rules are in `DESIGN.md` and `PRODUCT.md`.
 
 - Every route in `frontend/src/App.jsx` renders inside `Layout`, which contains
   `HeaderNav` and `Footer`.
-- The header links to **Play** (`/overview`), **Library** (`/library`),
-  **Reports** (`/reports`), and **Gigs** (`/setlists`, also active on `/gigs/*`)
+- Root path (`/`) redirects authenticated users to **Play** (`/play`) and signed-out visitors
+  to the welcome and onboarding hub at **Connect** (`/connect`).
+- The header links to **Play** (`/play`, alias `/overview`), **Library** (`/library`),
+  **Reports** (`/reports`), and **Gigs** (`/gigs`, alias `/setlists`, also active on `/gigs/*`)
   as text links, and groups outline SVG icons for **Profile** (`/profile`),
   **Connect** (`/connect`), and **Notifications** (`/settings?tab=notifications`)
-  on the far right across both desktop and mobile. It highlights the active page
-  and is accessible (ARIA and focus states).
+  on the far right across both desktop and mobile.
+- **Account Dropdown Menu:** Clicking the Profile icon opens an accessible dropdown menu
+  with quick navigation to Profile (`/profile`), Friends (`/following`), Settings (`/settings`),
+  Connect (`/connect`), and Sign out. It closes automatically on outside click, navigation, or Escape.
 - **Mobile Header (`@media (max-width: 720px)`):** Arranged via a 3-row CSS Grid:
   - Row 1: Brand title on left, 3 outline action icons on top-right.
   - Row 2: `Menu` toggle button on the right directly below the action icons.
@@ -83,7 +87,7 @@ Visual design rules are in `DESIGN.md` and `PRODUCT.md`.
 
 ---
 
-## 2. Play: `/` and `/overview`
+## 2. Play: `/play` (alias `/overview`)
 
 Active album discovery and musical memories hub (`<h1>Play</h1>`).
 
@@ -190,7 +194,7 @@ Organized into a 3-card Data Sources Hub with an accessible `<h1>` heading ("Con
 | Recent ingestion feed                                                       | `GET /analytics/recent-scrobbles` (interactive like heart saves/unlikes tracks on Spotify) |
 | Developer bypass tools                                                      | Development only (`import.meta.env.DEV`), stripped from production builds                  |
 
-## 8a. Gigs: `/setlists` and gig pages `/gigs/:id`
+## 8a. Gigs: `/gigs` (alias `/setlists`) and gig pages `/gigs/:id`
 
 Setlist.fm-style concert diary (`<h1>Gigs</h1>` or `<h1>@username's Gigs</h1>`). Styled with plain `sfm-*` classes in `styles.css`
 (Tailwind is **not** installed). Gig pages live at `/gigs/:id`, not under

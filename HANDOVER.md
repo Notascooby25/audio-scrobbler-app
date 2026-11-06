@@ -450,6 +450,16 @@ the NAS listing.** The live setup has drifted from the repos before.
   subscriptions, shielded worker-internal routes and metrics from Nginx ingress,
   switched worker token auth to constant-time comparison, and added pre-migration
   database snapshot safety checks.
+- **v0.35.0 (2026-11-06):** Navigation, menus, and visual polish (Phase 2).
+  Introduced an accessible Account dropdown menu in the Profile outline icon in
+  `HeaderNav` with one-click shortcuts to Profile, Friends (`/following`),
+  Settings, Connect, and Sign out; configured automatic first-visit redirection
+  from root (`/`) to the Connect welcome hub (`/connect`) when signed out, with
+  clear connection guidance on Profile and Gigs; established canonical routes
+  `/play` and `/gigs` with backward-compatible redirects from `/overview` and
+  `/setlists`; standardized page category eyebrows across all primary sections
+  and promoted Profile heading to a semantic `<h1>`; and unified secondary button,
+  retry button, and badge styling in `styles.css`.
 - **Also 2026-09-22/23:** listening heatmap, frontend redesign, nginx
   `client_max_body_size` raised for large imports, listening clock restored,
   friends-average removed from the UI, Library share-image feature,

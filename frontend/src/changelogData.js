@@ -1,5 +1,16 @@
 export const CHANGELOG = [
   {
+    version: "0.35.0",
+    date: "2026-11-06",
+    changes: [
+      "Profile Account Dropdown Menu: Added an accessible dropdown menu to the Profile outline icon in the top navigation bar, offering quick one-click shortcuts to Profile, Friends, Settings, Connect, and Sign out across desktop and mobile.",
+      "First-Visit Redirection & Connection Guidance: Visiting the root web address without an active session now automatically redirects to the Connect & Data Sources welcome hub, preventing empty dashboard states for new visitors and providing clear connection guidance across Profile and Gigs.",
+      "Canonical Navigation Routes (/play & /gigs): Established clean, canonical routes for /play and /gigs with seamless backward-compatible redirects from /overview and /setlists.",
+      "Standardized Page Eyebrows & Heading Hierarchy: Aligned category eyebrows across all primary sections (Jukebox, Collection, Profile, Community, Preferences, Live music) and promoted Profile to a semantic level-1 heading (<h1>) for screen readers and accessibility.",
+      "Unified Secondary Button Styling: Standardized subtle, flat-by-default outline styling across all secondary buttons, retry actions, and status badges in both light and dark themes.",
+    ],
+  },
+  {
     version: "0.34.0",
     date: "2026-11-06",
     changes: [
