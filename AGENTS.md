@@ -26,6 +26,8 @@
 - **Button Text-Transform & Case Sensitivity:** The global stylesheet defines `button { text-transform: uppercase; }`. Any button rendering semantic mixed-case prose, release versions (e.g. `v0.33.0 • What's new`), or modal action buttons must explicitly declare `text-transform: none;` in its scoped class.
 - **Mobile Header Grid Layout Invariant:** On mobile viewports (`@media (max-width: 720px)`), the header topbar uses CSS Grid (`grid-template-areas: "brand icons" ". toggle" "links links"`). The brand title sits on the left with the 3 outline action icons (`Profile`, `Connect`, `Notifications`) on the top right. The `Menu` toggle button sits directly below the icons on row 2. When open, navigation links expand on row 3 horizontally beneath the toggle (`flex-direction: row; justify-content: flex-end; flex-wrap: wrap;`), never floating left or displacing the top-row icons.
 - **Frontend Component Test Cleanup:** Because `vitest.config.js` does not set `globals: true`, always import and call `afterEach(() => cleanup())` from `@testing-library/react` in component tests that render overlays, dialogs, or multiple component instances to prevent DOM element leakage across tests.
+- **Route Redirects & Search Parameters Preservation:** When redirecting deprecated or canonical URL paths (e.g. `/overview` → `/play`, `/setlists` → `/gigs`), never use a bare `<Navigate to="..." replace />` that drops query parameters. Always append `location.search` (e.g. using a `RedirectWithSearch` helper component) so that shared links, follower views (`?userId=...`), active tab selections (`?tab=...`), and state keys are preserved across redirects.
+- **Playwright Locator Specificity with Common Button & Link Labels:** In browser end-to-end tests, button text matching artist names, common actions, or navigation tabs can match multiple elements or substrings. Always use exact matching (`page.getByRole("button", { name: "...", exact: true })`) to prevent Playwright strict mode violation errors when elements share partial text.
 
 # Linter, Formatter & Test Commands
 - **Python Linter & Formatter (Ruff):**
@@ -59,10 +61,11 @@
   bash scripts/preview_settings_check.sh   # settings this branch expects versus live; no values leave the server
   cd frontend && node e2e/preview-shots.mjs <folder-outside-this-repo> /reports /library   # desktop and phone screenshots; they show real data
   ```
-- **Frontend End-to-End Tests (when changing navigation or date filtering):**
+- **Frontend End-to-End Tests (Mandatory Before Completion on Nav/Routes/Filters):**
   ```bash
   cd frontend && npm run test:e2e
   ```
+  Whenever modifying routes, redirects, primary navigation, header menus, or date/filter parameters, you MUST run the Playwright test suite locally and verify 100% pass rate *before* declaring completion or asking for merge go-ahead. Never rely on CI to catch E2E regressions.
 - **Database Migrations (when changing models or migrations, against a throwaway Postgres DB):**
   ```bash
   cd backend && alembic upgrade head
