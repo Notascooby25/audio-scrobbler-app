@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { NavLink, useLocation } from "react-router-dom";
-import { readSession } from "../session";
+import { useState, useEffect, useRef } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { readSession, clearSession } from "../session";
 import { fetchUnreadNotificationCount } from "../api";
 
 const NAV_LINKS = [
@@ -9,11 +9,6 @@ const NAV_LINKS = [
   { to: "/reports", label: "Reports" },
   // A gig's setlist page (/gigs/:id) belongs to the Gigs section
   { to: "/setlists", label: "Gigs", alsoActive: "/gigs/" },
-];
-
-const ICON_LINKS = [
-  { to: "/profile", label: "Profile", Icon: UserIcon },
-  { to: "/connect", label: "Connect", Icon: LinkPlugIcon },
 ];
 
 function UserIcon({ className }) {
@@ -78,8 +73,34 @@ function BellIcon({ className }) {
 
 export default function HeaderNav() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const session = readSession();
+  const accountMenuRef = useRef(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isAccountMenuOpen) return;
+
+    const handleClickOutside = (e) => {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(e.target)) {
+        setIsAccountMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setIsAccountMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isAccountMenuOpen]);
 
   useEffect(() => {
     if (!session?.accessToken) return;
@@ -151,18 +172,91 @@ export default function HeaderNav() {
         </div>
 
         <div className="topbar-icons" role="group" aria-label="Account and connections">
-          {ICON_LINKS.map(({ to, label, Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={iconLinkClassName}
-              aria-label={label}
-              title={label}
-              onClick={() => setIsMenuOpen(false)}
+          <div className="nav-account-container" ref={accountMenuRef}>
+            <button
+              type="button"
+              className={`nav-link nav-icon-link nav-account-btn ${isAccountMenuOpen ? "nav-link-active" : ""}`}
+              aria-label="Account menu"
+              aria-haspopup="menu"
+              aria-expanded={isAccountMenuOpen}
+              onClick={() => setIsAccountMenuOpen((open) => !open)}
             >
-              <Icon />
-            </NavLink>
-          ))}
+              <UserIcon />
+            </button>
+            {isAccountMenuOpen && (
+              <div className="nav-account-dropdown" role="menu" aria-label="Account menu">
+                <NavLink
+                  to="/profile"
+                  role="menuitem"
+                  className="nav-account-item"
+                  onClick={() => {
+                    setIsAccountMenuOpen(false);
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  Profile
+                </NavLink>
+                <NavLink
+                  to="/following"
+                  role="menuitem"
+                  className="nav-account-item"
+                  onClick={() => {
+                    setIsAccountMenuOpen(false);
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  Friends
+                </NavLink>
+                <NavLink
+                  to="/settings"
+                  role="menuitem"
+                  className="nav-account-item"
+                  onClick={() => {
+                    setIsAccountMenuOpen(false);
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  Settings
+                </NavLink>
+                <NavLink
+                  to="/connect"
+                  role="menuitem"
+                  className="nav-account-item"
+                  onClick={() => {
+                    setIsAccountMenuOpen(false);
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  Connect
+                </NavLink>
+                {session?.accessToken && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="nav-account-item nav-account-signout"
+                    onClick={() => {
+                      clearSession();
+                      setIsAccountMenuOpen(false);
+                      setIsMenuOpen(false);
+                      navigate("/connect");
+                    }}
+                  >
+                    Sign out
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <NavLink
+            to="/connect"
+            className={iconLinkClassName}
+            aria-label="Connect"
+            title="Connect"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <LinkPlugIcon />
+          </NavLink>
           {session?.accessToken && (
             <NavLink
               to="/settings?tab=notifications"
