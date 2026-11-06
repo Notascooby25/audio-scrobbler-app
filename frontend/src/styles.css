@@ -230,6 +230,14 @@ p {
   color: var(--color-primary);
 }
 
+.app-footer-version-btn {
+  background: transparent;
+  border: none;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+
 /* ─── Topbar Navigation ────────────────────────────────────────────────────────── */
 .topbar {
   display: flex;
