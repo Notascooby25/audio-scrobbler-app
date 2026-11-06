@@ -287,9 +287,7 @@ export default function ProfilePage() {
               <Link to={profile.is_self ? "/library" : `/library?userId=${profile.id}`}>
                 View Library
               </Link>
-              <Link to={profile.is_self ? "/setlists" : `/setlists?userId=${profile.id}`}>
-                View Gigs
-              </Link>
+              <Link to={profile.is_self ? "/gigs" : `/gigs?userId=${profile.id}`}>View Gigs</Link>
               <Link
                 to={
                   profile.is_self

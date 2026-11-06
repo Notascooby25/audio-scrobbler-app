@@ -131,7 +131,7 @@ export default function SetlistGigPage() {
   // expanded row); a direct visit has no in-app history, so fall back to My Gigs.
   const goBack = () => {
     if (location.key !== "default") navigate(-1);
-    else navigate(isViewing ? `/setlists?userId=${viewUserId}` : "/setlists");
+    else navigate(isViewing ? `/gigs?userId=${viewUserId}` : "/gigs");
   };
 
   useEffect(() => {

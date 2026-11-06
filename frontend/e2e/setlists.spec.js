@@ -63,7 +63,7 @@ test.beforeEach(async ({ page }) => {
 test.describe("set lists", () => {
   test("Back from a gig page restores the tab and expanded artist", async ({ page }) => {
     await page.goto("/setlists?tab=artists");
-    await page.getByRole("button", { name: "The Lottery Winners" }).click();
+    await page.getByRole("button", { name: "The Lottery Winners", exact: true }).click();
     await expect(page).toHaveURL(/open=The\+Lottery\+Winners/);
 
     await page.getByRole("button", { name: "HMV Empire, Coventry" }).click();
@@ -87,7 +87,7 @@ test.describe("set lists", () => {
     await page.goto("/gigs/7");
     await expect(page.getByText("Burning House")).toBeVisible();
     await page.getByRole("button", { name: /back/i }).click();
-    await expect(page).toHaveURL(/\/setlists$/);
+    await expect(page).toHaveURL(/\/(gigs|setlists)$/);
     await expect(page.getByRole("heading", { name: "All Gigs (1)" })).toBeVisible();
   });
   test("a followed person's gigs open read-only and Back returns to their list", async ({
@@ -103,7 +103,7 @@ test.describe("set lists", () => {
     await expect(page.getByRole("heading", { name: "@sam's Gigs" })).toBeVisible();
     await expect(page.getByRole("button", { name: "+ Log a Gig" })).toHaveCount(0);
 
-    await page.getByRole("button", { name: "The Lottery Winners" }).click();
+    await page.getByRole("button", { name: "The Lottery Winners", exact: true }).click();
     await expect(page).toHaveURL(/\/gigs\/7\?userId=2$/);
     await expect(page.getByText("From @sam's gigs")).toBeVisible();
     await expect(page.getByRole("button", { name: "+ I was there too" })).toBeVisible();
@@ -112,7 +112,7 @@ test.describe("set lists", () => {
     expect(viewedWith.every((id) => id === "2")).toBe(true);
 
     await page.getByRole("button", { name: /back/i }).click();
-    await expect(page).toHaveURL(/\/setlists\?userId=2$/);
+    await expect(page).toHaveURL(/\/(gigs|setlists)\?userId=2$/);
   });
 
   test("an invite from someone you follow adds the gig to My Gigs", async ({ page }) => {

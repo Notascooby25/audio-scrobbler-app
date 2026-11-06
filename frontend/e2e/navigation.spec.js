@@ -1,13 +1,15 @@
 import { test, expect } from "@playwright/test";
 
 const PAGES = [
-  ["/overview", "Play"],
+  ["/play", "Play"],
   ["/library", "Library"],
   ["/reports", "Reports"],
-  ["/setlists", "Gigs"],
+  ["/gigs", "Gigs"],
   ["/profile", "Profile"],
   ["/connect", "Connect"],
 ];
+
+const PRIMARY_LINKS = ["Play", "Library", "Reports", "Gigs"];
 
 test.describe("navigation", () => {
   for (const [path, label] of PAGES) {
@@ -15,9 +17,11 @@ test.describe("navigation", () => {
       await page.goto(path);
       const nav = page.getByRole("navigation", { name: "Primary navigation" });
       await expect(nav).toBeVisible();
-      for (const [, navLabel] of PAGES) {
+      for (const navLabel of PRIMARY_LINKS) {
         await expect(nav.getByRole("link", { name: navLabel, exact: true })).toBeVisible();
       }
+      await expect(page.getByRole("button", { name: "Account menu" })).toBeVisible();
+      await expect(page.getByRole("link", { name: "Connect", exact: true })).toBeVisible();
     });
   }
 
@@ -35,7 +39,7 @@ test.describe("navigation", () => {
   test("keeps the header visible and updates the active link after navigating", async ({
     page,
   }) => {
-    await page.goto("/overview");
+    await page.goto("/play");
     const nav = page.getByRole("navigation", { name: "Primary navigation" });
     await nav.getByRole("link", { name: "Library", exact: true }).click();
 
@@ -55,7 +59,7 @@ test.describe("navigation", () => {
 
   test("shows a working mobile menu on small viewports", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto("/overview");
+    await page.goto("/play");
 
     const nav = page.getByRole("navigation", { name: "Primary navigation" });
     const toggle = page.getByRole("button", { name: "Toggle navigation menu" });

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Layout from "./components/Layout";
 import FollowingPage from "./pages/FollowingPage";
 import HomePage from "./pages/HomePage";
@@ -13,6 +13,11 @@ import SetlistsPage from "./components/setlists/SetlistsPage";
 import SetlistGigPage from "./components/setlists/SetlistGigPage";
 import { fetchUserSettings } from "./api";
 import { readSession } from "./session";
+
+function RedirectWithSearch({ to }) {
+  const location = useLocation();
+  return <Navigate to={`${to}${location.search}`} replace />;
+}
 
 export default function App() {
   const session = readSession();
@@ -50,10 +55,10 @@ export default function App() {
           />
           <Route path="/connect" element={<HomePage />} />
           <Route path="/play" element={<OverviewPage />} />
-          <Route path="/overview" element={<Navigate to="/play" replace />} />
+          <Route path="/overview" element={<RedirectWithSearch to="/play" />} />
           <Route path="/library" element={<LibraryPage />} />
           <Route path="/gigs" element={<SetlistsPage />} />
-          <Route path="/setlists" element={<Navigate to="/gigs" replace />} />
+          <Route path="/setlists" element={<RedirectWithSearch to="/gigs" />} />
           {/* Not under /setlists/: that prefix is proxied to the API by nginx and Vite */}
           <Route path="/gigs/:concertId" element={<SetlistGigPage />} />
           <Route path="/reports" element={<ReportsPage />} />
