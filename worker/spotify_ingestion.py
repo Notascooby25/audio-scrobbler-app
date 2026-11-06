@@ -399,6 +399,37 @@ class SpotifyClient:
         raise requests.HTTPError(f"Spotify request failed after retries: {url}")
 
 
+_REALTIME_ACCESS_TOKENS: dict[int, tuple[str, datetime]] = {}
+
+
+def get_cached_or_refreshed_token(
+    user: UserRecord,
+    client: SpotifyClient,
+    session,
+    force_refresh: bool = False,
+) -> str | None:
+    now = _utc_now()
+    if not force_refresh and user.id in _REALTIME_ACCESS_TOKENS:
+        token, expires_at = _REALTIME_ACCESS_TOKENS[user.id]
+        if expires_at > now + timedelta(minutes=5):
+            return token
+
+    try:
+        refresh_token = decrypt_refresh_token(user.refresh_token_cipher, client.refresh_token_key)
+    except InvalidToken:
+        _REALTIME_ACCESS_TOKENS.pop(user.id, None)
+        return None
+
+    access_token, rotated_refresh_token = client.refresh_access_token(refresh_token)
+    if rotated_refresh_token:
+        user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)
+        session.commit()
+
+    # Spotify access tokens are valid for 1 hour (3600s)
+    _REALTIME_ACCESS_TOKENS[user.id] = (access_token, now + timedelta(seconds=3600))
+    return access_token
+
+
 def sync_currently_playing(
     session,
     user: UserRecord,
@@ -407,17 +438,22 @@ def sync_currently_playing(
     backend_url: str,
     worker_token: str,
 ) -> bool:
-    try:
-        refresh_token = decrypt_refresh_token(user.refresh_token_cipher, client.refresh_token_key)
-    except InvalidToken:
+    access_token = get_cached_or_refreshed_token(user, client, session)
+    if not access_token:
         return False
-        
-    access_token, rotated_refresh_token = client.refresh_access_token(refresh_token)
-    if rotated_refresh_token:
-        user.refresh_token_cipher = encrypt_refresh_token(rotated_refresh_token, client.refresh_token_key)
-        session.commit()
-    
-    current = client.currently_playing(access_token)
+
+    try:
+        current = client.currently_playing(access_token)
+    except Exception as e:
+        status_code = getattr(getattr(e, "response", None), "status_code", None)
+        if status_code == 401:
+            access_token = get_cached_or_refreshed_token(user, client, session, force_refresh=True)
+            if not access_token:
+                return False
+            current = client.currently_playing(access_token)
+        else:
+            raise
+
     now = _utc_now()
     
     state = session.query(RealtimePlaybackStateRecord).filter(RealtimePlaybackStateRecord.user_id == user.id).first()
