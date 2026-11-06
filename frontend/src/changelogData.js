@@ -1,5 +1,16 @@
 export const CHANGELOG = [
   {
+    version: "0.34.0",
+    date: "2026-11-06",
+    changes: [
+      "Spotify OAuth Token Rotation & Commit Safety: Hardened token rotation across background ingestion jobs with immediate transaction commits (db.commit()), guaranteeing rotated refresh tokens are safely saved to the database immediately and preventing lost sessions.",
+      "Realtime Playback Quota Optimization: Implemented smart in-memory caching for Spotify access tokens in the 10-second playback polling loop, eliminating over 17,000 redundant refresh API calls per day while automatically retrying on token expiration.",
+      "Client Cache Isolation & Public Sign Out: Restricted Service Worker offline caching strictly to static app shell assets (bypassing private user API data), purged all client-side CacheStorage entries upon sign-out, and added an accessible Sign Out button to the Profile and Home streaming cards.",
+      "Network Security & Ingress Shielding: Protected YouTube channel lookups and Web Push subscriptions against SSRF with strict domain allowlists, shielded worker-internal routes (/internal/) and metrics endpoints from public reverse proxy ingress with HTTP 404 responses, and switched worker token comparison to constant-time verification (hmac.compare_digest).",
+      "Database Pre-Migration Snapshots: Added an automated safety snapshot hook (pre_migration_backup.sh) in the backend container that verifies tools and database connectivity before applying Alembic migrations.",
+    ],
+  },
+  {
     version: "0.33.1",
     date: "2026-11-06",
     changes: [

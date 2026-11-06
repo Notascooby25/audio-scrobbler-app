@@ -63,8 +63,8 @@ class Settings:
                 raise ValueError("JWT_SECRET must be changed in production")
             if self.refresh_token_key == "0123456789abcdef0123456789abcdef":
                 raise ValueError("REFRESH_TOKEN_KEY must be changed in production")
-            if self.worker_ingestion_token == "dev-worker-token":
-                raise ValueError("WORKER_INGESTION_TOKEN must be changed in production")
+            if not self.worker_ingestion_token or self.worker_ingestion_token == "dev-worker-token":
+                raise ValueError("WORKER_INGESTION_TOKEN must be set and changed in production")
             if self.database_url == "postgresql+psycopg://scrobbler:scrobbler@db:5432/scrobbler":
                 raise ValueError("DATABASE_URL must be configured in production")
             if "*" in self.allowed_cors_origins():

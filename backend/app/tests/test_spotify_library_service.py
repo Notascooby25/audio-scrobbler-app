@@ -148,3 +148,34 @@ def test_backfill_scrobble_artwork_updates_events_missing_artwork(monkeypatch):
     db.refresh(event)
     assert event.artwork_url == "https://example.com/art.jpg"
     db.close()
+
+
+def test_refresh_access_token_commits_on_rotated_token(monkeypatch):
+    db = TestingSession()
+    user = _make_user(db, 105)
+    
+    monkeypatch.setattr(spotify_library_service, "decrypt_refresh_token", lambda cipher: "old-refresh-token")
+    monkeypatch.setattr(spotify_library_service, "encrypt_refresh_token", lambda token: f"cipher-{token}")
+
+    def fake_request(method, url, **kwargs):
+        return FakeJsonResponse({"access_token": "new-access-token", "refresh_token": "rotated-token-123"})
+
+    monkeypatch.setattr(spotify_library_service, "_request", fake_request)
+
+    committed = False
+    original_commit = db.commit
+
+    def tracked_commit():
+        nonlocal committed
+        committed = True
+        return original_commit()
+
+    monkeypatch.setattr(db, "commit", tracked_commit)
+
+    token = spotify_library_service._refresh_access_token(db, user)
+
+    assert token == "new-access-token"
+    assert user.refresh_token_cipher == "cipher-rotated-token-123"
+    assert committed is True, "Rotated refresh token must be committed immediately via db.commit(), not just db.flush()"
+    db.close()
+

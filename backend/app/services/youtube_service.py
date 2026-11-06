@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 from typing import Any
+from urllib.parse import urlparse
 import xml.etree.ElementTree as ET
 
 import requests
@@ -247,7 +248,11 @@ def parse_tracklist_from_description(
 
 def resolve_channel_info(url_or_handle: str) -> dict[str, str | None]:
     cleaned = url_or_handle.strip()
-    if cleaned.startswith("http"):
+    if cleaned.startswith("http://") or cleaned.startswith("https://"):
+        parsed = urlparse(cleaned)
+        allowed_hosts = {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}
+        if (parsed.hostname or "").lower() not in allowed_hosts:
+            raise ValueError("Only YouTube URLs (youtube.com, youtu.be) are allowed")
         target_url = cleaned
     elif cleaned.startswith("@"):
         target_url = f"https://www.youtube.com/{cleaned}"

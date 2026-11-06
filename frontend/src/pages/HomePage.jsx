@@ -17,6 +17,7 @@ import CustomDateField from "../components/CustomDateField";
 import ImportProgressBar from "../components/ImportProgressBar";
 import ImportSummaryPanel from "../components/ImportSummaryPanel";
 import ScrobbleList from "../components/ScrobbleList";
+import { clearSession as purgeAuthSession } from "../session";
 
 function readSavedSession() {
   try {
@@ -142,7 +143,7 @@ export default function HomePage() {
   };
 
   const clearSession = () => {
-    localStorage.removeItem("audio-scrobbler-session");
+    purgeAuthSession();
     setToken("");
     setSummary(null);
     setStatus("idle");
@@ -413,9 +414,28 @@ export default function HomePage() {
                 )}
               </>
             ) : (
-              <span style={{ fontSize: "0.85rem", color: "var(--color-muted)" }}>
-                Active sync enabled. Your plays update automatically.
-              </span>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "0.75rem",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  width: "100%",
+                  justifyContent: "space-between",
+                }}
+              >
+                <span style={{ fontSize: "0.85rem", color: "var(--color-muted)" }}>
+                  Active sync enabled. Your plays update automatically.
+                </span>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={clearSession}
+                  style={{ textTransform: "none", fontSize: "0.8rem", padding: "0.35rem 0.75rem" }}
+                >
+                  Sign out
+                </button>
+              </div>
             )}
           </div>
         </div>

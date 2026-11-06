@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hmac
+
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -15,7 +17,9 @@ router = APIRouter(prefix="/ingestion", tags=["ingestion"])
 
 
 def require_worker_token(x_worker_token: str | None = Header(default=None)) -> None:
-    if x_worker_token != settings.worker_ingestion_token:
+    if not x_worker_token or not settings.worker_ingestion_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid worker credentials")
+    if not hmac.compare_digest(x_worker_token, settings.worker_ingestion_token):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid worker credentials")
 
 

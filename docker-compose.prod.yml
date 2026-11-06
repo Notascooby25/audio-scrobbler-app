@@ -21,7 +21,7 @@ services:
       - com.centurylinklabs.watchtower.enable=true
       - com.centurylinklabs.watchtower.scope=audio-scrobbler-app
     ports:
-      - "${BACKEND_HOST_PORT:-8000}:8000"
+      - "127.0.0.1:${BACKEND_HOST_PORT:-8000}:8000"
     environment:
       APP_ENV: production
       # Cosmetic only — set to a commit SHA in .env.production if you want

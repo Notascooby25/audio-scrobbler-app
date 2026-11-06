@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   fetchSpotifyStatus,
   fetchUserProfile,
@@ -14,6 +13,7 @@ import FollowButton from "../components/FollowButton";
 import Artwork from "../components/Artwork";
 import CopyScrobblesModal from "../components/profile/CopyScrobblesModal";
 import { formatScrobbleTime } from "../timeFormatting";
+import { clearSession } from "../session";
 
 function readSavedSession() {
   try {
@@ -36,6 +36,15 @@ export default function ProfilePage() {
   const [connectError, setConnectError] = useState("");
   const [spotifyRetryAfter, setSpotifyRetryAfter] = useState(null);
   const [showCopyModal, setShowCopyModal] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSignOut = () => {
+    clearSession();
+    navigate("/", { replace: true });
+    if (typeof window !== "undefined" && window.location) {
+      window.location.reload();
+    }
+  };
 
   useEffect(() => {
     fetchSpotifyStatus()
@@ -201,6 +210,13 @@ export default function ProfilePage() {
               <Link className="profile-settings-button" to="/following">
                 Following
               </Link>
+              <button
+                type="button"
+                className="profile-settings-button profile-signout-button"
+                onClick={handleSignOut}
+              >
+                Sign out
+              </button>
               {spotifyRetryAfter && (
                 <p className="notice" style={{ width: "100%", margin: "0.5rem 0 0" }}>
                   Spotify is rate-limiting this app. Try again after{" "}
