@@ -368,7 +368,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <AnalyticsPage eyebrow="Personal preferences" title="Settings">
+    <AnalyticsPage eyebrow="Preferences" title="Settings">
       {!session?.accessToken && (
         <p className="notice">Connect Spotify to manage your personal settings.</p>
       )}

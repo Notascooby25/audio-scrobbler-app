@@ -86,6 +86,19 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "account-menu-shortcuts",
+    category: "General & Appearance",
+    question: "Where do I find my profile, friends list, or sign-out option?",
+    answer: (
+      <p>
+        Click the <strong>Profile icon</strong> on the far right of the top navigation bar. An
+        accessible dropdown menu will appear with quick links to your <strong>Profile</strong>,{" "}
+        <strong>Friends</strong> (following & community leaderboards), <strong>Settings</strong>,{" "}
+        <strong>Connect</strong>, and an immediate <strong>Sign out</strong> option.
+      </p>
+    ),
+  },
+  {
     id: "whats-new-updates",
     category: "General & Appearance",
     question: "Where can I see what has changed in the latest update?",

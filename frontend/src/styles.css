@@ -307,6 +307,62 @@ p {
   min-height: 36px;
 }
 
+.nav-account-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nav-account-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-muted);
+}
+
+.nav-account-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 160px;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e5e5e5);
+  border-radius: var(--radius-sm, 6px);
+  padding: 4px 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+.nav-account-item {
+  display: block;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-ink, #111111);
+  text-decoration: none;
+  text-transform: none !important;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 100ms ease;
+  box-sizing: border-box;
+}
+
+.nav-account-item:hover,
+.nav-account-item:focus {
+  background: var(--color-surface-hover, var(--color-surface-subtle, #f3f4f6));
+  color: var(--color-ink, #111111);
+}
+
+.nav-account-signout {
+  border-top: 1px solid var(--color-border, #e5e5e5);
+  margin-top: 4px;
+  color: var(--color-danger, #ef4444);
+}
+
 .nav-link:hover {
   background: rgba(0, 0, 0, 0.04);
   color: var(--color-ink);
@@ -968,16 +1024,124 @@ a:focus-visible {
 
 button.btn-secondary,
 button.button-secondary,
-.button-secondary {
+button.secondary-button,
+.btn-secondary,
+.button-secondary,
+.secondary-button {
   background: transparent;
-  border-color: var(--color-border);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   color: var(--color-ink);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-height: 2.5rem;
+  padding: 0.6rem 1rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease;
+  box-shadow: none;
 }
 
 button.btn-secondary:hover:not(:disabled),
 button.button-secondary:hover:not(:disabled),
-.button-secondary:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.04);
+button.secondary-button:hover:not(:disabled),
+.btn-secondary:hover:not(:disabled),
+.button-secondary:hover:not(:disabled),
+.secondary-button:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border);
+}
+
+.button-primary {
+  background: var(--color-accent);
+  border: 0.5px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-surface);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-height: 2.5rem;
+  padding: 0.6rem 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+  transition:
+    background-color 140ms ease,
+    opacity 140ms ease;
+}
+
+.button-primary:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+.settings-button {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  text-transform: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 140ms ease;
+}
+
+.settings-button:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+}
+
+.retry-btn {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.retry-btn:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+}
+
+/* ─── Status Badges ───────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.badge-success {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.badge-secondary {
+  background: var(--color-surface-hover);
+  color: var(--color-muted);
+  border: 1px solid var(--color-border);
 }
 
 button.scope-creep-unfollow-btn,
@@ -1450,16 +1614,6 @@ button:disabled {
 
 .danger-button:hover:not(:disabled) {
   opacity: 0.9;
-}
-
-button.btn-secondary {
-  background: transparent;
-  border-color: var(--color-border);
-  color: var(--color-ink);
-}
-
-button.btn-secondary:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.04);
 }
 
 .danger-button:disabled {

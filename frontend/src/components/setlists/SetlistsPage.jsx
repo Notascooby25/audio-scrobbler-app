@@ -344,6 +344,7 @@ export default function SetlistsPage() {
       )}
 
       <header className="sfm-page-header">
+        <p className="section-kicker">Live music</p>
         {isViewing ? (
           <>
             <h1>@{viewedProfile?.username || "..."}&apos;s Gigs</h1>
@@ -377,6 +378,18 @@ export default function SetlistsPage() {
             Concert searches and Setlist.fm imports require <code>SETLIST_FM_API_KEY</code>. If you
             added it to your <code>.env.production</code> on the NUC, reload it with:{" "}
             <code>docker compose --env-file .env.production -f docker-compose.prod.yml up -d</code>
+          </p>
+        </div>
+      )}
+
+      {!token && !isViewing && (
+        <div className="sfm-warning" data-testid="signed-out-warning">
+          <p>
+            Connect Spotify from the{" "}
+            <Link className="sfm-link" to="/connect">
+              Connect page
+            </Link>{" "}
+            to log and view your concert history.
           </p>
         </div>
       )}

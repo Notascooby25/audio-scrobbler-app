@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Layout from "./components/Layout";
 import FollowingPage from "./pages/FollowingPage";
 import HomePage from "./pages/HomePage";
@@ -14,9 +14,15 @@ import SetlistGigPage from "./components/setlists/SetlistGigPage";
 import { fetchUserSettings } from "./api";
 import { readSession } from "./session";
 
+function RedirectWithSearch({ to }) {
+  const location = useLocation();
+  return <Navigate to={`${to}${location.search}`} replace />;
+}
+
 export default function App() {
+  const session = readSession();
+
   useEffect(() => {
-    const session = readSession();
     if (session?.accessToken) {
       fetchUserSettings({ token: session.accessToken })
         .then((settings) => {
@@ -31,17 +37,28 @@ export default function App() {
         })
         .catch(() => {});
     }
-  }, []);
+  }, [session?.accessToken]);
 
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={<OverviewPage />} />
+          <Route
+            path="/"
+            element={
+              session?.accessToken ? (
+                <Navigate to="/play" replace />
+              ) : (
+                <Navigate to="/connect" replace />
+              )
+            }
+          />
           <Route path="/connect" element={<HomePage />} />
-          <Route path="/overview" element={<OverviewPage />} />
+          <Route path="/play" element={<OverviewPage />} />
+          <Route path="/overview" element={<RedirectWithSearch to="/play" />} />
           <Route path="/library" element={<LibraryPage />} />
-          <Route path="/setlists" element={<SetlistsPage />} />
+          <Route path="/gigs" element={<SetlistsPage />} />
+          <Route path="/setlists" element={<RedirectWithSearch to="/gigs" />} />
           {/* Not under /setlists/: that prefix is proxied to the API by nginx and Vite */}
           <Route path="/gigs/:concertId" element={<SetlistGigPage />} />
           <Route path="/reports" element={<ReportsPage />} />

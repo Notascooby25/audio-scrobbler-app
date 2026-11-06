@@ -128,15 +128,15 @@ export default function ProfilePage() {
     <section className="dashboard" aria-labelledby="profile-heading">
       <div className="section-heading">
         <div>
-          <p className="section-kicker">Personal archive</p>
-          <h2 id="profile-heading">Profile</h2>
+          <p className="section-kicker">Profile</p>
+          <h1 id="profile-heading">Profile</h1>
         </div>
       </div>
 
       {!token && (
         <div className="profile-connect">
           <p className="notice">
-            Sign in from the dashboard, or connect Spotify to create your profile.
+            Connect Spotify from the <Link to="/connect">Connect page</Link> to create your profile.
           </p>
           <button type="button" onClick={connectSpotify} disabled={Boolean(spotifyRetryAfter)}>
             Connect Spotify
@@ -156,7 +156,9 @@ export default function ProfilePage() {
       )}
 
       {token && !targetUserId && (
-        <p className="notice">Sign in from the dashboard to view your profile.</p>
+        <p className="notice">
+          Connect Spotify from the <Link to="/connect">Connect page</Link> to view your profile.
+        </p>
       )}
 
       {token && targetUserId && status === "loading" && (
@@ -171,7 +173,7 @@ export default function ProfilePage() {
       {token && targetUserId && profile && (
         <div className="profile-card">
           <div className="profile-header">
-            <h3 className="profile-username">@{profile.username}</h3>
+            <h2 className="profile-username">@{profile.username}</h2>
             <p className="profile-display-name">{profile.display_name}</p>
           </div>
 
@@ -285,9 +287,7 @@ export default function ProfilePage() {
               <Link to={profile.is_self ? "/library" : `/library?userId=${profile.id}`}>
                 View Library
               </Link>
-              <Link to={profile.is_self ? "/setlists" : `/setlists?userId=${profile.id}`}>
-                View Gigs
-              </Link>
+              <Link to={profile.is_self ? "/gigs" : `/gigs?userId=${profile.id}`}>View Gigs</Link>
               <Link
                 to={
                   profile.is_self

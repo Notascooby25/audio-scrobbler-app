@@ -53,6 +53,16 @@ export default function UserGuideSection() {
           </p>
         </div>
 
+        <h4>Navigating the App & Account Menu</h4>
+        <p>
+          The navigation bar at the top lets you jump between your primary listening hubs:{" "}
+          <strong>Play</strong> (Jukebox & Time Capsule), <strong>Library</strong> (your complete
+          song archive), <strong>Reports</strong> (listening stats and trends), and{" "}
+          <strong>Gigs</strong> (live concert history). Clicking the <strong>Profile icon</strong>{" "}
+          on the far right opens your <strong>Account Menu</strong>, giving you instant access to
+          your Profile, Friends, Settings, Connect, and a quick Sign out option.
+        </p>
+
         <h4>Scrobbling Modes</h4>
         <ul>
           <li>

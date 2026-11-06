@@ -41,9 +41,12 @@ describe("ProfilePage", () => {
 
   it("shows a connect prompt when there is no saved session", () => {
     renderProfile();
-    expect(
-      screen.getByText("Sign in from the dashboard, or connect Spotify to create your profile.")
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Connect Spotify from the/i)).toBeInTheDocument();
+  });
+
+  it("renders a level 1 heading for Profile", () => {
+    renderProfile();
+    expect(screen.getByRole("heading", { level: 1, name: "Profile" })).toBeInTheDocument();
   });
 
   it("starts Spotify authorization from the connect button", async () => {
@@ -130,7 +133,7 @@ describe("ProfilePage", () => {
     );
     expect(screen.getByRole("link", { name: "View Gigs" })).toHaveAttribute(
       "href",
-      "/setlists?userId=2"
+      "/gigs?userId=2"
     );
     expect(screen.getByRole("link", { name: "View Last 7 Days" })).toHaveAttribute(
       "href",
