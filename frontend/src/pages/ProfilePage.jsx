@@ -136,7 +136,7 @@ export default function ProfilePage() {
       {!token && (
         <div className="profile-connect">
           <p className="notice">
-            Sign in from the dashboard, or connect Spotify to create your profile.
+            Connect Spotify from the <Link to="/connect">Connect page</Link> to create your profile.
           </p>
           <button type="button" onClick={connectSpotify} disabled={Boolean(spotifyRetryAfter)}>
             Connect Spotify
@@ -156,7 +156,9 @@ export default function ProfilePage() {
       )}
 
       {token && !targetUserId && (
-        <p className="notice">Sign in from the dashboard to view your profile.</p>
+        <p className="notice">
+          Connect Spotify from the <Link to="/connect">Connect page</Link> to view your profile.
+        </p>
       )}
 
       {token && targetUserId && status === "loading" && (

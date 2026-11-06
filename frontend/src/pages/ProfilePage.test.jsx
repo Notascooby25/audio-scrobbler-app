@@ -41,9 +41,7 @@ describe("ProfilePage", () => {
 
   it("shows a connect prompt when there is no saved session", () => {
     renderProfile();
-    expect(
-      screen.getByText("Sign in from the dashboard, or connect Spotify to create your profile.")
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Connect Spotify from the/i)).toBeInTheDocument();
   });
 
   it("starts Spotify authorization from the connect button", async () => {

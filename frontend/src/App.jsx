@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
 import FollowingPage from "./pages/FollowingPage";
 import HomePage from "./pages/HomePage";
@@ -15,8 +15,9 @@ import { fetchUserSettings } from "./api";
 import { readSession } from "./session";
 
 export default function App() {
+  const session = readSession();
+
   useEffect(() => {
-    const session = readSession();
     if (session?.accessToken) {
       fetchUserSettings({ token: session.accessToken })
         .then((settings) => {
@@ -31,13 +32,16 @@ export default function App() {
         })
         .catch(() => {});
     }
-  }, []);
+  }, [session?.accessToken]);
 
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={<OverviewPage />} />
+          <Route
+            path="/"
+            element={session?.accessToken ? <OverviewPage /> : <Navigate to="/connect" replace />}
+          />
           <Route path="/connect" element={<HomePage />} />
           <Route path="/overview" element={<OverviewPage />} />
           <Route path="/library" element={<LibraryPage />} />

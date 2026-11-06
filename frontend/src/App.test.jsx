@@ -55,7 +55,18 @@ describe("App", () => {
     return render(<App />);
   }
 
-  it("renders the Play page at the root route", () => {
+  it("redirects signed-out visitors from root route to connect welcome page", () => {
+    window.history.pushState({}, "", "/");
+    render(<App />);
+    expect(screen.getByRole("heading", { name: "Connect & Data Sources" })).toBeInTheDocument();
+  });
+
+  it("renders the Play page at the root route when authenticated", () => {
+    localStorage.setItem(
+      "audio-scrobbler-session",
+      JSON.stringify({ userId: 1, accessToken: "token-123" })
+    );
+    window.history.pushState({}, "", "/");
     render(<App />);
     expect(screen.getByRole("heading", { name: "Play" })).toBeInTheDocument();
   });

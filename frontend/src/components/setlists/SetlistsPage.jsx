@@ -381,6 +381,18 @@ export default function SetlistsPage() {
         </div>
       )}
 
+      {!token && !isViewing && (
+        <div className="sfm-warning" data-testid="signed-out-warning">
+          <p>
+            Connect Spotify from the{" "}
+            <Link className="sfm-link" to="/connect">
+              Connect page
+            </Link>{" "}
+            to log and view your concert history.
+          </p>
+        </div>
+      )}
+
       <section className="sfm-panel">
         <div className="sfm-tabbar">
           <div className="sfm-tabs" role="tablist" aria-label="Set Lists sections">
