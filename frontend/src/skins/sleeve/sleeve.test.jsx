@@ -4,6 +4,7 @@ import { render, screen, cleanup, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import SleeveVinylDisc from "./slots/SleeveVinylDisc";
 import SleeveTodayPage from "./slots/SleeveTodayPage";
+import SleevePlayPage from "./slots/SleevePlayPage";
 import * as api from "../../api";
 import * as session from "../../session";
 
@@ -107,6 +108,50 @@ describe("Sleeve Skin Components", () => {
         expect(screen.getByText(/Playing now/i)).toBeTruthy();
         expect(screen.getByText(/Earlier today/i)).toBeTruthy();
         expect(screen.getByText("I Wanna Be Adored")).toBeTruthy();
+      });
+    });
+  });
+
+  describe("SleevePlayPage", () => {
+    it("renders signed-out message when no access token", () => {
+      vi.spyOn(session, "readSession").mockReturnValue(null);
+      render(
+        <MemoryRouter>
+          <SleevePlayPage />
+        </MemoryRouter>
+      );
+      expect(screen.getByText(/Connect Spotify from the/i)).toBeTruthy();
+    });
+
+    it("renders JukeboxCard and RediscoverCard when signed in", async () => {
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        userId: 1,
+        username: "testuser",
+      });
+      vi.spyOn(api, "fetchJukeboxAlbums").mockResolvedValue({
+        albums: [
+          {
+            id: 1,
+            album_name: "Definitely Maybe",
+            artist_name: "Oasis",
+            release_year: 1994,
+            play_count: 42,
+          },
+        ],
+      });
+      vi.spyOn(api, "fetchRediscoverTracks").mockResolvedValue({ tracks: [] });
+
+      render(
+        <MemoryRouter>
+          <SleevePlayPage />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: "Play" })).toBeTruthy();
+        expect(screen.getByLabelText("Album Jukebox")).toBeTruthy();
+        expect(screen.getByLabelText("Time Capsule")).toBeTruthy();
       });
     });
   });
