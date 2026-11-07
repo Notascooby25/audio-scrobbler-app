@@ -9,6 +9,12 @@ import LibraryPage from "../../pages/LibraryPage";
 import ReportsPage from "../../pages/ReportsPage";
 import SetlistsPage from "../../components/setlists/SetlistsPage";
 import SetlistGigPage from "../../components/setlists/SetlistGigPage";
+import ProfilePage from "../../pages/ProfilePage";
+import FollowingPage from "../../pages/FollowingPage";
+import HomePage from "../../pages/HomePage";
+import SettingsPage from "../../pages/SettingsPage";
+import ChangelogPage from "../../pages/ChangelogPage";
+import { SkinProvider } from "../useSkin";
 import * as api from "../../api";
 import * as setlistsApi from "../../api/setlists";
 import * as session from "../../session";
@@ -357,6 +363,163 @@ describe("Sleeve Skin Components", () => {
         expect(screen.getByText("Lovesong")).toBeTruthy();
         expect(screen.getByRole("button", { name: "Copy setlist" })).toBeTruthy();
       });
+    });
+  });
+
+  describe("ProfilePage in Sleeve Skin", () => {
+    it("renders profile header, stats, actions, and scrobble cards under sleeve skin", async () => {
+      document.documentElement.dataset.skin = "sleeve";
+      localStorage.setItem(
+        "audio-scrobbler-session",
+        JSON.stringify({ userId: 1, accessToken: "test-token", username: "andy" })
+      );
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        userId: 1,
+        username: "andy",
+      });
+      vi.spyOn(api, "fetchUserProfile").mockResolvedValue({
+        id: 1,
+        username: "andy",
+        display_name: "Andy",
+        follower_count: 5,
+        following_count: 3,
+        is_self: true,
+        is_following: false,
+        can_view_details: true,
+        last_scrobble: {
+          track_name: "Pictures of You",
+          artist_name: "The Cure",
+          album_name: "Disintegration",
+          source: "spotify",
+          played_at: "2026-01-15T12:00:00",
+        },
+      });
+      vi.spyOn(api, "fetchNowPlaying").mockResolvedValue(null);
+      vi.spyOn(api, "fetchSpotifyStatus").mockResolvedValue({ rate_limited: false, retry_after: null });
+
+      render(
+        <MemoryRouter initialEntries={["/profile"]}>
+          <ProfilePage />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: "Profile", level: 1 })).toBeTruthy();
+        expect(screen.getByRole("heading", { name: "@andy", level: 2 })).toBeTruthy();
+        expect(screen.getByText("Andy")).toBeTruthy();
+        expect(screen.getByText("5")).toBeTruthy();
+        expect(screen.getByRole("link", { name: "Settings" })).toBeTruthy();
+        expect(screen.getByRole("button", { name: "Sign out" })).toBeTruthy();
+      });
+    });
+  });
+
+  describe("FollowingPage in Sleeve Skin", () => {
+    it("renders following list with live status and follow buttons under sleeve skin", async () => {
+      document.documentElement.dataset.skin = "sleeve";
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        userId: 1,
+        username: "andy",
+      });
+      vi.spyOn(api, "fetchFollowing").mockResolvedValue({
+        results: [
+          {
+            id: 2,
+            username: "friend1",
+            display_name: "Alice",
+            is_following: true,
+            last_scrobble: {
+              track_name: "Ceremony",
+              artist_name: "New Order",
+            },
+          },
+        ],
+      });
+      vi.spyOn(api, "searchUsers").mockResolvedValue({ results: [] });
+
+      render(
+        <MemoryRouter initialEntries={["/following"]}>
+          <FollowingPage />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: "Friends", level: 1 })).toBeTruthy();
+        expect(screen.getByRole("tab", { name: "Following" })).toBeTruthy();
+        expect(screen.getByText("Alice")).toBeTruthy();
+        expect(screen.getByRole("link", { name: "View profile" })).toBeTruthy();
+      });
+    });
+  });
+
+  describe("Connect / HomePage in Sleeve Skin", () => {
+    it("renders connection source cards and actions under sleeve skin", async () => {
+      document.documentElement.dataset.skin = "sleeve";
+      localStorage.removeItem("audio-scrobbler-session");
+      vi.spyOn(session, "readSession").mockReturnValue(null);
+      vi.spyOn(api, "fetchSpotifyStatus").mockResolvedValue({ rate_limited: false, retry_after: null });
+      vi.spyOn(api, "fetchRecentScrobbles").mockResolvedValue({ scrobbles: [] });
+
+      render(
+        <MemoryRouter initialEntries={["/connect"]}>
+          <HomePage />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: "Connect & Data Sources", level: 1 })).toBeTruthy();
+        expect(screen.getByRole("button", { name: "Connect Spotify" })).toBeTruthy();
+      });
+    });
+  });
+
+  describe("SettingsPage in Sleeve Skin", () => {
+    it("renders settings tabs, form, and skin selector under sleeve skin", async () => {
+      document.documentElement.dataset.skin = "sleeve";
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        userId: 1,
+        username: "andy",
+      });
+      vi.spyOn(api, "fetchUserSettings").mockResolvedValue({
+        theme: "system",
+        accent_color: "blue_monday",
+        skin: "sleeve",
+      });
+      vi.spyOn(api, "fetchScrobbleSettings").mockResolvedValue({});
+      vi.spyOn(api, "fetchBlocks").mockResolvedValue([]);
+
+      render(
+        <MemoryRouter initialEntries={["/settings"]}>
+          <SkinProvider>
+            <SettingsPage />
+          </SkinProvider>
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: "Settings", level: 1 })).toBeTruthy();
+        expect(screen.getByRole("tab", { name: "General" })).toBeTruthy();
+        expect(screen.getByRole("tab", { name: "Danger Zone" })).toBeTruthy();
+        expect(screen.getByLabelText("Skin")).toBeTruthy();
+      });
+    });
+  });
+
+  describe("ChangelogPage in Sleeve Skin", () => {
+    it("renders changelog release cards and version tags under sleeve skin", async () => {
+      document.documentElement.dataset.skin = "sleeve";
+
+      render(
+        <MemoryRouter initialEntries={["/changelog"]}>
+          <ChangelogPage />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByRole("heading", { name: "Changelog", level: 1 })).toBeTruthy();
+      expect(screen.getAllByText(/^v\d+\.\d+\.\d+/).length).toBeGreaterThan(0);
     });
   });
 });
