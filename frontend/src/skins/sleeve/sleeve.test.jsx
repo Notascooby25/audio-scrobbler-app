@@ -6,6 +6,7 @@ import SleeveVinylDisc from "./slots/SleeveVinylDisc";
 import SleeveTodayPage from "./slots/SleeveTodayPage";
 import SleevePlayPage from "./slots/SleevePlayPage";
 import LibraryPage from "../../pages/LibraryPage";
+import ReportsPage from "../../pages/ReportsPage";
 import * as api from "../../api";
 import * as session from "../../session";
 
@@ -203,6 +204,49 @@ describe("Sleeve Skin Components", () => {
         expect(screen.getByText("Love Spreads")).toBeTruthy();
         expect(screen.getByText("The Stone Roses")).toBeTruthy();
         expect(screen.getByText("Today")).toBeTruthy();
+      });
+    });
+  });
+
+  describe("Reports under Sleeve Skin", () => {
+    it("renders Reports page with section tabs and facts under sleeve skin", async () => {
+      document.documentElement.setAttribute("data-skin", "sleeve");
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        userId: 1,
+        username: "testuser",
+      });
+      vi.spyOn(api, "fetchReportsSummary").mockResolvedValue({
+        period_scrobbles: 1420,
+        listening_minutes: 4890,
+        average_per_day: 47,
+        comparison_percent: 12.4,
+        listening_minutes_comparison_percent: 8.5,
+        average_per_day_comparison_percent: 10.2,
+      });
+      vi.spyOn(api, "fetchReportsCharts").mockResolvedValue({
+        weekly_scrobbles: [],
+        listening_heatmap: [],
+        listening_clock: [],
+        music_by_decade: [],
+      });
+      vi.spyOn(api, "fetchReportsEntity").mockResolvedValue({ entries: [] });
+
+      render(
+        <MemoryRouter initialEntries={["/reports"]}>
+          <ReportsPage />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByRole("heading", { name: "Reports", level: 1 })).toBeTruthy();
+      expect(screen.getByRole("tab", { name: "Listening" })).toBeTruthy();
+      expect(screen.getByRole("tab", { name: "Gigs" })).toBeTruthy();
+
+      await waitFor(() => {
+        expect(screen.getByText("1,420")).toBeTruthy();
+        expect(screen.getByText("Scrobbles this period")).toBeTruthy();
+        expect(screen.getByText("4,890")).toBeTruthy();
+        expect(screen.getByText("Listening minutes")).toBeTruthy();
       });
     });
   });
