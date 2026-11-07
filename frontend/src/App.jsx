@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Layout from "./components/Layout";
 import FollowingPage from "./pages/FollowingPage";
@@ -13,6 +13,8 @@ import SetlistsPage from "./components/setlists/SetlistsPage";
 import SetlistGigPage from "./components/setlists/SetlistGigPage";
 import { fetchUserSettings } from "./api";
 import { readSession } from "./session";
+import { SkinProvider } from "./skins/useSkin";
+import Slot from "./skins/Slot";
 
 function RedirectWithSearch({ to }) {
   const location = useLocation();
@@ -21,6 +23,7 @@ function RedirectWithSearch({ to }) {
 
 export default function App() {
   const session = readSession();
+  const [skinPreference, setSkinPreference] = useState(null);
 
   useEffect(() => {
     if (session?.accessToken) {
@@ -34,41 +37,52 @@ export default function App() {
             localStorage.setItem("audio-scrobbler-accent", settings.accent_color);
             document.documentElement.setAttribute("data-accent", settings.accent_color);
           }
+          if (settings.skin) {
+            const hasUrlOverride = Boolean(
+              new URLSearchParams(window.location?.search || "").get("skin")
+            );
+            if (!hasUrlOverride) {
+              localStorage.setItem("audio-scrobbler-skin", settings.skin);
+              setSkinPreference(settings.skin);
+            }
+          }
         })
         .catch(() => {});
     }
   }, [session?.accessToken]);
 
   return (
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route
-            path="/"
-            element={
-              session?.accessToken ? (
-                <Navigate to="/play" replace />
-              ) : (
-                <Navigate to="/connect" replace />
-              )
-            }
-          />
-          <Route path="/connect" element={<HomePage />} />
-          <Route path="/play" element={<OverviewPage />} />
-          <Route path="/overview" element={<RedirectWithSearch to="/play" />} />
-          <Route path="/library" element={<LibraryPage />} />
-          <Route path="/gigs" element={<SetlistsPage />} />
-          <Route path="/setlists" element={<RedirectWithSearch to="/gigs" />} />
-          {/* Not under /setlists/: that prefix is proxied to the API by nginx and Vite */}
-          <Route path="/gigs/:concertId" element={<SetlistGigPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/profile/:userId" element={<ProfilePage />} />
-          <Route path="/following" element={<FollowingPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/changelog" element={<ChangelogPage />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <SkinProvider initialSkin={skinPreference}>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route
+              path="/"
+              element={
+                !session?.accessToken ? (
+                  <Navigate to="/connect" replace />
+                ) : (
+                  <Slot name="todayPage" fallback={<Navigate to="/play" replace />} />
+                )
+              }
+            />
+            <Route path="/connect" element={<HomePage />} />
+            <Route path="/play" element={<OverviewPage />} />
+            <Route path="/overview" element={<RedirectWithSearch to="/play" />} />
+            <Route path="/library" element={<LibraryPage />} />
+            <Route path="/gigs" element={<SetlistsPage />} />
+            <Route path="/setlists" element={<RedirectWithSearch to="/gigs" />} />
+            {/* Not under /setlists/: that prefix is proxied to the API by nginx and Vite */}
+            <Route path="/gigs/:concertId" element={<SetlistGigPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile/:userId" element={<ProfilePage />} />
+            <Route path="/following" element={<FollowingPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/changelog" element={<ChangelogPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </SkinProvider>
   );
 }

@@ -162,4 +162,93 @@ describe("Primary Text Color & WCAG AA Contrast Verification", () => {
       }
     );
   });
+
+  describe("Sleeve Skin Derived Tokens WCAG AA Contrast Verification", () => {
+    const sleeveCssPath = path.resolve(__dirname, "skins/sleeve/sleeve.css");
+    const sleeveCssContent = fs.readFileSync(sleeveCssPath, "utf-8");
+
+    function colorMix(hex1, p1, hex2) {
+      const c1 = hex1.replace("#", "");
+      const c2 = hex2.replace("#", "");
+      const r1 = parseInt(c1.substring(0, 2), 16);
+      const g1 = parseInt(c1.substring(2, 4), 16);
+      const b1 = parseInt(c1.substring(4, 6), 16);
+      const r2 = parseInt(c2.substring(0, 2), 16);
+      const g2 = parseInt(c2.substring(2, 4), 16);
+      const b2 = parseInt(c2.substring(4, 6), 16);
+      const r = Math.round(r1 * (p1 / 100) + r2 * ((100 - p1) / 100));
+      const g = Math.round(g1 * (p1 / 100) + g2 * ((100 - p1) / 100));
+      const b = Math.round(b1 * (p1 / 100) + b2 * ((100 - p1) / 100));
+      return "#" + [r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("");
+    }
+
+    const SLEEVE_TEST_CASES = [
+      { id: "blue_monday", hex: "#0066FF" },
+      { id: "spotify_green", hex: "#169C46" },
+      { id: "red_red_wine", hex: "#E11D48" },
+      { id: "purple_rain", hex: "#7C3AED" },
+      { id: "fools_gold", hex: "#D97706" },
+      { id: "paint_it_black", hex: "#475569" },
+      { id: "pretty_in_pink", hex: "#EC4899" },
+      { id: "orange_crush", hex: "#EA580C" },
+      { id: "pure_white", hex: "#FFFFFF" },
+      { id: "pure_black", hex: "#000000" },
+      { id: "bright_yellow", hex: "#FFE100" },
+    ];
+
+    it.each(SLEEVE_TEST_CASES)(
+      "confirms text on ground for $id ($hex) scores ≥ 7.2:1 (exceeding WCAG AA 4.5:1)",
+      ({ hex }) => {
+        const ground = colorMix(hex, 34, "#000000");
+        const ratio = getContrastRatio("#FFFFFF", ground);
+        expect(ratio).toBeGreaterThanOrEqual(4.5);
+        expect(ratio).toBeGreaterThanOrEqual(7.2);
+      }
+    );
+
+    it.each(SLEEVE_TEST_CASES)(
+      "confirms muted text on ground for $id ($hex) scores ≥ 7.2:1 (exceeding WCAG AA 4.5:1)",
+      ({ hex }) => {
+        const ground = colorMix(hex, 34, "#000000");
+        const muted = colorMix(hex, 22, "#FFFFFF");
+        const ratio = getContrastRatio(muted, ground);
+        expect(ratio).toBeGreaterThanOrEqual(4.5);
+        expect(ratio).toBeGreaterThanOrEqual(7.2);
+      }
+    );
+
+    it.each(SLEEVE_TEST_CASES)(
+      "confirms higher-contrast on-sleeve pick (#FFFFFF or #1A1305) on $id ($hex) scores ≥ 4.7:1",
+      ({ hex }) => {
+        const ratioWhite = getContrastRatio("#FFFFFF", hex);
+        const ratioDark = getContrastRatio("#1A1305", hex);
+        const bestRatio = Math.max(ratioWhite, ratioDark);
+        expect(bestRatio).toBeGreaterThanOrEqual(4.5);
+        expect(Number(bestRatio.toFixed(1))).toBeGreaterThanOrEqual(4.7);
+      }
+    );
+
+    it("verifies sleeve.css contains the specified token equations", () => {
+      expect(sleeveCssContent).toMatch(
+        /--sl-ground:\s*color-mix\(in srgb,\s*var\(--sleeve\)\s*34%,\s*#000000\)/
+      );
+      expect(sleeveCssContent).toMatch(
+        /--sl-card:\s*color-mix\(in srgb,\s*var\(--sleeve\)\s*55%,\s*#000000\)/
+      );
+      expect(sleeveCssContent).toMatch(
+        /--sl-deep:\s*color-mix\(in srgb,\s*var\(--sleeve\)\s*22%,\s*#000000\)/
+      );
+      expect(sleeveCssContent).toMatch(
+        /--sl-muted:\s*color-mix\(in srgb,\s*var\(--sleeve\)\s*22%,\s*#ffffff\)/
+      );
+      expect(sleeveCssContent).toMatch(
+        /--sl-edge:\s*color-mix\(in srgb,\s*var\(--sleeve\)\s*82%,\s*#ffffff\)/
+      );
+    });
+
+    it("verifies sleeve.css overrides --sl-on-sleeve to #1a1305 for high-luminance accents", () => {
+      expect(sleeveCssContent).toMatch(/\[data-skin="sleeve"\]\[data-accent="fools_gold"\]/);
+      expect(sleeveCssContent).toMatch(/--sl-on-sleeve:\s*#1a1305;/);
+    });
+  });
 });

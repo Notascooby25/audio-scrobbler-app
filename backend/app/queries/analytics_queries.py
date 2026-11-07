@@ -139,6 +139,7 @@ def build_recent_scrobbles_query(
             ListeningEvent.source,
             ListeningEvent.played_at,
             ListeningEvent.artwork_url,
+            ListeningEvent.artwork_color,
             _spotify_track_id_expr().label("spotify_track_id"),
         )
         .where(ListeningEvent.user_id == user_id)

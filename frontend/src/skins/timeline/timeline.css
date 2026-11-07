@@ -1,0 +1,5 @@
+/* Timeline Skin Stylesheet */
+/* All rules must be scoped under [data-skin="timeline"] */
+[data-skin="timeline"] {
+  --timeline-placeholder: none;
+}

@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import SettingsPage from "./SettingsPage";
+import { SkinProvider } from "../skins/useSkin";
 import {
   advancedDeleteImports,
   enableLikedTracksSync,
@@ -494,5 +495,68 @@ describe("SettingsPage", () => {
         }),
       { timeout: 1000 }
     );
+  });
+
+  it("shows skin switcher in Appearance when multiple live skins exist", async () => {
+    render(
+      <MemoryRouter initialEntries={["/settings"]}>
+        <SkinProvider>
+          <SettingsPage />
+        </SkinProvider>
+      </MemoryRouter>
+    );
+
+    await screen.findByRole("tabpanel", { name: "General" });
+    expect(screen.getByLabelText("Skin")).toBeInTheDocument();
+  });
+
+  it("shows skin switcher in Appearance when ?skin=sleeve is present and allows toggling", async () => {
+    render(
+      <MemoryRouter initialEntries={["/settings?skin=sleeve"]}>
+        <SkinProvider>
+          <SettingsPage />
+        </SkinProvider>
+      </MemoryRouter>
+    );
+
+    const skinSelect = await screen.findByLabelText("Skin");
+    expect(skinSelect).toBeInTheDocument();
+
+    fireEvent.change(skinSelect, { target: { value: "sleeve" } });
+    await waitFor(
+      () =>
+        expect(updateUserSettings).toHaveBeenCalledWith({
+          token: "token",
+          changes: { skin: "sleeve" },
+        }),
+      { timeout: 1000 }
+    );
+  });
+
+  it("allows toggling the match album sleeve setting", async () => {
+    render(
+      <MemoryRouter initialEntries={["/settings"]}>
+        <SkinProvider>
+          <SettingsPage />
+        </SkinProvider>
+      </MemoryRouter>
+    );
+
+    const toggle = await screen.findByLabelText("Match the album sleeve");
+    expect(toggle).toBeInTheDocument();
+    expect(toggle).toBeChecked();
+
+    fireEvent.click(toggle);
+    expect(toggle).not.toBeChecked();
+
+    await waitFor(
+      () =>
+        expect(updateUserSettings).toHaveBeenCalledWith({
+          token: "token",
+          changes: { match_album_sleeve: false },
+        }),
+      { timeout: 1000 }
+    );
+    expect(localStorage.getItem("audio-scrobbler-match-sleeve")).toBe("false");
   });
 });

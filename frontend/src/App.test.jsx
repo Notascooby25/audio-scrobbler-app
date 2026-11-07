@@ -47,6 +47,7 @@ describe("App", () => {
     localStorage.clear();
     document.documentElement.removeAttribute("data-theme");
     document.documentElement.removeAttribute("data-accent");
+    document.documentElement.removeAttribute("data-skin");
     vi.clearAllMocks();
   });
 
@@ -327,5 +328,26 @@ describe("Navigation", () => {
       expect(document.documentElement.getAttribute("data-accent")).toBe("purple_rain");
       expect(localStorage.getItem("audio-scrobbler-accent")).toBe("purple_rain");
     });
+  });
+
+  it("applies and saves skin preference on initial session load", async () => {
+    localStorage.setItem("audio-scrobbler-session", JSON.stringify({ accessToken: "valid-token" }));
+    fetchUserSettings.mockResolvedValueOnce({
+      theme: "dark",
+      accent_color: "blue_monday",
+      skin: "sleeve",
+    });
+    renderAtRoute("/overview");
+
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute("data-skin")).toBe("sleeve");
+      expect(localStorage.getItem("audio-scrobbler-skin")).toBe("sleeve");
+    });
+  });
+
+  it("honors ?skin= URL override parameter", () => {
+    renderAtRoute("/connect?skin=timeline");
+
+    expect(document.documentElement.getAttribute("data-skin")).toBe("timeline");
   });
 });

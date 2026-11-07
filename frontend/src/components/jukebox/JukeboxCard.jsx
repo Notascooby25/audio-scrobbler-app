@@ -240,6 +240,7 @@ export default function JukeboxCard({ token }) {
       >
         {/* Source Switcher */}
         <div
+          className="jukebox-source-tabs"
           style={{
             display: "inline-flex",
             background: "var(--color-surface-hover, var(--color-canvas))",
@@ -250,6 +251,7 @@ export default function JukeboxCard({ token }) {
         >
           <button
             type="button"
+            className={`jukebox-source-tab-btn ${sourceMode === "library" ? "active" : ""}`}
             onClick={() => handleSwitchSource("library")}
             style={{
               padding: "5px 12px",
@@ -266,6 +268,7 @@ export default function JukeboxCard({ token }) {
           </button>
           <button
             type="button"
+            className={`jukebox-source-tab-btn ${sourceMode === "1001" ? "active" : ""}`}
             onClick={() => handleSwitchSource("1001")}
             style={{
               padding: "5px 12px",

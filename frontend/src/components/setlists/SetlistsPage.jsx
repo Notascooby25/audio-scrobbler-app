@@ -325,6 +325,18 @@ export default function SetlistsPage() {
     setActiveTab("gigs");
   };
 
+  const totalShows = myGigs.length;
+  const uniqueArtists = new Set(
+    myGigs.map((g) => g.artist_name?.trim().toLowerCase()).filter(Boolean)
+  ).size;
+  const uniqueVenues = new Set(
+    myGigs.map((g) => (g.venue_name || g.festival_name)?.trim().toLowerCase()).filter(Boolean)
+  ).size;
+  const summaryStatsLine =
+    totalShows > 0
+      ? `${totalShows} ${totalShows === 1 ? "show" : "shows"}, ${uniqueArtists} ${uniqueArtists === 1 ? "artist" : "artists"}, ${uniqueVenues} ${uniqueVenues === 1 ? "venue" : "venues"}`
+      : "Track your concert attendances, live song history, and artist stats";
+
   return (
     <div className="sfm-page">
       {toastMessage && (
@@ -359,7 +371,12 @@ export default function SetlistsPage() {
           <>
             <h1>Gigs</h1>
             <p className="sfm-page-intro">
-              Track your concert attendances, live song history, and artist stats
+              <span className="classic-intro">
+                Track your concert attendances, live song history, and artist stats
+              </span>
+              <span className="sleeve-summary" style={{ display: "none" }}>
+                {summaryStatsLine}
+              </span>
             </p>
           </>
         )}

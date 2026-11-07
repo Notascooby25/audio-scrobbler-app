@@ -188,6 +188,7 @@ def get_recent_scrobbles(
                 source=row.source,
                 played_at=row.played_at,
                 artwork_url=getattr(row, "artwork_url", None),
+                artwork_color=getattr(row, "artwork_color", None),
                 spotify_track_id=track_id,
                 is_liked=track_id in liked_ids if track_id else False,
             )

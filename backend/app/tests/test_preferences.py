@@ -35,6 +35,8 @@ class FakeDB:
     def add(self, value):
         if getattr(value, "theme", None) is None:
             value.theme = "system"
+        if getattr(value, "skin", None) is None:
+            value.skin = "classic"
         if getattr(value, "accent_color", None) is None:
             value.accent_color = "blue_monday"
         if getattr(value, "notify_recaps", None) is None:
@@ -174,3 +176,54 @@ def test_settings_rejects_invalid_jukebox_archive_limit():
         headers={"Authorization": "Bearer demo"},
     )
     assert response.status_code == 400
+
+
+def test_settings_returns_classic_skin_default():
+    response = client.get("/users/me/settings", headers={"Authorization": "Bearer demo"})
+    assert response.status_code == 200
+    assert response.json()["skin"] == "classic"
+
+
+def test_settings_updates_skin():
+    for skin in ("sleeve", "timeline", "classic"):
+        response = client.patch(
+            "/users/me/settings",
+            json={"skin": skin},
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert response.status_code == 200
+        assert response.json()["skin"] == skin
+
+
+def test_settings_rejects_invalid_skin():
+    response = client.patch(
+        "/users/me/settings",
+        json={"skin": "cyberpunk"},
+        headers={"Authorization": "Bearer demo"},
+    )
+    assert response.status_code == 400
+
+
+def test_settings_returns_match_album_sleeve_default():
+    response = client.get("/users/me/settings", headers={"Authorization": "Bearer demo"})
+    assert response.status_code == 200
+    assert response.json()["match_album_sleeve"] is True
+
+
+def test_settings_updates_match_album_sleeve():
+    response = client.patch(
+        "/users/me/settings",
+        json={"match_album_sleeve": False},
+        headers={"Authorization": "Bearer demo"},
+    )
+    assert response.status_code == 200
+    assert response.json()["match_album_sleeve"] is False
+
+    # Toggle back to True
+    response = client.patch(
+        "/users/me/settings",
+        json={"match_album_sleeve": True},
+        headers={"Authorization": "Bearer demo"},
+    )
+    assert response.status_code == 200
+    assert response.json()["match_album_sleeve"] is True

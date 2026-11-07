@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from ..api.deps import get_current_user
 from ..db import get_db
-from ..models import RealtimePlaybackState, User
+from ..models import ArtworkCache, RealtimePlaybackState, User
 from ..queries.analytics_queries import DATE_RANGE_PRESETS, resolve_date_range
 from ..schemas.users import (
     FollowActionResponse, FollowingListResponse, UserProfileResponse, 
@@ -13,6 +13,7 @@ from ..schemas.users import (
     CopyScrobblesRequest, CopyScrobblesResponse
 )
 from ..services import social_service
+from ..services.color_service import fetch_and_extract_color
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -129,7 +130,28 @@ def now_playing(
                 images = album.get("images", [])
                 if images and isinstance(images, list) and isinstance(images[0], dict):
                     artwork_url = images[0].get("url")
-            
+
+    artwork_color = None
+    if artwork_url:
+        cached = db.query(ArtworkCache).filter(ArtworkCache.artwork_url == artwork_url).first()
+        if cached and cached.dominant_color:
+            artwork_color = cached.dominant_color
+        else:
+            color = fetch_and_extract_color(artwork_url)
+            if color:
+                artwork_color = color
+                if cached:
+                    cached.dominant_color = color
+                else:
+                    db.merge(
+                        ArtworkCache(
+                            track_id=track_id or artwork_url,
+                            artwork_url=artwork_url,
+                            dominant_color=color,
+                        )
+                    )
+                db.commit()
+
     return NowPlayingResponse(
         is_playing=True,
         track_id=track_id,
@@ -137,9 +159,10 @@ def now_playing(
         artist_name=artist_name,
         album_name=album_name,
         artwork_url=artwork_url,
+        artwork_color=artwork_color,
         progress_ms=state.max_progress_ms,
         duration_ms=state.duration_ms,
-        raw_metadata=state.raw_metadata
+        raw_metadata=state.raw_metadata,
     )
 
 

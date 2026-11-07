@@ -7,9 +7,10 @@ from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ..models import ListeningEvent
+from ..models import ArtworkCache, ListeningEvent
 from ..schemas.ingestion import ListeningEventCreate, ListeningEventResponse
 from . import scrobble_settings_service
+from .color_service import fetch_and_extract_color
 from .runtime_metrics import record_ingestion
 from .text_cleaning import clean_title
 
@@ -41,6 +42,25 @@ def ingest_listening_event(
             record_ingestion(True)
             return ListeningEventResponse(event_id=dup.id, duplicate=True)
 
+    artwork_color = None
+    if event.artwork_url:
+        cached = db.query(ArtworkCache).filter(ArtworkCache.artwork_url == event.artwork_url).first()
+        if cached and cached.dominant_color:
+            artwork_color = cached.dominant_color
+        else:
+            artwork_color = fetch_and_extract_color(event.artwork_url)
+            if artwork_color:
+                if cached:
+                    cached.dominant_color = artwork_color
+                else:
+                    db.merge(
+                        ArtworkCache(
+                            track_id=event.track_id or event.artwork_url,
+                            artwork_url=event.artwork_url,
+                            dominant_color=artwork_color,
+                        )
+                    )
+
     listening_event = ListeningEvent(
         user_id=user_id,
         track_id=event.track_id,
@@ -48,6 +68,7 @@ def ingest_listening_event(
         artist_name=event.artist_name,
         album_name=event.album_name,
         artwork_url=event.artwork_url,
+        artwork_color=artwork_color,
         played_at=event.played_at,
         duration_ms=event.duration_ms,
         source=event.source,

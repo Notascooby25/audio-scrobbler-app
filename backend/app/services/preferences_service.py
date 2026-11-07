@@ -3,12 +3,14 @@ from __future__ import annotations
 from sqlalchemy.orm import Session
 
 from ..models import UserPreferences
-from ..schemas.preferences import ACCENT_COLORS, DATE_RANGES, PAGE_SIZES, VIEWS
+from ..schemas.preferences import ACCENT_COLORS, DATE_RANGES, PAGE_SIZES, SKINS, VIEWS
 
 
 DEFAULTS = {
     "default_date_range": "last.week",
     "theme": "system",
+    "skin": "classic",
+    "match_album_sleeve": True,
     "accent_color": "blue_monday",
     "default_page_size": 50,
     "scrobbles_page_size": None,
@@ -45,6 +47,10 @@ def update(db: Session, user_id: int, changes: dict[str, object]) -> UserPrefere
             raise ValueError("Unsupported default date range")
         if key == "theme" and value not in {"light", "dark", "system"}:
             raise ValueError("Unsupported theme")
+        if key == "skin" and value not in SKINS:
+            raise ValueError("Unsupported skin")
+        if key == "match_album_sleeve" and not isinstance(value, bool):
+            raise ValueError("match_album_sleeve must be a boolean")
         if key == "accent_color" and value not in ACCENT_COLORS:
             raise ValueError("Unsupported accent color")
         if key.endswith("_page_size") and value is not None and value not in PAGE_SIZES:

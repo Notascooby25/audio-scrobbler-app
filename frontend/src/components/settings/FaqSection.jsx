@@ -86,6 +86,26 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "skins-visual-themes",
+    category: "General & Appearance",
+    question: "What are visual skins, and how does the Sleeve skin work?",
+    answer: (
+      <>
+        <p>
+          In <strong>Settings → General</strong>, the <strong>Skin</strong> selector allows you to
+          choose between <em>Classic</em> (the crisp, dashboard layout) and <em>Sleeve</em> (an
+          editorial, vinyl-inspired visual theme with Young Serif typography and dedicated
+          navigation).
+        </p>
+        <p>
+          When using the Sleeve skin, you can turn on <strong>Match the album sleeve</strong> to let
+          the background atmosphere dynamically tint to match the dominant colors of whatever album
+          is currently playing.
+        </p>
+      </>
+    ),
+  },
+  {
     id: "account-menu-shortcuts",
     category: "General & Appearance",
     question: "Where do I find my profile, friends list, or sign-out option?",

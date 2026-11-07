@@ -135,4 +135,19 @@ Utilitarian geometric forms.
 - **Don't** use dropdown menus for primary navigation or filtering where segmented tabs could fit.
 - **Don't** modify or restyle `RetroJukebox.jsx` or `RetroJukebox.module.css` during global theme/accent restyles.
 
+## Skins
+
+The application architecture supports selectable visual skins built on a unified skins framework:
+
+- **Classic (Default):** The focused, utilitarian default described in this document. Always remains pixel-identical across releases. Unscoped styles in `frontend/src/styles.css`.
+- **Sleeve (Idea B):** An album-led, immersive dark aesthetic dynamically derived from artwork dominant colors. Detailed in [`docs/design/sleeve-skin.md`](docs/design/sleeve-skin.md). Scoped under `[data-skin="sleeve"]`.
+- **Timeline (Idea A):** A calm, data-first vertical rail of plays with quiet gaps and hourly charts. Detailed in [`docs/design/timeline-skin.md`](docs/design/timeline-skin.md). Scoped under `[data-skin="timeline"]`.
+
+All skins adhere to the core design system rules:
+- **Flat-By-Default:** Zero gradients and zero box-shadows across all skin stylesheets.
+- **Token Contract:** Every skin must map the required semantic tokens in `frontend/src/skins/tokens.contract.js`.
+- **Protected Code:** The Retro Jukebox (`RetroJukebox.jsx` and `RetroJukebox.module.css`) is protected and remains untouched in all skins.
+- **Framework Spec:** Architectural invariants and governance are defined in [`docs/design/skins-framework.md`](docs/design/skins-framework.md).
+
+
 
