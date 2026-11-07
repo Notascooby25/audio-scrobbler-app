@@ -7,6 +7,7 @@ import SleeveNav from "./sleeve/slots/SleeveNav";
 import SleeveTodayPage from "./sleeve/slots/SleeveTodayPage";
 import SleevePlayPage from "./sleeve/slots/SleevePlayPage";
 import TimelineNav from "./timeline/slots/TimelineNav";
+import TimelineTodayPage from "./timeline/slots/TimelineTodayPage";
 
 export const SKINS = [
   {
@@ -37,6 +38,7 @@ export const SKINS = [
     status: "hidden",
     slots: {
       appNav: TimelineNav,
+      todayPage: TimelineTodayPage,
     },
   },
 ];
