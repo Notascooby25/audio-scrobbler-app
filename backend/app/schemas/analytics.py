@@ -29,6 +29,7 @@ class ScrobbleListEntry(BaseModel):
     source: str
     played_at: datetime
     artwork_url: str | None = None
+    artwork_color: str | None = None
     spotify_track_id: str | None = None
     is_liked: bool = False
 

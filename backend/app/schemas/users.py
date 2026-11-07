@@ -20,6 +20,7 @@ class LastScrobble(BaseModel):
     played_at: datetime
     track_id: str | None = None
     artwork_url: str | None = None
+    artwork_color: str | None = None
 
     @field_serializer("played_at")
     def serialize_played_at(self, dt: datetime) -> str:
@@ -68,6 +69,7 @@ class NowPlayingResponse(BaseModel):
     artist_name: str | None = None
     album_name: str | None = None
     artwork_url: str | None = None
+    artwork_color: str | None = None
     progress_ms: int | None = None
     duration_ms: int | None = None
     raw_metadata: dict | None = None
