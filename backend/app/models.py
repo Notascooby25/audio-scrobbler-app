@@ -58,6 +58,7 @@ class UserPreferences(Base):
         ),
         CheckConstraint("default_library_view IN ('list', 'grid')", name="ck_user_preferences_library_view"),
         CheckConstraint("theme IN ('light', 'dark', 'system')", name="ck_user_preferences_theme"),
+        CheckConstraint("skin IN ('classic', 'sleeve', 'timeline')", name="ck_user_preferences_skin"),
         CheckConstraint(
             "accent_color IN ('blue_monday', 'spotify_green', 'red_red_wine', 'purple_rain', "
             "'fools_gold', 'paint_it_black', 'pretty_in_pink', 'orange_crush')",
@@ -77,6 +78,7 @@ class UserPreferences(Base):
     user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
     default_date_range: Mapped[str] = mapped_column(String(32), nullable=False, default="last.week")
     theme: Mapped[str] = mapped_column(String(16), nullable=False, default="system")
+    skin: Mapped[str] = mapped_column(String(16), nullable=False, default="classic")
     accent_color: Mapped[str] = mapped_column(String(24), nullable=False, default="blue_monday")
     jukebox_source: Mapped[str] = mapped_column(String(32), nullable=False, default="spotify_saved")
     jukebox_archive_limit: Mapped[int] = mapped_column(Integer, nullable=False, default=100)

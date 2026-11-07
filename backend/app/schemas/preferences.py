@@ -16,6 +16,7 @@ ACCENT_COLORS = {
     "pretty_in_pink",
     "orange_crush",
 }
+SKINS = {"classic", "sleeve", "timeline"}
 
 
 class HomeCityRequest(BaseModel):
@@ -27,6 +28,7 @@ class UserPreferencesResponse(BaseModel):
     home_city: str | None = None
     default_date_range: str
     theme: str
+    skin: str = "classic"
     accent_color: str = "blue_monday"
     default_page_size: int
     scrobbles_page_size: int | None = None
@@ -54,6 +56,7 @@ class UserPreferencesResponse(BaseModel):
 class UserPreferencesUpdate(BaseModel):
     default_date_range: str | None = None
     theme: str | None = None
+    skin: str | None = None
     accent_color: str | None = None
     jukebox_source: str | None = None
     jukebox_archive_limit: int | None = None
