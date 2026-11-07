@@ -1,0 +1,2484 @@
+import React, { useState, useMemo, useEffect } from 'react';
+import {
+  Heart,
+  Bell,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Share,
+  Pencil,
+  Activity,
+  Library,
+  Play,
+  BarChart2,
+  Ticket,
+  Smartphone,
+  Monitor,
+  Check,
+  Sparkles,
+  Disc,
+  Plus,
+  Upload,
+  RefreshCw,
+  LogOut,
+  Users,
+  Settings as SettingsIcon,
+  Radio,
+  Clock,
+  Volume2,
+  Maximize2,
+  Info,
+  CheckCircle2,
+  Sliders,
+  Music,
+  ExternalLink
+} from 'lucide-react';
+
+// --- INITIAL DATA MATCHING MOCKUPS & GITHUB REPO CONTEXT ---
+
+const INITIAL_TRACKS = [
+  {
+    id: 'trk-everlong',
+    title: 'Everlong',
+    artist: 'Foo Fighters',
+    album: 'The Colour and the Shape',
+    monogram: 'E',
+    time: '5:32 pm',
+    relativeTime: '8 minutes ago',
+    source: 'Spotify',
+    tileColor: '#b92b36', // Crimson
+    themeBg: '#380d11',
+    themeCard: '#4d1419',
+    themeBorder: 'rgba(255, 255, 255, 0.14)',
+    plays: 38,
+    duration: '4:10',
+    liked: true,
+    isHero: true
+  },
+  {
+    id: 'trk-monkey-wrench',
+    title: 'Monkey Wrench',
+    artist: 'Foo Fighters',
+    album: 'The Colour and the Shape',
+    monogram: 'MW',
+    time: '5:27 pm',
+    relativeTime: '13 minutes ago',
+    source: 'Spotify',
+    tileColor: '#b92b36',
+    themeBg: '#380d11',
+    themeCard: '#4d1419',
+    themeBorder: 'rgba(255, 255, 255, 0.14)',
+    plays: 11,
+    duration: '3:51',
+    liked: false
+  },
+  {
+    id: 'trk-hey-johnny',
+    title: 'Hey, Johnny Park!',
+    artist: 'Foo Fighters',
+    album: 'The Colour and the Shape',
+    monogram: 'HJ',
+    time: '5:22 pm',
+    relativeTime: '18 minutes ago',
+    source: 'Spotify',
+    tileColor: '#b92b36',
+    themeBg: '#380d11',
+    themeCard: '#4d1419',
+    themeBorder: 'rgba(255, 255, 255, 0.14)',
+    plays: 6,
+    duration: '4:08',
+    liked: false
+  },
+  {
+    id: 'trk-pumpkin-soup',
+    title: 'Pumpkin Soup',
+    artist: 'Kate Nash',
+    album: 'Made of Bricks',
+    monogram: 'PS',
+    time: '12:48 pm',
+    relativeTime: '4 hours ago',
+    source: 'Spotify',
+    tileColor: '#2d7256', // Forest Emerald
+    themeBg: '#0c241b',
+    themeCard: '#173a2c',
+    themeBorder: 'rgba(255, 255, 255, 0.14)',
+    plays: 19,
+    duration: '2:59',
+    liked: false,
+    featuredEarlier: true
+  },
+  {
+    id: 'trk-foundations',
+    title: 'Foundations',
+    artist: 'Kate Nash',
+    album: 'Made of Bricks',
+    monogram: 'F',
+    time: '12:44 pm',
+    relativeTime: '4 hours ago',
+    source: 'Spotify',
+    tileColor: '#2e49b8', // Royal Cobalt
+    themeBg: '#101935',
+    themeCard: '#1b2854',
+    themeBorder: 'rgba(255, 255, 255, 0.15)',
+    plays: 27,
+    duration: '4:05',
+    liked: true,
+    featuredEarlier: true
+  },
+  {
+    id: 'trk-loaded',
+    title: 'Loaded',
+    artist: 'Primal Scream',
+    album: 'Screamadelica',
+    monogram: 'L',
+    time: '8:41 am',
+    relativeTime: '8 hours ago',
+    source: 'YouTube',
+    tileColor: '#d19b1b', // Mustard Gold
+    themeBg: '#3f2e0c',
+    themeCard: '#574014',
+    themeBorder: 'rgba(255, 255, 255, 0.15)',
+    plays: 31,
+    duration: '7:01',
+    liked: false,
+    featuredEarlier: true
+  },
+  {
+    id: 'trk-3310',
+    title: '3310',
+    artist: 'Jamie T',
+    album: '3310 - Single',
+    monogram: 'JT',
+    time: 'Yesterday',
+    relativeTime: '1 day ago',
+    source: 'Spotify',
+    tileColor: '#7c3aed',
+    themeBg: '#23103a',
+    themeCard: '#321852',
+    themeBorder: 'rgba(255, 255, 255, 0.14)',
+    plays: 14,
+    duration: '3:22',
+    liked: true
+  }
+];
+
+const INITIAL_GIGS = [
+  {
+    id: 'gig-red-rum',
+    day: '16',
+    month: 'OCT',
+    year: '2026',
+    fullDate: 'Friday 16 October 2026',
+    artist: 'Red Rum Club',
+    venue: 'O2 Institute, Birmingham',
+    badgeColor: '#b92b36',
+    support: 'The Lathums, Columbia',
+    companions: 'Went with Sam',
+    setlist: [
+      { id: 's-rrc-1', title: 'Vanilla', plays: 18, liked: true },
+      { id: 's-rrc-2', title: 'Would You Rather Be Lonely?', plays: 22, liked: true },
+      { id: 's-rrc-3', title: 'Eleanor', plays: 9, liked: false },
+      { id: 's-rrc-4', title: 'Black Cat', plays: 14, liked: false },
+      { id: 's-rrc-5', title: 'Vibribrate', plays: 6, liked: false }
+    ]
+  },
+  {
+    id: 'gig-black-keys',
+    day: '29',
+    month: 'AUG',
+    year: '2026',
+    fullDate: 'Saturday 29 August 2026',
+    artist: 'The Black Keys',
+    venue: 'Victorious Festival',
+    badgeColor: '#2e49b8',
+    support: 'Primal Scream, Doves',
+    companions: 'Went with Jo and Andy',
+    setlist: [
+      { id: 's-tbk-1', title: 'Lonely Boy', plays: 31, liked: true },
+      { id: 's-tbk-2', title: 'Gold on the Ceiling', plays: 19, liked: true },
+      { id: 's-tbk-3', title: 'Tighten Up', plays: 12, liked: false },
+      { id: 's-tbk-4', title: 'Howlin’ for You', plays: 8, liked: false }
+    ]
+  },
+  {
+    id: 'gig-primal-scream',
+    day: '29',
+    month: 'AUG',
+    year: '2026',
+    fullDate: 'Saturday 29 August 2026',
+    artist: 'Primal Scream',
+    venue: 'Victorious Festival',
+    badgeColor: '#2d7256',
+    support: 'Doves, Royel Otis',
+    companions: 'Went with Jo and Andy',
+    setlist: [
+      { id: 'trk-loaded', title: 'Loaded', plays: 31, liked: false },
+      { id: 's-ps-2', title: 'Movin’ On Up', plays: 24, liked: true },
+      { id: 's-ps-3', title: 'Rocks', plays: 15, liked: false },
+      { id: 's-ps-4', title: 'Come Together', plays: 7, liked: false }
+    ]
+  },
+  {
+    id: 'gig-doves',
+    day: '29',
+    month: 'AUG',
+    year: '2026',
+    fullDate: 'Saturday 29 August 2026',
+    artist: 'Doves',
+    venue: 'Victorious Festival',
+    badgeColor: '#d19b1b',
+    support: 'Festival Stage',
+    companions: 'Went with Jo',
+    setlist: [
+      { id: 's-dv-1', title: 'There Goes the Fear', plays: 16, liked: true },
+      { id: 's-dv-2', title: 'Black and White Town', plays: 21, liked: true },
+      { id: 's-dv-3', title: 'Pounding', plays: 9, liked: false }
+    ]
+  },
+  {
+    id: 'gig-foo-fighters',
+    day: '27',
+    month: 'JUN',
+    year: '2026',
+    fullDate: 'Saturday 27 June 2026',
+    artist: 'Foo Fighters',
+    venue: 'Anfield, Liverpool',
+    badgeColor: '#7c3291',
+    support: 'Royel Otis, Die Spitz and The Snuts',
+    companions: 'You went with Sam and Jo.',
+    setlist: [
+      { id: 's-ff-1', title: 'All My Life', plays: 12, liked: true },
+      { id: 's-ff-2', title: 'Rescued', plays: 4, liked: false },
+      { id: 's-ff-3', title: 'The Pretender', plays: 9, liked: true },
+      { id: 's-ff-4', title: 'Learn to Fly', plays: 7, liked: false },
+      { id: 'trk-monkey-wrench', title: 'Monkey Wrench', plays: 11, liked: false },
+      { id: 's-ff-6', title: 'Times Like These', plays: 5, liked: true },
+      { id: 's-ff-7', title: 'My Hero', plays: 0, liked: false },
+      { id: 'trk-everlong', title: 'Everlong', plays: 38, liked: true }
+    ]
+  },
+  {
+    id: 'gig-royel-otis',
+    day: '27',
+    month: 'JUN',
+    year: '2026',
+    fullDate: 'Saturday 27 June 2026',
+    artist: 'Royel Otis',
+    venue: 'Anfield, Liverpool',
+    badgeColor: '#2e49b8',
+    support: 'Supporting Foo Fighters',
+    companions: 'You went with Sam and Jo.',
+    setlist: [
+      { id: 's-ro-1', title: 'Oysters in My Pocket', plays: 15, liked: true },
+      { id: 's-ro-2', title: 'Sofa King', plays: 11, liked: false },
+      { id: 's-ro-3', title: 'Murder on the Dancefloor', plays: 19, liked: true }
+    ]
+  }
+];
+
+const INITIAL_FRIENDS = [
+  { id: 'fr-1', initials: 'SO', name: 'Sam Okafor', status: 'Listening to Loaded', avatarColor: '#b92b36', following: true, weeklyPlays: 214 },
+  { id: 'fr-2', initials: 'JP', name: 'Jo Pearce', status: '23 plays today', avatarColor: '#d19b1b', following: true, weeklyPlays: 189 },
+  { id: 'fr-3', initials: 'AM', name: 'Andy Marsh', status: 'Last played 2 h ago', avatarColor: '#2e49b8', following: true, weeklyPlays: 162 },
+  { id: 'fr-4', initials: 'PN', name: 'Priya Nair', status: 'Listening to Foundations', avatarColor: '#7c3291', following: true, weeklyPlays: 148 },
+  { id: 'fr-5', initials: 'TR', name: 'Tom Reilly', status: 'Last played yesterday', avatarColor: '#2d7256', following: true, weeklyPlays: 95 }
+];
+
+const ACCENT_SWATCHES = [
+  { id: 'sw-blue', name: 'Blue Monday', songRef: 'Named after the New Order song.', color: '#1d6ce0', bg: '#101935', card: '#1b2854' },
+  { id: 'sw-green', name: 'Green Light', songRef: 'Named after the Lorde song.', color: '#248f59', bg: '#0c241b', card: '#173a2c' },
+  { id: 'sw-crimson', name: 'The Colour & the Shape', songRef: 'Classic Foo Fighters crimson.', color: '#d92648', bg: '#380d11', card: '#4d1419' },
+  { id: 'sw-purple', name: 'Purple Rain', songRef: 'Named after the Prince anthem.', color: '#7e3af2', bg: '#23103a', card: '#321852' },
+  { id: 'sw-amber', name: 'Screamadelica Gold', songRef: 'Warm ochre gold sleeve.', color: '#d47a11', bg: '#3f2e0c', card: '#574014' },
+  { id: 'sw-slate', name: 'Blue Orchid Slate', songRef: 'Deep studio charcoal.', color: '#475569', bg: '#18202c', card: '#243042' },
+  { id: 'sw-pink', name: 'Pretty in Pink', songRef: 'Named after The Psychedelic Furs.', color: '#e04088', bg: '#381024', card: '#4f1834' },
+  { id: 'sw-orange', name: 'Channel Orange', songRef: 'Warm analog sunset.', color: '#e05316', bg: '#38170b', card: '#4f2211' }
+];
+
+export default function App() {
+  // Viewport & Navigation State
+  const [viewportMode, setViewportMode] = useState('mobile'); // 'mobile' | 'desktop'
+  const [activeScreen, setActiveScreen] = useState('today');
+  // 'today' | 'library' | 'gigs' | 'gig-detail' | 'connect' | 'profile' | 'following' | 'settings' | 'first-run' | 'reports'
+
+  // Interactive Data State
+  const [tracks, setTracks] = useState(INITIAL_TRACKS);
+  const [gigs, setGigs] = useState(INITIAL_GIGS);
+  const [selectedGigId, setSelectedGigId] = useState('gig-foo-fighters');
+  const [activeHeroTrackId, setActiveHeroTrackId] = useState('trk-everlong');
+  const [isVinylSpinning, setIsVinylSpinning] = useState(true);
+
+  // Library Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [libraryTab, setLibraryTab] = useState('Scrobbles'); // 'Scrobbles' | 'Artists' | 'Albums' | 'Tracks'
+  const [onlyLikedFilter, setOnlyLikedFilter] = useState(false);
+  const [sourceFilter, setSourceFilter] = useState('All'); // 'All' | 'Spotify' | 'YouTube'
+
+  // Gigs Filters & Modal
+  const [gigTab, setGigTab] = useState('Timeline'); // 'Timeline' | 'Artists' | 'Venues' | 'Songs'
+  const [showLogGigModal, setShowLogGigModal] = useState(false);
+  const [newGigArtist, setNewGigArtist] = useState('');
+  const [newGigVenue, setNewGigVenue] = useState('');
+
+  // Following State
+  const [friends, setFriends] = useState(INITIAL_FRIENDS);
+  const [followTab, setFollowTab] = useState('following'); // 'following' | 'followers'
+  const [showCompareModal, setShowCompareModal] = useState(false);
+
+  // Settings & Dynamic Theme State
+  const [matchAlbumSleeve, setMatchAlbumSleeve] = useState(true);
+  const [selectedSwatchId, setSelectedSwatchId] = useState('sw-blue');
+  const [publicProfile, setPublicProfile] = useState(true);
+  const [notifFollows, setNotifFollows] = useState(false);
+  const [notifWeekly, setNotifWeekly] = useState(true);
+  const [notifImport, setNotifImport] = useState(false);
+  const [showHitboxGuides, setShowHitboxGuides] = useState(false);
+
+  // Connect Sources State
+  const [spotifyChecking, setSpotifyChecking] = useState(false);
+  const [spotifyLastChecked, setSpotifyLastChecked] = useState('8 minutes ago');
+  const [bbcConnected, setBbcConnected] = useState(false);
+
+  // Toast Notification for Heart Likes & Actions
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const triggerToast = (msg) => {
+    setToastMessage(msg);
+  };
+
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => setToastMessage(null), 3200);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
+
+  // Active Hero Track
+  const activeHeroTrack = useMemo(() => {
+    return tracks.find((t) => t.id === activeHeroTrackId) || tracks[0];
+  }, [tracks, activeHeroTrackId]);
+
+  // Selected Gig
+  const selectedGig = useMemo(() => {
+    return gigs.find((g) => g.id === selectedGigId) || gigs[4];
+  }, [gigs, selectedGigId]);
+
+  // Count total liked tracks across Library + Setlists
+  const totalLikedCount = useMemo(() => {
+    return tracks.filter((t) => t.liked).length;
+  }, [tracks]);
+
+  // Toggle Heart Like (44x44px hitbox handler)
+  const handleToggleLike = (trackId, title, e) => {
+    if (e) e.stopPropagation();
+
+    // Check if track is in main tracks list
+    const existingTrack = tracks.find((t) => t.id === trackId);
+    let nextLikedState = true;
+
+    if (existingTrack) {
+      nextLikedState = !existingTrack.liked;
+      setTracks((prev) =>
+        prev.map((t) => (t.id === trackId ? { ...t, liked: nextLikedState } : t))
+      );
+    }
+
+    // Also sync with gig setlists
+    setGigs((prevGigs) =>
+      prevGigs.map((gig) => ({
+        ...gig,
+        setlist: gig.setlist.map((s) => {
+          if (s.id === trackId || s.title === title) {
+            nextLikedState = existingTrack ? nextLikedState : !s.liked;
+            return { ...s, liked: nextLikedState };
+          }
+          return s;
+        })
+      }))
+    );
+
+    triggerToast(
+      nextLikedState
+        ? `♥ Liked "${title}" — Synced to user_liked_tracks & Spotify`
+        : `♡ Removed "${title}" from Liked Songs`
+    );
+  };
+
+  // Compute Contextual B-Sleeve Theme Colors matching the Mockups
+  const activeTheme = useMemo(() => {
+    const fallbackSwatch =
+      ACCENT_SWATCHES.find((s) => s.id === selectedSwatchId) || ACCENT_SWATCHES[0];
+
+    // Screen-specific authentic palettes from the B-Sleeve mockups:
+    if (activeScreen === 'gig-detail' || activeScreen === 'following') {
+      return {
+        bg: '#0c241b', // Deep Forest Pine
+        card: '#16382b',
+        heroCard: '#2b6650',
+        border: 'rgba(255, 255, 255, 0.14)',
+        pillActiveBg: '#ffffff',
+        pillActiveText: '#0c241b',
+        navPillBg: '#1c4635',
+        name: 'Forest Pine (Sleeve)'
+      };
+    }
+    if (activeScreen === 'connect') {
+      return {
+        bg: '#101935', // Deep Midnight Navy
+        card: '#1b2854',
+        heroCard: '#263875',
+        border: 'rgba(255, 255, 255, 0.15)',
+        pillActiveBg: '#ffffff',
+        pillActiveText: '#101935',
+        navPillBg: '#23346b',
+        name: 'Midnight Navy (Sources)'
+      };
+    }
+    if (activeScreen === 'settings') {
+      if (!matchAlbumSleeve) {
+        return {
+          bg: fallbackSwatch.bg,
+          card: fallbackSwatch.card,
+          heroCard: fallbackSwatch.color,
+          border: 'rgba(255, 255, 255, 0.16)',
+          pillActiveBg: '#ffffff',
+          pillActiveText: fallbackSwatch.bg,
+          navPillBg: fallbackSwatch.card,
+          name: fallbackSwatch.name
+        };
+      }
+      return {
+        bg: '#3f2e0c', // Warm Olive Ochre from Settings Mockup
+        card: '#594114',
+        heroCard: '#78581b',
+        border: 'rgba(255, 255, 255, 0.16)',
+        pillActiveBg: '#ffffff',
+        pillActiveText: '#3f2e0c',
+        navPillBg: '#594114',
+        name: 'Olive Ochre (Sleeve)'
+      };
+    }
+
+    // For Today, Library, Gigs, Profile, First Run, Reports:
+    // If "Match the album sleeve" is ON, take hue from activeHeroTrack!
+    if (matchAlbumSleeve && activeHeroTrack) {
+      return {
+        bg: activeHeroTrack.themeBg || '#380d11',
+        card: activeHeroTrack.themeCard || '#4d1419',
+        heroCard: activeHeroTrack.tileColor || '#b92b36',
+        border: activeHeroTrack.themeBorder || 'rgba(255, 255, 255, 0.14)',
+        pillActiveBg: '#ffffff',
+        pillActiveText: activeHeroTrack.themeBg || '#380d11',
+        navPillBg: '#661a20',
+        name: `${activeHeroTrack.album} Sleeve`
+      };
+    }
+
+    return {
+      bg: fallbackSwatch.bg,
+      card: fallbackSwatch.card,
+      heroCard: fallbackSwatch.color,
+      border: 'rgba(255, 255, 255, 0.15)',
+      pillActiveBg: '#ffffff',
+      pillActiveText: fallbackSwatch.bg,
+      navPillBg: fallbackSwatch.card,
+      name: fallbackSwatch.name
+    };
+  }, [activeScreen, matchAlbumSleeve, activeHeroTrack, selectedSwatchId]);
+
+  // Filtered Library Tracks
+  const filteredTracks = useMemo(() => {
+    return tracks.filter((t) => {
+      const matchesQuery =
+        !searchQuery.trim() ||
+        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.album.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesLiked = !onlyLikedFilter || t.liked;
+      const matchesSource = sourceFilter === 'All' || t.source === sourceFilter;
+      return matchesQuery && matchesLiked && matchesSource;
+    });
+  }, [tracks, searchQuery, onlyLikedFilter, sourceFilter]);
+
+  // Add New Gig Handler
+  const handleAddGig = (e) => {
+    e.preventDefault();
+    if (!newGigArtist.trim() || !newGigVenue.trim()) return;
+    const newGig = {
+      id: `gig-${Date.now()}`,
+      day: '14',
+      month: 'NOV',
+      year: '2026',
+      fullDate: 'Saturday 14 November 2026',
+      artist: newGigArtist.trim(),
+      venue: newGigVenue.trim(),
+      badgeColor: '#b92b36',
+      support: 'Special Guests',
+      companions: 'Logged manually',
+      setlist: [
+        { id: `s-custom-1`, title: 'Opening Track', plays: 5, liked: true },
+        { id: `s-custom-2`, title: 'Encore Finale', plays: 12, liked: false }
+      ]
+    };
+    setGigs([newGig, ...gigs]);
+    setNewGigArtist('');
+    setNewGigVenue('');
+    setShowLogGigModal(false);
+    triggerToast(`Logged gig: ${newGig.artist} at ${newGig.venue}`);
+  };
+
+  // Reusable 44x44px Accessible Heart Like Button Component
+  const HeartLikeButton = ({ liked, onToggle, label, size = 18 }) => (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={label || (liked ? 'Unlike track' : 'Like track')}
+      aria-pressed={liked}
+      title="44×44px Touch Target — Syncs with Spotify & PostgreSQL"
+      className={`min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-full transition-all duration-150 active:scale-125 focus:outline-none focus:ring-2 focus:ring-white/40 ${
+        showHitboxGuides ? 'ring-1 ring-dashed ring-rose-400/70 bg-rose-500/10' : 'hover:bg-white/10'
+      }`}
+    >
+      <Heart
+        size={size}
+        className={`transition-transform duration-200 ${
+          liked
+            ? 'fill-white text-white scale-110 drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]'
+            : 'text-white/60 hover:text-white'
+        }`}
+      />
+    </button>
+  );
+
+  // Reusable Vinyl Sleeve Graphic (Used on "Today" and "First Run")
+  const VinylSleeveArtwork = ({ track, size = 'large', interactive = true }) => {
+    const isLarge = size === 'large';
+    return (
+      <div
+        onClick={() => interactive && setIsVinylSpinning(!isVinylSpinning)}
+        className={`relative select-none ${
+          interactive ? 'cursor-pointer group' : ''
+        } flex items-center`}
+        title={interactive ? 'Click sleeve to toggle vinyl rotation' : undefined}
+      >
+        {/* Square Album Sleeve */}
+        <div
+          style={{ backgroundColor: track?.tileColor || '#b92b36' }}
+          className={`relative z-10 ${
+            isLarge ? 'w-56 h-56 sm:w-64 sm:h-64 p-5' : 'w-44 h-44 p-4'
+          } rounded-[4px] shadow-[8px_8px_28px_rgba(0,0,0,0.45)] flex flex-col justify-between transition-transform duration-300 group-hover:scale-[1.01] border border-white/10`}
+        >
+          <div className="space-y-0.5">
+            <h2
+              style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+              className={`${
+                isLarge ? 'text-[28px] sm:text-[32px] leading-[1.08]' : 'text-xl leading-tight'
+              } font-normal text-white/95 tracking-tight`}
+            >
+              {track?.album || 'The Colour and the Shape'}
+            </h2>
+          </div>
+
+          <div className="flex items-center justify-between text-[11px] uppercase tracking-widest text-white/75 font-medium">
+            <span>{track?.artist || 'Foo Fighters'}</span>
+            <span className="px-1.5 py-0.5 rounded bg-black/20 text-white/90 font-mono">
+              LP
+            </span>
+          </div>
+        </div>
+
+        {/* Peeking Grooved Vinyl Record on the Right */}
+        <div
+          className={`relative -ml-16 sm:-ml-20 z-0 ${
+            isLarge ? 'w-52 h-52 sm:w-60 sm:h-60' : 'w-40 h-40'
+          } rounded-full bg-[#09090b] shadow-2xl border border-white/10 flex items-center justify-center transition-transform duration-500 ${
+            isVinylSpinning ? 'animate-[spin_14s_linear_infinite]' : ''
+          }`}
+          style={{
+            backgroundImage:
+              'repeating-radial-gradient(circle at center, #0a0a0c 0px, #0a0a0c 4px, #18181b 5px, #0a0a0c 6px)'
+          }}
+        >
+          {/* Vinyl Sheen Highlight */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none" />
+          {/* Inner Center Label */}
+          <div
+            style={{ backgroundColor: track?.tileColor || '#b92b36' }}
+            className={`${
+              isLarge ? 'w-16 h-16' : 'w-12 h-12'
+            } rounded-full border-4 border-black/40 flex items-center justify-center shadow-inner`}
+          >
+            {/* Center Spindle Hole */}
+            <div className="w-3 h-3 rounded-full bg-[#12090a] border border-white/20" />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // --- SCREEN RENDERERS ---
+
+  // 1. TODAY SCREEN
+  const renderTodayScreen = (isDesktopLayout = false) => {
+    const earlierTracks = tracks.filter((t) => t.featuredEarlier);
+
+    return (
+      <div className={isDesktopLayout ? 'grid grid-cols-12 gap-8 items-start' : 'space-y-6'}>
+        {/* Left / Primary Hero Column */}
+        <div
+          className={
+            isDesktopLayout
+              ? 'col-span-5 bg-black/15 border border-white/10 rounded-2xl p-6 space-y-5'
+              : 'space-y-4'
+          }
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs uppercase tracking-widest text-white/60 font-medium">
+              Now Playing / Latest Sleeve
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-xs text-emerald-300/90 bg-emerald-500/15 border border-emerald-400/20 px-2.5 py-0.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              {activeHeroTrack.source}
+            </span>
+          </div>
+
+          {/* Vinyl Sleeve Hero */}
+          <div className="py-1 flex justify-start">
+            <VinylSleeveArtwork track={activeHeroTrack} size="large" />
+          </div>
+
+          {/* Active Track Title + 44x44px Heart Like Control */}
+          <div className="pt-1 flex items-start justify-between gap-2">
+            <div>
+              <h1
+                style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+                className="text-2xl sm:text-3xl text-white font-normal leading-tight"
+              >
+                {activeHeroTrack.title}
+              </h1>
+              <p className="text-sm font-semibold text-white/90 mt-0.5">
+                {activeHeroTrack.artist}
+              </p>
+              <p className="text-xs text-white/65 mt-1 leading-relaxed">
+                {activeHeroTrack.album}. Scrobbled {activeHeroTrack.relativeTime} from{' '}
+                {activeHeroTrack.source}.
+              </p>
+            </div>
+
+            <HeartLikeButton
+              liked={activeHeroTrack.liked}
+              size={22}
+              onToggle={(e) =>
+                handleToggleLike(activeHeroTrack.id, activeHeroTrack.title, e)
+              }
+            />
+          </div>
+        </div>
+
+        {/* Right / Secondary Column: Earlier Today Sleeve Grid + Recent Stream */}
+        <div className={isDesktopLayout ? 'col-span-7 space-y-8' : 'space-y-6 pt-2'}>
+          {/* Earlier Today 3-Column Monogram Sleeve Showcase */}
+          <div>
+            <div className="flex items-baseline justify-between mb-3">
+              <h2
+                style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+                className="text-base text-white/95 font-normal"
+              >
+                Earlier today
+              </h2>
+              <button
+                type="button"
+                onClick={() => setActiveScreen('library')}
+                className="text-xs text-white/80 underline underline-offset-4 hover:text-white"
+              >
+                See all 38
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              {earlierTracks.map((item) => {
+                const isSelected = item.id === activeHeroTrack.id;
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => {
+                      setActiveHeroTrackId(item.id);
+                      triggerToast(`Sleeve theme matched to "${item.album}"`);
+                    }}
+                    className="group cursor-pointer space-y-1.5"
+                  >
+                    <div
+                      style={{ backgroundColor: item.tileColor }}
+                      className={`aspect-square rounded-[4px] p-2.5 flex flex-col justify-between shadow-md transition-all duration-200 group-hover:-translate-y-0.5 ${
+                        isSelected ? 'ring-2 ring-white' : 'border border-white/10'
+                      }`}
+                    >
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={(e) => handleToggleLike(item.id, item.title, e)}
+                          aria-label={`Like ${item.title}`}
+                          className="w-7 h-7 rounded-full bg-black/20 hover:bg-black/40 flex items-center justify-center transition"
+                        >
+                          <Heart
+                            size={13}
+                            className={
+                              item.liked ? 'fill-white text-white' : 'text-white/70'
+                            }
+                          />
+                        </button>
+                      </div>
+                      <span
+                        style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+                        className="text-xl sm:text-2xl text-white/90 font-normal leading-none"
+                      >
+                        {item.monogram}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-white truncate">
+                        {item.title}
+                      </p>
+                      <p className="text-[11px] text-white/65 truncate">{item.artist}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Recent Scrobble Stream (Interactive list to test changing hero sleeves) */}
+          <div className="pt-2">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs uppercase tracking-wider text-white/60 font-medium">
+                Recent Scrobble Stream (Tap row to preview sleeve hue)
+              </span>
+              <span className="text-xs text-white/60 tabular-nums">
+                2 h 14 m listened
+              </span>
+            </div>
+
+            <div className="divide-y divide-white/15 border-t border-b border-white/15">
+              {tracks.slice(0, 5).map((trk) => {
+                const isCurrent = trk.id === activeHeroTrack.id;
+                return (
+                  <div
+                    key={trk.id}
+                    onClick={() => setActiveHeroTrackId(trk.id)}
+                    className={`py-2.5 flex items-center justify-between gap-3 cursor-pointer transition-colors ${
+                      isCurrent ? 'bg-white/10 -mx-2 px-2 rounded-lg' : 'hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        style={{ backgroundColor: trk.tileColor }}
+                        className="w-10 h-10 rounded-[4px] flex-shrink-0 flex items-end p-1.5 border border-white/10"
+                      >
+                        <span
+                          style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+                          className="text-xs text-white/95 leading-none"
+                        >
+                          {trk.monogram}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-white truncate flex items-center gap-1.5">
+                          {trk.title}
+                          {isCurrent && (
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-white" />
+                          )}
+                        </p>
+                        <p className="text-xs text-white/65 truncate">{trk.artist}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <span className="text-xs text-white/60 tabular-nums">{trk.time}</span>
+                      <HeartLikeButton
+                        liked={trk.liked}
+                        onToggle={(e) => handleToggleLike(trk.id, trk.title, e)}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 2. LIBRARY SCREEN
+  const renderLibraryScreen = (isDesktopLayout = false) => {
+    const tabs = ['Scrobbles', 'Artists', 'Albums', 'Tracks'];
+
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+          <div>
+            <h1
+              style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+              className="text-3xl text-white font-normal tracking-tight"
+            >
+              Library
+            </h1>
+          </div>
+          <div className="text-xs text-white/65 tabular-nums">
+            Showing {filteredTracks.length} of {tracks.length} today • {totalLikedCount} liked
+          </div>
+        </div>
+
+        {/* Search Input Pill */}
+        <div className="relative">
+          <Search
+            size={16}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/55 pointer-events-none"
+          />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search tracks, artists, albums"
+            aria-label="Search library tracks, artists, or albums"
+            style={{ backgroundColor: activeTheme.card }}
+            className="w-full pl-10 pr-4 py-2.5 rounded-full text-sm text-white placeholder-white/55 border border-white/15 focus:outline-none focus:border-white/50 transition"
+          />
+        </div>
+
+        {/* Primary Pill Filter Tabs + Heart Liked Filter */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+          {tabs.map((tab) => {
+            const active = libraryTab === tab;
+            return (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setLibraryTab(tab)}
+                style={
+                  active
+                    ? {
+                        backgroundColor: activeTheme.pillActiveBg,
+                        color: activeTheme.pillActiveText
+                      }
+                    : undefined
+                }
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition whitespace-nowrap ${
+                  active
+                    ? 'shadow-sm'
+                    : 'border border-white/25 text-white/85 hover:bg-white/10'
+                }`}
+              >
+                {tab}
+              </button>
+            );
+          })}
+
+          {/* Liked Tracks Quick Filter Pill */}
+          <button
+            type="button"
+            onClick={() => setOnlyLikedFilter(!onlyLikedFilter)}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 transition whitespace-nowrap ${
+              onlyLikedFilter
+                ? 'bg-rose-500 text-white shadow-sm'
+                : 'border border-white/25 text-white/85 hover:bg-white/10'
+            }`}
+          >
+            <Heart size={12} className={onlyLikedFilter ? 'fill-white' : ''} />
+            Liked ({totalLikedCount})
+          </button>
+        </div>
+
+        {/* Source Sub-Pills (All / Spotify / YouTube) */}
+        <div className="flex items-center justify-between pt-1">
+          <h2
+            style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+            className="text-base text-white/90 font-normal"
+          >
+            Today
+          </h2>
+          <div className="flex items-center gap-1.5">
+            {['All', 'Spotify', 'YouTube'].map((src) => (
+              <button
+                key={src}
+                type="button"
+                onClick={() => setSourceFilter(src)}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition ${
+                  sourceFilter === src
+                    ? 'bg-white/20 text-white border border-white/30'
+                    : 'text-white/60 hover:text-white'
+                }`}
+              >
+                {src}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Flattened Track List with Hairline Dividers & 44x44px Heart Buttons */}
+        <div className="divide-y divide-white/15 border-t border-b border-white/15">
+          {filteredTracks.length === 0 ? (
+            <div className="py-10 text-center text-sm text-white/60">
+              No scrobbles match your current filter.
+            </div>
+          ) : (
+            filteredTracks.map((trk) => (
+              <div
+                key={trk.id}
+                onClick={() => {
+                  setActiveHeroTrackId(trk.id);
+                  triggerToast(`Selected "${trk.title}" — Dynamic sleeve colour updated`);
+                }}
+                className="py-2.5 flex items-center justify-between gap-3 hover:bg-white/5 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  {/* Monogram Square Sleeve Tile */}
+                  <div
+                    style={{ backgroundColor: trk.tileColor }}
+                    className="w-11 h-11 rounded-[4px] flex-shrink-0 flex items-end p-1.5 shadow-sm border border-white/10"
+                  >
+                    <span
+                      style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+                      className="text-xs text-white/95 font-normal leading-none"
+                    >
+                      {trk.monogram}
+                    </span>
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-white truncate">{trk.title}</p>
+                    <p className="text-xs text-white/65 truncate">
+                      {trk.artist}
+                      {isDesktopLayout && (
+                        <span className="text-white/45"> • {trk.album}</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {isDesktopLayout && (
+                    <span className="hidden md:inline-flex text-[11px] px-2 py-0.5 rounded bg-white/10 text-white/75">
+                      {trk.source}
+                    </span>
+                  )}
+                  <span className="text-xs text-white/65 tabular-nums">{trk.time}</span>
+                  <HeartLikeButton
+                    liked={trk.liked}
+                    onToggle={(e) => handleToggleLike(trk.id, trk.title, e)}
+                  />
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // 3. GIGS TIMELINE SCREEN
+  const renderGigsScreen = (isDesktopLayout = false) => {
+    const gigTabs = ['Timeline', 'Artists', 'Venues', 'Songs'];
+
+    return (
+      <div className={isDesktopLayout ? 'grid grid-cols-12 gap-8 items-start' : 'space-y-4'}>
+        {/* Left / Main Gigs List */}
+        <div className={isDesktopLayout ? 'col-span-6 space-y-4' : 'space-y-4'}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h1
+                style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+                className="text-3xl text-white font-normal tracking-tight"
+              >
+                Gigs
+              </h1>
+              <p className="text-xs text-white/70 mt-0.5 tabular-nums">
+                {gigs.length + 18} shows, 19 artists, 9 venues
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowLogGigModal(true)}
+              className="px-4 py-2 rounded-full bg-white text-[#380d11] text-xs font-bold shadow-sm hover:bg-white/90 transition"
+            >
+              Log a gig
+            </button>
+          </div>
+
+          {/* Gigs Filter Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {gigTabs.map((tab) => {
+              const active = gigTab === tab;
+              return (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setGigTab(tab)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition whitespace-nowrap ${
+                    active
+                      ? 'bg-white text-[#380d11] shadow-sm'
+                      : 'border border-white/25 text-white/85 hover:bg-white/10'
+                  }`}
+                >
+                  {tab}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Gigs Rows with Colored Square Date Badges */}
+          <div className="divide-y divide-white/15 border-t border-b border-white/15">
+            {gigs.map((gig) => {
+              const isSelected = gig.id === selectedGig.id;
+              return (
+                <div
+                  key={gig.id}
+                  onClick={() => {
+                    setSelectedGigId(gig.id);
+                    if (!isDesktopLayout) {
+                      setActiveScreen('gig-detail');
+                    }
+                  }}
+                  className={`py-3 flex items-center justify-between gap-3 cursor-pointer transition ${
+                    isDesktopLayout && isSelected
+                      ? 'bg-white/10 -mx-2 px-2 rounded-lg'
+                      : 'hover:bg-white/5'
+                  }`}
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    {/* Square Date Badge */}
+                    <div
+                      style={{ backgroundColor: gig.badgeColor }}
+                      className="w-11 h-11 rounded-[4px] flex-shrink-0 flex flex-col items-center justify-center text-white shadow-sm border border-white/10"
+                    >
+                      <span className="text-sm font-bold leading-none tabular-nums">
+                        {gig.day}
+                      </span>
+                      <span className="text-[10px] font-semibold tracking-wider uppercase mt-0.5 text-white/85">
+                        {gig.month}
+                      </span>
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{gig.artist}</p>
+                      <p className="text-xs text-white/65 truncate">{gig.venue}</p>
+                    </div>
+                  </div>
+
+                  <span className="text-xs text-white/60 tabular-nums flex-shrink-0">
+                    {gig.year}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* In Desktop Mode, show the selected Gig Detail Setlist side-by-side! */}
+        {isDesktopLayout && (
+          <div className="col-span-6 bg-[#0c241b] border border-white/15 rounded-2xl p-6 shadow-xl">
+            {renderGigDetailScreen(true)}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // 4. GIG DETAIL SCREEN (Deep Forest Green Sleeve Theme)
+  const renderGigDetailScreen = (embeddedInDesktop = false) => {
+    const playedInSetlist = selectedGig.setlist.filter((s) => s.plays > 0).length;
+
+    return (
+      <div className="space-y-4">
+        {/* Top Action Bar */}
+        {!embeddedInDesktop && (
+          <div className="flex items-center justify-between pb-1">
+            <button
+              type="button"
+              onClick={() => setActiveScreen('gigs')}
+              className="min-w-[44px] min-h-[44px] -ml-2 inline-flex items-center justify-center rounded-full text-white/85 hover:bg-white/10"
+              aria-label="Back to gigs"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() =>
+                  triggerToast(`Shared ${selectedGig.artist} at ${selectedGig.venue} link`)
+                }
+                className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-full text-white/85 hover:bg-white/10"
+                aria-label="Share gig"
+              >
+                <Share size={17} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowLogGigModal(true)}
+                className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-full text-white/85 hover:bg-white/10"
+                aria-label="Edit gig"
+              >
+                <Pencil size={17} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Green Ticket Sleeve Hero Card */}
+        <div
+          style={{ backgroundColor: '#29634e' }}
+          className="rounded-[6px] p-5 min-h-[148px] flex flex-col justify-between border border-white/15 shadow-md"
+        >
+          <span className="text-xs text-white/80 font-medium">{selectedGig.fullDate}</span>
+
+          <div className="pt-6">
+            <h1
+              style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+              className="text-3xl text-white font-normal leading-tight"
+            >
+              {selectedGig.artist}
+            </h1>
+            <p className="text-xs text-white/90 font-medium mt-0.5">{selectedGig.venue}</p>
+          </div>
+        </div>
+
+        {/* Support & Companions Metadata */}
+        <div className="text-xs text-white/75 space-y-0.5 leading-relaxed">
+          <p>With {selectedGig.support}</p>
+          <p>{selectedGig.companions}</p>
+        </div>
+
+        {/* Setlist Header */}
+        <div className="pt-2 flex items-baseline justify-between">
+          <h2
+            style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+            className="text-base text-white font-normal"
+          >
+            Setlist
+          </h2>
+          <span className="text-xs text-white/70 tabular-nums">
+            You’ve played {playedInSetlist} of {selectedGig.setlist.length}
+          </span>
+        </div>
+
+        {/* Setlist Rows with Play Counts & 44x44px Heart Like Buttons */}
+        <div className="divide-y divide-white/15 border-t border-b border-white/15">
+          {selectedGig.setlist.map((song, idx) => (
+            <div
+              key={song.id}
+              className="py-2 flex items-center justify-between gap-3 hover:bg-white/5 transition"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="text-xs text-white/55 w-4 tabular-nums">{idx + 1}</span>
+                <span className="text-sm font-medium text-white truncate">{song.title}</span>
+              </div>
+
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <span
+                  className={`text-xs tabular-nums ${
+                    song.plays > 0 ? 'text-white/85 font-medium' : 'text-white/45'
+                  }`}
+                >
+                  {song.plays > 0 ? `${song.plays} plays` : 'Not yet'}
+                </span>
+                <HeartLikeButton
+                  liked={song.liked}
+                  size={16}
+                  onToggle={(e) => handleToggleLike(song.id, song.title, e)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // 5. CONNECT SOURCES SCREEN (Deep Midnight Navy Theme)
+  const renderConnectScreen = (isDesktopLayout = false) => {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveScreen('profile')}
+            className="min-w-[44px] min-h-[44px] -ml-2 inline-flex items-center justify-center rounded-full text-white/85 hover:bg-white/10"
+            aria-label="Back to profile"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <h1
+            style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+            className="text-lg text-white font-normal"
+          >
+            Connect sources
+          </h1>
+        </div>
+
+        <p className="text-xs text-white/75 leading-relaxed">
+          Bring your plays from each service into one timeline. Duplicates are removed for you.
+        </p>
+
+        <div className={isDesktopLayout ? 'grid grid-cols-3 gap-4 pt-2' : 'space-y-3 pt-1'}>
+          {/* Card 1: Spotify */}
+          <div className="bg-[#1b2854] border border-white/10 rounded-xl p-4 space-y-3 flex flex-col justify-between">
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-[4px] bg-[#249c57] flex items-end p-1.5 text-white font-serif text-xs">
+                  Sp
+                </div>
+                <div>
+                  <h2
+                    style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+                    className="text-base text-white font-normal leading-tight"
+                  >
+                    Spotify
+                  </h2>
+                  <p className="text-xs text-white/70">Connected as chris.l</p>
+                </div>
+              </div>
+
+              <p className="text-xs text-white/75 leading-relaxed">
+                Last checked {spotifyLastChecked}. 38 plays added today.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setSpotifyChecking(true);
+                  setTimeout(() => {
+                    setSpotifyChecking(false);
+                    setSpotifyLastChecked('just now');
+                    triggerToast('Polled Spotify /v1/me/player/recently-played & /me/tracks');
+                  }, 600);
+                }}
+                className="py-2 px-3 rounded-full bg-white text-[#101935] text-xs font-bold hover:bg-white/90 transition inline-flex items-center justify-center gap-1.5"
+              >
+                {spotifyChecking && <RefreshCw size={12} className="animate-spin" />}
+                Check now
+              </button>
+              <button
+                type="button"
+                onClick={() => triggerToast('Spotify OAuth token rotation stays active on NUC')}
+                className="py-2 px-3 rounded-full border border-white/30 text-white text-xs font-semibold hover:bg-white/10 transition"
+              >
+                Disconnect
+              </button>
+            </div>
+          </div>
+
+          {/* Card 2: YouTube History */}
+          <div className="bg-[#1b2854] border border-white/10 rounded-xl p-4 space-y-3 flex flex-col justify-between">
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-[4px] bg-[#d9383a] flex items-end p-1.5 text-white font-serif text-xs">
+                  Yt
+                </div>
+                <div>
+                  <h2
+                    style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+                    className="text-base text-white font-normal leading-tight"
+                  >
+                    YouTube history
+                  </h2>
+                  <p className="text-xs text-white/70">Imported from a file</p>
+                </div>
+              </div>
+
+              <p className="text-xs text-white/75 leading-relaxed">
+                12 October: 1,284 plays added, 96 duplicates skipped.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                triggerToast(
+                  'Ready to ingest Google Takeout watch-history.json into WORKER_IMPORT_DIR'
+                )
+              }
+              className="w-full py-2.5 px-4 rounded-full bg-white text-[#101935] text-xs font-bold hover:bg-white/90 transition"
+            >
+              Choose a history file
+            </button>
+          </div>
+
+          {/* Card 3: BBC Sounds */}
+          <div className="bg-[#1b2854] border border-white/10 rounded-xl p-4 space-y-3 flex flex-col justify-between">
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-[4px] bg-[#4a66d6] flex items-end p-1.5 text-white font-serif text-xs">
+                  Bb
+                </div>
+                <div>
+                  <h2
+                    style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+                    className="text-base text-white font-normal leading-tight"
+                  >
+                    BBC Sounds
+                  </h2>
+                  <p className="text-xs text-white/70">
+                    {bbcConnected ? 'Connected via Web Feed' : 'Not connected'}
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-xs text-white/70 leading-relaxed">
+                Import radio tracklists and live session plays into your timeline.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setBbcConnected(!bbcConnected);
+                triggerToast(
+                  !bbcConnected
+                    ? 'BBC Sounds feed linked to timeline'
+                    : 'BBC Sounds disconnected'
+                );
+              }}
+              className="w-full py-2.5 px-4 rounded-full border border-white/30 text-white text-xs font-semibold hover:bg-white/10 transition"
+            >
+              {bbcConnected ? 'Disconnect BBC Sounds' : 'Connect BBC Sounds'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 6. PROFILE SCREEN
+  const renderProfileScreen = (isDesktopLayout = false) => {
+    return (
+      <div className="space-y-5">
+        {/* User Avatar & Name Header */}
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-[#b93842] flex items-center justify-center text-white text-xl font-serif border border-white/20 shadow-md">
+            CL
+          </div>
+          <div>
+            <h1
+              style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+              className="text-2xl text-white font-normal"
+            >
+              Chris Lettis
+            </h1>
+            <p className="text-xs text-white/70 mt-0.5">
+              @chris, listening since March 2021
+            </p>
+          </div>
+        </div>
+
+        {/* 3 Stats Cards */}
+        <div className="grid grid-cols-3 gap-2.5">
+          <div
+            onClick={() => setActiveScreen('library')}
+            className="bg-white/10 border border-white/10 rounded-xl p-3 cursor-pointer hover:bg-white/15 transition"
+          >
+            <p
+              style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+              className="text-lg text-white tabular-nums"
+            >
+              18,432
+            </p>
+            <p className="text-[11px] text-white/65 mt-0.5">Scrobbles</p>
+          </div>
+
+          <div
+            onClick={() => setActiveScreen('following')}
+            className="bg-white/10 border border-white/10 rounded-xl p-3 cursor-pointer hover:bg-white/15 transition"
+          >
+            <p
+              style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+              className="text-lg text-white tabular-nums"
+            >
+              12
+            </p>
+            <p className="text-[11px] text-white/65 mt-0.5">Following</p>
+          </div>
+
+          <div
+            onClick={() => {
+              setFollowTab('followers');
+              setActiveScreen('following');
+            }}
+            className="bg-white/10 border border-white/10 rounded-xl p-3 cursor-pointer hover:bg-white/15 transition"
+          >
+            <p
+              style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+              className="text-lg text-white tabular-nums"
+            >
+              9
+            </p>
+            <p className="text-[11px] text-white/65 mt-0.5">Followers</p>
+          </div>
+        </div>
+
+        {/* Public Profile Toggle Card */}
+        <div className="bg-white/10 border border-white/10 rounded-xl p-3.5 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-white">Public profile</p>
+            <p className="text-xs text-white/70">
+              Friends can see your reports and library
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={publicProfile}
+            onClick={() => {
+              setPublicProfile(!publicProfile);
+              triggerToast(
+                !publicProfile
+                  ? 'Profile visible on Family Leaderboard'
+                  : 'Profile hidden from Family Leaderboard'
+              );
+            }}
+            className={`w-12 h-7 rounded-full p-1 transition-colors flex items-center ${
+              publicProfile ? 'bg-white justify-end' : 'bg-black/40 border border-white/25 justify-start'
+            }`}
+          >
+            <span
+              className={`w-5 h-5 rounded-full transition ${
+                publicProfile ? 'bg-[#380d11]' : 'bg-white/80'
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Navigation Rows with Hairline Dividers */}
+        <div className="divide-y divide-white/15 border-t border-b border-white/15">
+          <button
+            type="button"
+            onClick={() => setActiveScreen('following')}
+            className="w-full py-3.5 flex items-center justify-between text-left hover:bg-white/5 transition"
+          >
+            <span className="text-sm font-medium text-white">Following</span>
+            <span className="text-xs text-white/65 inline-flex items-center gap-1.5">
+              12 people <ChevronRight size={15} />
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveScreen('connect')}
+            className="w-full py-3.5 flex items-center justify-between text-left hover:bg-white/5 transition"
+          >
+            <span className="text-sm font-medium text-white">Connect sources</span>
+            <span className="text-xs text-white/65 inline-flex items-center gap-1.5">
+              {bbcConnected ? '3 connected' : '2 connected'} <ChevronRight size={15} />
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveScreen('settings')}
+            className="w-full py-3.5 flex items-center justify-between text-left hover:bg-white/5 transition"
+          >
+            <span className="text-sm font-medium text-white">Settings</span>
+            <ChevronRight size={15} className="text-white/65" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              triggerToast('Audio Scrobbler v2.14 — B-Sleeve UI + 44×44px Heart Likes')
+            }
+            className="w-full py-3.5 flex items-center justify-between text-left hover:bg-white/5 transition"
+          >
+            <span className="text-sm font-medium text-white">What’s new</span>
+            <span className="text-xs text-white/65 inline-flex items-center gap-1.5">
+              Version 2.14 <ChevronRight size={15} />
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveScreen('first-run')}
+            className="w-full py-3.5 flex items-center justify-between text-left hover:bg-white/5 transition"
+          >
+            <span className="text-sm font-medium text-white">Sign out</span>
+            <ChevronRight size={15} className="text-white/65" />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // 7. FOLLOWING SCREEN (Deep Forest Green Theme)
+  const renderFollowingScreen = () => {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveScreen('profile')}
+            className="min-w-[44px] min-h-[44px] -ml-2 inline-flex items-center justify-center rounded-full text-white/85 hover:bg-white/10"
+            aria-label="Back to profile"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <h1
+            style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+            className="text-lg text-white font-normal"
+          >
+            Following
+          </h1>
+        </div>
+
+        {/* Following 12 / Followers 9 Pills */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setFollowTab('following')}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${
+              followTab === 'following'
+                ? 'bg-white text-[#0c241b]'
+                : 'border border-white/25 text-white/85'
+            }`}
+          >
+            Following 12
+          </button>
+          <button
+            type="button"
+            onClick={() => setFollowTab('followers')}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${
+              followTab === 'followers'
+                ? 'bg-white text-[#0c241b]'
+                : 'border border-white/25 text-white/85'
+            }`}
+          >
+            Followers 9
+          </button>
+        </div>
+
+        {/* Compare Listening CTA Pill */}
+        <button
+          type="button"
+          onClick={() => setShowCompareModal(true)}
+          className="w-full py-2.5 px-4 rounded-full bg-white text-[#0c241b] text-xs font-bold shadow-sm hover:bg-white/95 transition"
+        >
+          Compare listening with friends
+        </button>
+
+        {/* Friends List with Hairline Dividers */}
+        <div className="divide-y divide-white/15 border-t border-b border-white/15">
+          {friends.map((friend) => (
+            <div
+              key={friend.id}
+              className="py-3 flex items-center justify-between gap-3"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  style={{ backgroundColor: friend.avatarColor }}
+                  className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white shadow-sm"
+                >
+                  {friend.initials}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-white truncate">
+                    {friend.name}
+                  </p>
+                  <p className="text-xs text-white/65 truncate">{friend.status}</p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setFriends((prev) =>
+                    prev.map((f) =>
+                      f.id === friend.id ? { ...f, following: !f.following } : f
+                    )
+                  );
+                }}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition ${
+                  friend.following
+                    ? 'border border-white/30 text-white hover:bg-white/10'
+                    : 'bg-white text-[#0c241b]'
+                }`}
+              >
+                {friend.following ? 'Following' : 'Follow'}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // 8. SETTINGS SCREEN (Warm Olive Ochre Theme + Dynamic Sleeve Colour Controls)
+  const renderSettingsScreen = () => {
+    const activeSwatch =
+      ACCENT_SWATCHES.find((s) => s.id === selectedSwatchId) || ACCENT_SWATCHES[0];
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveScreen('profile')}
+            className="min-w-[44px] min-h-[44px] -ml-2 inline-flex items-center justify-center rounded-full text-white/85 hover:bg-white/10"
+            aria-label="Back to profile"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <h1
+            style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+            className="text-lg text-white font-normal"
+          >
+            Settings
+          </h1>
+        </div>
+
+        {/* Card 1: Colour & Match Album Sleeve */}
+        <div
+          style={{ backgroundColor: activeTheme.card }}
+          className="rounded-xl p-4 space-y-4 border border-white/10"
+        >
+          <h2
+            style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+            className="text-sm text-white/90 font-normal"
+          >
+            Colour
+          </h2>
+
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-white">Match the album sleeve</p>
+              <p className="text-xs text-white/70">
+                Screens take their colour from what you played last
+              </p>
+            </div>
+
+            <button
+              type="button"
+              role="switch"
+              aria-checked={matchAlbumSleeve}
+              onClick={() => {
+                setMatchAlbumSleeve(!matchAlbumSleeve);
+                triggerToast(
+                  !matchAlbumSleeve
+                    ? 'Dynamic album sleeve theming enabled'
+                    : `Using fixed accent: ${activeSwatch.name}`
+                );
+              }}
+              className={`w-12 h-7 rounded-full p-1 transition-colors flex-shrink-0 flex items-center ${
+                matchAlbumSleeve
+                  ? 'bg-white justify-end'
+                  : 'bg-black/40 border border-white/30 justify-start'
+              }`}
+            >
+              <span
+                className={`w-5 h-5 rounded-full transition ${
+                  matchAlbumSleeve ? 'bg-[#3f2e0c]' : 'bg-white'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs text-white/80 font-medium">
+              Colour when nothing has played
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              {ACCENT_SWATCHES.map((sw) => {
+                const isSelected = sw.id === selectedSwatchId;
+                return (
+                  <button
+                    key={sw.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedSwatchId(sw.id);
+                      setMatchAlbumSleeve(false);
+                      triggerToast(`${sw.name} — ${sw.songRef}`);
+                    }}
+                    style={{ backgroundColor: sw.color }}
+                    className={`h-9 rounded-md flex items-center justify-center transition transform active:scale-95 ${
+                      isSelected
+                        ? 'ring-2 ring-white shadow-md'
+                        : 'opacity-90 hover:opacity-100'
+                    }`}
+                    aria-label={sw.name}
+                  >
+                    {isSelected && <Check size={16} className="text-white" />}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-white/65 pt-0.5">
+              {activeSwatch.name} — {activeSwatch.songRef}
+            </p>
+          </div>
+        </div>
+
+        {/* Card 2: Notifications */}
+        <div
+          style={{ backgroundColor: activeTheme.card }}
+          className="rounded-xl p-4 space-y-3 border border-white/10"
+        >
+          <h2
+            style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+            className="text-sm text-white/90 font-normal"
+          >
+            Notifications
+          </h2>
+
+          <div className="divide-y divide-white/15">
+            <div className="py-2.5 flex items-center justify-between">
+              <span className="text-xs font-medium text-white">
+                When someone follows you
+              </span>
+              <button
+                type="button"
+                onClick={() => setNotifFollows(!notifFollows)}
+                className={`w-11 h-6 rounded-full p-0.5 transition flex items-center ${
+                  notifFollows
+                    ? 'bg-[#e6b43c] justify-end'
+                    : 'bg-black/35 border border-white/30 justify-start'
+                }`}
+              >
+                <span className="w-4 h-4 rounded-full bg-white" />
+              </button>
+            </div>
+
+            <div className="py-2.5 flex items-center justify-between">
+              <span className="text-xs font-medium text-white">
+                Weekly listening summary
+              </span>
+              <button
+                type="button"
+                onClick={() => setNotifWeekly(!notifWeekly)}
+                className={`w-11 h-6 rounded-full p-0.5 transition flex items-center ${
+                  notifWeekly
+                    ? 'bg-[#e6b43c] justify-end'
+                    : 'bg-black/35 border border-white/30 justify-start'
+                }`}
+              >
+                <span className="w-4 h-4 rounded-full bg-white" />
+              </button>
+            </div>
+
+            <div className="py-2.5 flex items-center justify-between">
+              <span className="text-xs font-medium text-white">Import finished</span>
+              <button
+                type="button"
+                onClick={() => setNotifImport(!notifImport)}
+                className={`w-11 h-6 rounded-full p-0.5 transition flex items-center ${
+                  notifImport
+                    ? 'bg-[#e6b43c] justify-end'
+                    : 'bg-black/35 border border-white/30 justify-start'
+                }`}
+              >
+                <span className="w-4 h-4 rounded-full bg-white" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Your Data */}
+        <div
+          style={{ backgroundColor: activeTheme.card }}
+          className="rounded-xl p-4 space-y-2 border border-white/10"
+        >
+          <h2
+            style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+            className="text-sm text-white/90 font-normal"
+          >
+            Your data
+          </h2>
+          <button
+            type="button"
+            onClick={() =>
+              triggerToast('Exporting 18,432 scrobbles & 142 liked tracks (JSON/CSV)...')
+            }
+            className="w-full pt-2 border-t border-white/15 flex items-center justify-between text-left hover:opacity-90"
+          >
+            <span className="text-xs font-medium text-white">Export everything</span>
+            <span className="text-xs text-white/70">JSON or CSV</span>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // 9. FIRST RUN ONBOARDING SCREEN
+  const renderFirstRunScreen = () => {
+    return (
+      <div className="py-4 flex flex-col justify-between min-h-[540px] space-y-6">
+        <div className="space-y-6">
+          <div className="pt-2">
+            <VinylSleeveArtwork
+              track={{
+                album: '',
+                artist: 'Self-Hosted Archive',
+                tileColor: '#b92b36'
+              }}
+              size="small"
+            />
+          </div>
+
+          <div className="space-y-3">
+            <h1
+              style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+              className="text-2xl sm:text-3xl text-white font-normal leading-snug"
+            >
+              Your listening history, kept on your own server
+            </h1>
+            <p className="text-xs sm:text-sm text-white/75 leading-relaxed">
+              Bring in your plays from Spotify and YouTube. Duplicates are removed, and
+              you can export everything whenever you like.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2.5 pt-4">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveScreen('today');
+              triggerToast('Connected to Spotify OAuth — Welcome back, Chris!');
+            }}
+            className="w-full py-3 px-4 rounded-full bg-white text-[#380d11] text-xs font-bold shadow-md hover:bg-white/95 transition"
+          >
+            Connect Spotify
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveScreen('connect')}
+            className="w-full py-3 px-4 rounded-full border border-white/30 text-white text-xs font-semibold hover:bg-white/10 transition"
+          >
+            Import a history file
+          </button>
+
+          <div className="pt-2 text-center">
+            <button
+              type="button"
+              onClick={() => setActiveScreen('today')}
+              className="text-xs text-white/80 underline underline-offset-4 hover:text-white"
+            >
+              I already have an account
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 10. REPORTS SCREEN (Bonus B-Sleeve Analytics View so Bottom Nav 'Reports' works seamlessly)
+  const renderReportsScreen = () => {
+    const weeklyBars = [
+      { day: 'Mon', count: 42 },
+      { day: 'Tue', count: 58 },
+      { day: 'Wed', count: 31 },
+      { day: 'Thu', count: 67 },
+      { day: 'Fri', count: 84 },
+      { day: 'Sat', count: 95 },
+      { day: 'Sun', count: 51 }
+    ];
+
+    return (
+      <div className="space-y-5">
+        <div>
+          <h1
+            style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+            className="text-3xl text-white font-normal"
+          >
+            Reports
+          </h1>
+          <p className="text-xs text-white/70 mt-0.5">
+            428 plays this week • +18% vs last week
+          </p>
+        </div>
+
+        <div className="bg-white/10 border border-white/10 rounded-xl p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-white">Last 7 Days Volume</span>
+            <span className="text-xs text-white/65 tabular-nums">Peak: Saturday (95)</span>
+          </div>
+          <div className="h-32 flex items-end justify-between gap-2 pt-4">
+            {weeklyBars.map((b) => (
+              <div key={b.day} className="flex-1 flex flex-col items-center gap-1.5">
+                <div className="w-full bg-white/10 rounded-t h-24 flex items-end overflow-hidden">
+                  <div
+                    style={{
+                      height: `${b.count}%`,
+                      backgroundColor: activeHeroTrack.tileColor
+                    }}
+                    className="w-full rounded-t transition-all duration-300"
+                  />
+                </div>
+                <span className="text-[10px] text-white/65">{b.day}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <h2
+            style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+            className="text-base text-white"
+          >
+            Most Loved Tracks (All Time)
+          </h2>
+          <div className="divide-y divide-white/15 border-t border-b border-white/15">
+            {tracks
+              .slice()
+              .sort((a, b) => b.plays - a.plays)
+              .map((trk, idx) => (
+                <div
+                  key={trk.id}
+                  className="py-2.5 flex items-center justify-between gap-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-xs text-white/50 w-4 tabular-nums">
+                      {idx + 1}
+                    </span>
+                    <div
+                      style={{ backgroundColor: trk.tileColor }}
+                      className="w-8 h-8 rounded-[3px] flex items-end p-1 text-[10px] font-serif text-white"
+                    >
+                      {trk.monogram}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-white truncate">
+                        {trk.title}
+                      </p>
+                      <p className="text-xs text-white/60 truncate">{trk.artist}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-white/80 tabular-nums">
+                      {trk.plays} plays
+                    </span>
+                    <HeartLikeButton
+                      liked={trk.liked}
+                      onToggle={(e) => handleToggleLike(trk.id, trk.title, e)}
+                    />
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // --- MAIN SCREEN ROUTER ---
+  const renderActiveScreenContent = (isDesktopLayout = false) => {
+    switch (activeScreen) {
+      case 'today':
+        return renderTodayScreen(isDesktopLayout);
+      case 'library':
+        return renderLibraryScreen(isDesktopLayout);
+      case 'gigs':
+        return renderGigsScreen(isDesktopLayout);
+      case 'gig-detail':
+        return renderGigDetailScreen(false);
+      case 'connect':
+        return renderConnectScreen(isDesktopLayout);
+      case 'profile':
+        return renderProfileScreen(isDesktopLayout);
+      case 'following':
+        return renderFollowingScreen();
+      case 'settings':
+        return renderSettingsScreen();
+      case 'first-run':
+        return renderFirstRunScreen();
+      case 'reports':
+        return renderReportsScreen();
+      default:
+        return renderTodayScreen(isDesktopLayout);
+    }
+  };
+
+  // Top Header inside the App Shell (Scrobbler + Bell with Badge + CL Profile Avatar)
+  const renderAppHeader = () => {
+    // Sub-screens that use their own "< Back" top bar in the mockups
+    const hasBackBar = ['gig-detail', 'connect', 'following', 'settings'].includes(
+      activeScreen
+    );
+    if (hasBackBar && viewportMode === 'mobile') return null;
+
+    return (
+      <header className="flex items-center justify-between pb-4">
+        <button
+          type="button"
+          onClick={() => setActiveScreen('today')}
+          style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+          className="text-base text-white/95 font-normal tracking-tight hover:text-white flex items-center gap-2"
+        >
+          Scrobbler
+        </button>
+
+        {activeScreen !== 'first-run' && (
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() =>
+                triggerToast('2 new notifications: Sam Okafor followed you & Weekly Summary ready')
+              }
+              className="relative w-9 h-9 rounded-full inline-flex items-center justify-center text-white/85 hover:bg-white/10 transition"
+              aria-label="Notifications"
+            >
+              <Bell size={18} />
+              <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-white text-[#380d11] text-[10px] font-bold flex items-center justify-center shadow">
+                2
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveScreen('profile')}
+              className={`w-8 h-8 rounded-full bg-[#b93842] text-white text-xs font-semibold flex items-center justify-center transition ${
+                activeScreen === 'profile'
+                  ? 'ring-2 ring-white'
+                  : 'border border-white/25 hover:border-white'
+              }`}
+              aria-label="Open profile"
+            >
+              CL
+            </button>
+          </div>
+        )}
+      </header>
+    );
+  };
+
+  // Bottom Navigation Bar (Matching Mockup: Today | Library | Play | Reports | Gigs)
+  const renderBottomNav = () => {
+    if (activeScreen === 'first-run') return null;
+
+    const navItems = [
+      { id: 'today', label: 'Today', icon: Activity },
+      { id: 'library', label: 'Library', icon: Library },
+      {
+        id: 'play-toggle',
+        label: 'Play',
+        icon: Play,
+        onClick: () => {
+          setIsVinylSpinning(!isVinylSpinning);
+          setActiveScreen('today');
+          triggerToast(
+            !isVinylSpinning ? 'Resumed sleeve playback' : 'Paused vinyl sleeve animation'
+          );
+        }
+      },
+      { id: 'reports', label: 'Reports', icon: BarChart2 },
+      { id: 'gigs', label: 'Gigs', icon: Ticket }
+    ];
+
+    return (
+      <nav
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.22)' }}
+        className="border-t border-white/10 px-3 py-2 flex items-center justify-around backdrop-blur-md"
+      >
+        {navItems.map((item) => {
+          const IconComponent = item.icon;
+          const isSelected =
+            activeScreen === item.id ||
+            (item.id === 'gigs' && activeScreen === 'gig-detail');
+
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => (item.onClick ? item.onClick() : setActiveScreen(item.id))}
+              className="flex flex-col items-center justify-center gap-1 min-w-[54px] py-1 group focus:outline-none"
+            >
+              <div
+                style={
+                  isSelected
+                    ? { backgroundColor: activeTheme.navPillBg || 'rgba(255,255,255,0.2)' }
+                    : undefined
+                }
+                className={`px-3.5 py-1 rounded-full transition-colors flex items-center justify-center ${
+                  isSelected
+                    ? 'text-white border border-white/15'
+                    : 'text-white/65 group-hover:text-white'
+                }`}
+              >
+                <IconComponent size={16} />
+              </div>
+              <span
+                className={`text-[10px] font-medium ${
+                  isSelected ? 'text-white font-semibold' : 'text-white/65'
+                }`}
+              >
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
+    );
+  };
+
+  const ALL_MOCKUP_SCREENS = [
+    { id: 'today', label: '1. Today (Vinyl)' },
+    { id: 'library', label: '2. Library (♥ Likes)' },
+    { id: 'gigs', label: '3. Gigs' },
+    { id: 'gig-detail', label: '4. Gig Detail' },
+    { id: 'connect', label: '5. Connect' },
+    { id: 'profile', label: '6. Profile' },
+    { id: 'following', label: '7. Following' },
+    { id: 'settings', label: '8. Settings' },
+    { id: 'first-run', label: '9. First Run' }
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#111114] text-zinc-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white">
+      {/* TOP CONTROL & VIEWPORT BAR */}
+      <div className="sticky top-0 z-40 bg-[#18181c]/95 backdrop-blur-md border-b border-white/10 px-4 py-2.5">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          {/* Brand & Active Sleeve Theme Indicator */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5">
+              <div
+                style={{ backgroundColor: activeTheme.heroCard }}
+                className="w-7 h-7 rounded-md flex items-center justify-center text-white font-serif font-bold text-sm shadow-inner border border-white/20 transition-colors duration-500"
+              >
+                B
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold tracking-tight text-white">
+                    B — Sleeve Concept Preview
+                  </span>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 font-medium">
+                    {activeTheme.name}
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-400 hidden sm:block">
+                  Notascooby25/audio-scrobbler-app • Interactive Mobile PWA & Desktop Mode
+                </p>
+              </div>
+            </div>
+
+            {/* Mobile/Desktop Viewport Toggle */}
+            <div className="flex items-center bg-black/50 p-1 rounded-lg border border-white/10">
+              <button
+                type="button"
+                onClick={() => setViewportMode('mobile')}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold inline-flex items-center gap-1.5 transition ${
+                  viewportMode === 'mobile'
+                    ? 'bg-white text-zinc-900 shadow-sm'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Smartphone size={14} />
+                Mobile (390px)
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewportMode('desktop')}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold inline-flex items-center gap-1.5 transition ${
+                  viewportMode === 'desktop'
+                    ? 'bg-white text-zinc-900 shadow-sm'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Monitor size={14} />
+                Desktop Mode
+              </button>
+            </div>
+          </div>
+
+          {/* Screen Switcher Pills & 44px Hitbox Inspector Toggle */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 no-scrollbar">
+            {ALL_MOCKUP_SCREENS.map((scr) => (
+              <button
+                key={scr.id}
+                type="button"
+                onClick={() => setActiveScreen(scr.id)}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition ${
+                  activeScreen === scr.id
+                    ? 'bg-rose-600 text-white shadow-sm'
+                    : 'bg-white/5 text-zinc-300 hover:bg-white/10'
+                }`}
+              >
+                {scr.label}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              onClick={() => setShowHitboxGuides(!showHitboxGuides)}
+              className={`ml-1 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-flex items-center gap-1 border transition ${
+                showHitboxGuides
+                  ? 'bg-rose-500/20 border-rose-400 text-rose-200'
+                  : 'border-white/15 text-zinc-400 hover:text-white'
+              }`}
+              title="Highlight 44×44px minimum touch target hitboxes on Heart buttons"
+            >
+              <Heart size={11} className="fill-rose-400 text-rose-400" />
+              44px Hitbox
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* FLOATING TOAST FEEDBACK (Shows PostgreSQL / Spotify Like Sync) */}
+      {toastMessage && (
+        <div className="fixed bottom-5 right-5 z-50 bg-zinc-900/95 border border-white/20 text-white px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-medium backdrop-blur-md animate-bounce">
+          <CheckCircle2 size={15} className="text-emerald-400 flex-shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* MAIN PREVIEW STAGE */}
+      <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+        {viewportMode === 'mobile' ? (
+          /* ==========================================
+             MOBILE PWA FRAME (390px Authentic Sleeve Mockup)
+             ========================================== */
+          <div className="flex flex-col items-center">
+            <div
+              style={{ backgroundColor: activeTheme.bg }}
+              className="w-[375px] sm:w-[390px] rounded-[42px] border-[8px] border-zinc-800 shadow-[0_25px_70px_rgba(0,0,0,0.75)] overflow-hidden flex flex-col justify-between transition-colors duration-500 min-h-[760px] max-h-[820px]"
+            >
+              {/* Scrollable Screen Body */}
+              <div className="flex-1 overflow-y-auto px-5 pt-5 pb-6 no-scrollbar">
+                {renderAppHeader()}
+                {renderActiveScreenContent(false)}
+              </div>
+
+              {/* Sticky Bottom Tab Bar */}
+              {renderBottomNav()}
+            </div>
+
+            <p className="text-xs text-zinc-400 mt-3 text-center">
+              Tip: Click any album sleeve or track row on <strong>Today</strong> or{' '}
+              <strong>Library</strong> to see the ambient sleeve color adapt live.
+            </p>
+          </div>
+        ) : (
+          /* ==========================================
+             DESKTOP RESPONSIVE WEB APP MODE (Full Width)
+             ========================================== */
+          <div
+            style={{ backgroundColor: activeTheme.bg }}
+            className="w-full max-w-6xl min-h-[720px] rounded-3xl border border-white/15 shadow-2xl overflow-hidden grid grid-cols-12 transition-colors duration-500"
+          >
+            {/* Left Desktop Sidebar Navigation */}
+            <aside className="col-span-3 lg:col-span-2 bg-black/25 border-r border-white/10 p-5 flex flex-col justify-between">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <span
+                    style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+                    className="text-xl text-white tracking-tight"
+                  >
+                    Scrobbler
+                  </span>
+                  <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-white/10 text-white/70">
+                    PWA
+                  </span>
+                </div>
+
+                <nav className="space-y-1">
+                  {[
+                    { id: 'today', label: 'Today', icon: Activity },
+                    { id: 'library', label: 'Library', icon: Library, badge: totalLikedCount },
+                    { id: 'gigs', label: 'Gigs', icon: Ticket, badge: '24' },
+                    { id: 'reports', label: 'Reports', icon: BarChart2 },
+                    { id: 'connect', label: 'Connect Sources', icon: Radio },
+                    { id: 'following', label: 'Following', icon: Users },
+                    { id: 'profile', label: 'Profile', icon: Disc },
+                    { id: 'settings', label: 'Settings', icon: SettingsIcon }
+                  ].map((item) => {
+                    const IconComponent = item.icon;
+                    const active =
+                      activeScreen === item.id ||
+                      (item.id === 'gigs' && activeScreen === 'gig-detail');
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setActiveScreen(item.id)}
+                        className={`w-full px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition ${
+                          active
+                            ? 'bg-white text-zinc-900 shadow-sm'
+                            : 'text-white/75 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <IconComponent size={16} />
+                          {item.label}
+                        </span>
+                        {item.badge !== undefined && (
+                          <span
+                            className={`text-[10px] px-1.5 py-0.5 rounded-full tabular-nums ${
+                              active ? 'bg-zinc-900 text-white' : 'bg-white/15 text-white/85'
+                            }`}
+                          >
+                            {item.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
+
+              {/* Mini Now Playing Sleeve Footer in Sidebar */}
+              <div className="pt-4 border-t border-white/10 space-y-2">
+                <div className="flex items-center gap-2.5">
+                  <div
+                    style={{ backgroundColor: activeHeroTrack.tileColor }}
+                    className="w-9 h-9 rounded flex-shrink-0 flex items-end p-1 text-white font-serif text-xs border border-white/15"
+                  >
+                    {activeHeroTrack.monogram}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-white truncate">
+                      {activeHeroTrack.title}
+                    </p>
+                    <p className="text-[11px] text-white/65 truncate">
+                      {activeHeroTrack.artist}
+                    </p>
+                  </div>
+                  <HeartLikeButton
+                    liked={activeHeroTrack.liked}
+                    size={15}
+                    onToggle={(e) =>
+                      handleToggleLike(activeHeroTrack.id, activeHeroTrack.title, e)
+                    }
+                  />
+                </div>
+              </div>
+            </aside>
+
+            {/* Desktop Main Content Area */}
+            <section className="col-span-9 lg:col-span-10 p-6 lg:p-8 overflow-y-auto">
+              <div className="flex items-center justify-between pb-6 mb-6 border-b border-white/10">
+                <div>
+                  <span className="text-[11px] uppercase tracking-widest text-white/60">
+                    B — Sleeve Desktop Layout
+                  </span>
+                  <h2
+                    style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+                    className="text-lg text-white/90"
+                  >
+                    Chris Lettis (@chris) • 18,432 Total Scrobbles
+                  </h2>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOnlyLikedFilter(true);
+                      setActiveScreen('library');
+                    }}
+                    className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-semibold text-white inline-flex items-center gap-1.5 transition"
+                  >
+                    <Heart size={13} className="fill-rose-400 text-rose-400" />
+                    {totalLikedCount} Liked Songs
+                  </button>
+                  {renderAppHeader()}
+                </div>
+              </div>
+
+              {renderActiveScreenContent(true)}
+            </section>
+          </div>
+        )}
+      </main>
+
+      {/* MODAL 1: LOG A GIG */}
+      {showLogGigModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#2a0c10] border border-white/20 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+            <h3
+              style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+              className="text-xl text-white"
+            >
+              Log a gig
+            </h3>
+            <form onSubmit={handleAddGig} className="space-y-3">
+              <div>
+                <label className="block text-xs text-white/75 mb-1">Artist / Headliner</label>
+                <input
+                  type="text"
+                  required
+                  value={newGigArtist}
+                  onChange={(e) => setNewGigArtist(e.target.value)}
+                  placeholder="e.g. Fontaines D.C."
+                  className="w-full px-3.5 py-2 rounded-lg bg-black/30 border border-white/20 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-white/75 mb-1">Venue & City</label>
+                <input
+                  type="text"
+                  required
+                  value={newGigVenue}
+                  onChange={(e) => setNewGigVenue(e.target.value)}
+                  placeholder="e.g. Alexandra Palace, London"
+                  className="w-full px-3.5 py-2 rounded-lg bg-black/30 border border-white/20 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowLogGigModal(false)}
+                  className="px-4 py-2 rounded-full border border-white/25 text-xs font-semibold text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-full bg-white text-[#380d11] text-xs font-bold"
+                >
+                  Save Gig
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: COMPARE LISTENING WITH FRIENDS */}
+      {showCompareModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0c241b] border border-white/20 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3
+                style={{ fontFamily: "Georgia, 'Playfair Display', serif" }}
+                className="text-xl text-white"
+              >
+                Family & Friends Leaderboard
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowCompareModal(false)}
+                className="text-xs text-white/70 hover:text-white"
+              >
+                Close
+              </button>
+            </div>
+            <p className="text-xs text-white/75">
+              Weekly scrobble comparison across your self-hosted server:
+            </p>
+            <div className="divide-y divide-white/15 border-t border-b border-white/15">
+              {friends.map((f, i) => (
+                <div key={f.id} className="py-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xs text-white/60 w-4 tabular-nums">#{i + 1}</span>
+                    <span className="text-sm font-semibold text-white">{f.name}</span>
+                  </div>
+                  <span className="text-xs font-bold text-emerald-300 tabular-nums">
+                    {f.weeklyPlays} plays
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
