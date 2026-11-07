@@ -1397,3 +1397,68 @@
   font-size: 14px !important;
   margin-bottom: 20px !important;
 }
+
+/* ==========================================================================
+   Reports Page: Headline Facts & Ratio Cards
+   ========================================================================== */
+
+[data-skin="sleeve"] .report-facts {
+  display: grid !important;
+  gap: 16px !important;
+  margin-bottom: 24px !important;
+}
+
+[data-skin="sleeve"] .report-facts div,
+[data-skin="sleeve"] .report-facts .report-fact-card {
+  background: var(--sl-card) !important;
+  border: 1px solid var(--sl-edge) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  padding: 20px !important;
+}
+
+[data-skin="sleeve"] .report-facts strong {
+  font-family: var(--font-display, "Young Serif", serif) !important;
+  font-size: 34px !important;
+  font-weight: 400 !important;
+  line-height: 1.1 !important;
+  color: #ffffff !important;
+}
+
+[data-skin="sleeve"] .report-facts span {
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--sl-muted) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+[data-skin="sleeve"] .report-facts .stat-comparison {
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  margin-top: 4px !important;
+}
+
+[data-skin="sleeve"] .report-facts .stat-comparison.stat-comparison-positive {
+  color: #4ade80 !important;
+}
+
+[data-skin="sleeve"] .report-facts .stat-comparison.stat-comparison-negative {
+  color: #f87171 !important;
+}
+
+[data-skin="sleeve"] .report-facts .stat-comparison.stat-comparison-neutral {
+  color: var(--sl-muted) !important;
+}
+
+[data-skin="sleeve"] .report-character-grid .chart-panel div[style*="font-size: 3rem"] {
+  font-family: var(--font-display, "Young Serif", serif) !important;
+  font-weight: 400 !important;
+  color: #ffffff !important;
+}
