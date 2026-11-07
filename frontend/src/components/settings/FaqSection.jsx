@@ -88,14 +88,16 @@ const FAQ_DATA = [
   {
     id: "skins-visual-themes",
     category: "General & Appearance",
-    question: "What are visual skins, and how does the Sleeve skin work?",
+    question: "What are visual skins, and which skins are available?",
     answer: (
       <>
         <p>
           In <strong>Settings → General</strong>, the <strong>Skin</strong> selector allows you to
-          choose between <em>Classic</em> (the crisp, dashboard layout) and <em>Sleeve</em> (an
-          editorial, vinyl-inspired visual theme with Young Serif typography and dedicated
-          navigation).
+          choose between three distinct visual experiences: <em>Classic</em> (the crisp, utility
+          dashboard), <em>Sleeve</em> (an editorial, vinyl-inspired theme with Young Serif
+          typography and dedicated navigation), and <em>Timeline</em> (a calm, data-first vertical
+          rail of plays with quiet gaps, hourly charts, and high-contrast source markers in light
+          and dark themes).
         </p>
         <p>
           When using the Sleeve skin, you can turn on <strong>Match the album sleeve</strong> to let

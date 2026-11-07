@@ -1,5 +1,17 @@
 export const CHANGELOG = [
   {
+    version: "0.38.0",
+    date: "2026-11-07",
+    changes: [
+      "Timeline Data-First Skin: Full live release of the Timeline visual skin across the entire application, presenting a calm, data-first listening interface in both Light and Dark modes with clean tabular typography.",
+      "Dedicated Vertical Time Rail: Tracks today's scrobbles on a continuous vertical time rail with high-contrast geometric source markers (Spotify, Apple Music, BBC Sounds, YouTube), precise tabular timestamps, and quick-access heart actions.",
+      "Quiet Gaps & Day Rhythm: Highlights quiet periods (60+ minute listening gaps) with subtle dashed connectors and duration labels, reflecting natural pauses and daily listening rhythms.",
+      "Hourly Listening Distribution Chart: Interactive 24-hour listening histogram with an active playhead indicator, current-hour highlight, and hourly scrobble volume scaled to your busiest hour.",
+      "Minimalist Navigation & Sub-Page Headers: Streamlined bottom tab navigation on mobile, persistent header navigation on desktop, and dedicated sub-page headers with instant Back navigation.",
+      "Site-Wide Multi-Page Timeline Styling: Refined layouts across Library, Play, Reports, Gigs & Setlists, Profile, Following, Connect, and Settings while preserving Classic and Sleeve skins completely untouched.",
+    ],
+  },
+  {
     version: "0.37.0",
     date: "2026-11-07",
     changes: [

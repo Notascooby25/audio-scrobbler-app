@@ -63,7 +63,7 @@ export default function UserGuideSection() {
           your Profile, Friends, Settings, Connect, and a quick Sign out option.
         </p>
 
-        <h4>Visual Themes & Skins (Classic & Sleeve)</h4>
+        <h4>Visual Themes & Skins (Classic, Sleeve & Timeline)</h4>
         <p>
           You can personalize your visual experience in <strong>Settings → General</strong> using
           the <strong>Skin switcher</strong>:
@@ -76,6 +76,10 @@ export default function UserGuideSection() {
           <li>
             <strong>Sleeve:</strong> An editorial, vinyl-inspired music layout featuring warm serif
             typography, vinyl records, and dedicated bottom navigation.
+          </li>
+          <li>
+            <strong>Timeline:</strong> A calm, data-first vertical rail of plays with quiet gaps,
+            hourly listening charts, and geometric source markers in both light and dark themes.
           </li>
         </ul>
         <p>
