@@ -532,4 +532,31 @@ describe("SettingsPage", () => {
       { timeout: 1000 }
     );
   });
+
+  it("allows toggling the match album sleeve setting", async () => {
+    render(
+      <MemoryRouter initialEntries={["/settings"]}>
+        <SkinProvider>
+          <SettingsPage />
+        </SkinProvider>
+      </MemoryRouter>
+    );
+
+    const toggle = await screen.findByLabelText("Match the album sleeve");
+    expect(toggle).toBeInTheDocument();
+    expect(toggle).toBeChecked();
+
+    fireEvent.click(toggle);
+    expect(toggle).not.toBeChecked();
+
+    await waitFor(
+      () =>
+        expect(updateUserSettings).toHaveBeenCalledWith({
+          token: "token",
+          changes: { match_album_sleeve: false },
+        }),
+      { timeout: 1000 }
+    );
+    expect(localStorage.getItem("audio-scrobbler-match-sleeve")).toBe("false");
+  });
 });

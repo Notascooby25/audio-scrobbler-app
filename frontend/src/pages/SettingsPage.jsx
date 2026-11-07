@@ -165,6 +165,9 @@ export default function SettingsPage() {
     fetchUserSettings({ token: session.accessToken })
       .then((data) => {
         setSettings(data);
+        if (data.match_album_sleeve !== undefined) {
+          localStorage.setItem("audio-scrobbler-match-sleeve", String(data.match_album_sleeve));
+        }
         setStatus("ready");
       })
       .catch(() => setStatus("error"));
@@ -190,6 +193,11 @@ export default function SettingsPage() {
 
     if (key === "skin") {
       setSkin(value);
+    }
+
+    if (key === "match_album_sleeve") {
+      localStorage.setItem("audio-scrobbler-match-sleeve", String(value));
+      window.dispatchEvent(new Event("audio-scrobbler-match-sleeve-changed"));
     }
 
     if (key === "accent_color") {
@@ -440,6 +448,15 @@ export default function SettingsPage() {
                 </label>
               );
             })()}
+            <label className="settings-checkbox">
+              <input
+                type="checkbox"
+                aria-label="Match the album sleeve"
+                checked={settings.match_album_sleeve ?? true}
+                onChange={(event) => changeSetting("match_album_sleeve", event.target.checked)}
+              />
+              Match the album sleeve
+            </label>
             {currentSkin?.supportsThemes === false ? (
               <label>
                 Theme
