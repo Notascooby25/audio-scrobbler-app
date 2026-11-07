@@ -30,9 +30,17 @@
   --color-border: var(--sl-edge);
   --color-border-subtle: rgba(255, 255, 255, 0.12);
   --color-primary: var(--sleeve);
+  --color-accent: var(--sleeve);
+  --color-accent-hover: color-mix(in srgb, var(--sleeve) 85%, #ffffff);
+  --color-accent-soft: color-mix(in srgb, var(--sleeve) 25%, transparent);
   --color-on-accent: var(--sl-on-sleeve);
   --color-focus: #ffffff;
-  --color-danger: #d32f2f;
+  --color-danger: #f87171;
+  --color-danger-soft: rgba(211, 47, 47, 0.2);
+  --color-success: #22c55e;
+  --color-success-soft: rgba(34, 197, 94, 0.2);
+  --color-warning: #f59e0b;
+  --color-warning-soft: rgba(217, 119, 6, 0.2);
   --color-bg: var(--sl-ground);
   --text: var(--sl-text);
   --text-muted: var(--sl-muted);
@@ -64,8 +72,100 @@
   padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
 }
 
+/* Base button rules in Sleeve: Sentence case, no uppercase */
 [data-skin="sleeve"] button {
   text-transform: none;
+}
+
+/* Primary buttons in Sleeve: White with ground-coloured bold text per spec */
+[data-skin="sleeve"] button.button-primary,
+[data-skin="sleeve"] .button-primary,
+[data-skin="sleeve"] .modal-confirm-button,
+[data-skin="sleeve"] .settings-actions button[type="submit"],
+[data-skin="sleeve"] .jukebox-action-primary {
+  background: #ffffff !important;
+  color: var(--sl-ground) !important;
+  border: none !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+}
+
+[data-skin="sleeve"] button.button-primary:hover:not(:disabled),
+[data-skin="sleeve"] .button-primary:hover:not(:disabled),
+[data-skin="sleeve"] .modal-confirm-button:hover:not(:disabled),
+[data-skin="sleeve"] .settings-actions button[type="submit"]:hover:not(:disabled) {
+  background: #f0f0f0 !important;
+}
+
+/* Default / Secondary buttons in Sleeve: 1px edge outline with white text */
+[data-skin="sleeve"]
+  button:not(.button-primary):not([class*="-primary"]):not(.sleeve-header-bell):not(
+    .sleeve-back-button
+  ):not([role="tab"]):not(.segmented-tab):not(.library-tabs button):not(.settings-tabs button):not(
+    .jukebox-source-tab-btn
+  ):not(.rediscover-tab-btn):not(.pagination-page):not(.sfm-page-btn):not(.date-range-pill):not(
+    .modal-confirm-button
+  ):not(.danger-button),
+[data-skin="sleeve"] .secondary-button,
+[data-skin="sleeve"] button.secondary-button,
+[data-skin="sleeve"] .btn-secondary,
+[data-skin="sleeve"] button.btn-secondary,
+[data-skin="sleeve"] .settings-button,
+[data-skin="sleeve"] .modal-cancel-button,
+[data-skin="sleeve"] .share-trigger-button,
+[data-skin="sleeve"] .settings-actions button[type="button"] {
+  background: transparent;
+  color: var(--sl-text);
+  border: 1px solid var(--sl-edge);
+  font-weight: 600;
+  text-transform: none;
+}
+
+[data-skin="sleeve"] button:hover:not(:disabled):not(.active):not([aria-current="page"]),
+[data-skin="sleeve"] .secondary-button:hover:not(:disabled),
+[data-skin="sleeve"] button.secondary-button:hover:not(:disabled),
+[data-skin="sleeve"] .btn-secondary:hover:not(:disabled),
+[data-skin="sleeve"] button.btn-secondary:hover:not(:disabled),
+[data-skin="sleeve"] .settings-button:hover:not(:disabled),
+[data-skin="sleeve"] .modal-cancel-button:hover:not(:disabled),
+[data-skin="sleeve"] .share-trigger-button:hover:not(:disabled),
+[data-skin="sleeve"] .settings-actions button[type="button"]:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #ffffff;
+}
+
+[data-skin="sleeve"] button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Danger buttons */
+[data-skin="sleeve"] .danger-button,
+[data-skin="sleeve"] button.danger-button {
+  background: var(--color-danger) !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+/* Form Controls & Options */
+[data-skin="sleeve"] input,
+[data-skin="sleeve"] select,
+[data-skin="sleeve"] textarea {
+  background-color: var(--sl-card) !important;
+  color: var(--sl-text) !important;
+  border: 1px solid var(--sl-edge) !important;
+  border-radius: var(--radius-sm);
+}
+
+[data-skin="sleeve"] input::placeholder,
+[data-skin="sleeve"] textarea::placeholder {
+  color: var(--sl-muted) !important;
+  opacity: 1 !important;
+}
+
+[data-skin="sleeve"] option {
+  background-color: #121212 !important;
+  color: #ffffff !important;
 }
 
 /* 56px Top Header */
@@ -228,19 +328,30 @@
   border: 1px solid var(--sl-edge) !important;
 }
 
+[data-skin="sleeve"] .flat-jukebox-pick-card div {
+  color: var(--sl-text);
+}
+
+[data-skin="sleeve"] .flat-jukebox-pick-card [style*="color: var(--color-muted)"],
+[data-skin="sleeve"] .flat-jukebox-pick-card [style*="color:var(--color-muted)"] {
+  color: var(--sl-muted) !important;
+}
+
 [data-skin="sleeve"] .jukebox-source-tabs {
   background: var(--sl-deep) !important;
   border: 1px solid var(--sl-edge) !important;
 }
 
-[data-skin="sleeve"] .jukebox-source-tab-btn {
-  color: var(--sl-muted) !important;
+[data-skin="sleeve"] .jukebox-action-reroll {
+  background: transparent !important;
+  color: var(--sl-text) !important;
+  border: 1px solid var(--sl-edge) !important;
 }
 
-[data-skin="sleeve"] .jukebox-source-tab-btn.active {
-  background: #ffffff !important;
-  color: var(--sl-ground) !important;
-  font-weight: 700 !important;
+[data-skin="sleeve"] .jukebox-action-reroll:disabled {
+  opacity: 0.45 !important;
+  color: var(--sl-muted) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 [data-skin="sleeve"] .rediscover-tabs {
@@ -248,18 +359,154 @@
   border: 1px solid var(--sl-edge) !important;
 }
 
-[data-skin="sleeve"] .rediscover-tab-btn {
-  color: var(--sl-muted) !important;
-}
-
-[data-skin="sleeve"] .rediscover-tab-btn.active {
-  background: #ffffff !important;
-  color: var(--sl-ground) !important;
-  font-weight: 700 !important;
-}
-
 [data-skin="sleeve"] .rediscover-badge {
   background: var(--sl-deep) !important;
   color: var(--sl-muted) !important;
   border: 1px solid var(--sl-edge) !important;
+}
+
+/* Tabs & Pills per spec: selected is white with ground-coloured text, unselected has 1px edge outline */
+[data-skin="sleeve"] .library-tabs button,
+[data-skin="sleeve"] .settings-tabs button,
+[data-skin="sleeve"] .segmented-tab,
+[data-skin="sleeve"] .segmented-tabs button,
+[data-skin="sleeve"] .date-range-pill,
+[data-skin="sleeve"] .library-view-toggle button,
+[data-skin="sleeve"] .pagination-page,
+[data-skin="sleeve"] button.sfm-tab,
+[data-skin="sleeve"] button.sfm-page-btn,
+[data-skin="sleeve"] .rediscover-tab-btn,
+[data-skin="sleeve"] .jukebox-source-tab-btn,
+[data-skin="sleeve"] .monthly-year-chip,
+[data-skin="sleeve"] .share-dialog-layout-toggle button,
+[data-skin="sleeve"] .guide-pill {
+  background: transparent !important;
+  color: var(--sl-muted) !important;
+  border: 1px solid var(--sl-edge) !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+}
+
+[data-skin="sleeve"] .library-tabs button:hover:not(.active):not(:disabled),
+[data-skin="sleeve"] .settings-tabs button:hover:not(.active):not(:disabled),
+[data-skin="sleeve"] .segmented-tab:hover:not(.active):not(:disabled),
+[data-skin="sleeve"] .segmented-tabs button:hover:not(.active):not(:disabled),
+[data-skin="sleeve"] .date-range-pill:hover,
+[data-skin="sleeve"] .library-view-toggle button:hover:not(.active):not(:disabled),
+[data-skin="sleeve"] .pagination-page:hover:not(.pagination-page-active),
+[data-skin="sleeve"] button.sfm-tab:hover:not(.active):not(:disabled),
+[data-skin="sleeve"] button.sfm-page-btn:hover:not(.active):not(:disabled),
+[data-skin="sleeve"] .rediscover-tab-btn:hover:not(.active),
+[data-skin="sleeve"] .jukebox-source-tab-btn:hover:not(.active),
+[data-skin="sleeve"] .monthly-year-chip:hover:not(.active),
+[data-skin="sleeve"] .share-dialog-layout-toggle button:hover:not(.active):not(:disabled),
+[data-skin="sleeve"] .guide-pill:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--sl-text) !important;
+  border-color: #ffffff !important;
+}
+
+[data-skin="sleeve"] .library-tabs button.active,
+[data-skin="sleeve"] .settings-tabs button.active,
+[data-skin="sleeve"] .segmented-tab.active,
+[data-skin="sleeve"] .segmented-tabs button.active,
+[data-skin="sleeve"] .date-range-pill.active,
+[data-skin="sleeve"] .library-view-toggle button.active,
+[data-skin="sleeve"] .pagination-page-active,
+[data-skin="sleeve"] button.sfm-tab.active,
+[data-skin="sleeve"] button.sfm-page-btn.active,
+[data-skin="sleeve"] .rediscover-tab-btn.active,
+[data-skin="sleeve"] .jukebox-source-tab-btn.active,
+[data-skin="sleeve"] .monthly-year-chip.active,
+[data-skin="sleeve"] .share-dialog-layout-toggle button.active,
+[data-skin="sleeve"] .guide-pill.active {
+  background: #ffffff !important;
+  color: var(--sl-ground) !important;
+  border: 1px solid #ffffff !important;
+  font-weight: 700 !important;
+}
+
+/* Links & Action Labels */
+[data-skin="sleeve"] a {
+  color: var(--sl-text);
+}
+
+[data-skin="sleeve"] .settings-link,
+[data-skin="sleeve"] .page-link a,
+[data-skin="sleeve"] .connect-feed-link,
+[data-skin="sleeve"] .report-banner a,
+[data-skin="sleeve"] .import-summary-dismiss {
+  color: var(--sl-text) !important;
+  text-decoration: underline !important;
+}
+
+/* Gigs Date Blocks */
+[data-skin="sleeve"] .sfm-date-block {
+  background: var(--color-primary);
+  color: var(--sl-on-sleeve) !important;
+}
+
+[data-skin="sleeve"] .sfm-date-block * {
+  color: var(--sl-on-sleeve) !important;
+}
+
+/* Bulk Action Bar & Toasts */
+[data-skin="sleeve"] .bulk-action-bar {
+  background: var(--sl-deep) !important;
+  color: var(--sl-text) !important;
+  border: 1px solid var(--sl-edge) !important;
+}
+
+[data-skin="sleeve"] .bulk-action-bar button {
+  background: #ffffff !important;
+  color: var(--sl-ground) !important;
+}
+
+[data-skin="sleeve"] .sfm-toast {
+  background: var(--sl-deep) !important;
+  color: var(--sl-text) !important;
+  border: 1px solid var(--sl-edge) !important;
+}
+
+[data-skin="sleeve"] .sfm-toast button.sfm-link {
+  color: #ffffff !important;
+}
+
+/* Warning and Alert Containers */
+[data-skin="sleeve"] .sfm-warning,
+[data-skin="sleeve"] .notice-error,
+[data-skin="sleeve"] .import-summary-error {
+  background: rgba(211, 47, 47, 0.18) !important;
+  border: 1px solid rgba(248, 113, 113, 0.4) !important;
+  color: #ffffff !important;
+}
+
+[data-skin="sleeve"] .sfm-warning p,
+[data-skin="sleeve"] .sfm-warning strong,
+[data-skin="sleeve"] .notice-error p,
+[data-skin="sleeve"] .import-summary-error p {
+  color: #ffffff !important;
+}
+
+[data-skin="sleeve"] .sfm-warning code {
+  background: rgba(0, 0, 0, 0.4) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+
+[data-skin="sleeve"] .notice-warning {
+  background: rgba(217, 119, 6, 0.18) !important;
+  border: 1px solid rgba(245, 158, 11, 0.4) !important;
+  color: #ffffff !important;
+}
+
+[data-skin="sleeve"] code,
+[data-skin="sleeve"] pre {
+  background: var(--sl-card);
+  color: var(--sl-text);
+  border: 1px solid var(--sl-edge);
+  border-radius: 4px;
+  padding: 1px 4px;
 }

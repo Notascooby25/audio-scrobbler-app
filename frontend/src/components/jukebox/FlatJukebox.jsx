@@ -313,6 +313,7 @@ export default function FlatJukebox({
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
         <button
           type="button"
+          className="jukebox-action-primary"
           disabled={busy || !canRoll}
           onClick={() => handleRoll(onLuckyDip)}
           style={{
@@ -332,6 +333,7 @@ export default function FlatJukebox({
         </button>
         <button
           type="button"
+          className="jukebox-action-reroll"
           disabled={busy || !sessionActive || outOfRolls}
           onClick={() => handleRoll(onReroll)}
           style={{
