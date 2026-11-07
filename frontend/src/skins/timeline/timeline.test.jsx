@@ -6,6 +6,9 @@ import fs from "fs";
 import path from "path";
 import { REQUIRED_TOKENS } from "../tokens.contract";
 import TimelineNav from "./slots/TimelineNav";
+import TimelineHourlyChart from "./slots/TimelineHourlyChart";
+import TimelineRail from "./slots/TimelineRail";
+import TimelineTodayPage from "./slots/TimelineTodayPage";
 import Slot from "../Slot";
 import { SkinProvider } from "../useSkin";
 import * as api from "../../api";
@@ -317,6 +320,236 @@ describe("Timeline Skin: Token Contract, Rules & Contrast Matrix", () => {
 
       expect(screen.queryByTestId("classic-fallback")).not.toBeInTheDocument();
       expect(screen.getByRole("navigation", { name: "Timeline navigation" })).toBeInTheDocument();
+    });
+  });
+
+  describe("TimelineHourlyChart Component", () => {
+    it("renders chart with accessible role='img' and aria-label", () => {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const sampleScrobbles = [
+        {
+          played_at: new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            currentHour,
+            10
+          ).toISOString(),
+        },
+        {
+          played_at: new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            currentHour,
+            25
+          ).toISOString(),
+        },
+      ];
+
+      render(<TimelineHourlyChart scrobbles={sampleScrobbles} />);
+
+      const chart = screen.getByRole("img", { name: /Hourly listening distribution/i });
+      expect(chart).toBeInTheDocument();
+      expect(chart.getAttribute("aria-label")).toMatch(/2 plays? today/);
+
+      // Check that legend exists
+      expect(screen.getByText("Spotify")).toBeInTheDocument();
+      expect(screen.getByText("YouTube")).toBeInTheDocument();
+      expect(screen.getByText("Apple")).toBeInTheDocument();
+      expect(screen.getByText("BBC")).toBeInTheDocument();
+    });
+
+    it("highlights the current hour and marks empty hours", () => {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const scrobbles = [
+        {
+          played_at: new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            currentHour,
+            5
+          ).toISOString(),
+        },
+      ];
+
+      const { container } = render(<TimelineHourlyChart scrobbles={scrobbles} />);
+
+      const currentCol = container.querySelector(".timeline-chart-bar-col.current");
+      expect(currentCol).toBeInTheDocument();
+
+      // Check empty hours exist if currentHour > 0
+      if (currentHour > 0) {
+        const emptyCols = container.querySelectorAll(".timeline-chart-bar-col.empty");
+        expect(emptyCols.length).toBeGreaterThan(0);
+      }
+    });
+  });
+
+  describe("TimelineRail Component", () => {
+    it("renders 'Nothing yet today' empty state when there are no scrobbles", () => {
+      render(<TimelineRail scrobbles={[]} nowPlaying={null} />);
+      expect(screen.getByText("Nothing yet today")).toBeInTheDocument();
+    });
+
+    it("renders source markers for Spotify, YouTube, Apple Music, and BBC", () => {
+      const now = Date.now();
+      const scrobbles = [
+        {
+          id: 1,
+          track_name: "Song A",
+          artist_name: "Artist A",
+          played_at: new Date(now - 10000).toISOString(),
+          source: "spotify",
+        },
+        {
+          id: 2,
+          track_name: "Song B",
+          artist_name: "Artist B",
+          played_at: new Date(now - 20000).toISOString(),
+          source: "youtube",
+        },
+        {
+          id: 3,
+          track_name: "Song C",
+          artist_name: "Artist C",
+          played_at: new Date(now - 30000).toISOString(),
+          source: "apple",
+        },
+        {
+          id: 4,
+          track_name: "Song D",
+          artist_name: "Artist D",
+          played_at: new Date(now - 40000).toISOString(),
+          source: "bbc",
+        },
+      ];
+
+      render(<TimelineRail scrobbles={scrobbles} />);
+
+      expect(screen.getByRole("img", { name: "Spotify" })).toBeInTheDocument();
+      expect(screen.getByRole("img", { name: "YouTube" })).toBeInTheDocument();
+      expect(screen.getByRole("img", { name: "Apple Music" })).toBeInTheDocument();
+      expect(screen.getByRole("img", { name: "BBC Sounds" })).toBeInTheDocument();
+    });
+
+    it("renders quiet gaps when delta between consecutive scrobbles is >= 60 minutes", () => {
+      const now = Date.now();
+      const scrobbles = [
+        {
+          id: 1,
+          track_name: "Newer Song",
+          artist_name: "Artist 1",
+          played_at: new Date(now).toISOString(),
+        },
+        // 2.5 hours gap
+        {
+          id: 2,
+          track_name: "Older Song",
+          artist_name: "Artist 2",
+          played_at: new Date(now - 150 * 60 * 1000).toISOString(),
+        },
+      ];
+
+      render(<TimelineRail scrobbles={scrobbles} />);
+
+      const gap = screen.getByRole("separator", { name: "2 h quiet" });
+      expect(gap).toBeInTheDocument();
+      expect(screen.getByText("2 h quiet")).toBeInTheDocument();
+    });
+
+    it("does not render quiet gap when delta is less than 60 minutes", () => {
+      const now = Date.now();
+      const scrobbles = [
+        {
+          id: 1,
+          track_name: "Song 1",
+          artist_name: "Artist 1",
+          played_at: new Date(now).toISOString(),
+        },
+        {
+          id: 2,
+          track_name: "Song 2",
+          artist_name: "Artist 2",
+          played_at: new Date(now - 20 * 60 * 1000).toISOString(),
+        },
+      ];
+
+      render(<TimelineRail scrobbles={scrobbles} />);
+
+      expect(screen.queryByRole("separator")).not.toBeInTheDocument();
+    });
+
+    it("renders Now Playing row when active playback exists", () => {
+      const nowPlaying = {
+        is_playing: true,
+        track_name: "Live Playing Track",
+        artist_name: "Live Artist",
+        artwork_url: "https://example.com/art.jpg",
+      };
+
+      render(<TimelineRail scrobbles={[]} nowPlaying={nowPlaying} />);
+
+      expect(screen.getByText("Playing now")).toBeInTheDocument();
+      expect(screen.getByText("Live Playing Track")).toBeInTheDocument();
+      expect(screen.getByText("Live Artist")).toBeInTheDocument();
+    });
+  });
+
+  describe("TimelineTodayPage Slot Component", () => {
+    beforeEach(() => {
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        username: "Alex",
+        userId: 1,
+      });
+      vi.spyOn(api, "fetchRecentScrobbles").mockResolvedValue({
+        scrobbles: [
+          {
+            id: 1,
+            track_name: "Today Song",
+            artist_name: "Today Artist",
+            played_at: new Date().toISOString(),
+            duration_ms: 180000,
+            source: "spotify",
+          },
+        ],
+        total: 1,
+      });
+      vi.spyOn(api, "fetchNowPlaying").mockResolvedValue({ is_playing: false });
+    });
+
+    it("renders today's date heading and listening stats subtitle", async () => {
+      render(
+        <MemoryRouter initialEntries={["/"]}>
+          <TimelineTodayPage />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Today Song")).toBeInTheDocument();
+      });
+
+      // Subtitle contains plays and listening duration
+      expect(screen.getByText(/1 play so far, 3 m of listening/i)).toBeInTheDocument();
+    });
+
+    it("resolves TimelineTodayPage through <Slot name='todayPage' /> when activeSkin is timeline", async () => {
+      render(
+        <MemoryRouter initialEntries={["/"]}>
+          <SkinProvider initialSkin="timeline">
+            <Slot name="todayPage" fallback={<div data-testid="fallback-overview">Classic</div>} />
+          </SkinProvider>
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId("fallback-overview")).not.toBeInTheDocument();
+        expect(screen.getByText("Today Song")).toBeInTheDocument();
+      });
     });
   });
 });
