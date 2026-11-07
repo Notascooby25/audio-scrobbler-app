@@ -288,6 +288,7 @@ describe("Timeline Skin: Token Contract, Rules & Contrast Matrix", () => {
 
       const avatar = screen.getByRole("link", { name: /Profile/i });
       expect(avatar).toBeInTheDocument();
+      expect(avatar.querySelector(".timeline-avatar-disc")).toBeInTheDocument();
       expect(screen.getByText("A")).toBeInTheDocument(); // initial of Alex
     });
 

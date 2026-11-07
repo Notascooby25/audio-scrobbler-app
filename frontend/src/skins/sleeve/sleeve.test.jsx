@@ -14,6 +14,7 @@ import FollowingPage from "../../pages/FollowingPage";
 import HomePage from "../../pages/HomePage";
 import SettingsPage from "../../pages/SettingsPage";
 import ChangelogPage from "../../pages/ChangelogPage";
+import SleeveNav from "./slots/SleeveNav";
 import { SkinProvider } from "../useSkin";
 import * as api from "../../api";
 import * as setlistsApi from "../../api/setlists";
@@ -396,7 +397,10 @@ describe("Sleeve Skin Components", () => {
         },
       });
       vi.spyOn(api, "fetchNowPlaying").mockResolvedValue(null);
-      vi.spyOn(api, "fetchSpotifyStatus").mockResolvedValue({ rate_limited: false, retry_after: null });
+      vi.spyOn(api, "fetchSpotifyStatus").mockResolvedValue({
+        rate_limited: false,
+        retry_after: null,
+      });
 
       render(
         <MemoryRouter initialEntries={["/profile"]}>
@@ -459,7 +463,10 @@ describe("Sleeve Skin Components", () => {
       document.documentElement.dataset.skin = "sleeve";
       localStorage.removeItem("audio-scrobbler-session");
       vi.spyOn(session, "readSession").mockReturnValue(null);
-      vi.spyOn(api, "fetchSpotifyStatus").mockResolvedValue({ rate_limited: false, retry_after: null });
+      vi.spyOn(api, "fetchSpotifyStatus").mockResolvedValue({
+        rate_limited: false,
+        retry_after: null,
+      });
       vi.spyOn(api, "fetchRecentScrobbles").mockResolvedValue({ scrobbles: [] });
 
       render(
@@ -469,7 +476,9 @@ describe("Sleeve Skin Components", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("heading", { name: "Connect & Data Sources", level: 1 })).toBeTruthy();
+        expect(
+          screen.getByRole("heading", { name: "Connect & Data Sources", level: 1 })
+        ).toBeTruthy();
         expect(screen.getByRole("button", { name: "Connect Spotify" })).toBeTruthy();
       });
     });
@@ -520,6 +529,42 @@ describe("Sleeve Skin Components", () => {
 
       expect(screen.getByRole("heading", { name: "Changelog", level: 1 })).toBeTruthy();
       expect(screen.getAllByText(/^v\d+\.\d+\.\d+/).length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("Sleeve A11y & Responsive Audit Improvements", () => {
+    it("renders profile avatar with 44px hit target containing sleeve-header-avatar-disc", async () => {
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        userId: 1,
+        username: "andy",
+      });
+
+      render(
+        <MemoryRouter initialEntries={["/"]}>
+          <SkinProvider initialSkin="sleeve">
+            <SleeveNav />
+          </SkinProvider>
+        </MemoryRouter>
+      );
+
+      const avatar = screen.getByRole("link", { name: "Open profile" });
+      expect(avatar).toBeInTheDocument();
+      expect(avatar.querySelector(".sleeve-header-avatar-disc")).toBeInTheDocument();
+      expect(screen.getByText("AN")).toBeInTheDocument();
+    });
+
+    it("verifies sleeve.css includes refined reduced-motion and focus-visible states", async () => {
+      const fs = await import("fs");
+      const path = await import("path");
+      const cssPath = path.resolve(__dirname, "sleeve.css");
+      const cssContent = fs.readFileSync(cssPath, "utf-8");
+
+      expect(cssContent).toContain("prefers-reduced-motion: reduce");
+      expect(cssContent).not.toContain("transition: none !important");
+      expect(cssContent).toContain("sleeve-header-bell:focus-visible");
+      expect(cssContent).toContain("sleeve-header-avatar:focus-visible");
+      expect(cssContent).toContain("sleeve-tab-item:focus-visible");
     });
   });
 });

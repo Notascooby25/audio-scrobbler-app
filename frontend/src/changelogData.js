@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.38.2",
+    date: "2026-11-07",
+    changes: [
+      "Timeline & Sleeve Theme Audit Polish: Refined prefers-reduced-motion in Sleeve skin to preserve essential state feedback and transitions while disabling heavy and disorienting motion.",
+      "Dedicated High-Contrast Focus Visible Rings: Added explicit :focus-visible outlines with offset on Sleeve header bell, avatar, and bottom dock navigation tabs for seamless keyboard navigation.",
+      "Expanded Header Avatar Tap Targets: Expanded Profile avatar touch targets in both Timeline and Sleeve headers to 44x44px for effortless mobile tapping and accessibility compliance.",
+    ],
+  },
+  {
     version: "0.38.1",
     date: "2026-11-07",
     changes: [
