@@ -1,5 +1,108 @@
 /* Timeline Skin Stylesheet */
 /* All rules must be scoped under [data-skin="timeline"] */
-[data-skin="timeline"] {
-  --timeline-placeholder: none;
+
+/* ─── Light Mode Tokens (Default) ────────────────────────────────────────── */
+[data-skin="timeline"],
+[data-skin="timeline"][data-theme="light"] {
+  --color-canvas: #f2f4f5;
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-ink: #0e1a24;
+  --color-muted: #55626d;
+  --color-border: #dde3e7;
+  --color-border-subtle: #edf0f2;
+  --tl-rail: #cbd3d9;
+  --tl-tile: #dde3e7;
+  --color-danger: #b3261e;
+  --color-focus: var(--color-primary);
+  --color-on-accent: #ffffff;
+
+  --font-display:
+    "Schibsted Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body:
+    "Schibsted Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-pill: 9999px;
+  --space-gutter: 16px;
+  --nav-height: 72px;
+
+  /* Marker accent token (defaults to active primary accent) */
+  --tl-mark: var(--color-primary);
+}
+
+/* Light Mode Accent Overrides for markers needing >= 3:1 against canvas #F2F4F5 */
+[data-skin="timeline"][data-accent="fools_gold"],
+[data-skin="timeline"][data-theme="light"][data-accent="fools_gold"] {
+  --tl-mark: color-mix(in srgb, var(--color-primary) 80%, #000000);
+}
+
+/* ─── Dark Mode Tokens ───────────────────────────────────────────────────── */
+[data-skin="timeline"][data-theme="dark"] {
+  --color-canvas: #0e1a24;
+  --color-surface: #16242f;
+  --color-surface-raised: #16242f;
+  --color-ink: #e8edf0;
+  --color-muted: #9aa9b5;
+  --color-border: #2a3a47;
+  --color-border-subtle: #1e2d39;
+  --tl-rail: #3a4b58;
+  --tl-tile: #22323e;
+  --color-danger: #f2b8b5;
+  --color-focus: var(--color-primary);
+  --color-on-accent: #ffffff;
+
+  --font-display:
+    "Schibsted Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body:
+    "Schibsted Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-pill: 9999px;
+  --space-gutter: 16px;
+  --nav-height: 72px;
+
+  --tl-mark: var(--color-primary);
+}
+
+/* Dark Mode Accent Overrides for markers needing >= 3:1 against canvas #0E1A24 */
+[data-skin="timeline"][data-theme="dark"][data-accent="paint_it_black"] {
+  --tl-mark: color-mix(in srgb, var(--color-primary) 60%, #ffffff);
+}
+
+/* ─── System Theme (OS Dark Preference) ──────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  [data-skin="timeline"]:not([data-theme="light"]) {
+    --color-canvas: #0e1a24;
+    --color-surface: #16242f;
+    --color-surface-raised: #16242f;
+    --color-ink: #e8edf0;
+    --color-muted: #9aa9b5;
+    --color-border: #2a3a47;
+    --color-border-subtle: #1e2d39;
+    --tl-rail: #3a4b58;
+    --tl-tile: #22323e;
+    --color-danger: #f2b8b5;
+    --color-focus: var(--color-primary);
+    --color-on-accent: #ffffff;
+
+    --font-display:
+      "Schibsted Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-body:
+      "Schibsted Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-pill: 9999px;
+    --space-gutter: 16px;
+    --nav-height: 72px;
+
+    --tl-mark: var(--color-primary);
+  }
+
+  [data-skin="timeline"]:not([data-theme="light"])[data-accent="paint_it_black"] {
+    --tl-mark: color-mix(in srgb, var(--color-primary) 60%, #ffffff);
+  }
 }
