@@ -71,8 +71,11 @@ describe("Skins Registry & Token Contract", () => {
       const cssPath = path.resolve(__dirname, id, `${id}.css`);
       if (fs.existsSync(cssPath)) {
         const content = fs.readFileSync(cssPath, "utf-8");
-        // Strip comments
-        const stripped = content.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+        // Strip comments and unwrap @media queries to test inner selector scoping
+        const stripped = content
+          .replace(/\/\*[\s\S]*?\*\//g, "")
+          .replace(/@media[^{]*\{/g, "")
+          .trim();
         if (stripped.length > 0) {
           // Extract selectors (text before opening brace {)
           const blocks = stripped.split("}");

@@ -74,6 +74,10 @@ export function SkinProvider({ initialSkin = null, children }) {
 
   useEffect(() => {
     applySkinToDocument(skinId);
+    if (skinId !== "sleeve" && typeof document !== "undefined") {
+      document.documentElement.style.removeProperty("--sleeve");
+      document.documentElement.style.removeProperty("--sl-on-sleeve");
+    }
     try {
       localStorage.setItem(STORAGE_KEY, skinId);
     } catch (_err) {

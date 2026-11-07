@@ -5,6 +5,7 @@ import SleeveVinylDisc from "./SleeveVinylDisc";
 import { fetchNowPlaying, fetchRecentScrobbles } from "../../../api";
 import { readSession } from "../../../session";
 import { formatScrobbleTime } from "../../../timeFormatting";
+import { applySleeveColor } from "../sleeveColor";
 
 export default function SleeveTodayPage() {
   const session = readSession();
@@ -28,7 +29,9 @@ export default function SleeveTodayPage() {
         ];
         if (session.userId) {
           promises.push(
-            fetchNowPlaying({ token: session.accessToken, userId: session.userId }).catch(() => null)
+            fetchNowPlaying({ token: session.accessToken, userId: session.userId }).catch(
+              () => null
+            )
           );
         }
 
@@ -76,6 +79,38 @@ export default function SleeveTodayPage() {
     };
   }, [session?.accessToken, session?.userId]);
 
+  // Determine active hero track: either live playing track or most recent scrobble
+  const isRealtime = Boolean(nowPlaying?.is_playing);
+  const heroTrack = isRealtime
+    ? {
+        track_name: nowPlaying.track_name,
+        artist_name: nowPlaying.artist_name,
+        album_name: nowPlaying.album_name,
+        artwork_url: nowPlaying.artwork_url,
+        artwork_color: nowPlaying.artwork_color,
+        source: "spotify",
+        is_playing: true,
+      }
+    : recentScrobbles[0] || null;
+
+  useEffect(() => {
+    const artworkColor = heroTrack?.artwork_color || null;
+    if (artworkColor) {
+      sessionStorage.setItem("sleeve-latest-artwork-color", artworkColor);
+    } else {
+      sessionStorage.removeItem("sleeve-latest-artwork-color");
+    }
+
+    const matchSleeve = localStorage.getItem("audio-scrobbler-match-sleeve") !== "false";
+    applySleeveColor(artworkColor, matchSleeve);
+    window.dispatchEvent(
+      new CustomEvent("sleeve-artwork-color-changed", { detail: { color: artworkColor } })
+    );
+  }, [heroTrack?.artwork_color]);
+
+  // Earlier tracks for the crate: exclude the hero track if it's the first scrobble
+  const crateTracks = isRealtime ? recentScrobbles : recentScrobbles.slice(1);
+
   if (!session?.accessToken) {
     return (
       <div className="sleeve-today-page">
@@ -99,22 +134,6 @@ export default function SleeveTodayPage() {
       </div>
     );
   }
-
-  // Determine active hero track: either live playing track or most recent scrobble
-  const isRealtime = Boolean(nowPlaying?.is_playing);
-  const heroTrack = isRealtime
-    ? {
-        track_name: nowPlaying.track_name,
-        artist_name: nowPlaying.artist_name,
-        album_name: nowPlaying.album_name,
-        artwork_url: nowPlaying.artwork_url,
-        source: "spotify",
-        is_playing: true,
-      }
-    : recentScrobbles[0] || null;
-
-  // Earlier tracks for the crate: exclude the hero track if it's the first scrobble
-  const crateTracks = isRealtime ? recentScrobbles : recentScrobbles.slice(1);
 
   if (!heroTrack) {
     return (
@@ -164,7 +183,11 @@ export default function SleeveTodayPage() {
                 className="sleeve-hero-art"
               />
             ) : (
-              <div className="sleeve-hero-fallback" role="img" aria-label="Album artwork placeholder">
+              <div
+                className="sleeve-hero-fallback"
+                role="img"
+                aria-label="Album artwork placeholder"
+              >
                 <span className="sleeve-fallback-initials">
                   {(heroTrack.artist_name || "?").slice(0, 2).toUpperCase()}
                 </span>
@@ -197,7 +220,10 @@ export default function SleeveTodayPage() {
 
           <div className="sleeve-crate-scroll">
             {crateTracks.map((item, idx) => (
-              <div key={item.id || `${item.track_name}-${item.played_at || idx}`} className="sleeve-crate-card">
+              <div
+                key={item.id || `${item.track_name}-${item.played_at || idx}`}
+                className="sleeve-crate-card"
+              >
                 <div className="sleeve-crate-tile">
                   {item.artwork_url ? (
                     <Artwork

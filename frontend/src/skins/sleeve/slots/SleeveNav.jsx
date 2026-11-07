@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { readSession } from "../../../session";
 import { fetchUnreadNotificationCount } from "../../../api";
+import { applySleeveColor } from "../sleeveColor";
 
 const TABS = [
   {
@@ -84,6 +85,30 @@ export default function SleeveNav() {
       window.removeEventListener("notifications_read", handleRead);
     };
   }, [session?.accessToken]);
+
+  useEffect(() => {
+    const applyCurrentColor = () => {
+      const cachedColor = sessionStorage.getItem("sleeve-latest-artwork-color");
+      const matchSleeve = localStorage.getItem("audio-scrobbler-match-sleeve") !== "false";
+      applySleeveColor(cachedColor, matchSleeve);
+    };
+
+    applyCurrentColor();
+
+    const onColorChanged = (e) => {
+      const color = e?.detail?.color ?? sessionStorage.getItem("sleeve-latest-artwork-color");
+      const match = localStorage.getItem("audio-scrobbler-match-sleeve") !== "false";
+      applySleeveColor(color, match);
+    };
+
+    window.addEventListener("sleeve-artwork-color-changed", onColorChanged);
+    window.addEventListener("audio-scrobbler-match-sleeve-changed", onColorChanged);
+
+    return () => {
+      window.removeEventListener("sleeve-artwork-color-changed", onColorChanged);
+      window.removeEventListener("audio-scrobbler-match-sleeve-changed", onColorChanged);
+    };
+  }, []);
 
   const subpageInfo = getSubpageInfo(pathname);
 

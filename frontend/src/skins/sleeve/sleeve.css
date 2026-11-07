@@ -70,6 +70,17 @@
   color: var(--color-ink);
   font-family: var(--font-body);
   padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
+  transition:
+    background-color 300ms ease,
+    border-color 300ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-skin="sleeve"],
+  [data-skin="sleeve"] body,
+  [data-skin="sleeve"] * {
+    transition: none !important;
+  }
 }
 
 /* Base button rules in Sleeve: Sentence case, no uppercase */
@@ -3027,5 +3038,3 @@
   line-height: 1.6 !important;
   color: rgba(255, 255, 255, 0.9) !important;
 }
-
-
