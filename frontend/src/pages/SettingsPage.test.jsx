@@ -497,7 +497,7 @@ describe("SettingsPage", () => {
     );
   });
 
-  it("hides skin switcher in Appearance when in standard Classic view with no preview flag", async () => {
+  it("shows skin switcher in Appearance when multiple live skins exist", async () => {
     render(
       <MemoryRouter initialEntries={["/settings"]}>
         <SkinProvider>
@@ -507,7 +507,7 @@ describe("SettingsPage", () => {
     );
 
     await screen.findByRole("tabpanel", { name: "General" });
-    expect(screen.queryByLabelText("Skin")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Skin")).toBeInTheDocument();
   });
 
   it("shows skin switcher in Appearance when ?skin=sleeve is present and allows toggling", async () => {

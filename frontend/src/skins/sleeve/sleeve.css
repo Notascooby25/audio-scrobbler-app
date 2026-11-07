@@ -2726,3 +2726,288 @@
   border-radius: 6px !important;
 }
 
+/* ==========================================================================
+   Settings Page (/settings)
+   ========================================================================== */
+
+[data-skin="sleeve"] .settings-form {
+  background: var(--sl-card) !important;
+  border: 1px solid var(--sl-edge) !important;
+  border-radius: 12px !important;
+  padding: 24px !important;
+  box-shadow: none;
+  color: #ffffff !important;
+  max-width: 42rem !important;
+}
+
+[data-skin="sleeve"] .settings-form label {
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--sl-muted) !important;
+  text-transform: none !important;
+  line-height: 1.4 !important;
+  gap: 6px !important;
+}
+
+[data-skin="sleeve"] .settings-form select,
+[data-skin="sleeve"] .settings-form input:not([type="checkbox"]):not([type="radio"]),
+[data-skin="sleeve"] .settings-form textarea {
+  background: var(--sl-deep) !important;
+  border: 1px solid var(--sl-edge) !important;
+  border-radius: 8px !important;
+  box-shadow: none;
+  color: #ffffff !important;
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 14px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 8px 12px !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.15s ease !important;
+}
+
+[data-skin="sleeve"] .settings-form select:focus-visible,
+[data-skin="sleeve"] .settings-form input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+[data-skin="sleeve"] .settings-form textarea:focus-visible {
+  border-color: #ffffff !important;
+  outline: 2px solid #ffffff !important;
+  outline-offset: 1px !important;
+}
+
+[data-skin="sleeve"] .settings-checkbox {
+  color: #ffffff !important;
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+[data-skin="sleeve"] .settings-checkbox input {
+  accent-color: var(--sleeve, #ffffff) !important;
+}
+
+[data-skin="sleeve"] .settings-form label:has(input[type="radio"]) {
+  color: #ffffff !important;
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 14px !important;
+}
+
+[data-skin="sleeve"] .settings-form input[type="radio"] {
+  accent-color: var(--sleeve, #ffffff) !important;
+}
+
+[data-skin="sleeve"] .settings-accent-select-wrapper select {
+  padding-left: 36px !important;
+}
+
+[data-skin="sleeve"] .settings-accent-select-dot {
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+[data-skin="sleeve"] .settings-form button:not(.destructive):not([role="tab"]) {
+  min-height: 38px !important;
+  padding: 8px 16px !important;
+  border-radius: 999px !important;
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  border: 1px solid var(--sl-edge) !important;
+  background: var(--sl-deep) !important;
+  color: #ffffff !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+[data-skin="sleeve"] .settings-form button:not(.destructive):not([role="tab"]):hover {
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  background: color-mix(in srgb, var(--sl-card) 90%, #ffffff) !important;
+}
+
+/* Danger Zone */
+[data-skin="sleeve"] .settings-danger-zone {
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  background: color-mix(in srgb, var(--sl-card) 92%, #ef4444) !important;
+}
+
+[data-skin="sleeve"] .settings-tabs button.destructive {
+  color: #f87171 !important;
+}
+
+[data-skin="sleeve"] .settings-tabs button.destructive.active {
+  background: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+[data-skin="sleeve"] .settings-form button.destructive {
+  min-height: 38px !important;
+  padding: 8px 16px !important;
+  border-radius: 999px !important;
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  border: 1px solid #ef4444 !important;
+  background: transparent !important;
+  color: #ef4444 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+[data-skin="sleeve"] .settings-form button.destructive:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+/* User Guide & FAQ */
+[data-skin="sleeve"] .user-guide-section,
+[data-skin="sleeve"] .faq-section {
+  color: #ffffff !important;
+}
+
+[data-skin="sleeve"] .guide-header h2,
+[data-skin="sleeve"] .faq-header h2 {
+  font-family: var(--font-display, "Young Serif", serif) !important;
+  font-size: 24px !important;
+  font-weight: 400 !important;
+  color: #ffffff !important;
+  margin: 0 0 8px 0 !important;
+}
+
+[data-skin="sleeve"] .guide-subtitle,
+[data-skin="sleeve"] .faq-subtitle {
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 14px !important;
+  color: var(--sl-muted) !important;
+  margin: 0 0 20px 0 !important;
+  line-height: 1.4 !important;
+}
+
+[data-skin="sleeve"] .guide-chapter,
+[data-skin="sleeve"] .faq-item {
+  background: var(--sl-card) !important;
+  border: 1px solid var(--sl-edge) !important;
+  border-radius: 12px !important;
+  padding: 20px !important;
+  margin-bottom: 16px !important;
+}
+
+[data-skin="sleeve"] .guide-chapter h3,
+[data-skin="sleeve"] .faq-category-title {
+  font-family: var(--font-display, "Young Serif", serif) !important;
+  font-size: 18px !important;
+  font-weight: 400 !important;
+  color: #ffffff !important;
+  margin: 0 0 12px 0 !important;
+}
+
+[data-skin="sleeve"] .guide-chapter h4 {
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  margin: 16px 0 8px 0 !important;
+}
+
+[data-skin="sleeve"] .guide-chapter p,
+[data-skin="sleeve"] .faq-answer p {
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  color: rgba(255, 255, 255, 0.88) !important;
+  margin: 0 0 10px 0 !important;
+}
+
+[data-skin="sleeve"] .guide-callout {
+  background: var(--sl-deep) !important;
+  border: 1px solid var(--sl-edge) !important;
+  border-radius: 8px !important;
+  padding: 14px !important;
+  margin: 12px 0 !important;
+}
+
+[data-skin="sleeve"] .guide-callout strong {
+  color: #ffffff !important;
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 13px !important;
+}
+
+[data-skin="sleeve"] .guide-callout p {
+  color: var(--sl-muted) !important;
+  font-size: 13px !important;
+  margin: 4px 0 0 0 !important;
+}
+
+[data-skin="sleeve"] .faq-question {
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+}
+
+[data-skin="sleeve"] .faq-answer {
+  padding-top: 12px !important;
+  margin-top: 12px !important;
+  border-top: 1px solid var(--sl-edge) !important;
+}
+
+[data-skin="sleeve"] .faq-search-input {
+  background: var(--sl-deep) !important;
+  border: 1px solid var(--sl-edge) !important;
+  border-radius: 999px !important;
+  color: #ffffff !important;
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 14px !important;
+  padding: 8px 16px !important;
+}
+
+/* ==========================================================================
+   Changelog Page (/changelog)
+   ========================================================================== */
+
+[data-skin="sleeve"] .changelog-container {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+[data-skin="sleeve"] .changelog-container > div {
+  background: var(--sl-card) !important;
+  border: 1px solid var(--sl-edge) !important;
+  border-radius: 12px !important;
+  padding: 20px !important;
+  margin-bottom: 0 !important;
+}
+
+[data-skin="sleeve"] .changelog-container h3 {
+  font-family: var(--font-display, "Young Serif", serif) !important;
+  font-size: 18px !important;
+  color: #ffffff !important;
+}
+
+[data-skin="sleeve"] .changelog-container .badge {
+  background: #ffffff !important;
+  color: var(--sl-ground) !important;
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  padding: 3px 10px !important;
+  border-radius: 999px !important;
+}
+
+[data-skin="sleeve"] .changelog-container ul {
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+
