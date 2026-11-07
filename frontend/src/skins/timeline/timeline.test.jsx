@@ -1,7 +1,20 @@
-import { describe, expect, it } from "vitest";
+import React from "react";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import fs from "fs";
 import path from "path";
 import { REQUIRED_TOKENS } from "../tokens.contract";
+import TimelineNav from "./slots/TimelineNav";
+import Slot from "../Slot";
+import { SkinProvider } from "../useSkin";
+import * as api from "../../api";
+import * as session from "../../session";
+
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
 
 // Helper function to calculate relative luminance per WCAG 2.1
 function getLuminance(hex) {
@@ -184,6 +197,126 @@ describe("Timeline Skin: Token Contract, Rules & Contrast Matrix", () => {
           ).toBeGreaterThanOrEqual(3.0);
         }
       });
+    });
+  });
+
+  describe("TimelineNav Slot Component", () => {
+    beforeEach(() => {
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        username: "Alex",
+        userId: 1,
+      });
+      vi.spyOn(api, "fetchUnreadNotificationCount").mockResolvedValue({ count: 3 });
+    });
+
+    it("renders the 5 primary tabs with accessible labels and icons", () => {
+      render(
+        <MemoryRouter initialEntries={["/"]}>
+          <TimelineNav />
+        </MemoryRouter>
+      );
+
+      const nav = screen.getByRole("navigation", { name: "Timeline navigation" });
+      expect(nav).toBeInTheDocument();
+
+      const todayTab = screen.getByRole("link", { name: "Today" });
+      const libraryTab = screen.getByRole("link", { name: "Library" });
+      const playTab = screen.getByRole("link", { name: "Play" });
+      const reportsTab = screen.getByRole("link", { name: "Reports" });
+      const gigsTab = screen.getByRole("link", { name: "Gigs" });
+
+      expect(todayTab).toBeInTheDocument();
+      expect(libraryTab).toBeInTheDocument();
+      expect(playTab).toBeInTheDocument();
+      expect(reportsTab).toBeInTheDocument();
+      expect(gigsTab).toBeInTheDocument();
+
+      expect(todayTab).toHaveAttribute("aria-current", "page");
+      expect(todayTab.className).toContain("active");
+      expect(libraryTab).not.toHaveAttribute("aria-current");
+    });
+
+    it("activates the correct tab based on current route", () => {
+      const routes = [
+        { path: "/library", tabName: "Library" },
+        { path: "/play", tabName: "Play" },
+        { path: "/reports", tabName: "Reports" },
+        { path: "/gigs", tabName: "Gigs" },
+      ];
+
+      for (const { path: routePath, tabName } of routes) {
+        cleanup();
+        render(
+          <MemoryRouter initialEntries={[routePath]}>
+            <TimelineNav />
+          </MemoryRouter>
+        );
+
+        const activeLink = screen.getByRole("link", { name: tabName });
+        expect(activeLink).toHaveAttribute("aria-current", "page");
+        expect(activeLink.className).toContain("active");
+      }
+    });
+
+    it("renders top header with Scrobbler wordmark, notification badge, and profile avatar", async () => {
+      render(
+        <MemoryRouter initialEntries={["/"]}>
+          <TimelineNav />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByText("Scrobbler")).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByRole("link", { name: /3 unread notifications/i })).toBeInTheDocument();
+      });
+
+      const avatar = screen.getByRole("link", { name: /Profile/i });
+      expect(avatar).toBeInTheDocument();
+      expect(screen.getByText("A")).toBeInTheDocument(); // initial of Alex
+    });
+
+    it("renders subpage header with back button and leaves tabs neutral on subpages", () => {
+      const subpages = [
+        { path: "/settings", backLabel: "Back to Profile" },
+        { path: "/following", backLabel: "Back to Profile" },
+        { path: "/connect", backLabel: "Back to Profile" },
+        { path: "/changelog", backLabel: "Back to Profile" },
+        { path: "/gigs/101", backLabel: "Back to Gigs" },
+      ];
+
+      for (const { path: subPath, backLabel } of subpages) {
+        cleanup();
+        render(
+          <MemoryRouter initialEntries={[subPath]}>
+            <TimelineNav />
+          </MemoryRouter>
+        );
+
+        const backLink = screen.getByRole("link", { name: backLabel });
+        expect(backLink).toBeInTheDocument();
+
+        // Bottom tabs are rendered but none is marked aria-current="page"
+        const nav = screen.getByRole("navigation", { name: "Timeline navigation" });
+        const tabs = within(nav).getAllByRole("link");
+        for (const tab of tabs) {
+          expect(tab).not.toHaveAttribute("aria-current", "page");
+        }
+      }
+    });
+
+    it("resolves TimelineNav through <Slot name='appNav' /> when activeSkin is timeline", () => {
+      render(
+        <MemoryRouter initialEntries={["/"]}>
+          <SkinProvider initialSkin="timeline">
+            <Slot name="appNav" fallback={<div data-testid="classic-fallback">Classic</div>} />
+          </SkinProvider>
+        </MemoryRouter>
+      );
+
+      expect(screen.queryByTestId("classic-fallback")).not.toBeInTheDocument();
+      expect(screen.getByRole("navigation", { name: "Timeline navigation" })).toBeInTheDocument();
     });
   });
 });

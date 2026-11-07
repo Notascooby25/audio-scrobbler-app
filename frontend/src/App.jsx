@@ -62,7 +62,7 @@ export default function App() {
                 !session?.accessToken ? (
                   <Navigate to="/connect" replace />
                 ) : (
-                  <Slot name="todayPage" fallback={<Navigate to="/play" replace />} />
+                  <Slot name="todayPage" fallback={<RedirectWithSearch to="/play" />} />
                 )
               }
             />

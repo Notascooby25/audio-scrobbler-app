@@ -6,6 +6,7 @@
 import SleeveNav from "./sleeve/slots/SleeveNav";
 import SleeveTodayPage from "./sleeve/slots/SleeveTodayPage";
 import SleevePlayPage from "./sleeve/slots/SleevePlayPage";
+import TimelineNav from "./timeline/slots/TimelineNav";
 
 export const SKINS = [
   {
@@ -34,7 +35,9 @@ export const SKINS = [
     description: "A calm, data-first vertical rail of plays with quiet gaps and hourly charts.",
     supportsThemes: true,
     status: "hidden",
-    slots: {},
+    slots: {
+      appNav: TimelineNav,
+    },
   },
 ];
 
