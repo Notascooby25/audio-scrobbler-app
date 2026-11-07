@@ -1,13 +1,16 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, cleanup, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import SleeveVinylDisc from "./slots/SleeveVinylDisc";
 import SleeveTodayPage from "./slots/SleeveTodayPage";
 import SleevePlayPage from "./slots/SleevePlayPage";
 import LibraryPage from "../../pages/LibraryPage";
 import ReportsPage from "../../pages/ReportsPage";
+import SetlistsPage from "../../components/setlists/SetlistsPage";
+import SetlistGigPage from "../../components/setlists/SetlistGigPage";
 import * as api from "../../api";
+import * as setlistsApi from "../../api/setlists";
 import * as session from "../../session";
 
 describe("Sleeve Skin Components", () => {
@@ -247,6 +250,112 @@ describe("Sleeve Skin Components", () => {
         expect(screen.getByText("Scrobbles this period")).toBeTruthy();
         expect(screen.getByText("4,890")).toBeTruthy();
         expect(screen.getByText("Listening minutes")).toBeTruthy();
+      });
+    });
+  });
+
+  describe("SetlistsPage (Gigs Index) in Sleeve Skin", () => {
+    it("renders page heading, summary stats line, section tabs and actions under sleeve skin", async () => {
+      document.documentElement.dataset.skin = "sleeve";
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        userId: 1,
+        username: "andy",
+      });
+      vi.spyOn(setlistsApi, "fetchSetlistStatus").mockResolvedValue({ configured: true });
+      vi.spyOn(setlistsApi, "fetchAttendances").mockResolvedValue([
+        {
+          id: 1,
+          artist_name: "The Cure",
+          venue_name: "Wembley Arena",
+          event_date: "12-12-2022",
+          city: "London",
+          country: "United Kingdom",
+        },
+        {
+          id: 2,
+          artist_name: "Depeche Mode",
+          venue_name: "Twickenham Stadium",
+          event_date: "17-06-2023",
+          city: "London",
+          country: "United Kingdom",
+        },
+      ]);
+      vi.spyOn(setlistsApi, "fetchGigInvites").mockResolvedValue([]);
+
+      const { container } = render(
+        <MemoryRouter initialEntries={["/setlists"]}>
+          <SetlistsPage />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByRole("heading", { name: "Gigs", level: 1 })).toBeTruthy();
+      expect(screen.getByRole("tab", { name: "My Gigs" })).toBeTruthy();
+      expect(screen.getByRole("tab", { name: "Artists Seen" })).toBeTruthy();
+      expect(screen.getByRole("tab", { name: "Songs Heard" })).toBeTruthy();
+      expect(screen.getByRole("tab", { name: "Venues" })).toBeTruthy();
+      expect(screen.getByRole("button", { name: "+ Log a Gig" })).toBeTruthy();
+
+      await waitFor(() => {
+        const summarySpan = container.querySelector(".sleeve-summary");
+        expect(summarySpan).toBeTruthy();
+        expect(summarySpan.textContent).toContain("2 shows, 2 artists, 2 venues");
+        expect(screen.getByText("The Cure")).toBeTruthy();
+        expect(screen.getByText("Depeche Mode")).toBeTruthy();
+      });
+    });
+  });
+
+  describe("SetlistGigPage (Gig Detail) in Sleeve Skin", () => {
+    it("renders gig header card, artist name, date block and actions under sleeve skin", async () => {
+      document.documentElement.dataset.skin = "sleeve";
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        userId: 1,
+        username: "andy",
+      });
+      vi.spyOn(setlistsApi, "fetchAttendance").mockResolvedValue({
+        id: 1,
+        artist_name: "The Cure",
+        venue_name: "Wembley Arena",
+        event_date: "12-12-2022",
+        city: "London",
+        country: "United Kingdom",
+        tour_name: "Shows of a Lost World",
+        raw_data: {
+          sets: {
+            set: [
+              {
+                song: [{ name: "Pictures of You" }, { name: "Lovesong" }],
+              },
+            ],
+          },
+        },
+      });
+      vi.spyOn(setlistsApi, "fetchGigBill").mockResolvedValue({
+        acts: [],
+        complete: true,
+        capped: false,
+      });
+      vi.spyOn(setlistsApi, "fetchGigCompanions").mockResolvedValue({
+        companions: [],
+        following: [],
+      });
+
+      render(
+        <MemoryRouter initialEntries={["/gigs/1"]}>
+          <Routes>
+            <Route path="/gigs/:concertId" element={<SetlistGigPage />} />
+          </Routes>
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: /The Cure Setlist/i, level: 1 })).toBeTruthy();
+        expect(screen.getByText(/at Wembley Arena, London, United Kingdom/i)).toBeTruthy();
+        expect(screen.getByText("Pictures of You")).toBeTruthy();
+        expect(screen.getByText("Lovesong")).toBeTruthy();
+        expect(screen.getByRole("button", { name: "Copy setlist" })).toBeTruthy();
       });
     });
   });
