@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { readSession } from "../../../session";
 import { fetchUnreadNotificationCount } from "../../../api";
 
@@ -101,11 +101,7 @@ export default function TimelineNav() {
     <>
       {subpageInfo ? (
         <header className="timeline-subpage-header">
-          <NavLink
-            to={subpageInfo.to}
-            className="timeline-back-button"
-            aria-label={subpageInfo.label}
-          >
+          <Link to={subpageInfo.to} className="timeline-back-button" aria-label={subpageInfo.label}>
             <svg
               width="20"
               height="20"
@@ -120,7 +116,7 @@ export default function TimelineNav() {
               <polyline points="15 18 9 12 15 6" />
             </svg>
             <span>{subpageInfo.label}</span>
-          </NavLink>
+          </Link>
         </header>
       ) : (
         <header className="timeline-header">
@@ -188,9 +184,9 @@ export default function TimelineNav() {
       <nav className="timeline-nav-bottom" aria-label="Timeline navigation">
         <div className="timeline-nav-bottom-inner">
           {TABS.map((tab) => {
-            const active = tab.isActive(pathname);
+            const active = !subpageInfo && tab.isActive(pathname);
             return (
-              <NavLink
+              <Link
                 key={tab.id}
                 to={tab.to}
                 className={`timeline-tab ${active ? "active" : ""}`}
@@ -211,7 +207,7 @@ export default function TimelineNav() {
                   <path d={tab.iconD} />
                 </svg>
                 <span className="timeline-tab-label">{tab.label}</span>
-              </NavLink>
+              </Link>
             );
           })}
         </div>
