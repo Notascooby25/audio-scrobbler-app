@@ -8,6 +8,7 @@ import SleeveTodayPage from "./sleeve/slots/SleeveTodayPage";
 import SleevePlayPage from "./sleeve/slots/SleevePlayPage";
 import TimelineNav from "./timeline/slots/TimelineNav";
 import TimelineTodayPage from "./timeline/slots/TimelineTodayPage";
+import TimelinePlayPage from "./timeline/slots/TimelinePlayPage";
 
 export const SKINS = [
   {
@@ -39,6 +40,7 @@ export const SKINS = [
     slots: {
       appNav: TimelineNav,
       todayPage: TimelineTodayPage,
+      playPage: TimelinePlayPage,
     },
   },
 ];

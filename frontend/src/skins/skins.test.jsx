@@ -161,7 +161,7 @@ describe("Slot Pattern Component", () => {
     expect(activeTabs).toHaveLength(0);
   });
 
-  it("resolves todayPage and playPage slots for Sleeve and falls back for Classic", () => {
+  it("resolves todayPage and playPage slots for Sleeve and Timeline, and falls back for Classic", () => {
     const classic = getSkin("classic");
     expect(classic.slots.todayPage).toBeUndefined();
     expect(classic.slots.playPage).toBeUndefined();
@@ -169,5 +169,9 @@ describe("Slot Pattern Component", () => {
     const sleeve = getSkin("sleeve");
     expect(sleeve.slots.todayPage).toBeDefined();
     expect(sleeve.slots.playPage).toBeDefined();
+
+    const timeline = getSkin("timeline");
+    expect(timeline.slots.todayPage).toBeDefined();
+    expect(timeline.slots.playPage).toBeDefined();
   });
 });
