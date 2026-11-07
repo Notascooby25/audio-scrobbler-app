@@ -1,0 +1,5 @@
+/* Sleeve Skin Stylesheet */
+/* All rules must be scoped under [data-skin="sleeve"] */
+[data-skin="sleeve"] {
+  --sleeve-placeholder: none;
+}
