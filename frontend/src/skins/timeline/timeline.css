@@ -2196,3 +2196,137 @@
 [data-skin="timeline"] .blocked-list li .settings-link:hover {
   border-color: var(--color-ink) !important;
 }
+
+/* ─── Connect Page (/connect) ─────────────────────────────────────────────── */
+[data-skin="timeline"] .connect-source-grid {
+  display: grid !important;
+  gap: 16px !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)) !important;
+  margin-bottom: 24px !important;
+}
+
+[data-skin="timeline"] .connect-source-card,
+[data-skin="timeline"] .connect-handoff-card {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 20px !important;
+  margin-bottom: 16px !important;
+}
+
+[data-skin="timeline"] .connect-source-card h3,
+[data-skin="timeline"] .connect-source-card h4,
+[data-skin="timeline"] .connect-handoff-card h3 {
+  font-family: var(--font-display) !important;
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--color-ink) !important;
+  margin: 0 0 8px 0 !important;
+}
+
+[data-skin="timeline"] .connect-source-card p,
+[data-skin="timeline"] .connect-handoff-card p {
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  color: var(--color-muted) !important;
+  margin: 0 0 16px 0 !important;
+  line-height: 1.4 !important;
+}
+
+[data-skin="timeline"] .connect-source-card button:not(.secondary),
+[data-skin="timeline"] .connect-handoff-card button {
+  min-height: 40px !important;
+  padding: 8px 18px !important;
+  border-radius: 8px !important;
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  border: 1px solid transparent !important;
+  background: var(--color-primary) !important;
+  color: var(--color-on-accent) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer;
+}
+
+[data-skin="timeline"] .connect-source-card button.secondary {
+  min-height: 40px !important;
+  padding: 8px 18px !important;
+  border-radius: 8px !important;
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  border: 1px solid var(--color-border) !important;
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer;
+}
+
+[data-skin="timeline"] .connect-source-card button.secondary:hover {
+  border-color: var(--color-ink) !important;
+}
+
+[data-skin="timeline"] .import-progress-track {
+  background: var(--color-canvas) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+  height: 10px !important;
+}
+
+[data-skin="timeline"] .import-progress-fill {
+  background: var(--color-primary) !important;
+  border-radius: 6px !important;
+}
+
+/* ─── Changelog Page (/changelog) ─────────────────────────────────────────── */
+[data-skin="timeline"] .changelog-container {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+[data-skin="timeline"] .changelog-container > div {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 20px !important;
+  margin-bottom: 0 !important;
+}
+
+[data-skin="timeline"] .changelog-container h3 {
+  font-family: var(--font-display) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+}
+
+[data-skin="timeline"] .changelog-container .badge {
+  background: var(--tl-tile) !important;
+  color: var(--color-ink) !important;
+  border: 1px solid var(--color-border) !important;
+  font-family: var(--font-body) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  font-variant-numeric: tabular-nums !important;
+  padding: 3px 10px !important;
+  border-radius: 9999px !important;
+}
+
+[data-skin="timeline"] .changelog-container ul {
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  color: var(--color-ink) !important;
+}
+
+[data-skin="timeline"] .changelog-container li {
+  margin-bottom: 6px !important;
+}
