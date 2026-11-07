@@ -13,6 +13,11 @@ import TimelinePlayPage from "./slots/TimelinePlayPage";
 import ReportsPage from "../../pages/ReportsPage";
 import SetlistsPage from "../../components/setlists/SetlistsPage";
 import SetlistGigPage from "../../components/setlists/SetlistGigPage";
+import ProfilePage from "../../pages/ProfilePage";
+import FollowingPage from "../../pages/FollowingPage";
+import HomePage from "../../pages/HomePage";
+import SettingsPage from "../../pages/SettingsPage";
+import ChangelogPage from "../../pages/ChangelogPage";
 import Slot from "../Slot";
 import { SkinProvider } from "../useSkin";
 import * as api from "../../api";
@@ -782,6 +787,171 @@ describe("Timeline Skin: Token Contract, Rules & Contrast Matrix", () => {
         expect(screen.getByText("Lovesong")).toBeInTheDocument();
         expect(screen.getByText("Sam")).toBeInTheDocument();
       });
+    });
+  });
+
+  describe("ProfilePage under Timeline Skin", () => {
+    it("renders profile header, stats, actions, and scrobble cards under timeline skin", async () => {
+      document.documentElement.dataset.skin = "timeline";
+      localStorage.setItem(
+        "audio-scrobbler-session",
+        JSON.stringify({ userId: 1, accessToken: "test-token", username: "andy" })
+      );
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        userId: 1,
+        username: "andy",
+      });
+      vi.spyOn(api, "fetchUserProfile").mockResolvedValue({
+        id: 1,
+        username: "andy",
+        display_name: "Andy",
+        follower_count: 5,
+        following_count: 3,
+        is_self: true,
+        is_following: false,
+        can_view_details: true,
+        last_scrobble: {
+          track_name: "Pictures of You",
+          artist_name: "The Cure",
+          album_name: "Disintegration",
+          source: "spotify",
+          played_at: "2026-01-15T12:00:00",
+        },
+      });
+      vi.spyOn(api, "fetchNowPlaying").mockResolvedValue(null);
+      vi.spyOn(api, "fetchSpotifyStatus").mockResolvedValue({
+        rate_limited: false,
+        retry_after: null,
+      });
+
+      render(
+        <MemoryRouter initialEntries={["/profile"]}>
+          <ProfilePage />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: "Profile", level: 1 })).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "@andy", level: 2 })).toBeInTheDocument();
+        expect(screen.getByText("Andy")).toBeInTheDocument();
+        expect(screen.getByText("5")).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Settings" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("FollowingPage under Timeline Skin", () => {
+    it("renders following list with live status and follow buttons under timeline skin", async () => {
+      document.documentElement.dataset.skin = "timeline";
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        userId: 1,
+        username: "andy",
+      });
+      vi.spyOn(api, "fetchFollowing").mockResolvedValue({
+        results: [
+          {
+            id: 2,
+            username: "friend1",
+            display_name: "Alice",
+            is_following: true,
+            last_scrobble: {
+              track_name: "Ceremony",
+              artist_name: "New Order",
+            },
+          },
+        ],
+      });
+      vi.spyOn(api, "searchUsers").mockResolvedValue({ results: [] });
+
+      render(
+        <MemoryRouter initialEntries={["/following"]}>
+          <FollowingPage />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: "Friends", level: 1 })).toBeInTheDocument();
+        expect(screen.getByRole("tab", { name: "Following" })).toBeInTheDocument();
+        expect(screen.getByText("Alice")).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "View profile" })).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Connect / HomePage under Timeline Skin", () => {
+    it("renders connection source cards and actions under timeline skin", async () => {
+      document.documentElement.dataset.skin = "timeline";
+      localStorage.removeItem("audio-scrobbler-session");
+      vi.spyOn(session, "readSession").mockReturnValue(null);
+      vi.spyOn(api, "fetchSpotifyStatus").mockResolvedValue({
+        rate_limited: false,
+        retry_after: null,
+      });
+      vi.spyOn(api, "fetchRecentScrobbles").mockResolvedValue({ scrobbles: [] });
+
+      render(
+        <MemoryRouter initialEntries={["/connect"]}>
+          <HomePage />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole("heading", { name: "Connect & Data Sources", level: 1 })
+        ).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Connect Spotify" })).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("SettingsPage under Timeline Skin", () => {
+    it("renders settings tabs, form, and skin selector under timeline skin", async () => {
+      document.documentElement.dataset.skin = "timeline";
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        userId: 1,
+        username: "andy",
+      });
+      vi.spyOn(api, "fetchUserSettings").mockResolvedValue({
+        theme: "system",
+        accent_color: "blue_monday",
+        skin: "timeline",
+      });
+      vi.spyOn(api, "fetchScrobbleSettings").mockResolvedValue({});
+      vi.spyOn(api, "fetchBlocks").mockResolvedValue([]);
+
+      render(
+        <MemoryRouter initialEntries={["/settings"]}>
+          <SkinProvider>
+            <SettingsPage />
+          </SkinProvider>
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: "Settings", level: 1 })).toBeInTheDocument();
+        expect(screen.getByRole("tab", { name: "General" })).toBeInTheDocument();
+        expect(screen.getByRole("tab", { name: "Danger Zone" })).toBeInTheDocument();
+        expect(screen.getByLabelText("Skin")).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("ChangelogPage under Timeline Skin", () => {
+    it("renders changelog release cards and version tags under timeline skin", async () => {
+      document.documentElement.dataset.skin = "timeline";
+
+      render(
+        <MemoryRouter initialEntries={["/changelog"]}>
+          <ChangelogPage />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByRole("heading", { name: "Changelog", level: 1 })).toBeInTheDocument();
+      expect(screen.getAllByText(/^v\d+\.\d+\.\d+/).length).toBeGreaterThan(0);
     });
   });
 });
