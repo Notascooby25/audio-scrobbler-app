@@ -1623,3 +1623,181 @@
   color: var(--sl-muted) !important;
   font-size: 14px !important;
 }
+
+/* ==========================================================================
+   Gigs Page: Index Header, Tabs, Actions & Filters
+   ========================================================================== */
+
+[data-skin="sleeve"] .sfm-page-intro .classic-intro {
+  display: none !important;
+}
+
+[data-skin="sleeve"] .sfm-page-intro .sleeve-summary {
+  display: inline !important;
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 14px !important;
+  color: var(--sl-muted) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+[data-skin="sleeve"] .sfm-page-header {
+  margin-bottom: 24px !important;
+}
+
+[data-skin="sleeve"] .sfm-page-header h1 {
+  font-family: var(--font-display, "Young Serif", serif) !important;
+  font-size: clamp(28px, 6vw, 36px) !important;
+  font-weight: 400 !important;
+  color: #ffffff !important;
+  line-height: 1.15 !important;
+  font-feature-settings: "onum" 1 !important;
+  margin: 0 0 6px 0 !important;
+}
+
+[data-skin="sleeve"] .sfm-page-header .section-kicker {
+  display: none !important;
+}
+
+[data-skin="sleeve"] .sfm-panel {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+[data-skin="sleeve"] .sfm-tabbar {
+  border-bottom: none !important;
+  margin-bottom: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+}
+
+[data-skin="sleeve"] .sfm-tabbar-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding-bottom: 0 !important;
+}
+
+/* Primary "+ Log a Gig" action button */
+[data-skin="sleeve"] .sfm-tabbar-actions button.sfm-link:first-child {
+  background: #ffffff !important;
+  color: var(--sl-ground) !important;
+  min-height: 40px !important;
+  padding: 8px 18px !important;
+  border-radius: 999px !important;
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+  text-transform: none !important;
+  border: 1px solid #ffffff !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease !important;
+}
+
+[data-skin="sleeve"] .sfm-tabbar-actions button.sfm-link:first-child:hover {
+  filter: brightness(0.9) !important;
+}
+
+/* Secondary "Import / Export" action button */
+[data-skin="sleeve"] .sfm-tabbar-actions button.sfm-link:last-child {
+  background: transparent !important;
+  color: var(--sl-muted) !important;
+  min-height: 40px !important;
+  padding: 8px 16px !important;
+  border-radius: 999px !important;
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  text-transform: none !important;
+  border: 1px solid var(--sl-edge) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease !important;
+}
+
+[data-skin="sleeve"] .sfm-tabbar-actions button.sfm-link:last-child:hover {
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+[data-skin="sleeve"] .sfm-section-head {
+  margin-bottom: 20px !important;
+}
+
+[data-skin="sleeve"] .sfm-section-head h2 {
+  font-family: var(--font-display, "Young Serif", serif) !important;
+  font-size: 22px !important;
+  font-weight: 400 !important;
+  color: #ffffff !important;
+  line-height: 1.2 !important;
+  margin: 0 !important;
+}
+
+[data-skin="sleeve"] .sfm-section-desc {
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 14px !important;
+  color: var(--sl-muted) !important;
+  margin: 4px 0 0 0 !important;
+}
+
+/* Filter pills (All, Attended, Upcoming) */
+[data-skin="sleeve"] .sfm-filter {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-top: 10px !important;
+}
+
+[data-skin="sleeve"] .sfm-filter-sep {
+  display: none !important;
+}
+
+[data-skin="sleeve"] .sfm-filter button.sfm-link {
+  min-height: 32px !important;
+  padding: 5px 14px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--sl-edge) !important;
+  background: var(--sl-card) !important;
+  color: var(--sl-muted) !important;
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  text-decoration: none !important;
+  transition: all 0.15s ease !important;
+}
+
+[data-skin="sleeve"] .sfm-filter button.sfm-link:hover:not(.is-current) {
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+[data-skin="sleeve"] .sfm-filter button.sfm-link.is-current {
+  background: #ffffff !important;
+  color: var(--sl-ground) !important;
+  border-color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+[data-skin="sleeve"] .sfm-page-size {
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 13px !important;
+  color: var(--sl-muted) !important;
+  margin: 16px 0 12px !important;
+}
+
+[data-skin="sleeve"] .sfm-page-size select {
+  background: var(--sl-card) !important;
+  color: #ffffff !important;
+  border: 1px solid var(--sl-edge) !important;
+  border-radius: 6px !important;
+  padding: 4px 8px !important;
+}
