@@ -1,5 +1,15 @@
 export const CHANGELOG = [
   {
+    version: "0.36.0",
+    date: "2026-11-07",
+    changes: [
+      "Skins Architecture Foundation: Introduced a unified skins framework supporting multiple visual themes (Classic, Sleeve, and Timeline) sharing the same data and routing with zero visual drift.",
+      "Skin Selection & Preference Sync: Added skin preferences to the database and user settings, synchronized with local storage and instant inline document initialization to eliminate theme flashing.",
+      "Token Contract & Slot System: Established a shared design token contract and extensible component slot pattern (<Slot name='...' />) enabling isolated skin styles and components without modifying Classic markup.",
+      "Automated Multi-Skin Testing: Added comprehensive automated test suites enforcing token contract compliance, flat-by-default rules (zero gradients/shadows), strict CSS selector scoping, and Retro Jukebox immutability.",
+    ],
+  },
+  {
     version: "0.35.0",
     date: "2026-11-06",
     changes: [
