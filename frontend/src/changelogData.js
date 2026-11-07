@@ -1,5 +1,16 @@
 export const CHANGELOG = [
   {
+    version: "0.38.1",
+    date: "2026-11-07",
+    changes: [
+      "Mobile Track & Artist Name Density: Resolved aggressive mobile truncation across Timeline and Sleeve skins so song titles, artist names, and album names display in full without clipping.",
+      "Proportional Progress in Separator Lines: Replaced the fixed horizontal volume column on mobile ranked lists with a sleek 2px accent underline along each row's separator border, paired with clean tabular play counts.",
+      "Responsive Time Capsule Rows: Redesigned Time Capsule & Rediscover cards on mobile screens so stats badges wrap cleanly to a secondary line, allowing song titles to use the full width of the card.",
+      "Clean Mobile Scrobble Grid: Arranged mobile scrobble feeds into a responsive 2-row layout with artwork, title, time, artist, source badge, and liked heart, ensuring long titles have ample horizontal space.",
+      "Suppressed Redundant Rank Source Badges: Hid repeated source icons on ranked artist, track, and album lists to prioritize essential entity titles and artist names.",
+    ],
+  },
+  {
     version: "0.38.0",
     date: "2026-11-07",
     changes: [
