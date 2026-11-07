@@ -29,6 +29,8 @@ import UserGuideSection from "../components/settings/UserGuideSection";
 import FaqSection from "../components/settings/FaqSection";
 import HomeCitySection from "../components/settings/HomeCitySection";
 import BlockedItemsSection from "../components/settings/BlockedItemsSection";
+import { useSkin } from "../skins/useSkin";
+import { getAvailableSkins } from "../skins";
 
 const SETTINGS_TABS = [
   ["general", "General"],
@@ -81,6 +83,7 @@ function urlBase64ToUint8Array(base64String) {
 
 export default function SettingsPage() {
   const session = readSession();
+  const { id: activeSkinId, skin: currentSkin, setSkin } = useSkin();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
 
@@ -183,6 +186,10 @@ export default function SettingsPage() {
     if (key === "theme") {
       localStorage.setItem("audio-scrobbler-theme", value);
       document.documentElement.setAttribute("data-theme", value);
+    }
+
+    if (key === "skin") {
+      setSkin(value);
     }
 
     if (key === "accent_color") {
@@ -411,17 +418,48 @@ export default function SettingsPage() {
             id="settings-panel-general"
             aria-labelledby="settings-tab-general"
           >
-            <label>
-              Theme
-              <select
-                value={settings.theme || "system"}
-                onChange={(event) => changeSetting("theme", event.target.value)}
-              >
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-                <option value="system">System Default</option>
-              </select>
-            </label>
+            {(() => {
+              const isSkinPreviewActive =
+                Boolean(searchParams.get("skin")) || activeSkinId !== "classic";
+              const availableSkins = getAvailableSkins({ includeHidden: isSkinPreviewActive });
+              if (availableSkins.length <= 1) return null;
+              return (
+                <label>
+                  Skin
+                  <select
+                    aria-label="Skin"
+                    value={settings.skin || activeSkinId || "classic"}
+                    onChange={(event) => changeSetting("skin", event.target.value)}
+                  >
+                    {availableSkins.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              );
+            })()}
+            {currentSkin?.supportsThemes === false ? (
+              <label>
+                Theme
+                <select disabled value="dark" aria-label="Theme">
+                  <option value="dark">Dark (enforced by {currentSkin.name})</option>
+                </select>
+              </label>
+            ) : (
+              <label>
+                Theme
+                <select
+                  value={settings.theme || "system"}
+                  onChange={(event) => changeSetting("theme", event.target.value)}
+                >
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                  <option value="system">System Default</option>
+                </select>
+              </label>
+            )}
             <label>
               Accent color
               <div className="settings-accent-select-wrapper">

@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import SettingsPage from "./SettingsPage";
+import { SkinProvider } from "../skins/useSkin";
 import {
   advancedDeleteImports,
   enableLikedTracksSync,
@@ -491,6 +492,42 @@ describe("SettingsPage", () => {
         expect(updateUserSettings).toHaveBeenCalledWith({
           token: "token",
           changes: { artists_page_size: 20 },
+        }),
+      { timeout: 1000 }
+    );
+  });
+
+  it("hides skin switcher in Appearance when in standard Classic view with no preview flag", async () => {
+    render(
+      <MemoryRouter initialEntries={["/settings"]}>
+        <SkinProvider>
+          <SettingsPage />
+        </SkinProvider>
+      </MemoryRouter>
+    );
+
+    await screen.findByRole("tabpanel", { name: "General" });
+    expect(screen.queryByLabelText("Skin")).not.toBeInTheDocument();
+  });
+
+  it("shows skin switcher in Appearance when ?skin=sleeve is present and allows toggling", async () => {
+    render(
+      <MemoryRouter initialEntries={["/settings?skin=sleeve"]}>
+        <SkinProvider>
+          <SettingsPage />
+        </SkinProvider>
+      </MemoryRouter>
+    );
+
+    const skinSelect = await screen.findByLabelText("Skin");
+    expect(skinSelect).toBeInTheDocument();
+
+    fireEvent.change(skinSelect, { target: { value: "sleeve" } });
+    await waitFor(
+      () =>
+        expect(updateUserSettings).toHaveBeenCalledWith({
+          token: "token",
+          changes: { skin: "sleeve" },
         }),
       { timeout: 1000 }
     );
