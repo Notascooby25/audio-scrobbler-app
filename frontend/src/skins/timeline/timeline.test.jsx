@@ -10,14 +10,19 @@ import TimelineHourlyChart from "./slots/TimelineHourlyChart";
 import TimelineRail from "./slots/TimelineRail";
 import TimelineTodayPage from "./slots/TimelineTodayPage";
 import TimelinePlayPage from "./slots/TimelinePlayPage";
+import ReportsPage from "../../pages/ReportsPage";
+import SetlistsPage from "../../components/setlists/SetlistsPage";
+import SetlistGigPage from "../../components/setlists/SetlistGigPage";
 import Slot from "../Slot";
 import { SkinProvider } from "../useSkin";
 import * as api from "../../api";
+import * as setlistsApi from "../../api/setlists";
 import * as session from "../../session";
 
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  document.documentElement.removeAttribute("data-skin");
 });
 
 // Helper function to calculate relative luminance per WCAG 2.1
@@ -632,6 +637,150 @@ describe("Timeline Skin: Token Contract, Rules & Contrast Matrix", () => {
       await waitFor(() => {
         expect(screen.queryByTestId("fallback-play")).not.toBeInTheDocument();
         expect(screen.getByRole("heading", { name: "Play" })).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Reports under Timeline Skin", () => {
+    it("renders Reports page summary cards and tabs under timeline skin", async () => {
+      document.documentElement.setAttribute("data-skin", "timeline");
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        userId: 1,
+        username: "alex",
+      });
+      vi.spyOn(api, "fetchReportsSummary").mockResolvedValue({
+        period_scrobbles: 1420,
+        listening_minutes: 4890,
+        average_per_day: 47,
+        comparison_percent: 12.4,
+        listening_minutes_comparison_percent: 8.5,
+        average_per_day_comparison_percent: 10.2,
+      });
+      vi.spyOn(api, "fetchReportsCharts").mockResolvedValue({
+        weekly_scrobbles: [],
+        listening_heatmap: [],
+        listening_clock: [],
+        music_by_decade: [],
+      });
+      vi.spyOn(api, "fetchReportsEntity").mockResolvedValue({ entries: [] });
+
+      render(
+        <MemoryRouter initialEntries={["/reports"]}>
+          <ReportsPage />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByRole("heading", { name: "Reports", level: 1 })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Listening" })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Gigs" })).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByText("1,420")).toBeInTheDocument();
+        expect(screen.getByText("Scrobbles this period")).toBeInTheDocument();
+        expect(screen.getByText("4,890")).toBeInTheDocument();
+        expect(screen.getByText("Listening minutes")).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("SetlistsPage (Gigs Index) under Timeline Skin", () => {
+    it("renders page heading, log a gig button, segmented tabs and gig cards under timeline skin", async () => {
+      document.documentElement.setAttribute("data-skin", "timeline");
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        userId: 1,
+        username: "alex",
+      });
+      vi.spyOn(setlistsApi, "fetchSetlistStatus").mockResolvedValue({ configured: true });
+      vi.spyOn(setlistsApi, "fetchAttendances").mockResolvedValue([
+        {
+          id: 1,
+          artist_name: "The Cure",
+          venue_name: "Wembley Arena",
+          event_date: "12-12-2022",
+          city: "London",
+          country: "United Kingdom",
+        },
+        {
+          id: 2,
+          artist_name: "Depeche Mode",
+          venue_name: "Twickenham Stadium",
+          event_date: "17-06-2023",
+          city: "London",
+          country: "United Kingdom",
+        },
+      ]);
+      vi.spyOn(setlistsApi, "fetchGigInvites").mockResolvedValue([]);
+
+      render(
+        <MemoryRouter initialEntries={["/setlists"]}>
+          <SetlistsPage />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByRole("heading", { name: "Gigs", level: 1 })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "My Gigs" })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Artists Seen" })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Songs Heard" })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Venues" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "+ Log a Gig" })).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByText("The Cure")).toBeInTheDocument();
+        expect(screen.getByText("Depeche Mode")).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("SetlistGigPage (Gig Detail) under Timeline Skin", () => {
+    it("renders gig header, artist name, date, setlist songs and companion chips under timeline skin", async () => {
+      document.documentElement.setAttribute("data-skin", "timeline");
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        userId: 1,
+        username: "alex",
+      });
+      vi.spyOn(setlistsApi, "fetchAttendance").mockResolvedValue({
+        id: 1,
+        artist_name: "The Cure",
+        venue_name: "Wembley Arena",
+        event_date: "12-12-2022",
+        city: "London",
+        country: "United Kingdom",
+        tour_name: "Shows of a Lost World",
+        raw_data: {
+          sets: {
+            set: [
+              {
+                song: [{ name: "Pictures of You" }, { name: "Lovesong" }],
+              },
+            ],
+          },
+        },
+      });
+      vi.spyOn(setlistsApi, "fetchGigBill").mockResolvedValue({
+        acts: [],
+        complete: true,
+        capped: false,
+      });
+      vi.spyOn(setlistsApi, "fetchGigCompanions").mockResolvedValue({
+        companions: [{ user_id: 10, username: "sam", display_name: "Sam", status: "added" }],
+        following: [],
+      });
+
+      render(
+        <MemoryRouter initialEntries={["/gigs/1"]}>
+          <SetlistGigPage concertId="1" />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: /The Cure/i })).toBeInTheDocument();
+        expect(screen.getByText(/Wembley Arena, London, United Kingdom/)).toBeInTheDocument();
+        expect(screen.getByText("Pictures of You")).toBeInTheDocument();
+        expect(screen.getByText("Lovesong")).toBeInTheDocument();
+        expect(screen.getByText("Sam")).toBeInTheDocument();
       });
     });
   });
