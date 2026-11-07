@@ -16,6 +16,8 @@
         if (theme) document.documentElement.setAttribute("data-theme", theme);
         var accent = localStorage.getItem("audio-scrobbler-accent");
         if (accent) document.documentElement.setAttribute("data-accent", accent);
+        var skin = localStorage.getItem("audio-scrobbler-skin");
+        if (skin) document.documentElement.setAttribute("data-skin", skin);
       } catch (e) {}
     </script>
     <title>Audio Scrobbler App</title>

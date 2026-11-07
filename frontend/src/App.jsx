@@ -13,6 +13,7 @@ import SetlistsPage from "./components/setlists/SetlistsPage";
 import SetlistGigPage from "./components/setlists/SetlistGigPage";
 import { fetchUserSettings } from "./api";
 import { readSession } from "./session";
+import { SkinProvider, applySkinToDocument } from "./skins/useSkin";
 
 function RedirectWithSearch({ to }) {
   const location = useLocation();
@@ -34,41 +35,47 @@ export default function App() {
             localStorage.setItem("audio-scrobbler-accent", settings.accent_color);
             document.documentElement.setAttribute("data-accent", settings.accent_color);
           }
+          if (settings.skin) {
+            localStorage.setItem("audio-scrobbler-skin", settings.skin);
+            applySkinToDocument(settings.skin);
+          }
         })
         .catch(() => {});
     }
   }, [session?.accessToken]);
 
   return (
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route
-            path="/"
-            element={
-              session?.accessToken ? (
-                <Navigate to="/play" replace />
-              ) : (
-                <Navigate to="/connect" replace />
-              )
-            }
-          />
-          <Route path="/connect" element={<HomePage />} />
-          <Route path="/play" element={<OverviewPage />} />
-          <Route path="/overview" element={<RedirectWithSearch to="/play" />} />
-          <Route path="/library" element={<LibraryPage />} />
-          <Route path="/gigs" element={<SetlistsPage />} />
-          <Route path="/setlists" element={<RedirectWithSearch to="/gigs" />} />
-          {/* Not under /setlists/: that prefix is proxied to the API by nginx and Vite */}
-          <Route path="/gigs/:concertId" element={<SetlistGigPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/profile/:userId" element={<ProfilePage />} />
-          <Route path="/following" element={<FollowingPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/changelog" element={<ChangelogPage />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <SkinProvider>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route
+              path="/"
+              element={
+                session?.accessToken ? (
+                  <Navigate to="/play" replace />
+                ) : (
+                  <Navigate to="/connect" replace />
+                )
+              }
+            />
+            <Route path="/connect" element={<HomePage />} />
+            <Route path="/play" element={<OverviewPage />} />
+            <Route path="/overview" element={<RedirectWithSearch to="/play" />} />
+            <Route path="/library" element={<LibraryPage />} />
+            <Route path="/gigs" element={<SetlistsPage />} />
+            <Route path="/setlists" element={<RedirectWithSearch to="/gigs" />} />
+            {/* Not under /setlists/: that prefix is proxied to the API by nginx and Vite */}
+            <Route path="/gigs/:concertId" element={<SetlistGigPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile/:userId" element={<ProfilePage />} />
+            <Route path="/following" element={<FollowingPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/changelog" element={<ChangelogPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </SkinProvider>
   );
 }
