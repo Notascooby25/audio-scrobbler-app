@@ -5,6 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import SleeveVinylDisc from "./slots/SleeveVinylDisc";
 import SleeveTodayPage from "./slots/SleeveTodayPage";
 import SleevePlayPage from "./slots/SleevePlayPage";
+import LibraryPage from "../../pages/LibraryPage";
 import * as api from "../../api";
 import * as session from "../../session";
 
@@ -15,6 +16,7 @@ describe("Sleeve Skin Components", () => {
 
   afterEach(() => {
     cleanup();
+    document.documentElement.removeAttribute("data-skin");
   });
 
   describe("SleeveVinylDisc", () => {
@@ -152,6 +154,55 @@ describe("Sleeve Skin Components", () => {
         expect(screen.getByRole("heading", { name: "Play" })).toBeTruthy();
         expect(screen.getByLabelText("Album Jukebox")).toBeTruthy();
         expect(screen.getByLabelText("Time Capsule")).toBeTruthy();
+      });
+    });
+  });
+
+  describe("Library under Sleeve Skin", () => {
+    it("renders Library page with tabs and scrobble list under sleeve skin", async () => {
+      document.documentElement.setAttribute("data-skin", "sleeve");
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        userId: 1,
+        username: "testuser",
+      });
+      vi.spyOn(api, "fetchUserSettings").mockResolvedValue({
+        default_date_range: "all.time",
+        scrobbles_view: "list",
+      });
+      vi.spyOn(api, "fetchLibraryScrobbles").mockResolvedValue({
+        scrobbles: [
+          {
+            id: 201,
+            track_name: "Love Spreads",
+            artist_name: "The Stone Roses",
+            album_name: "Second Coming",
+            artwork_url: "https://example.com/art.jpg",
+            played_at: new Date().toISOString(),
+            source: "spotify",
+            is_liked: true,
+          },
+        ],
+        total_count: 1,
+      });
+      vi.spyOn(api, "fetchLibraryTimeline").mockResolvedValue({ entries: [] });
+
+      render(
+        <MemoryRouter initialEntries={["/library"]}>
+          <LibraryPage />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByRole("heading", { name: "Library", level: 1 })).toBeTruthy();
+      expect(screen.getByRole("tab", { name: "Scrobbles" })).toBeTruthy();
+      expect(screen.getByRole("tab", { name: "Artists" })).toBeTruthy();
+      expect(screen.getByRole("tab", { name: "Albums" })).toBeTruthy();
+      expect(screen.getByRole("tab", { name: "Tracks" })).toBeTruthy();
+
+      await waitFor(() => {
+        expect(screen.getByText("Love Spreads")).toBeTruthy();
+        expect(screen.getByText("The Stone Roses")).toBeTruthy();
+        expect(screen.getByText("Today")).toBeTruthy();
       });
     });
   });
