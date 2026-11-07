@@ -18,6 +18,7 @@ import FollowingPage from "../../pages/FollowingPage";
 import HomePage from "../../pages/HomePage";
 import SettingsPage from "../../pages/SettingsPage";
 import ChangelogPage from "../../pages/ChangelogPage";
+import Footer from "../../components/Footer";
 import Slot from "../Slot";
 import { SkinProvider } from "../useSkin";
 import * as api from "../../api";
@@ -281,9 +282,6 @@ describe("Timeline Skin: Token Contract, Rules & Contrast Matrix", () => {
       );
 
       expect(screen.getByText("Scrobbler")).toBeInTheDocument();
-      const versionLink = screen.getByRole("link", { name: /What's new in v/i });
-      expect(versionLink).toBeInTheDocument();
-      expect(versionLink).toHaveAttribute("href", "/changelog");
 
       await waitFor(() => {
         expect(screen.getByRole("link", { name: /3 unread notifications/i })).toBeInTheDocument();
@@ -956,6 +954,19 @@ describe("Timeline Skin: Token Contract, Rules & Contrast Matrix", () => {
 
       expect(screen.getByRole("heading", { name: "Changelog", level: 1 })).toBeInTheDocument();
       expect(screen.getAllByText(/^v\d+\.\d+\.\d+/).length).toBeGreaterThan(0);
+    });
+
+    it("renders footer with version button above bottom dock in Timeline layout", () => {
+      document.documentElement.dataset.skin = "timeline";
+
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByTestId("app-footer")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /What's new/i })).toBeInTheDocument();
     });
   });
 });
