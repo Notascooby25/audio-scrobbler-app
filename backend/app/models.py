@@ -79,6 +79,7 @@ class UserPreferences(Base):
     default_date_range: Mapped[str] = mapped_column(String(32), nullable=False, default="last.week")
     theme: Mapped[str] = mapped_column(String(16), nullable=False, default="system")
     skin: Mapped[str] = mapped_column(String(16), nullable=False, default="classic")
+    match_album_sleeve: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     accent_color: Mapped[str] = mapped_column(String(24), nullable=False, default="blue_monday")
     jukebox_source: Mapped[str] = mapped_column(String(32), nullable=False, default="spotify_saved")
     jukebox_archive_limit: Mapped[int] = mapped_column(Integer, nullable=False, default=100)
@@ -124,6 +125,7 @@ class ListeningEvent(Base):
     album_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     artwork_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     artist_artwork_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    artwork_color: Mapped[str | None] = mapped_column(String(7), nullable=True)
     played_at: Mapped[datetime] = mapped_column(DateTime, index=True, nullable=False)
     duration_ms: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     source: Mapped[str] = mapped_column(String(64), default="spotify", nullable=False)
@@ -252,6 +254,7 @@ class ArtworkCache(Base):
 
     track_id: Mapped[str] = mapped_column(String(255), primary_key=True, index=True)
     artwork_url: Mapped[str] = mapped_column(Text, nullable=False)
+    dominant_color: Mapped[str | None] = mapped_column(String(7), nullable=True)
     cached_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 

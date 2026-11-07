@@ -202,3 +202,28 @@ def test_settings_rejects_invalid_skin():
         headers={"Authorization": "Bearer demo"},
     )
     assert response.status_code == 400
+
+
+def test_settings_returns_match_album_sleeve_default():
+    response = client.get("/users/me/settings", headers={"Authorization": "Bearer demo"})
+    assert response.status_code == 200
+    assert response.json()["match_album_sleeve"] is True
+
+
+def test_settings_updates_match_album_sleeve():
+    response = client.patch(
+        "/users/me/settings",
+        json={"match_album_sleeve": False},
+        headers={"Authorization": "Bearer demo"},
+    )
+    assert response.status_code == 200
+    assert response.json()["match_album_sleeve"] is False
+
+    # Toggle back to True
+    response = client.patch(
+        "/users/me/settings",
+        json={"match_album_sleeve": True},
+        headers={"Authorization": "Bearer demo"},
+    )
+    assert response.status_code == 200
+    assert response.json()["match_album_sleeve"] is True
