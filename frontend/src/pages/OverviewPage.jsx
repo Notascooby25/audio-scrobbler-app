@@ -3,10 +3,9 @@ import AnalyticsPage from "../components/AnalyticsPage";
 import RediscoverCard from "../components/RediscoverCard";
 import JukeboxCard from "../components/jukebox/JukeboxCard";
 import { readSession } from "../session";
+import Slot from "../skins/Slot";
 
-export default function OverviewPage() {
-  const session = readSession();
-
+function ClassicOverviewContent({ session }) {
   return (
     <AnalyticsPage eyebrow="Jukebox" title="Play">
       {!session?.accessToken ? (
@@ -21,5 +20,13 @@ export default function OverviewPage() {
         </>
       )}
     </AnalyticsPage>
+  );
+}
+
+export default function OverviewPage() {
+  const session = readSession();
+
+  return (
+    <Slot name="playPage" fallback={<ClassicOverviewContent session={session} />} />
   );
 }

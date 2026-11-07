@@ -157,4 +157,14 @@ describe("Slot Pattern Component", () => {
     const activeTabs = tabs.filter((t) => t.getAttribute("aria-current") === "page");
     expect(activeTabs).toHaveLength(0);
   });
+
+  it("resolves todayPage and playPage slots for Sleeve and falls back for Classic", () => {
+    const classic = getSkin("classic");
+    expect(classic.slots.todayPage).toBeUndefined();
+    expect(classic.slots.playPage).toBeUndefined();
+
+    const sleeve = getSkin("sleeve");
+    expect(sleeve.slots.todayPage).toBeDefined();
+    expect(sleeve.slots.playPage).toBeDefined();
+  });
 });

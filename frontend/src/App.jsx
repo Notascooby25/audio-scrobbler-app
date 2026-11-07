@@ -14,6 +14,7 @@ import SetlistGigPage from "./components/setlists/SetlistGigPage";
 import { fetchUserSettings } from "./api";
 import { readSession } from "./session";
 import { SkinProvider } from "./skins/useSkin";
+import Slot from "./skins/Slot";
 
 function RedirectWithSearch({ to }) {
   const location = useLocation();
@@ -58,10 +59,10 @@ export default function App() {
             <Route
               path="/"
               element={
-                session?.accessToken ? (
-                  <Navigate to="/play" replace />
-                ) : (
+                !session?.accessToken ? (
                   <Navigate to="/connect" replace />
+                ) : (
+                  <Slot name="todayPage" fallback={<Navigate to="/play" replace />} />
                 )
               }
             />
