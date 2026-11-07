@@ -648,3 +648,214 @@
   border-radius: var(--radius-md);
   color: var(--color-muted);
 }
+
+/* ─── Play Page (/play) ───────────────────────────────────────────────────── */
+[data-skin="timeline"] .timeline-play-page {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 0 16px 40px;
+}
+
+[data-skin="timeline"] .timeline-page-header {
+  padding: 24px 0 16px;
+}
+
+[data-skin="timeline"] .timeline-page-title {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--color-ink);
+  margin: 0 0 6px;
+  line-height: 1.15;
+}
+
+[data-skin="timeline"] .timeline-page-subtitle {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+[data-skin="timeline"] .timeline-jukebox-section,
+[data-skin="timeline"] .timeline-rediscover-section {
+  margin-bottom: 24px;
+}
+
+/* Flat Jukebox Pick Card & Controls */
+[data-skin="timeline"] .flat-jukebox-pick-card {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+}
+
+[data-skin="timeline"] .flat-jukebox-pick-card div {
+  color: var(--color-ink);
+}
+
+[data-skin="timeline"] .flat-jukebox-pick-card [style*="color: var(--color-muted)"],
+[data-skin="timeline"] .flat-jukebox-pick-card [style*="color:var(--color-muted)"] {
+  color: var(--color-muted) !important;
+}
+
+[data-skin="timeline"] .jukebox-action-primary {
+  background: var(--color-primary) !important;
+  color: var(--color-on-accent, #ffffff) !important;
+  border-radius: var(--radius-sm) !important;
+  min-height: 44px !important;
+  font-family: var(--font-body) !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+}
+
+[data-skin="timeline"] .jukebox-action-primary:focus-visible {
+  outline: 2px solid var(--color-focus) !important;
+  outline-offset: 2px !important;
+}
+
+[data-skin="timeline"] .jukebox-action-reroll {
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  border: 1px solid var(--color-ink) !important;
+  border-radius: var(--radius-sm) !important;
+  min-height: 44px !important;
+  font-family: var(--font-body) !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+}
+
+[data-skin="timeline"] .jukebox-action-reroll:focus-visible {
+  outline: 2px solid var(--color-focus) !important;
+  outline-offset: 2px !important;
+}
+
+[data-skin="timeline"] .jukebox-action-reroll:disabled {
+  opacity: 0.45 !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-muted) !important;
+}
+
+/* Rediscover & Time Capsule Card */
+[data-skin="timeline"] .rediscover-card {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 20px !important;
+}
+
+[data-skin="timeline"] .rediscover-title-area h2 {
+  font-family: var(--font-display) !important;
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+  letter-spacing: -0.02em !important;
+  margin: 0 0 4px !important;
+}
+
+[data-skin="timeline"] .rediscover-subtitle {
+  font-size: 14px !important;
+  color: var(--color-muted) !important;
+  margin: 0 !important;
+}
+
+[data-skin="timeline"] .rediscover-tabs {
+  background: var(--color-border) !important;
+  border-radius: 10px !important;
+  padding: 3px !important;
+  border: none !important;
+  display: inline-flex !important;
+  gap: 0 !important;
+}
+
+[data-skin="timeline"] .rediscover-tab-btn {
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 6px 14px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--color-muted) !important;
+  background: transparent !important;
+  min-height: 36px !important;
+  text-transform: none !important;
+  cursor: pointer !important;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease !important;
+}
+
+[data-skin="timeline"] .rediscover-tab-btn:hover:not(.active) {
+  color: var(--color-ink) !important;
+}
+
+[data-skin="timeline"] .rediscover-tab-btn.active {
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  font-weight: 600 !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+[data-skin="timeline"] .rediscover-tab-btn:focus-visible {
+  outline: 2px solid var(--color-focus) !important;
+  outline-offset: 2px !important;
+}
+
+[data-skin="timeline"] .rediscover-save-btn {
+  border: 1px solid var(--color-ink) !important;
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  border-radius: var(--radius-sm) !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  min-height: 40px !important;
+  padding: 8px 16px !important;
+}
+
+[data-skin="timeline"] .rediscover-save-btn:focus-visible {
+  outline: 2px solid var(--color-focus) !important;
+  outline-offset: 2px !important;
+}
+
+[data-skin="timeline"] .rediscover-list {
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+[data-skin="timeline"] .rediscover-item {
+  border-bottom: 1px solid var(--color-border-subtle) !important;
+  padding: 12px 14px !important;
+  min-height: 44px !important;
+}
+
+[data-skin="timeline"] .rediscover-item:last-child {
+  border-bottom: none !important;
+}
+
+[data-skin="timeline"] .rediscover-artwork {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+[data-skin="timeline"] .rediscover-item-title {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+}
+
+[data-skin="timeline"] .rediscover-item-artist {
+  font-size: 13px !important;
+  color: var(--color-muted) !important;
+}
+
+[data-skin="timeline"] .rediscover-badge {
+  background: var(--color-canvas) !important;
+  color: var(--color-muted) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  font-variant-numeric: tabular-nums !important;
+}
