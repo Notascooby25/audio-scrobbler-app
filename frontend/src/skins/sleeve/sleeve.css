@@ -510,3 +510,308 @@
   border-radius: 4px;
   padding: 1px 4px;
 }
+
+/* ==========================================================================
+   Today View Styles
+   ========================================================================== */
+
+[data-skin="sleeve"] .sleeve-today-page {
+  padding: 8px 0 32px;
+}
+
+[data-skin="sleeve"] .sleeve-now-playing-section {
+  margin-bottom: 32px;
+}
+
+[data-skin="sleeve"] .sleeve-stack-container {
+  position: relative;
+  width: 320px;
+  max-width: 100%;
+  height: 252px;
+  margin: 0 auto;
+}
+
+[data-skin="sleeve"] .sleeve-tile-wrapper {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 252px;
+  height: 252px;
+  border-radius: 6px;
+  border: 1px solid var(--sl-edge);
+  background: var(--sleeve);
+  overflow: hidden;
+  z-index: 2;
+}
+
+[data-skin="sleeve"] .sleeve-hero-art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+[data-skin="sleeve"] .sleeve-hero-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  padding: 16px;
+  background: var(--sleeve);
+}
+
+[data-skin="sleeve"] .sleeve-fallback-initials {
+  font-family: var(--font-display, "Young Serif", serif);
+  font-size: 56px;
+  color: var(--sl-on-sleeve);
+  line-height: 0.9;
+  font-weight: 400;
+}
+
+[data-skin="sleeve"] .sleeve-vinyl-wrapper {
+  position: absolute;
+  left: 88px;
+  top: 10px;
+  width: 232px;
+  height: 232px;
+  z-index: 1;
+}
+
+[data-skin="sleeve"] .sleeve-vinyl-disc {
+  display: block;
+}
+
+[data-skin="sleeve"] .sleeve-hero-info {
+  margin-top: 24px;
+}
+
+[data-skin="sleeve"] .sleeve-hero-title {
+  font-family: var(--font-display, "Young Serif", serif);
+  font-size: 36px;
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--sl-text);
+  word-break: break-word;
+  margin: 0;
+}
+
+[data-skin="sleeve"] .sleeve-hero-artist {
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--sl-text);
+  margin: 6px 0 0;
+  word-break: break-word;
+}
+
+[data-skin="sleeve"] .sleeve-hero-meta {
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif);
+  font-size: 13px;
+  color: var(--sl-muted);
+  margin: 6px 0 0;
+}
+
+/* Earlier Today Crate */
+[data-skin="sleeve"] .sleeve-earlier-section {
+  margin-top: 36px;
+}
+
+[data-skin="sleeve"] .sleeve-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 14px;
+}
+
+[data-skin="sleeve"] .sleeve-section-title {
+  font-family: var(--font-display, "Young Serif", serif);
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--sl-text);
+  margin: 0;
+}
+
+[data-skin="sleeve"] .sleeve-see-all-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sl-muted);
+  text-decoration: none;
+}
+
+[data-skin="sleeve"] .sleeve-see-all-link:hover {
+  color: var(--sl-text);
+  text-decoration: underline;
+}
+
+[data-skin="sleeve"] .sleeve-crate-scroll {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+[data-skin="sleeve"] .sleeve-crate-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+[data-skin="sleeve"] .sleeve-crate-card {
+  flex-shrink: 0;
+  width: 112px;
+}
+
+[data-skin="sleeve"] .sleeve-crate-tile {
+  width: 112px;
+  height: 112px;
+  border-radius: 6px;
+  border: 1px solid var(--sl-edge);
+  background: var(--sleeve);
+  overflow: hidden;
+}
+
+[data-skin="sleeve"] .sleeve-crate-art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+[data-skin="sleeve"] .sleeve-crate-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  padding: 8px;
+  background: var(--sleeve);
+}
+
+[data-skin="sleeve"] .sleeve-crate-fallback span {
+  font-family: var(--font-display, "Young Serif", serif);
+  font-size: 24px;
+  color: var(--sl-on-sleeve);
+  line-height: 1;
+}
+
+[data-skin="sleeve"] .sleeve-crate-info {
+  margin-top: 6px;
+}
+
+[data-skin="sleeve"] .sleeve-crate-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sl-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-skin="sleeve"] .sleeve-crate-artist {
+  font-size: 12px;
+  color: var(--sl-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   Play View Styles
+   ========================================================================== */
+
+[data-skin="sleeve"] .sleeve-play-page {
+  padding: 8px 0 32px;
+}
+
+[data-skin="sleeve"] .sleeve-page-header {
+  margin-bottom: 20px;
+}
+
+[data-skin="sleeve"] .sleeve-page-title {
+  font-family: var(--font-display, "Young Serif", serif);
+  font-size: 34px;
+  font-weight: 400;
+  line-height: 1.05;
+  color: var(--sl-text);
+  margin: 0;
+}
+
+[data-skin="sleeve"] .sleeve-jukebox-section {
+  margin-bottom: 28px;
+}
+
+[data-skin="sleeve"] .sleeve-time-capsule-section {
+  margin-bottom: 32px;
+}
+
+/* Sleeve Jukebox Button & Filter Styling */
+[data-skin="sleeve"] .jukebox-action-primary {
+  background: #ffffff !important;
+  color: var(--sl-ground) !important;
+  border: none !important;
+  border-radius: 999px !important;
+  text-transform: none !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  min-height: 44px !important;
+  padding: 10px 20px !important;
+}
+
+[data-skin="sleeve"] .jukebox-action-reroll {
+  background: transparent !important;
+  color: #ffffff !important;
+  border: 1px solid #ffffff !important;
+  border-radius: 999px !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  min-height: 44px !important;
+  padding: 10px 16px !important;
+}
+
+/* Empty & Loading States */
+[data-skin="sleeve"] .sleeve-empty-state {
+  background: var(--sl-card);
+  border: 1px solid var(--sl-edge);
+  border-radius: 12px;
+  padding: 28px 20px;
+  text-align: center;
+  margin-top: 20px;
+}
+
+[data-skin="sleeve"] .sleeve-empty-state h2 {
+  font-family: var(--font-display, "Young Serif", serif);
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--sl-text);
+  margin: 0 0 8px;
+}
+
+[data-skin="sleeve"] .sleeve-empty-state p {
+  color: var(--sl-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+
+[data-skin="sleeve"] .sleeve-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  color: var(--sl-ground);
+  padding: 10px 24px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  min-height: 44px;
+}
+
+[data-skin="sleeve"] .sleeve-loading-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--sl-muted);
+  font-size: 14px;
+}
+
