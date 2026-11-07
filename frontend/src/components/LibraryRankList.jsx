@@ -166,8 +166,15 @@ export default function LibraryRankList({
               );
             }
 
+            const relativePercent =
+              maximum > 0 ? Math.max(2, Math.round(((entry.play_count || 0) / maximum) * 100)) : 0;
+
             return (
-              <li className="library-rank-row" key={`${entry.label}-${entry.secondary || ""}`}>
+              <li
+                className="library-rank-row"
+                key={`${entry.label}-${entry.secondary || ""}`}
+                style={{ "--rank-pct": `${relativePercent}%` }}
+              >
                 {selectMode && onToggleSelection && entityType && (
                   <label className="bulk-select-control">
                     <input

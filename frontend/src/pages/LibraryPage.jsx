@@ -53,14 +53,18 @@ export default function LibraryPage() {
   const targetUserId = routeUserId ? Number(routeUserId) : undefined;
   const isOwnLibrary = !routeUserId || Number(routeUserId) === session?.userId;
   const [targetProfile, setTargetProfile] = useState(null);
-  const [tab, setTab] = useState(() =>
-    searchParams.get("filter_name") ? "scrobbles" : "scrobbles"
-  );
+  const [tab, setTab] = useState(() => {
+    const requestedTab = searchParams.get("tab");
+    if (requestedTab && ["scrobbles", "artists", "albums", "tracks"].includes(requestedTab)) {
+      return requestedTab;
+    }
+    return searchParams.get("filter_name") ? "scrobbles" : "scrobbles";
+  });
   const [dateRange, setDateRange] = useState(createDefaultDateRange());
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [view, setView] = useState(
-    () => localStorage.getItem("audio-scrobbler-library-view") || "list"
+    () => searchParams.get("view") || localStorage.getItem("audio-scrobbler-library-view") || "list"
   );
   const [settings, setSettings] = useState(null);
   const [preferencesReady, setPreferencesReady] = useState(!session?.accessToken);
@@ -117,7 +121,9 @@ export default function LibraryPage() {
         setSettings(userSettings);
         setDateRange((current) => ({ ...current, range: userSettings.default_date_range }));
         setPageSize(getPageSizeForTab(tab, userSettings));
-        setView(userSettings.scrobbles_view || userSettings.default_library_view);
+        if (!searchParams.get("view")) {
+          setView(userSettings.scrobbles_view || userSettings.default_library_view);
+        }
         setPreferencesReady(true);
       })
       .catch(() => setPreferencesReady(true));
@@ -202,7 +208,8 @@ export default function LibraryPage() {
     localStorage.setItem("audio-scrobbler-library-view", nextView);
   };
 
-  const activeView = tab === "scrobbles" ? "list" : settings?.[`${tab}_view`] || view;
+  const activeView =
+    tab === "scrobbles" ? "list" : searchParams.get("view") || settings?.[`${tab}_view`] || view;
   const visibleScrobbles = data && loadedTab === tab && tab === "scrobbles" ? data.scrobbles : [];
   const selectedCount = tab === "scrobbles" ? selectedScrobbleIds.size : selectedEntries.size;
 
@@ -568,7 +575,15 @@ export default function LibraryPage() {
                     setTab(value);
                     setPageSize(getPageSizeForTab(value, settings));
                     setPage(1);
-                    setSearchParams(routeUserId ? { userId: routeUserId } : {});
+                    setSearchParams((prev) => {
+                      const next = new URLSearchParams(prev);
+                      if (value === "scrobbles") {
+                        next.delete("tab");
+                      } else {
+                        next.set("tab", value);
+                      }
+                      return next;
+                    });
                   }}
                 >
                   {label}
