@@ -9,6 +9,7 @@ import TimelineNav from "./slots/TimelineNav";
 import TimelineHourlyChart from "./slots/TimelineHourlyChart";
 import TimelineRail from "./slots/TimelineRail";
 import TimelineTodayPage from "./slots/TimelineTodayPage";
+import TimelinePlayPage from "./slots/TimelinePlayPage";
 import Slot from "../Slot";
 import { SkinProvider } from "../useSkin";
 import * as api from "../../api";
@@ -549,6 +550,88 @@ describe("Timeline Skin: Token Contract, Rules & Contrast Matrix", () => {
       await waitFor(() => {
         expect(screen.queryByTestId("fallback-overview")).not.toBeInTheDocument();
         expect(screen.getByText("Today Song")).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("TimelinePlayPage Slot Component", () => {
+    it("renders signed-out empty notice linking to connect page when no session", () => {
+      vi.spyOn(session, "readSession").mockReturnValue(null);
+
+      render(
+        <MemoryRouter initialEntries={["/play"]}>
+          <TimelinePlayPage />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByRole("heading", { name: "Play" })).toBeInTheDocument();
+      expect(
+        screen.getByText(/to spin your Album Jukebox and explore your Time Capsule/i)
+      ).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "connection page" })).toHaveAttribute(
+        "href",
+        "/connect"
+      );
+    });
+
+    it("renders page title, subtitle, and jukebox/rediscover sections when signed in", async () => {
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        username: "Alex",
+        userId: 1,
+      });
+      vi.spyOn(api, "fetchJukeboxAlbums").mockResolvedValue({
+        albums: [
+          {
+            id: 1,
+            album_name: "Blue Lines",
+            artist_name: "Massive Attack",
+            release_year: 1991,
+            play_count: 50,
+          },
+        ],
+      });
+      vi.spyOn(api, "fetch1001Albums").mockResolvedValue({ albums: [] });
+      vi.spyOn(api, "fetchRediscoverTracks").mockResolvedValue({ tracks: [] });
+
+      render(
+        <MemoryRouter initialEntries={["/play"]}>
+          <TimelinePlayPage />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByRole("heading", { name: "Play" })).toBeInTheDocument();
+      expect(
+        screen.getByText("An album from your own history, start to finish.")
+      ).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByLabelText("Album Jukebox")).toBeInTheDocument();
+        expect(screen.getByLabelText("Time Capsule")).toBeInTheDocument();
+      });
+    });
+
+    it("resolves TimelinePlayPage through <Slot name='playPage' /> when activeSkin is timeline", async () => {
+      vi.spyOn(session, "readSession").mockReturnValue({
+        accessToken: "test-token",
+        username: "Alex",
+        userId: 1,
+      });
+      vi.spyOn(api, "fetchJukeboxAlbums").mockResolvedValue({ albums: [] });
+      vi.spyOn(api, "fetch1001Albums").mockResolvedValue({ albums: [] });
+      vi.spyOn(api, "fetchRediscoverTracks").mockResolvedValue({ tracks: [] });
+
+      render(
+        <MemoryRouter initialEntries={["/play"]}>
+          <SkinProvider initialSkin="timeline">
+            <Slot name="playPage" fallback={<div data-testid="fallback-play">Classic</div>} />
+          </SkinProvider>
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId("fallback-play")).not.toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "Play" })).toBeInTheDocument();
       });
     });
   });
