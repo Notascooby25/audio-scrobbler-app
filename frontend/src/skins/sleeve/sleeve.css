@@ -2310,6 +2310,18 @@
   padding: 0 0 40px !important;
 }
 
+[data-skin="sleeve"] .profile-card {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
 [data-skin="sleeve"] .profile-header {
   display: flex !important;
   flex-direction: column !important;
@@ -2529,8 +2541,12 @@
 [data-skin="sleeve"] .profile-actions {
   display: flex !important;
   flex-direction: column !important;
-  gap: 6px !important;
+  gap: 8px !important;
   margin-top: 20px !important;
+  border-top: none !important;
+  padding-top: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 [data-skin="sleeve"] .profile-actions a,
@@ -2549,6 +2565,8 @@
   justify-content: space-between !important;
   transition: all 0.15s ease !important;
   min-height: 48px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 [data-skin="sleeve"] .profile-actions a:hover,
