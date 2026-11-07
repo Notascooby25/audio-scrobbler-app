@@ -1238,3 +1238,637 @@
   border-color: var(--color-ink) !important;
   font-weight: 600 !important;
 }
+
+/* ─── Reports Page (/reports) ─────────────────────────────────────────────── */
+[data-skin="timeline"] .reports-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+[data-skin="timeline"] .compare-toggle-btn {
+  min-height: 40px !important;
+  padding: 0 14px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--color-border) !important;
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  font-weight: 500 !important;
+  font-size: 13px !important;
+  text-transform: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  cursor: pointer;
+}
+
+[data-skin="timeline"] .compare-toggle-btn:hover:not(.active) {
+  border-color: var(--color-ink) !important;
+}
+
+[data-skin="timeline"] .compare-toggle-btn.active {
+  border-color: var(--color-ink) !important;
+  font-weight: 600 !important;
+}
+
+[data-skin="timeline"] .compare-toggle-btn:focus-visible {
+  outline: 2px solid var(--color-focus) !important;
+  outline-offset: 2px !important;
+}
+
+[data-skin="timeline"] .reports-library-link {
+  color: var(--color-ink) !important;
+  text-decoration: underline !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+}
+
+[data-skin="timeline"] .reports-loading-indicator {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 14px 20px !important;
+  color: var(--color-muted) !important;
+}
+
+/* Three Stat Cards */
+[data-skin="timeline"] .report-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+[data-skin="timeline"] .report-fact-card {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 16px 20px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+}
+
+[data-skin="timeline"] .report-fact-card strong {
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  color: var(--color-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+  line-height: 1.15 !important;
+}
+
+[data-skin="timeline"] .report-fact-card > span:not(.stat-comparison) {
+  font-size: 13px !important;
+  color: var(--color-muted) !important;
+}
+
+/* Stat Comparison Deltas */
+[data-skin="timeline"] .stat-comparison {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  font-variant-numeric: tabular-nums !important;
+  margin-top: 4px !important;
+}
+
+[data-skin="timeline"] .stat-comparison.stat-comparison-positive {
+  color: #15803d !important;
+}
+
+[data-skin="timeline"][data-theme="dark"] .stat-comparison.stat-comparison-positive {
+  color: #4ade80 !important;
+}
+
+[data-skin="timeline"] .stat-comparison.stat-comparison-negative {
+  color: #b91c1c !important;
+}
+
+[data-skin="timeline"][data-theme="dark"] .stat-comparison.stat-comparison-negative {
+  color: #f87171 !important;
+}
+
+[data-skin="timeline"] .stat-comparison.stat-comparison-neutral {
+  color: var(--color-muted) !important;
+}
+
+/* Chart Panels */
+[data-skin="timeline"] .chart-panel {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 20px !important;
+}
+
+[data-skin="timeline"] .chart-panel h2 {
+  font-family: var(--font-display) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+  letter-spacing: -0.02em !important;
+  margin: 0 0 12px !important;
+}
+
+[data-skin="timeline"] .chart-caption {
+  color: var(--color-muted) !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  margin-top: 10px !important;
+}
+
+[data-skin="timeline"] .section-kicker {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  color: var(--color-muted) !important;
+  margin-bottom: 6px !important;
+}
+
+[data-skin="timeline"] .report-category-grid .library-rank-panel {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 20px !important;
+}
+
+[data-skin="timeline"] .report-category-grid .library-rank-heading h2,
+[data-skin="timeline"] .report-category-grid .library-rank-heading {
+  font-family: var(--font-display) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+}
+
+[data-skin="timeline"] .report-character-grid .chart-panel div[style*="font-size: 3rem"] {
+  font-family: var(--font-display) !important;
+  font-weight: 700 !important;
+  color: var(--color-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* Gig Reports Section in Reports */
+[data-skin="timeline"] .gig-reports .chart-panel {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+}
+
+[data-skin="timeline"] .gig-reports .ranked-list {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+[data-skin="timeline"] .gig-reports .ranked-list li {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 10px 0 !important;
+  border-bottom: 1px solid var(--color-border-subtle) !important;
+}
+
+[data-skin="timeline"] .gig-reports .ranked-list li:last-child {
+  border-bottom: none !important;
+}
+
+[data-skin="timeline"] .gig-reports .ranked-list li strong {
+  color: var(--color-ink) !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+[data-skin="timeline"] .gig-reports .ranked-list li small {
+  color: var(--color-muted) !important;
+  font-size: 13px !important;
+}
+
+[data-skin="timeline"] .gig-reports .ranked-list .rank-count {
+  color: var(--color-muted) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* ─── Gigs Page (/setlists) ───────────────────────────────────────────────── */
+[data-skin="timeline"] .sfm-page-header h1 {
+  font-family: var(--font-display) !important;
+  font-size: 30px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.03em !important;
+  color: var(--color-ink) !important;
+  margin: 0 0 6px !important;
+  line-height: 1.15 !important;
+}
+
+[data-skin="timeline"] .sfm-page-intro {
+  font-size: 14px !important;
+  color: var(--color-muted) !important;
+  margin-bottom: 16px !important;
+}
+
+[data-skin="timeline"] .sfm-tabbar {
+  border-bottom: none !important;
+  margin-bottom: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+}
+
+/* Segmented Control for Gigs Tabs */
+[data-skin="timeline"] .sfm-tabs {
+  background: var(--color-border) !important;
+  border-radius: 10px !important;
+  padding: 3px !important;
+  border: none !important;
+  display: inline-flex !important;
+  gap: 0 !important;
+}
+
+[data-skin="timeline"] button.sfm-tab {
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--color-muted) !important;
+  background: transparent !important;
+  min-height: 36px !important;
+  text-transform: none !important;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease !important;
+}
+
+[data-skin="timeline"] button.sfm-tab:hover:not(.active) {
+  color: var(--color-ink) !important;
+}
+
+[data-skin="timeline"] button.sfm-tab.active {
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  font-weight: 600 !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+[data-skin="timeline"] button.sfm-tab:focus-visible {
+  outline: 2px solid var(--color-focus) !important;
+  outline-offset: 2px !important;
+}
+
+/* Tabbar Actions: "+ Log a Gig" and "Import / Export" */
+[data-skin="timeline"] .sfm-tabbar-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+[data-skin="timeline"] .sfm-tabbar-actions button.sfm-link:first-child {
+  background: var(--color-primary) !important;
+  color: var(--color-on-accent, #ffffff) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  min-height: 40px !important;
+  padding: 8px 18px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  text-decoration: none !important;
+  text-transform: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+[data-skin="timeline"] .sfm-tabbar-actions button.sfm-link:first-child:focus-visible {
+  outline: 2px solid var(--color-focus) !important;
+  outline-offset: 2px !important;
+}
+
+[data-skin="timeline"] .sfm-tabbar-actions button.sfm-link:last-child {
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 8px !important;
+  min-height: 40px !important;
+  padding: 8px 16px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  text-decoration: none !important;
+  text-transform: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+[data-skin="timeline"] .sfm-tabbar-actions button.sfm-link:last-child:focus-visible {
+  outline: 2px solid var(--color-focus) !important;
+  outline-offset: 2px !important;
+}
+
+/* Gig Cards List & Stacked Date Badge */
+[data-skin="timeline"] .sfm-gig-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+[data-skin="timeline"] .sfm-gig {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 12px 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  min-height: 64px !important;
+}
+
+[data-skin="timeline"] .sfm-date {
+  background: var(--tl-tile) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 6px 4px !important;
+  width: 44px !important;
+  min-width: 44px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  flex: 0 0 44px !important;
+}
+
+[data-skin="timeline"] .sfm-date-day {
+  font-family: var(--font-display) !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: var(--color-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+  line-height: 1 !important;
+}
+
+[data-skin="timeline"] .sfm-date-month {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  color: var(--color-muted) !important;
+  text-transform: uppercase !important;
+  line-height: 1 !important;
+  margin-top: 2px !important;
+}
+
+[data-skin="timeline"] .sfm-date-year {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: var(--color-muted) !important;
+  font-variant-numeric: tabular-nums !important;
+  line-height: 1 !important;
+  margin-top: 1px !important;
+}
+
+[data-skin="timeline"] .sfm-gig-title button.sfm-link {
+  font-family: var(--font-body) !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+  text-decoration: none !important;
+}
+
+[data-skin="timeline"] .sfm-gig-meta {
+  font-size: 14px !important;
+  color: var(--color-muted) !important;
+  margin-top: 3px !important;
+}
+
+[data-skin="timeline"] .sfm-tag {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 2px 8px !important;
+  border-radius: 9999px !important;
+  border: 1px solid var(--color-border) !important;
+  background: var(--color-canvas) !important;
+  color: var(--color-muted) !important;
+  text-transform: uppercase !important;
+}
+
+/* Leaderboards & Tables */
+[data-skin="timeline"] .sfm-table {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  overflow: hidden !important;
+}
+
+[data-skin="timeline"] .sfm-row {
+  border-bottom: 1px solid var(--color-border-subtle) !important;
+}
+
+[data-skin="timeline"] .sfm-row:last-child {
+  border-bottom: none !important;
+}
+
+[data-skin="timeline"] .sfm-rank {
+  font-variant-numeric: tabular-nums !important;
+  font-weight: 600 !important;
+  color: var(--color-muted) !important;
+}
+
+[data-skin="timeline"] .sfm-name button.sfm-link {
+  font-family: var(--font-body) !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+  text-decoration: none !important;
+}
+
+[data-skin="timeline"] .sfm-bar {
+  background: var(--tl-rail) !important;
+  height: 4px !important;
+  border-radius: 2px !important;
+}
+
+/* ─── Gig Detail Page (/gigs/:concertId) ──────────────────────────────────── */
+[data-skin="timeline"] .sfm-gig-header {
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 20px !important;
+  margin-bottom: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 20px !important;
+  flex-wrap: wrap !important;
+}
+
+[data-skin="timeline"] .sfm-gig-header .sfm-date-block {
+  background: var(--tl-tile) !important;
+  color: var(--color-ink) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 10px 8px !important;
+  width: 5rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+[data-skin="timeline"] .sfm-gig-header .sfm-date-block .sfm-date-day {
+  font-family: var(--font-display) !important;
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  color: var(--color-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+  line-height: 1 !important;
+}
+
+[data-skin="timeline"] .sfm-gig-header .sfm-date-block .sfm-date-month {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: var(--color-muted) !important;
+  text-transform: uppercase !important;
+  line-height: 1 !important;
+  margin-top: 2px !important;
+}
+
+[data-skin="timeline"] .sfm-gig-header .sfm-date-block .sfm-date-year {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: var(--color-muted) !important;
+  font-variant-numeric: tabular-nums !important;
+  line-height: 1 !important;
+  margin-top: 1px !important;
+}
+
+[data-skin="timeline"] .sfm-gig-heading h1 {
+  font-family: var(--font-display) !important;
+  font-size: 28px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.03em !important;
+  color: var(--color-ink) !important;
+  margin: 0 0 4px !important;
+  line-height: 1.2 !important;
+}
+
+[data-skin="timeline"] .sfm-gig-heading p {
+  color: var(--color-muted) !important;
+  font-size: 14px !important;
+  margin: 4px 0 0 !important;
+}
+
+[data-skin="timeline"] .sfm-gig-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 16px 0 20px !important;
+}
+
+[data-skin="timeline"] .sfm-gig-actions button.sfm-link,
+[data-skin="timeline"] .sfm-gig-actions a.sfm-link {
+  border-radius: 8px !important;
+  border: 1px solid var(--color-border) !important;
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  font-weight: 600 !important;
+  min-height: 36px !important;
+  padding: 6px 14px !important;
+  text-transform: none !important;
+  text-decoration: none !important;
+  cursor: pointer;
+}
+
+[data-skin="timeline"] .sfm-gig-actions button.sfm-link:hover,
+[data-skin="timeline"] .sfm-gig-actions a.sfm-link:hover {
+  border-color: var(--color-ink) !important;
+}
+
+[data-skin="timeline"] .sfm-gig-actions button.sfm-link.is-danger {
+  color: var(--color-danger, #b3261e) !important;
+  border-color: var(--color-danger, #b3261e) !important;
+}
+
+/* Setlists and Sections in Gig Detail */
+[data-skin="timeline"] .sfm-gig-columns {
+  display: grid !important;
+  gap: 20px !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)) !important;
+  align-items: start !important;
+}
+
+[data-skin="timeline"] .sfm-gig-section {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 20px !important;
+}
+
+[data-skin="timeline"] .sfm-gig-section h2,
+[data-skin="timeline"] .sfm-setlist h2 {
+  font-family: var(--font-display) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+  letter-spacing: -0.02em !important;
+  margin: 0 0 16px !important;
+}
+
+[data-skin="timeline"] .sfm-songs li {
+  display: grid !important;
+  grid-template-columns: 2.25rem minmax(0, 1fr) !important;
+  gap: 8px !important;
+  padding: 10px 0 !important;
+  border-bottom: 1px solid var(--color-border-subtle) !important;
+  font-size: 15px !important;
+  color: var(--color-ink) !important;
+  align-items: baseline !important;
+}
+
+[data-skin="timeline"] .sfm-songs li:last-child {
+  border-bottom: none !important;
+}
+
+[data-skin="timeline"] .sfm-song-no {
+  font-variant-numeric: tabular-nums !important;
+  color: var(--color-muted) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  text-align: right !important;
+}
+
+[data-skin="timeline"] .sfm-song-name {
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+}
+
+[data-skin="timeline"] .sfm-song-note {
+  font-size: 12px !important;
+  color: var(--color-muted) !important;
+  margin-top: 2px !important;
+}
+
+[data-skin="timeline"] .sfm-companion-chip {
+  background: var(--color-canvas) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 9999px !important;
+  color: var(--color-ink) !important;
+  font-size: 12px !important;
+  padding: 4px 12px !important;
+}
+
+[data-skin="timeline"] .sfm-notes-form textarea {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 8px !important;
+  color: var(--color-ink) !important;
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  padding: 12px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
