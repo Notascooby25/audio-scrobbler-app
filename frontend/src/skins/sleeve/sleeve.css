@@ -1045,5 +1045,238 @@
   justify-content: center !important;
 }
 
+/* Ranked Lists & Grid View */
+[data-skin="sleeve"] .library-rank-panel {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+[data-skin="sleeve"] .library-rank-heading {
+  font-family: var(--font-display, "Young Serif", serif) !important;
+  font-size: 20px !important;
+  font-weight: 400 !important;
+  color: #ffffff !important;
+  margin: 20px 0 12px 0 !important;
+}
+
+[data-skin="sleeve"] .library-rank-list {
+  border-bottom: 1px solid var(--sl-edge);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+[data-skin="sleeve"] .library-rank-row {
+  min-height: 64px !important;
+  height: auto !important;
+  box-sizing: border-box !important;
+  padding: 10px 0 !important;
+  border-top: 1px solid var(--sl-edge) !important;
+  background: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+[data-skin="sleeve"] .library-rank-number {
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--sl-muted) !important;
+  width: 28px !important;
+  text-align: center !important;
+  flex-shrink: 0;
+}
+
+[data-skin="sleeve"] .library-rank-row .library-row-artwork {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  border-radius: 4px !important;
+  border: 1px solid var(--sl-edge) !important;
+  background: var(--sleeve);
+  object-fit: cover !important;
+}
+
+[data-skin="sleeve"] .library-rank-row .library-row-copy {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+}
+
+[data-skin="sleeve"] .library-rank-row .library-row-copy strong {
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  line-height: 1.25 !important;
+}
+
+[data-skin="sleeve"] .library-rank-row .library-row-copy small {
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: var(--sl-muted) !important;
+  line-height: 1.25 !important;
+}
+
+[data-skin="sleeve"] .library-rank-row .library-bar-track {
+  height: 4px !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 2px !important;
+  overflow: hidden !important;
+}
+
+[data-skin="sleeve"] .library-rank-row .library-bar-fill {
+  background: var(--sleeve, var(--color-primary)) !important;
+  border-radius: 2px !important;
+}
+
+[data-skin="sleeve"] .library-rank-row .library-bar-count {
+  font-size: 13px !important;
+  color: var(--sl-muted) !important;
+}
+
+/* Library Grid View */
+[data-skin="sleeve"] .library-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)) !important;
+  gap: 16px !important;
+  margin-top: 16px !important;
+}
+
+[data-skin="sleeve"] .library-grid-item {
+  background: var(--sl-card) !important;
+  border: 1px solid var(--sl-edge) !important;
+  border-radius: 8px !important;
+  padding: 10px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+[data-skin="sleeve"] .library-grid-item .artwork {
+  width: 100% !important;
+  border-radius: 6px !important;
+}
+
+/* Pagination & Page Size */
+[data-skin="sleeve"] .library-pagination-bar {
+  margin-top: 32px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+[data-skin="sleeve"] .pagination {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+}
+
+[data-skin="sleeve"] .pagination-list {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+[data-skin="sleeve"] .pagination-page {
+  min-height: 40px !important;
+  min-width: 40px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--sl-edge) !important;
+  background: transparent !important;
+  color: var(--sl-muted) !important;
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  padding: 4px 10px !important;
+}
+
+[data-skin="sleeve"] .pagination-page.pagination-page-active {
+  background: #ffffff !important;
+  color: var(--sl-ground) !important;
+  border-color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+[data-skin="sleeve"] .pagination-next {
+  min-height: 40px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--sl-edge) !important;
+  background: transparent !important;
+  color: var(--sl-muted) !important;
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 6px 16px !important;
+  text-transform: none !important;
+  cursor: pointer;
+}
+
+[data-skin="sleeve"] .pagination-next:disabled {
+  opacity: 0.3 !important;
+  cursor: not-allowed !important;
+}
+
+[data-skin="sleeve"] .pagination-ellipsis {
+  color: var(--sl-muted) !important;
+  padding: 0 4px !important;
+}
+
+[data-skin="sleeve"] .page-size-select {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+[data-skin="sleeve"] .page-size-label {
+  font-size: 13px !important;
+  color: var(--sl-muted) !important;
+}
+
+[data-skin="sleeve"] .page-size-select .segmented-tabs {
+  background: transparent !important;
+  border: none !important;
+  gap: 4px !important;
+  padding: 0 !important;
+}
+
+[data-skin="sleeve"] .page-size-select .segmented-tab {
+  min-height: 36px !important;
+  padding: 4px 12px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--sl-edge) !important;
+  background: transparent !important;
+  color: var(--sl-muted) !important;
+  font-size: 12px !important;
+}
+
+[data-skin="sleeve"] .page-size-select .segmented-tab.active {
+  background: #ffffff !important;
+  color: var(--sl-ground) !important;
+  border-color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+[data-skin="sleeve"] .library-filter-label {
+  color: var(--sl-muted) !important;
+  font-size: 14px !important;
+  margin-bottom: 14px !important;
+}
+
+[data-skin="sleeve"] .library-filter-label strong {
+  color: #ffffff !important;
+}
+
+
 
 
