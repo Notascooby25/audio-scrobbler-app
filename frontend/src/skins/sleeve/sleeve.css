@@ -1124,20 +1124,56 @@
 }
 
 [data-skin="sleeve"] .library-rank-row .library-bar-track {
-  height: 4px !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-  border-radius: 2px !important;
-  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  flex: 0 1 140px !important;
+  width: 140px !important;
+  min-width: 60px !important;
+  height: auto !important;
+  background: transparent !important;
+  overflow: visible !important;
 }
 
-[data-skin="sleeve"] .library-rank-row .library-bar-fill {
-  background: var(--sleeve, var(--color-primary)) !important;
-  border-radius: 2px !important;
+[data-skin="sleeve"] .report-category-grid .library-bar-track {
+  flex: 1 1 auto !important;
+  max-width: 180px !important;
+  width: 100% !important;
 }
 
-[data-skin="sleeve"] .library-rank-row .library-bar-count {
-  font-size: 13px !important;
-  color: var(--sl-muted) !important;
+[data-skin="sleeve"] .library-rank-row .library-count-bar {
+  display: flex !important;
+  align-items: center !important;
+  height: 22px !important;
+  min-width: 2rem !important;
+  padding: 0 7px !important;
+  border-radius: 4px !important;
+  background: color-mix(in srgb, var(--sleeve) 40%, rgba(255, 255, 255, 0.22)) !important;
+  color: #ffffff !important;
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  font-variant-numeric: tabular-nums !important;
+  text-decoration: none !important;
+  box-sizing: border-box !important;
+  transition: filter 0.15s ease !important;
+}
+
+[data-skin="sleeve"] .library-rank-row .library-count-bar:hover {
+  filter: brightness(1.2) !important;
+}
+
+[data-skin="sleeve"] .library-rank-row .library-count-bar span {
+  color: #ffffff !important;
+}
+
+[data-skin="sleeve"] .genre-bar {
+  background-color: color-mix(in srgb, var(--sleeve) 40%, rgba(255, 255, 255, 0.22)) !important;
+  border-radius: 4px !important;
+}
+
+[data-skin="sleeve"] .genre-row:hover .genre-bar {
+  background-color: color-mix(in srgb, var(--sleeve) 60%, rgba(255, 255, 255, 0.35)) !important;
 }
 
 /* Library Grid View */
