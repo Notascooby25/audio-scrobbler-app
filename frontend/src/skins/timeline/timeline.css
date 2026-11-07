@@ -1238,3 +1238,215 @@
   border-color: var(--color-ink) !important;
   font-weight: 600 !important;
 }
+
+/* ─── Reports Page (/reports) ─────────────────────────────────────────────── */
+[data-skin="timeline"] .reports-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+[data-skin="timeline"] .compare-toggle-btn {
+  min-height: 40px !important;
+  padding: 0 14px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--color-border) !important;
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  font-weight: 500 !important;
+  font-size: 13px !important;
+  text-transform: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  cursor: pointer;
+}
+
+[data-skin="timeline"] .compare-toggle-btn:hover:not(.active) {
+  border-color: var(--color-ink) !important;
+}
+
+[data-skin="timeline"] .compare-toggle-btn.active {
+  border-color: var(--color-ink) !important;
+  font-weight: 600 !important;
+}
+
+[data-skin="timeline"] .compare-toggle-btn:focus-visible {
+  outline: 2px solid var(--color-focus) !important;
+  outline-offset: 2px !important;
+}
+
+[data-skin="timeline"] .reports-library-link {
+  color: var(--color-ink) !important;
+  text-decoration: underline !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+}
+
+[data-skin="timeline"] .reports-loading-indicator {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 14px 20px !important;
+  color: var(--color-muted) !important;
+}
+
+/* Three Stat Cards */
+[data-skin="timeline"] .report-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+[data-skin="timeline"] .report-fact-card {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 16px 20px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+}
+
+[data-skin="timeline"] .report-fact-card strong {
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  color: var(--color-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+  line-height: 1.15 !important;
+}
+
+[data-skin="timeline"] .report-fact-card > span:not(.stat-comparison) {
+  font-size: 13px !important;
+  color: var(--color-muted) !important;
+}
+
+/* Stat Comparison Deltas */
+[data-skin="timeline"] .stat-comparison {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  font-variant-numeric: tabular-nums !important;
+  margin-top: 4px !important;
+}
+
+[data-skin="timeline"] .stat-comparison.stat-comparison-positive {
+  color: #15803d !important;
+}
+
+[data-skin="timeline"][data-theme="dark"] .stat-comparison.stat-comparison-positive {
+  color: #4ade80 !important;
+}
+
+[data-skin="timeline"] .stat-comparison.stat-comparison-negative {
+  color: #b91c1c !important;
+}
+
+[data-skin="timeline"][data-theme="dark"] .stat-comparison.stat-comparison-negative {
+  color: #f87171 !important;
+}
+
+[data-skin="timeline"] .stat-comparison.stat-comparison-neutral {
+  color: var(--color-muted) !important;
+}
+
+/* Chart Panels */
+[data-skin="timeline"] .chart-panel {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 20px !important;
+}
+
+[data-skin="timeline"] .chart-panel h2 {
+  font-family: var(--font-display) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+  letter-spacing: -0.02em !important;
+  margin: 0 0 12px !important;
+}
+
+[data-skin="timeline"] .chart-caption {
+  color: var(--color-muted) !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  margin-top: 10px !important;
+}
+
+[data-skin="timeline"] .section-kicker {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  color: var(--color-muted) !important;
+  margin-bottom: 6px !important;
+}
+
+[data-skin="timeline"] .report-category-grid .library-rank-panel {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 20px !important;
+}
+
+[data-skin="timeline"] .report-category-grid .library-rank-heading h2,
+[data-skin="timeline"] .report-category-grid .library-rank-heading {
+  font-family: var(--font-display) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+}
+
+[data-skin="timeline"] .report-character-grid .chart-panel div[style*="font-size: 3rem"] {
+  font-family: var(--font-display) !important;
+  font-weight: 700 !important;
+  color: var(--color-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* Gig Reports Section in Reports */
+[data-skin="timeline"] .gig-reports .chart-panel {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+}
+
+[data-skin="timeline"] .gig-reports .ranked-list {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+[data-skin="timeline"] .gig-reports .ranked-list li {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 10px 0 !important;
+  border-bottom: 1px solid var(--color-border-subtle) !important;
+}
+
+[data-skin="timeline"] .gig-reports .ranked-list li:last-child {
+  border-bottom: none !important;
+}
+
+[data-skin="timeline"] .gig-reports .ranked-list li strong {
+  color: var(--color-ink) !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+[data-skin="timeline"] .gig-reports .ranked-list li small {
+  color: var(--color-muted) !important;
+  font-size: 13px !important;
+}
+
+[data-skin="timeline"] .gig-reports .ranked-list .rank-count {
+  color: var(--color-muted) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  font-variant-numeric: tabular-nums !important;
+}
