@@ -1689,3 +1689,186 @@
   height: 4px !important;
   border-radius: 2px !important;
 }
+
+/* ─── Gig Detail Page (/gigs/:concertId) ──────────────────────────────────── */
+[data-skin="timeline"] .sfm-gig-header {
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 20px !important;
+  margin-bottom: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 20px !important;
+  flex-wrap: wrap !important;
+}
+
+[data-skin="timeline"] .sfm-gig-header .sfm-date-block {
+  background: var(--tl-tile) !important;
+  color: var(--color-ink) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 10px 8px !important;
+  width: 5rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+[data-skin="timeline"] .sfm-gig-header .sfm-date-block .sfm-date-day {
+  font-family: var(--font-display) !important;
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  color: var(--color-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+  line-height: 1 !important;
+}
+
+[data-skin="timeline"] .sfm-gig-header .sfm-date-block .sfm-date-month {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: var(--color-muted) !important;
+  text-transform: uppercase !important;
+  line-height: 1 !important;
+  margin-top: 2px !important;
+}
+
+[data-skin="timeline"] .sfm-gig-header .sfm-date-block .sfm-date-year {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: var(--color-muted) !important;
+  font-variant-numeric: tabular-nums !important;
+  line-height: 1 !important;
+  margin-top: 1px !important;
+}
+
+[data-skin="timeline"] .sfm-gig-heading h1 {
+  font-family: var(--font-display) !important;
+  font-size: 28px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.03em !important;
+  color: var(--color-ink) !important;
+  margin: 0 0 4px !important;
+  line-height: 1.2 !important;
+}
+
+[data-skin="timeline"] .sfm-gig-heading p {
+  color: var(--color-muted) !important;
+  font-size: 14px !important;
+  margin: 4px 0 0 !important;
+}
+
+[data-skin="timeline"] .sfm-gig-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 16px 0 20px !important;
+}
+
+[data-skin="timeline"] .sfm-gig-actions button.sfm-link,
+[data-skin="timeline"] .sfm-gig-actions a.sfm-link {
+  border-radius: 8px !important;
+  border: 1px solid var(--color-border) !important;
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  font-weight: 600 !important;
+  min-height: 36px !important;
+  padding: 6px 14px !important;
+  text-transform: none !important;
+  text-decoration: none !important;
+  cursor: pointer;
+}
+
+[data-skin="timeline"] .sfm-gig-actions button.sfm-link:hover,
+[data-skin="timeline"] .sfm-gig-actions a.sfm-link:hover {
+  border-color: var(--color-ink) !important;
+}
+
+[data-skin="timeline"] .sfm-gig-actions button.sfm-link.is-danger {
+  color: var(--color-danger, #b3261e) !important;
+  border-color: var(--color-danger, #b3261e) !important;
+}
+
+/* Setlists and Sections in Gig Detail */
+[data-skin="timeline"] .sfm-gig-columns {
+  display: grid !important;
+  gap: 20px !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)) !important;
+  align-items: start !important;
+}
+
+[data-skin="timeline"] .sfm-gig-section {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 20px !important;
+}
+
+[data-skin="timeline"] .sfm-gig-section h2,
+[data-skin="timeline"] .sfm-setlist h2 {
+  font-family: var(--font-display) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+  letter-spacing: -0.02em !important;
+  margin: 0 0 16px !important;
+}
+
+[data-skin="timeline"] .sfm-songs li {
+  display: grid !important;
+  grid-template-columns: 2.25rem minmax(0, 1fr) !important;
+  gap: 8px !important;
+  padding: 10px 0 !important;
+  border-bottom: 1px solid var(--color-border-subtle) !important;
+  font-size: 15px !important;
+  color: var(--color-ink) !important;
+  align-items: baseline !important;
+}
+
+[data-skin="timeline"] .sfm-songs li:last-child {
+  border-bottom: none !important;
+}
+
+[data-skin="timeline"] .sfm-song-no {
+  font-variant-numeric: tabular-nums !important;
+  color: var(--color-muted) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  text-align: right !important;
+}
+
+[data-skin="timeline"] .sfm-song-name {
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+}
+
+[data-skin="timeline"] .sfm-song-note {
+  font-size: 12px !important;
+  color: var(--color-muted) !important;
+  margin-top: 2px !important;
+}
+
+[data-skin="timeline"] .sfm-companion-chip {
+  background: var(--color-canvas) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 9999px !important;
+  color: var(--color-ink) !important;
+  font-size: 12px !important;
+  padding: 4px 12px !important;
+}
+
+[data-skin="timeline"] .sfm-notes-form textarea {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 8px !important;
+  color: var(--color-ink) !important;
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  padding: 12px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
