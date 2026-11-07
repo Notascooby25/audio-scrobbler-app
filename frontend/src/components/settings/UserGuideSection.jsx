@@ -63,6 +63,28 @@ export default function UserGuideSection() {
           your Profile, Friends, Settings, Connect, and a quick Sign out option.
         </p>
 
+        <h4>Visual Themes & Skins (Classic & Sleeve)</h4>
+        <p>
+          You can personalize your visual experience in <strong>Settings → General</strong> using
+          the <strong>Skin switcher</strong>:
+        </p>
+        <ul>
+          <li>
+            <strong>Classic:</strong> The familiar, crisp dashboard interface designed for clean
+            daily scrobble tracking.
+          </li>
+          <li>
+            <strong>Sleeve:</strong> An editorial, vinyl-inspired music layout featuring warm serif
+            typography, vinyl records, and dedicated bottom navigation.
+          </li>
+        </ul>
+        <p>
+          When using the Sleeve skin, enable <strong>Match the album sleeve</strong> in{" "}
+          <em>Settings → General</em> to let your ambient background dynamically adapt to the
+          extracted dominant tones of your current album artwork with a smooth cross-fade
+          transition.
+        </p>
+
         <h4>Scrobbling Modes</h4>
         <ul>
           <li>

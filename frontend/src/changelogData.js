@@ -1,5 +1,17 @@
 export const CHANGELOG = [
   {
+    version: "0.37.0",
+    date: "2026-11-07",
+    changes: [
+      "Sleeve Editorial Skin: Complete release of the vinyl-inspired Sleeve visual theme across the entire application, featuring warm Young Serif display typography, editorial card layouts, and dedicated mobile and desktop navigation.",
+      "Dedicated Sleeve Today Page: Added a rich, immersive Today experience with vinyl record disc visuals, live-playing status, and an Earlier Today horizontal listening carousel.",
+      "Dynamic Ambient Artwork Tinting: Introduced automatic dominant color extraction from album artwork using Pillow on the backend, dynamically tinting background surfaces (--sl-ground and --sl-card) with a smooth 300ms ambient transition.",
+      "Automatic High-Contrast Overlay Calculation: Dynamically calculates high-contrast text and overlay colors (--sl-on-sleeve) against extracted album colors using WCAG relative luminance standards.",
+      "Match Album Sleeve Preference: Added an Appearance toggle in Settings allowing users to customize whether the background ambiently tints to the current album sleeve or stays locked to their chosen accent palette.",
+      "Site-Wide Multi-Page Sleeve Styling: Restyled Library, Gigs & Setlists, Reports & Stats, Profile, Following, Connect, and Settings into cohesive Sleeve editorial layouts while leaving Classic skin 100% untouched.",
+    ],
+  },
+  {
     version: "0.36.0",
     date: "2026-11-07",
     changes: [
