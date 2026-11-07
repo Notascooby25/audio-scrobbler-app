@@ -1277,6 +1277,123 @@
   color: #ffffff !important;
 }
 
+/* ==========================================================================
+   Reports Page: Section Tabs & Toolbar
+   ========================================================================== */
 
+[data-skin="sleeve"] .sfm-tabs {
+  display: flex !important;
+  gap: 8px !important;
+  margin-bottom: 20px !important;
+  overflow-x: auto !important;
+  padding-bottom: 4px !important;
+}
 
+[data-skin="sleeve"] button.sfm-tab {
+  min-height: 40px !important;
+  padding: 8px 20px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--sl-edge) !important;
+  background: transparent !important;
+  color: var(--sl-muted) !important;
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  cursor: pointer;
+  white-space: nowrap !important;
+  transition: all 0.15s ease;
+}
 
+[data-skin="sleeve"] button.sfm-tab:hover:not(:disabled) {
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+[data-skin="sleeve"] button.sfm-tab.active {
+  background: #ffffff !important;
+  color: var(--sl-ground) !important;
+  border-color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+[data-skin="sleeve"] .reports-toolbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+  margin-bottom: 24px !important;
+}
+
+[data-skin="sleeve"] .reports-toolbar-actions {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+
+[data-skin="sleeve"] .compare-toggle-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 40px !important;
+  padding: 8px 16px !important;
+  border-radius: 999px !important;
+  background: var(--sl-card) !important;
+  border: 1px solid var(--sl-edge) !important;
+  color: var(--sl-muted) !important;
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  cursor: pointer;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+[data-skin="sleeve"] .compare-toggle-btn:hover:not(:disabled) {
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+[data-skin="sleeve"] .compare-toggle-btn.active {
+  background: #ffffff !important;
+  border-color: #ffffff !important;
+  color: var(--sl-ground) !important;
+  font-weight: 700 !important;
+}
+
+[data-skin="sleeve"] .compare-toggle-btn.active svg {
+  stroke: var(--sl-ground) !important;
+}
+
+[data-skin="sleeve"] .reports-library-link {
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--sl-muted) !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 40px !important;
+  padding: 0 8px !important;
+}
+
+[data-skin="sleeve"] .reports-library-link:hover {
+  color: #ffffff !important;
+  text-decoration: underline !important;
+}
+
+[data-skin="sleeve"] .reports-loading-indicator {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 12px 16px !important;
+  background: var(--sl-card) !important;
+  border: 1px solid var(--sl-edge) !important;
+  border-radius: 10px !important;
+  color: var(--sl-muted) !important;
+  font-size: 14px !important;
+  margin-bottom: 20px !important;
+}
