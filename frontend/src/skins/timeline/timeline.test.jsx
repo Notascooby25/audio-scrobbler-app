@@ -281,6 +281,9 @@ describe("Timeline Skin: Token Contract, Rules & Contrast Matrix", () => {
       );
 
       expect(screen.getByText("Scrobbler")).toBeInTheDocument();
+      const versionLink = screen.getByRole("link", { name: /What's new in v/i });
+      expect(versionLink).toBeInTheDocument();
+      expect(versionLink).toHaveAttribute("href", "/changelog");
 
       await waitFor(() => {
         expect(screen.getByRole("link", { name: /3 unread notifications/i })).toBeInTheDocument();

@@ -151,7 +151,38 @@
 [data-skin="timeline"] .timeline-header-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+}
+
+[data-skin="timeline"] .timeline-header-version {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  background-color: var(--tl-tile);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+  border: 1px solid var(--color-border-subtle);
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+[data-skin="timeline"] .timeline-header-version:hover {
+  border-color: var(--color-border);
+  background-color: var(--color-surface-raised);
+}
+
+[data-skin="timeline"] .timeline-header-version:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 [data-skin="timeline"] .timeline-header-bell {
