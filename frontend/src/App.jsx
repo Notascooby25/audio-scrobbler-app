@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Layout from "./components/Layout";
 import FollowingPage from "./pages/FollowingPage";
@@ -13,7 +13,7 @@ import SetlistsPage from "./components/setlists/SetlistsPage";
 import SetlistGigPage from "./components/setlists/SetlistGigPage";
 import { fetchUserSettings } from "./api";
 import { readSession } from "./session";
-import { SkinProvider, applySkinToDocument } from "./skins/useSkin";
+import { SkinProvider } from "./skins/useSkin";
 
 function RedirectWithSearch({ to }) {
   const location = useLocation();
@@ -22,6 +22,7 @@ function RedirectWithSearch({ to }) {
 
 export default function App() {
   const session = readSession();
+  const [skinPreference, setSkinPreference] = useState(null);
 
   useEffect(() => {
     if (session?.accessToken) {
@@ -36,8 +37,13 @@ export default function App() {
             document.documentElement.setAttribute("data-accent", settings.accent_color);
           }
           if (settings.skin) {
-            localStorage.setItem("audio-scrobbler-skin", settings.skin);
-            applySkinToDocument(settings.skin);
+            const hasUrlOverride = Boolean(
+              new URLSearchParams(window.location?.search || "").get("skin")
+            );
+            if (!hasUrlOverride) {
+              localStorage.setItem("audio-scrobbler-skin", settings.skin);
+              setSkinPreference(settings.skin);
+            }
           }
         })
         .catch(() => {});
@@ -45,7 +51,7 @@ export default function App() {
   }, [session?.accessToken]);
 
   return (
-    <SkinProvider>
+    <SkinProvider initialSkin={skinPreference}>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route element={<Layout />}>

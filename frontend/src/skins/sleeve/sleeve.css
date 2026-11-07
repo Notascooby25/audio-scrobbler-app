@@ -1,5 +1,215 @@
 /* Sleeve Skin Stylesheet */
-/* All rules must be scoped under [data-skin="sleeve"] */
+/* All rules scoped strictly under [data-skin="sleeve"] */
+
 [data-skin="sleeve"] {
-  --sleeve-placeholder: none;
+  --sleeve: var(--color-primary);
+  --sl-ground: color-mix(in srgb, var(--sleeve) 34%, #000000);
+  --sl-card: color-mix(in srgb, var(--sleeve) 55%, #000000);
+  --sl-deep: color-mix(in srgb, var(--sleeve) 22%, #000000);
+  --sl-muted: color-mix(in srgb, var(--sleeve) 22%, #ffffff);
+  --sl-edge: color-mix(in srgb, var(--sleeve) 82%, #ffffff);
+  --sl-text: #ffffff;
+  --sl-on-sleeve: #ffffff;
+}
+
+[data-skin="sleeve"][data-accent="fools_gold"],
+[data-skin="sleeve"][data-accent="spotify_green"],
+[data-skin="sleeve"][data-accent="pretty_in_pink"],
+[data-skin="sleeve"][data-accent="orange_crush"] {
+  --sl-on-sleeve: #1a1305;
+}
+
+[data-skin="sleeve"] {
+  /* Canonical Token Contract Mapping */
+  --color-canvas: var(--sl-ground);
+  --color-surface: var(--sl-card);
+  --color-surface-raised: var(--sl-card);
+  --color-ink: var(--sl-text);
+  --color-muted: var(--sl-muted);
+  --color-border: var(--sl-edge);
+  --color-border-subtle: var(--sl-edge);
+  --color-primary: var(--sleeve);
+  --color-on-accent: var(--sl-on-sleeve);
+  --color-focus: #ffffff;
+  --color-danger: #d32f2f;
+  --font-display: "Young Serif", Georgia, serif;
+  --font-body: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-pill: 999px;
+  --space-gutter: 20px;
+  --nav-height: 72px;
+
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background-color: var(--color-canvas);
+  font-variant-numeric: tabular-nums;
+  transition:
+    background-color 300ms ease,
+    border-color 300ms ease;
+}
+
+[data-skin="sleeve"] body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
+}
+
+[data-skin="sleeve"] button {
+  text-transform: none;
+}
+
+/* 56px Top Header */
+[data-skin="sleeve"] .sleeve-header {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-gutter);
+  background: var(--sl-ground);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+[data-skin="sleeve"] .sleeve-header-wordmark {
+  font-family: var(--font-display);
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 400;
+  color: var(--sl-text);
+  text-decoration: none;
+}
+
+[data-skin="sleeve"] .sleeve-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+[data-skin="sleeve"] .sleeve-header-bell {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sl-text);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+[data-skin="sleeve"] .sleeve-header-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--sl-ground);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+[data-skin="sleeve"] .sleeve-header-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--sl-card);
+  color: var(--sl-text);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  border: 1px solid var(--sl-edge);
+}
+
+/* 72px Fixed Bottom Tab Bar */
+[data-skin="sleeve"] .sleeve-tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(72px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--sl-deep);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+  z-index: 50;
+  border-top: 1px solid var(--sl-edge);
+}
+
+[data-skin="sleeve"] .sleeve-tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--sl-muted);
+  text-decoration: none;
+  height: 100%;
+  position: relative;
+}
+
+[data-skin="sleeve"] .sleeve-tab-item[aria-current="page"] {
+  color: var(--sl-text);
+  font-weight: 700;
+}
+
+[data-skin="sleeve"] .sleeve-tab-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 30px;
+  border-radius: 15px;
+}
+
+[data-skin="sleeve"] .sleeve-tab-item[aria-current="page"] .sleeve-tab-icon-wrapper {
+  background: var(--sl-card);
+}
+
+[data-skin="sleeve"] .sleeve-tab-label {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+/* Sub-page Header (< Back to ...) */
+[data-skin="sleeve"] .sleeve-subpage-header {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-gutter);
+  background: var(--sl-ground);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+[data-skin="sleeve"] .sleeve-back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--sl-text);
+  background: transparent;
+  border: none;
+  font-family: var(--font-display);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 8px 0;
+  min-height: 44px;
+  min-width: 44px;
+  text-decoration: none;
 }

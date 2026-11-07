@@ -3,6 +3,8 @@
  * Central registry defining available visual skins, metadata, and slot components.
  */
 
+import SleeveNav from "./sleeve/slots/SleeveNav";
+
 export const SKINS = [
   {
     id: "classic",
@@ -18,7 +20,9 @@ export const SKINS = [
     description: "An album-led, immersive dark aesthetic derived dynamically from artwork.",
     supportsThemes: false,
     status: "hidden",
-    slots: {},
+    slots: {
+      appNav: SleeveNav,
+    },
   },
   {
     id: "timeline",

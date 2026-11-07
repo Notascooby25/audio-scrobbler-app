@@ -1,14 +1,15 @@
 import { afterEach, describe, expect, it } from "vitest";
 import React from "react";
 import { cleanup, render, screen } from "@testing-library/react";
-
-afterEach(() => cleanup());
+import { MemoryRouter } from "react-router-dom";
 import fs from "fs";
 import path from "path";
 import { getSkin, getAvailableSkins, DEFAULT_SKIN_ID } from "./index";
 import { REQUIRED_TOKENS } from "./tokens.contract";
 import Slot from "./Slot";
 import { SkinProvider } from "./useSkin";
+
+afterEach(() => cleanup());
 
 describe("Skins Registry & Token Contract", () => {
   it("registers Classic as live and Sleeve/Timeline as hidden initially", () => {
@@ -111,5 +112,49 @@ describe("Slot Pattern Component", () => {
     );
 
     expect(screen.getByTestId("child-content")).toHaveTextContent("Default Child");
+  });
+
+  it("renders SleeveNav when active skin is sleeve and slot is appNav", () => {
+    render(
+      <MemoryRouter
+        initialEntries={["/library"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <SkinProvider initialSkin="sleeve">
+          <Slot name="appNav" fallback={<div data-testid="classic-nav">Classic</div>} />
+        </SkinProvider>
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByTestId("classic-nav")).not.toBeInTheDocument();
+    expect(screen.getByText("Scrobbler")).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Sleeve navigation" })).toBeInTheDocument();
+
+    const libraryTab = screen.getByRole("link", { name: /Library/i });
+    expect(libraryTab).toHaveAttribute("aria-current", "page");
+
+    const todayTab = screen.getByRole("link", { name: /Today/i });
+    expect(todayTab).not.toHaveAttribute("aria-current");
+  });
+
+  it("renders subpage header with Back button when on subpage route under sleeve skin", () => {
+    render(
+      <MemoryRouter
+        initialEntries={["/settings"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <SkinProvider initialSkin="sleeve">
+          <Slot name="appNav" fallback={<div data-testid="classic-nav">Classic</div>} />
+        </SkinProvider>
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByText("Scrobbler")).not.toBeInTheDocument();
+    expect(screen.getByText("Back to Profile")).toBeInTheDocument();
+
+    // In a subpage, no tab has aria-current="page"
+    const tabs = screen.getAllByRole("link");
+    const activeTabs = tabs.filter((t) => t.getAttribute("aria-current") === "page");
+    expect(activeTabs).toHaveLength(0);
   });
 });

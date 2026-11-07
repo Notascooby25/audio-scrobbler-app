@@ -62,6 +62,17 @@ export function SkinProvider({ initialSkin = null, children }) {
   const [skinId, setSkinId] = useState(() => detectInitialSkin(initialSkin));
 
   useEffect(() => {
+    if (initialSkin) {
+      const hasUrlOverride =
+        typeof window !== "undefined" &&
+        Boolean(new URLSearchParams(window.location?.search || "").get("skin"));
+      if (!hasUrlOverride && SKINS.some((s) => s.id === initialSkin)) {
+        setSkinId(initialSkin);
+      }
+    }
+  }, [initialSkin]);
+
+  useEffect(() => {
     applySkinToDocument(skinId);
     try {
       localStorage.setItem(STORAGE_KEY, skinId);
