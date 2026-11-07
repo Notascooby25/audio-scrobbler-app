@@ -292,3 +292,359 @@
   font-weight: 700;
   color: var(--color-ink);
 }
+
+/* ─── Today Page Layout ──────────────────────────────────────────────────── */
+[data-skin="timeline"] .timeline-today-page {
+  padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 32px);
+  min-height: 100vh;
+  background-color: var(--color-canvas);
+}
+
+[data-skin="timeline"] .timeline-today-container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px var(--space-gutter);
+}
+
+[data-skin="timeline"] .timeline-today-header {
+  margin-bottom: 24px;
+}
+
+[data-skin="timeline"] .timeline-today-title {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  margin: 0 0 6px 0;
+  color: var(--color-ink);
+}
+
+[data-skin="timeline"] .timeline-today-subtitle {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-muted);
+  margin: 0;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Hourly Chart ───────────────────────────────────────────────────────── */
+[data-skin="timeline"] .timeline-chart-section {
+  margin-bottom: 32px;
+}
+
+[data-skin="timeline"] .timeline-chart-container {
+  position: relative;
+  width: 100%;
+}
+
+[data-skin="timeline"] .timeline-chart-bars {
+  display: flex;
+  align-items: flex-end;
+  height: 44px;
+  gap: 3px;
+  width: 100%;
+}
+
+[data-skin="timeline"] .timeline-chart-bar-col {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+}
+
+[data-skin="timeline"] .timeline-chart-bar {
+  width: 100%;
+  border-radius: 2px;
+  background-color: var(--color-ink);
+  min-height: 3px;
+}
+
+[data-skin="timeline"] .timeline-chart-bar-col.current .timeline-chart-bar {
+  background-color: var(--tl-mark);
+}
+
+[data-skin="timeline"] .timeline-chart-bar-col.empty .timeline-chart-bar {
+  background-color: var(--tl-rail);
+}
+
+[data-skin="timeline"] .timeline-chart-axis {
+  position: relative;
+  height: 18px;
+  margin-top: 6px;
+}
+
+[data-skin="timeline"] .timeline-axis-label {
+  position: absolute;
+  font-size: 12px;
+  color: var(--color-muted);
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+[data-skin="timeline"] .timeline-source-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+[data-skin="timeline"] .timeline-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ─── Source Marker Shapes ───────────────────────────────────────────────── */
+[data-skin="timeline"] .timeline-marker-circle {
+  color: var(--color-ink);
+  font-size: 13px;
+  line-height: 1;
+}
+
+[data-skin="timeline"] .timeline-marker-diamond {
+  color: var(--tl-mark);
+  font-size: 13px;
+  line-height: 1;
+}
+
+[data-skin="timeline"] .timeline-marker-square {
+  color: var(--color-ink);
+  font-size: 13px;
+  line-height: 1;
+}
+
+[data-skin="timeline"] .timeline-marker-triangle {
+  color: var(--color-ink);
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* ─── Vertical Time Rail ─────────────────────────────────────────────────── */
+[data-skin="timeline"] .timeline-rail-section {
+  width: 100%;
+}
+
+[data-skin="timeline"] .timeline-rail-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+[data-skin="timeline"] .timeline-rail-item {
+  display: grid;
+  grid-template-columns: 52px 24px 1fr;
+  align-items: stretch;
+  min-height: 56px;
+}
+
+[data-skin="timeline"] .timeline-time-col {
+  text-align: right;
+  padding-right: 8px;
+  padding-top: 14px;
+  font-size: 12px;
+  color: var(--color-muted);
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+[data-skin="timeline"] .timeline-rail-col {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 14px;
+}
+
+[data-skin="timeline"] .timeline-rail-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background-color: var(--tl-rail);
+  z-index: 1;
+}
+
+[data-skin="timeline"] .timeline-rail-marker {
+  position: relative;
+  z-index: 2;
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-canvas);
+  border-radius: 50%;
+  border: 2px solid var(--color-canvas);
+  line-height: 1;
+}
+
+[data-skin="timeline"] .timeline-track-col {
+  padding: 4px 0 12px 10px;
+  min-width: 0;
+}
+
+[data-skin="timeline"] .timeline-track-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+
+[data-skin="timeline"] .timeline-track-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+[data-skin="timeline"] .timeline-track-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-skin="timeline"] .timeline-track-artist {
+  font-size: 13px;
+  color: var(--color-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-skin="timeline"] .timeline-track-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+[data-skin="timeline"] .timeline-artwork-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background-color: var(--tl-tile);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+[data-skin="timeline"] .timeline-track-artwork {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+/* ─── Quiet Gap Stretch ──────────────────────────────────────────────────── */
+[data-skin="timeline"] .timeline-quiet-gap {
+  display: grid;
+  grid-template-columns: 52px 24px 1fr;
+  align-items: center;
+  min-height: 40px;
+  margin: 4px 0;
+}
+
+[data-skin="timeline"] .timeline-rail-gap-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  border-left: 2px dashed var(--tl-rail);
+}
+
+[data-skin="timeline"] .timeline-quiet-gap-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-muted);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-canvas);
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Now Playing Item ───────────────────────────────────────────────────── */
+[data-skin="timeline"] .timeline-now-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tl-mark);
+  margin-bottom: 2px;
+}
+
+[data-skin="timeline"] .timeline-now-pulse-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--tl-mark);
+}
+
+[data-skin="timeline"] .timeline-marker-now {
+  background-color: var(--tl-mark);
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+}
+
+[data-skin="timeline"] .timeline-now-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  display: inline-block;
+}
+
+/* ─── Empty Rail State ───────────────────────────────────────────────────── */
+[data-skin="timeline"] .timeline-empty-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+  gap: 16px;
+}
+
+[data-skin="timeline"] .timeline-empty-rail-line {
+  width: 2px;
+  height: 80px;
+  background-color: var(--tl-rail);
+}
+
+[data-skin="timeline"] .timeline-empty-rail-message {
+  font-size: 15px;
+  color: var(--color-muted);
+  margin: 0;
+}
+
+[data-skin="timeline"] .timeline-empty-notice,
+[data-skin="timeline"] .timeline-loading-state {
+  max-width: 480px;
+  margin: 60px auto;
+  padding: 24px;
+  text-align: center;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+}
