@@ -24,14 +24,20 @@
   --color-canvas: var(--sl-ground);
   --color-surface: var(--sl-card);
   --color-surface-raised: var(--sl-card);
+  --color-surface-hover: var(--sl-deep);
   --color-ink: var(--sl-text);
   --color-muted: var(--sl-muted);
   --color-border: var(--sl-edge);
-  --color-border-subtle: var(--sl-edge);
+  --color-border-subtle: rgba(255, 255, 255, 0.12);
   --color-primary: var(--sleeve);
   --color-on-accent: var(--sl-on-sleeve);
   --color-focus: #ffffff;
   --color-danger: #d32f2f;
+  --color-bg: var(--sl-ground);
+  --text: var(--sl-text);
+  --text-muted: var(--sl-muted);
+  --color-text-primary: var(--sl-text);
+  --color-text-secondary: var(--sl-muted);
   --font-display: "Young Serif", Georgia, serif;
   --font-body: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --radius-sm: 6px;
@@ -39,6 +45,8 @@
   --radius-pill: 999px;
   --space-gutter: 20px;
   --nav-height: 72px;
+
+  color-scheme: dark;
 
   font-family: var(--font-body);
   color: var(--color-ink);
@@ -212,4 +220,46 @@
   min-height: 44px;
   min-width: 44px;
   text-decoration: none;
+}
+
+/* Play Page & Jukebox Components in Sleeve */
+[data-skin="sleeve"] .flat-jukebox-pick-card {
+  background: var(--sl-deep) !important;
+  border: 1px solid var(--sl-edge) !important;
+}
+
+[data-skin="sleeve"] .jukebox-source-tabs {
+  background: var(--sl-deep) !important;
+  border: 1px solid var(--sl-edge) !important;
+}
+
+[data-skin="sleeve"] .jukebox-source-tab-btn {
+  color: var(--sl-muted) !important;
+}
+
+[data-skin="sleeve"] .jukebox-source-tab-btn.active {
+  background: #ffffff !important;
+  color: var(--sl-ground) !important;
+  font-weight: 700 !important;
+}
+
+[data-skin="sleeve"] .rediscover-tabs {
+  background: var(--sl-deep) !important;
+  border: 1px solid var(--sl-edge) !important;
+}
+
+[data-skin="sleeve"] .rediscover-tab-btn {
+  color: var(--sl-muted) !important;
+}
+
+[data-skin="sleeve"] .rediscover-tab-btn.active {
+  background: #ffffff !important;
+  color: var(--sl-ground) !important;
+  font-weight: 700 !important;
+}
+
+[data-skin="sleeve"] .rediscover-badge {
+  background: var(--sl-deep) !important;
+  color: var(--sl-muted) !important;
+  border: 1px solid var(--sl-edge) !important;
 }

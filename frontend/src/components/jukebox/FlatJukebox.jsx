@@ -113,6 +113,7 @@ export default function FlatJukebox({
       />
 
       <div
+        className="flat-jukebox-pick-card"
         style={{
           background: "var(--color-surface-hover, var(--color-canvas))",
           border: "1px solid var(--color-border)",
