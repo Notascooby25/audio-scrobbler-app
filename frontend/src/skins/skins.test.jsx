@@ -12,7 +12,7 @@ import { SkinProvider } from "./useSkin";
 afterEach(() => cleanup());
 
 describe("Skins Registry & Token Contract", () => {
-  it("registers Classic and Sleeve as live, and Timeline as hidden", () => {
+  it("registers Classic, Sleeve, and Timeline as live", () => {
     expect(DEFAULT_SKIN_ID).toBe("classic");
     const classic = getSkin("classic");
     expect(classic).toBeDefined();
@@ -26,13 +26,13 @@ describe("Skins Registry & Token Contract", () => {
 
     const timeline = getSkin("timeline");
     expect(timeline).toBeDefined();
-    expect(timeline.status).toBe("hidden");
+    expect(timeline.status).toBe("live");
     expect(timeline.supportsThemes).toBe(true);
   });
 
   it("filters skins by status appropriately", () => {
     const liveSkins = getAvailableSkins();
-    expect(liveSkins.map((s) => s.id)).toEqual(["classic", "sleeve"]);
+    expect(liveSkins.map((s) => s.id)).toEqual(["classic", "sleeve", "timeline"]);
 
     const allSkins = getAvailableSkins({ includeHidden: true });
     expect(allSkins.map((s) => s.id)).toEqual(["classic", "sleeve", "timeline"]);
