@@ -1462,3 +1462,128 @@
   font-weight: 400 !important;
   color: #ffffff !important;
 }
+
+/* ==========================================================================
+   Reports Page: Chart Panels, Category Rankings & Gig Reports
+   ========================================================================== */
+
+[data-skin="sleeve"] .chart-panel {
+  background: var(--sl-card) !important;
+  border: 1px solid var(--sl-edge) !important;
+  border-radius: 12px !important;
+  padding: 20px !important;
+}
+
+[data-skin="sleeve"] .chart-panel h2 {
+  font-family: var(--font-display, "Young Serif", serif) !important;
+  font-size: 20px !important;
+  font-weight: 400 !important;
+  color: #ffffff !important;
+  margin: 0 0 12px !important;
+}
+
+[data-skin="sleeve"] .chart-caption {
+  color: var(--sl-muted) !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  margin-top: 10px !important;
+}
+
+[data-skin="sleeve"] .section-kicker {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  color: var(--sl-muted) !important;
+  margin-bottom: 6px !important;
+}
+
+[data-skin="sleeve"] .report-category-grid .library-rank-panel {
+  background: var(--sl-card) !important;
+  border: 1px solid var(--sl-edge) !important;
+  border-radius: 12px !important;
+  padding: 20px !important;
+}
+
+[data-skin="sleeve"] .report-category-grid .library-rank-heading h2,
+[data-skin="sleeve"] .report-category-grid .library-rank-heading {
+  font-family: var(--font-display, "Young Serif", serif) !important;
+  font-size: 20px !important;
+  font-weight: 400 !important;
+  color: #ffffff !important;
+}
+
+[data-skin="sleeve"] .gig-reports .chart-panel {
+  background: var(--sl-card) !important;
+  border: 1px solid var(--sl-edge) !important;
+  border-radius: 12px !important;
+}
+
+[data-skin="sleeve"] .gig-reports .ranked-list {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+[data-skin="sleeve"] .gig-reports .ranked-list li {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 12px 0 !important;
+  border-bottom: 1px solid var(--sl-edge) !important;
+}
+
+[data-skin="sleeve"] .gig-reports .ranked-list li strong {
+  color: #ffffff !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+[data-skin="sleeve"] .gig-reports .ranked-list li small {
+  color: var(--sl-muted) !important;
+  font-size: 13px !important;
+}
+
+[data-skin="sleeve"] .gig-reports .ranked-list .rank-count {
+  color: var(--sl-muted) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+[data-skin="sleeve"] .gig-reports button.show-more-btn {
+  min-height: 40px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--sl-edge) !important;
+  background: transparent !important;
+  color: var(--sl-muted) !important;
+  text-transform: none !important;
+  padding: 8px 16px !important;
+  font-weight: 600 !important;
+  margin-top: 12px !important;
+  cursor: pointer;
+}
+
+[data-skin="sleeve"] .gig-reports button.show-more-btn:hover {
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+[data-skin="sleeve"] .friends-comparison-container {
+  background: var(--sl-card) !important;
+  border: 1px solid var(--sl-edge) !important;
+  border-radius: 12px !important;
+  padding: 20px !important;
+  margin-bottom: 24px !important;
+}
+
+[data-skin="sleeve"] .friends-comparison-header h2 {
+  font-family: var(--font-display, "Young Serif", serif) !important;
+  font-size: 22px !important;
+  font-weight: 400 !important;
+  color: #ffffff !important;
+}
+
+[data-skin="sleeve"] .friends-comparison-header p {
+  color: var(--sl-muted) !important;
+  font-size: 14px !important;
+}
