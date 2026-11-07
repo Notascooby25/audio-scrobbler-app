@@ -938,4 +938,112 @@
   padding: 8px 18px !important;
 }
 
+/* Day Groups & Scrobble Rows */
+[data-skin="sleeve"] .library-scrobble-panel {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+[data-skin="sleeve"] .library-scrobble-panel > h2 {
+  display: none !important;
+}
+
+[data-skin="sleeve"] .scrobble-day {
+  margin-bottom: 28px;
+}
+
+[data-skin="sleeve"] .scrobble-day h3 {
+  font-family: var(--font-display, "Young Serif", serif) !important;
+  font-size: 20px !important;
+  font-weight: 400 !important;
+  color: var(--sl-text) !important;
+  margin: 20px 0 10px 0 !important;
+}
+
+[data-skin="sleeve"] .library-scrobble-list {
+  border-bottom: 1px solid var(--sl-edge);
+}
+
+[data-skin="sleeve"] .library-scrobble-row {
+  min-height: 64px !important;
+  height: auto !important;
+  box-sizing: border-box !important;
+  padding: 10px 0 !important;
+  border-top: 1px solid var(--sl-edge) !important;
+  background: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+[data-skin="sleeve"] .library-scrobble-row .library-row-artwork {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  border-radius: 4px !important;
+  border: 1px solid var(--sl-edge) !important;
+  background: var(--sleeve);
+  object-fit: cover !important;
+}
+
+[data-skin="sleeve"] .library-scrobble-row .library-row-artwork-empty {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: var(--font-display, "Young Serif", serif) !important;
+  font-size: 18px !important;
+  color: var(--sl-on-sleeve) !important;
+}
+
+[data-skin="sleeve"] .library-scrobble-row .library-row-copy {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+}
+
+[data-skin="sleeve"] .library-scrobble-row .library-row-copy strong {
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  line-height: 1.25 !important;
+}
+
+[data-skin="sleeve"] .library-scrobble-row .library-row-copy small {
+  font-family: var(--font-body, "Hanken Grotesk", sans-serif) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: var(--sl-muted) !important;
+  line-height: 1.25 !important;
+}
+
+[data-skin="sleeve"] .library-scrobble-row .library-scrobble-time {
+  font-size: 13px !important;
+  color: var(--sl-muted) !important;
+  white-space: nowrap !important;
+  margin-left: auto !important;
+}
+
+/* 44px Interactive Touch Targets */
+[data-skin="sleeve"] .library-scrobble-row .liked-heart-btn,
+[data-skin="sleeve"] .library-rank-row .liked-heart-btn {
+  min-width: 44px !important;
+  min-height: 44px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+[data-skin="sleeve"] .library-scrobble-row .bulk-select-control {
+  min-width: 44px !important;
+  min-height: 44px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+
 
