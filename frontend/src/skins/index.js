@@ -36,7 +36,7 @@ export const SKINS = [
     name: "Timeline",
     description: "A calm, data-first vertical rail of plays with quiet gaps and hourly charts.",
     supportsThemes: true,
-    status: "hidden",
+    status: "live",
     slots: {
       appNav: TimelineNav,
       todayPage: TimelineTodayPage,
