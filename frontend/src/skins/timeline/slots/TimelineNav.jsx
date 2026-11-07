@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { readSession } from "../../../session";
 import { fetchUnreadNotificationCount } from "../../../api";
-import { CHANGELOG } from "../../../changelogData";
 
 const TABS = [
   {
@@ -125,15 +124,6 @@ export default function TimelineNav() {
             Scrobbler
           </NavLink>
           <div className="timeline-header-actions">
-            <NavLink
-              to="/changelog"
-              className="timeline-header-version"
-              aria-label={`What's new in v${CHANGELOG[0]?.version || "0.38.2"}`}
-              title="What's new"
-            >
-              v{CHANGELOG[0]?.version || "0.38.2"}
-            </NavLink>
-
             {session?.accessToken && (
               <NavLink
                 to="/settings?tab=notifications"
