@@ -21,7 +21,7 @@ export const SKINS = [
     name: "Sleeve",
     description: "An album-led, immersive dark aesthetic derived dynamically from artwork.",
     supportsThemes: false,
-    status: "hidden",
+    status: "live",
     slots: {
       appNav: SleeveNav,
       todayPage: SleeveTodayPage,
