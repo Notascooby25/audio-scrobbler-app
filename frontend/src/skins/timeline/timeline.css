@@ -2330,3 +2330,241 @@
 [data-skin="timeline"] .changelog-container li {
   margin-bottom: 6px !important;
 }
+
+/* ─── Settings Page (/settings) ───────────────────────────────────────────── */
+[data-skin="timeline"] .settings-form {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 24px !important;
+  box-shadow: none;
+  color: var(--color-ink) !important;
+  max-width: 42rem !important;
+}
+
+[data-skin="timeline"] .settings-form label {
+  font-family: var(--font-body) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--color-muted) !important;
+  text-transform: none !important;
+  line-height: 1.4 !important;
+  gap: 6px !important;
+}
+
+[data-skin="timeline"] .settings-form select,
+[data-skin="timeline"] .settings-form input:not([type="checkbox"]):not([type="radio"]),
+[data-skin="timeline"] .settings-form textarea {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 8px !important;
+  box-shadow: none;
+  color: var(--color-ink) !important;
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 8px 12px !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.15s ease !important;
+}
+
+[data-skin="timeline"] .settings-form select:focus-visible,
+[data-skin="timeline"]
+  .settings-form
+  input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+[data-skin="timeline"] .settings-form textarea:focus-visible {
+  border-color: var(--color-ink) !important;
+  outline: 2px solid var(--color-ink) !important;
+  outline-offset: 1px !important;
+}
+
+[data-skin="timeline"] .settings-checkbox {
+  color: var(--color-ink) !important;
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+[data-skin="timeline"] .settings-checkbox input {
+  accent-color: var(--color-primary) !important;
+}
+
+[data-skin="timeline"] .settings-form label:has(input[type="radio"]) {
+  color: var(--color-ink) !important;
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+}
+
+[data-skin="timeline"] .settings-form input[type="radio"] {
+  accent-color: var(--color-primary) !important;
+}
+
+[data-skin="timeline"] .settings-accent-select-wrapper select {
+  padding-left: 36px !important;
+}
+
+[data-skin="timeline"] .settings-accent-select-dot {
+  border: 1px solid var(--color-border) !important;
+}
+
+[data-skin="timeline"] .settings-form button:not(.destructive):not([role="tab"]) {
+  min-height: 38px !important;
+  padding: 8px 16px !important;
+  border-radius: 8px !important;
+  font-family: var(--font-body) !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  border: 1px solid var(--color-border) !important;
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+}
+
+[data-skin="timeline"] .settings-form button:not(.destructive):not([role="tab"]):hover {
+  border-color: var(--color-ink) !important;
+}
+
+[data-skin="timeline"] .settings-danger-zone {
+  border-color: var(--color-danger, #b3261e) !important;
+  background: var(--color-surface) !important;
+}
+
+[data-skin="timeline"] .settings-tabs button.destructive {
+  color: var(--color-danger, #b3261e) !important;
+}
+
+[data-skin="timeline"] .settings-tabs button.destructive.active {
+  background: var(--color-danger, #b3261e) !important;
+  color: #ffffff !important;
+  border-color: var(--color-danger, #b3261e) !important;
+}
+
+[data-skin="timeline"] .settings-form button.destructive {
+  min-height: 38px !important;
+  padding: 8px 16px !important;
+  border-radius: 8px !important;
+  font-family: var(--font-body) !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  border: 1px solid var(--color-danger, #b3261e) !important;
+  background: transparent !important;
+  color: var(--color-danger, #b3261e) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+}
+
+[data-skin="timeline"] .settings-form button.destructive:hover {
+  background: var(--color-danger, #b3261e) !important;
+  color: #ffffff !important;
+}
+
+/* User Guide & FAQ */
+[data-skin="timeline"] .user-guide-section,
+[data-skin="timeline"] .faq-section {
+  color: var(--color-ink) !important;
+}
+
+[data-skin="timeline"] .guide-header h2,
+[data-skin="timeline"] .faq-header h2 {
+  font-family: var(--font-display) !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+  margin: 0 0 8px 0 !important;
+}
+
+[data-skin="timeline"] .guide-subtitle,
+[data-skin="timeline"] .faq-subtitle {
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  color: var(--color-muted) !important;
+  margin: 0 0 20px 0 !important;
+  line-height: 1.4 !important;
+}
+
+[data-skin="timeline"] .guide-chapter,
+[data-skin="timeline"] .faq-item {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 20px !important;
+  margin-bottom: 16px !important;
+}
+
+[data-skin="timeline"] .guide-chapter h3,
+[data-skin="timeline"] .faq-category-title {
+  font-family: var(--font-display) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+  margin: 0 0 12px 0 !important;
+}
+
+[data-skin="timeline"] .guide-chapter h4 {
+  font-family: var(--font-body) !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+  margin: 16px 0 8px 0 !important;
+}
+
+[data-skin="timeline"] .guide-chapter p,
+[data-skin="timeline"] .faq-answer p {
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  color: var(--color-ink) !important;
+  margin: 0 0 10px 0 !important;
+}
+
+[data-skin="timeline"] .guide-callout {
+  background: var(--color-canvas) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 8px !important;
+  padding: 14px !important;
+  margin: 12px 0 !important;
+}
+
+[data-skin="timeline"] .guide-callout strong {
+  color: var(--color-ink) !important;
+  font-family: var(--font-body) !important;
+  font-size: 13px !important;
+}
+
+[data-skin="timeline"] .guide-callout p {
+  color: var(--color-muted) !important;
+  font-size: 13px !important;
+  margin: 4px 0 0 0 !important;
+}
+
+[data-skin="timeline"] .faq-question {
+  font-family: var(--font-body) !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+  cursor: pointer !important;
+}
+
+[data-skin="timeline"] .faq-answer {
+  padding-top: 12px !important;
+  margin-top: 12px !important;
+  border-top: 1px solid var(--color-border-subtle) !important;
+}
+
+[data-skin="timeline"] .faq-search-input {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 8px !important;
+  color: var(--color-ink) !important;
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  padding: 8px 16px !important;
+}
