@@ -1,6 +1,7 @@
 import React from "react";
 import Artwork from "../../../components/Artwork";
 import LikedHeart from "../../../components/LikedHeart";
+import SourceBadge from "../../../components/SourceBadge";
 
 export function formatTimelineTime(dateValue) {
   if (!dateValue) return "";
@@ -13,39 +14,6 @@ export function formatTimelineTime(dateValue) {
     })
     .toLowerCase()
     .replace(/\s+/g, "");
-}
-
-function SourceMarker({ source }) {
-  const normSource = (source || "spotify").toLowerCase();
-
-  let shapeClass = "timeline-marker-circle";
-  let symbol = "●";
-  let label = "Spotify";
-
-  if (normSource.includes("youtube")) {
-    shapeClass = "timeline-marker-diamond";
-    symbol = "◆";
-    label = "YouTube";
-  } else if (normSource.includes("apple")) {
-    shapeClass = "timeline-marker-square";
-    symbol = "■";
-    label = "Apple Music";
-  } else if (normSource.includes("bbc")) {
-    shapeClass = "timeline-marker-triangle";
-    symbol = "▲";
-    label = "BBC Sounds";
-  }
-
-  return (
-    <span
-      className={`timeline-rail-marker ${shapeClass}`}
-      role="img"
-      aria-label={label}
-      title={label}
-    >
-      <span aria-hidden="true">{symbol}</span>
-    </span>
-  );
 }
 
 export default function TimelineRail({ scrobbles = [], nowPlaying = null, onToggleLike = null }) {
@@ -163,7 +131,11 @@ export default function TimelineRail({ scrobbles = [], nowPlaying = null, onTogg
             </div>
             <div className="timeline-rail-col">
               <div className="timeline-rail-line" />
-              <SourceMarker source={track.source} />
+              <SourceBadge
+                source={track.source || "spotify"}
+                size="sm"
+                className="timeline-rail-marker"
+              />
             </div>
             <div className="timeline-track-col">
               <div className="timeline-track-row">

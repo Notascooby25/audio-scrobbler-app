@@ -119,6 +119,7 @@ describe("Sleeve Skin Components", () => {
         expect(screen.getByText("Fool's Gold")).toBeTruthy();
         expect(screen.getAllByText("The Stone Roses").length).toBeGreaterThanOrEqual(1);
         expect(screen.getByText(/Playing now/i)).toBeTruthy();
+        expect(screen.getByRole("img", { name: "Scrobbled via Spotify" })).toBeInTheDocument();
         expect(screen.getByText(/Earlier today/i)).toBeTruthy();
         expect(screen.getByText("I Wanna Be Adored")).toBeTruthy();
       });

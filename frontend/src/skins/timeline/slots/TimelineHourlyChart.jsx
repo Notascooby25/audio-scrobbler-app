@@ -1,17 +1,12 @@
 import React from "react";
+import SourceBadge from "../../../components/SourceBadge";
 
-/**
- * Geometric source shapes:
- * - Spotify: filled circle (●) in ink
- * - YouTube: filled diamond (◆) in --tl-mark
- * - Apple: filled square (■) in ink
- * - BBC Sounds: filled triangle (▲) in ink
- */
 export const SOURCE_MARKERS = [
-  { id: "spotify", name: "Spotify", symbol: "●", shape: "circle" },
-  { id: "youtube", name: "YouTube", symbol: "◆", shape: "diamond" },
-  { id: "apple", name: "Apple", symbol: "■", shape: "square" },
-  { id: "bbc", name: "BBC Sounds", symbol: "▲", shape: "triangle" },
+  { id: "spotify", name: "Spotify", source: "spotify" },
+  { id: "youtube", name: "YouTube", source: "youtube" },
+  { id: "apple", name: "Apple", source: "apple" },
+  { id: "bbc", name: "BBC", source: "bbc_sounds" },
+  { id: "gig", name: "Gigs", source: "setlistfm" },
 ];
 
 export default function TimelineHourlyChart({ scrobbles = [] }) {
@@ -106,30 +101,12 @@ export default function TimelineHourlyChart({ scrobbles = [] }) {
       </div>
 
       <div className="timeline-source-legend" aria-label="Source marker shapes">
-        <span className="timeline-legend-item">
-          <span className="timeline-marker-circle" aria-hidden="true">
-            ●
-          </span>{" "}
-          Spotify
-        </span>
-        <span className="timeline-legend-item">
-          <span className="timeline-marker-diamond" aria-hidden="true">
-            ◆
-          </span>{" "}
-          YouTube
-        </span>
-        <span className="timeline-legend-item">
-          <span className="timeline-marker-square" aria-hidden="true">
-            ■
-          </span>{" "}
-          Apple
-        </span>
-        <span className="timeline-legend-item">
-          <span className="timeline-marker-triangle" aria-hidden="true">
-            ▲
-          </span>{" "}
-          BBC
-        </span>
+        {SOURCE_MARKERS.map((m) => (
+          <span key={m.id} className="timeline-legend-item">
+            <SourceBadge source={m.source} size="sm" />
+            <span>{m.name}</span>
+          </span>
+        ))}
       </div>
     </div>
   );

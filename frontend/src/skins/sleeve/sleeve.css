@@ -651,6 +651,12 @@
   margin: 6px 0 0;
 }
 
+[data-skin="sleeve"] .sleeve-hero-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 /* Earlier Today Crate */
 [data-skin="sleeve"] .sleeve-earlier-section {
   margin-top: 36px;

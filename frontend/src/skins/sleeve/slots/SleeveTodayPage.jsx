@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Artwork from "../../../components/Artwork";
+import SourceBadge from "../../../components/SourceBadge";
 import SleeveVinylDisc from "./SleeveVinylDisc";
 import { fetchNowPlaying, fetchRecentScrobbles } from "../../../api";
 import { readSession } from "../../../session";
@@ -155,14 +156,19 @@ export default function SleeveTodayPage() {
       ? `Scrobbled ${formatScrobbleTime(heroTrack.played_at, Date.now(), "relative")}`
       : "Recently scrobbled";
 
+  const rawSource = (heroTrack.source || "spotify").toLowerCase();
   const sourceName =
-    heroTrack.source === "apple"
-      ? "Apple Music"
-      : heroTrack.source === "youtube"
-        ? "YouTube"
-        : heroTrack.source === "bbc_sounds"
-          ? "BBC Sounds"
-          : "Spotify";
+    rawSource.includes("setlist") || rawSource.includes("gig")
+      ? "Live Gig"
+      : rawSource.includes("apple")
+        ? "Apple Music"
+        : rawSource.includes("youtube")
+          ? "YouTube"
+          : rawSource.includes("bbc")
+            ? "BBC Sounds"
+            : rawSource.includes("import")
+              ? "Import"
+              : "Spotify";
 
   return (
     <div className="sleeve-today-page">
@@ -203,7 +209,10 @@ export default function SleeveTodayPage() {
           <p className="sleeve-hero-meta">
             {heroTrack.album_name && <span>{heroTrack.album_name} • </span>}
             <span>{relativeTime}</span>
-            <span> from {sourceName}</span>
+            {" • "}
+            <span className="sleeve-hero-source">
+              from <SourceBadge source={heroTrack.source || "spotify"} size="sm" /> {sourceName}
+            </span>
           </p>
         </div>
       </section>
