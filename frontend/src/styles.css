@@ -4079,9 +4079,16 @@ dd {
 
 .share-card-header {
   display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.share-card-header-main {
+  display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  margin-bottom: 1rem;
 }
 
 .share-card-title {
@@ -4094,6 +4101,100 @@ dd {
 .share-card-subtitle {
   font-size: 0.9rem;
   color: var(--color-muted);
+}
+
+.share-card-brand {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-subtle);
+  border: 0.5px solid var(--color-border);
+}
+
+/* ─── Share Card Stats Banner ────────────────────────────────────────── */
+.share-card-stats-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background: var(--color-surface-subtle);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.share-stat-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 120px;
+}
+
+.share-stat-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+}
+
+.share-stat-val {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.share-stat-diff {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.share-stat-diff.diff-up {
+  color: #10b981;
+}
+
+.share-stat-diff.diff-down {
+  color: #ef4444;
+}
+
+.share-source-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.share-source-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  background: var(--color-surface);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.15rem 0.45rem;
+}
+
+/* ─── Share Card Grid Variations ─────────────────────────────────────── */
+.share-card-grid-layout.share-grid-2x2 .library-rank-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.share-card-grid-layout.share-grid-2x3 .library-rank-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.share-card-grid-layout.share-grid-3x2 .library-rank-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+.share-card-grid-layout.share-grid-3x3 .library-rank-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
 }
 
 .share-card-footer {
