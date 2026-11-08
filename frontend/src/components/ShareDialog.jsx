@@ -82,7 +82,8 @@ export default function ShareDialog({
     if (reportStats) return;
 
     let cancelled = false;
-    fetchReportsSummary({ token, dateRange, userId })
+    const summaryRange = { ...dateRange, compare_to_previous: true };
+    fetchReportsSummary({ token, dateRange: summaryRange, userId })
       .then((res) => {
         if (!cancelled && res) {
           setReportStats({

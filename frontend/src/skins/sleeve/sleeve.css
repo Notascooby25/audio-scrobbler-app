@@ -419,6 +419,7 @@
 [data-skin="sleeve"] .jukebox-source-tab-btn,
 [data-skin="sleeve"] .monthly-year-chip,
 [data-skin="sleeve"] .share-dialog-layout-toggle button,
+[data-skin="sleeve"] .share-dialog-dim-toggle button,
 [data-skin="sleeve"] .guide-pill {
   background: transparent !important;
   color: var(--sl-muted) !important;
@@ -440,6 +441,7 @@
 [data-skin="sleeve"] .jukebox-source-tab-btn:hover:not(.active),
 [data-skin="sleeve"] .monthly-year-chip:hover:not(.active),
 [data-skin="sleeve"] .share-dialog-layout-toggle button:hover:not(.active):not(:disabled),
+[data-skin="sleeve"] .share-dialog-dim-toggle button:hover:not(.active):not(:disabled),
 [data-skin="sleeve"] .guide-pill:hover {
   background: rgba(255, 255, 255, 0.08) !important;
   color: var(--sl-text) !important;
@@ -459,6 +461,7 @@
 [data-skin="sleeve"] .jukebox-source-tab-btn.active,
 [data-skin="sleeve"] .monthly-year-chip.active,
 [data-skin="sleeve"] .share-dialog-layout-toggle button.active,
+[data-skin="sleeve"] .share-dialog-dim-toggle button.active,
 [data-skin="sleeve"] .guide-pill.active {
   background: #ffffff !important;
   color: var(--sl-ground) !important;
