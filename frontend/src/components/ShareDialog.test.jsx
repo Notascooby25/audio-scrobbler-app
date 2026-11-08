@@ -119,7 +119,14 @@ describe("ShareDialog", () => {
     fireEvent.click(timeCheckbox);
     expect(timeCheckbox).toBeChecked();
 
-    await waitFor(() => expect(fetchReportsSummary).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(fetchReportsSummary).toHaveBeenCalledWith(
+        expect.objectContaining({
+          token: "t",
+          dateRange: expect.objectContaining({ compare_to_previous: true }),
+        })
+      )
+    );
   });
 
   it("clamps the size and shows a note when fewer entries are available than requested", async () => {
