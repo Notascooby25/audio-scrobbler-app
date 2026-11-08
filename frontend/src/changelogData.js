@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.38.4",
+    date: "2026-11-08",
+    changes: [
+      "Reports Ranked Categories Text Restoration: Restored artist, album, and track names in the most-played category grids on the Reports page under both Timeline and Sleeve themes. Resolved an issue where flex layout overrides collapsed the text block into zero width.",
+    ],
+  },
+  {
     version: "0.38.3",
     date: "2026-11-08",
     changes: [
