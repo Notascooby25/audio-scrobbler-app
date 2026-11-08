@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.38.3",
+    date: "2026-11-08",
+    changes: [
+      "Compact Mobile Reports Toolbar in Timeline Theme: Redesigned the Reports page comparison action buttons under the Timeline skin on mobile viewports into compact, inline pill chips, eliminating vertical whitespace and stacking above listening stats.",
+    ],
+  },
+  {
     version: "0.38.2",
     date: "2026-11-07",
     changes: [
