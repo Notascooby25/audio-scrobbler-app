@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.39.0",
+    date: "2026-11-08",
+    changes: [
+      "Share Card Grid Dimensions & 3×3 Default: Upgraded the Library Share dialog to open to a default 3×3 collage (9 items), with quick dimension buttons to select 2×2 (4 items), 2×3 (6 items - portrait), 3×2 (6 items - landscape), or 3×3 (9 items).",
+      "Share Card Stats Infusions: Added toggleable checkboxes to stamp listening highlights directly onto the generated share image: total listening time with percentage comparisons (green ▲ or red ▼ vs. prior period), active data sources breakdown (omitting unused sources), and newly discovered artists, albums, or tracks.",
+    ],
+  },
+  {
     version: "0.38.5",
     date: "2026-11-08",
     changes: [

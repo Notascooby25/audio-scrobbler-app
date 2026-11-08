@@ -301,9 +301,12 @@ export default function UserGuideSection() {
             heart explains that liking is only supported for music played through Spotify.
           </li>
           <li>
-            <strong>Shareable Image Cards:</strong> Want to brag about your top 5 albums or artists?
-            In the Library, click the "Share" button to generate a beautiful, formatted image card
-            ready to download or send directly to friends.
+            <strong>Shareable Image Cards:</strong> Want to brag about your top music? In the
+            Library, click the "Share" button to generate a beautiful, formatted image card ready to
+            download or send directly to friends. Choose between 2×2 (4 items), 2×3 (6 items -
+            portrait), 3×2 (6 items - landscape), or 3×3 (9 items - square collage, default). You
+            can also optionally stamp key stats directly onto the card, including total listening
+            time with percentage change, active sources breakdown, and discovery counts!
           </li>
         </ul>
       </article>

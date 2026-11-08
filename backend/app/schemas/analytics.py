@@ -133,6 +133,22 @@ class TimelineResponse(BaseModel):
     entries: list[TimelineEntry]
 
 
+class SourceBreakdownEntry(BaseModel):
+    source: str
+    count: int
+    percent: float
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DiscoveriesEntry(BaseModel):
+    artists: int = 0
+    albums: int = 0
+    tracks: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ReportSummaryResponse(BaseModel):
     user_id: int
     range: str
@@ -150,6 +166,8 @@ class ReportSummaryResponse(BaseModel):
     unique_artists: int = 0
     unique_albums: int = 0
     unique_tracks: int = 0
+    source_breakdown: list[SourceBreakdownEntry] = []
+    new_discoveries: DiscoveriesEntry = DiscoveriesEntry()
 
 
 class ReportPoint(BaseModel):

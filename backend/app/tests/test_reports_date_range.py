@@ -164,6 +164,40 @@ def test_reports_summary_compare_to_previous_computes_all_deltas():
     assert "average_per_day_comparison_percent" in payload
 
 
+def test_reports_summary_sources_and_discoveries():
+    db = TestingSession()
+    now = utc_now()
+    # Add a BBC Sounds scrobble for a new artist in the last month window (5 days ago)
+    db.add(
+        ListeningEvent(
+            user_id=1,
+            track_id="track-bbc-1",
+            track_name="BBC Song",
+            artist_name="Fontaines D.C.",
+            album_name="Romance",
+            played_at=now - timedelta(days=5),
+            source="bbc_sounds",
+            play_id="track-bbc-1",
+        )
+    )
+    db.commit()
+
+    response = client.get("/reports/summary?range=last.month")
+    assert response.status_code == 200
+    payload = response.json()
+    assert "source_breakdown" in payload
+    assert len(payload["source_breakdown"]) >= 2
+    sources = {s["source"]: s for s in payload["source_breakdown"]}
+    assert "spotify" in sources
+    assert "bbc_sounds" in sources
+    assert sources["bbc_sounds"]["count"] == 1
+    assert sources["bbc_sounds"]["percent"] > 0
+
+    assert "new_discoveries" in payload
+    # Fontaines D.C. was heard for the first time in this period
+    assert payload["new_discoveries"]["artists"] >= 1
+
+
 def test_reports_summary_all_time_does_not_crash_and_covers_full_history():
     # Regression: get_report_summary(range_key="all.time") used ListeningEvent and
     # func without a module-level import for either. A later local `from sqlalchemy

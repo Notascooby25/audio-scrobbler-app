@@ -20,6 +20,8 @@ from ..queries.analytics_queries import (
     build_report_clock_query,
     build_report_monthly_query,
     build_report_period_count_query,
+    build_report_period_sources_query,
+    build_report_discoveries_query,
     build_report_weekly_query,
     build_report_decade_query,
     build_stats_summary_query,
@@ -39,6 +41,8 @@ from ..schemas.analytics import (
     ReportChartsResponse,
     ReportPoint,
     ReportSummaryResponse,
+    SourceBreakdownEntry,
+    DiscoveriesEntry,
     ScrobbleListEntry,
     ScrobbleListResponse,
     StatsResponse,
@@ -484,6 +488,27 @@ def get_report_summary(
                 total_follow_scrobbles += int(f_count_row.scrobble_count)
             following_avg = total_follow_scrobbles / len(followed_ids)
 
+    # Source breakdown for the active period
+    source_rows = db.execute(build_report_period_sources_query(user_id, period_start, period_end)).all()
+    source_breakdown: list[SourceBreakdownEntry] = []
+    if current_count > 0:
+        for r in source_rows:
+            cnt = int(r.count)
+            pct = round((cnt / current_count) * 100, 1)
+            source_breakdown.append(SourceBreakdownEntry(source=str(r.source or "unknown"), count=cnt, percent=pct))
+
+    # New discoveries during the active period
+    new_artists = int(
+        db.execute(build_report_discoveries_query(user_id, period_start, period_end, "artist")).scalar() or 0
+    )
+    new_albums = int(
+        db.execute(build_report_discoveries_query(user_id, period_start, period_end, "album")).scalar() or 0
+    )
+    new_tracks = int(
+        db.execute(build_report_discoveries_query(user_id, period_start, period_end, "track")).scalar() or 0
+    )
+    new_discoveries = DiscoveriesEntry(artists=new_artists, albums=new_albums, tracks=new_tracks)
+
     return ReportSummaryResponse(
         user_id=user_id,
         range=range_key,
@@ -501,6 +526,8 @@ def get_report_summary(
         unique_artists=int(current.unique_artists),
         unique_albums=int(current.unique_albums),
         unique_tracks=int(current.unique_tracks),
+        source_breakdown=source_breakdown,
+        new_discoveries=new_discoveries,
     )
 
 
