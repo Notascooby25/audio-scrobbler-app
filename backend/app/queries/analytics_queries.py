@@ -484,6 +484,48 @@ def build_report_period_count_query(user_id: int, start: datetime, end: datetime
     )
 
 
+def build_report_period_sources_query(user_id: int, start: datetime, end: datetime):
+    return (
+        select(
+            ListeningEvent.source.label("source"),
+            func.count(ListeningEvent.id).label("count"),
+        )
+        .where(
+            ListeningEvent.user_id == user_id,
+            not_blocked_clause(user_id),
+            ListeningEvent.played_at >= start,
+            ListeningEvent.played_at < end,
+        )
+        .group_by(ListeningEvent.source)
+        .order_by(func.count(ListeningEvent.id).desc())
+    )
+
+
+def build_report_discoveries_query(user_id: int, start: datetime, end: datetime, entity: str = "artist"):
+    col = {
+        "artist": ListeningEvent.artist_name,
+        "album": ListeningEvent.album_name,
+        "track": ListeningEvent.track_name,
+    }[entity]
+    subquery = (
+        select(
+            col.label("name"),
+            func.min(ListeningEvent.played_at).label("first_played"),
+        )
+        .where(
+            ListeningEvent.user_id == user_id,
+            not_blocked_clause(user_id),
+            col.isnot(None),
+        )
+        .group_by(col)
+        .subquery()
+    )
+    return select(func.count(subquery.c.name)).where(
+        subquery.c.first_played >= start,
+        subquery.c.first_played < end,
+    )
+
+
 def build_report_weekly_query(user_id: int, start: datetime, end: datetime):
     day_expr = func.date_trunc("day", ListeningEvent.played_at)
     return (
