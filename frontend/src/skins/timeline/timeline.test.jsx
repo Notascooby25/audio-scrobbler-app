@@ -689,6 +689,27 @@ describe("Timeline Skin: Token Contract, Rules & Contrast Matrix", () => {
         expect(screen.getByText("Listening minutes")).toBeInTheDocument();
       });
     });
+
+    it("verifies timeline.css defines two-row grid styles preserving artist, album, and track copy in report category grid", async () => {
+      const fs = await import("fs");
+      const path = await import("path");
+      const cssPath = path.resolve(__dirname, "timeline.css");
+      const cssContent = fs.readFileSync(cssPath, "utf-8");
+
+      expect(cssContent).toContain(
+        '[data-skin="timeline"] .report-category-grid .library-rank-row'
+      );
+      expect(cssContent).toContain('grid-template-areas: "media copy" "media actions" !important');
+      expect(cssContent).toContain(
+        '[data-skin="timeline"] .report-category-grid .library-row-copy'
+      );
+      expect(cssContent).toContain(
+        '[data-skin="timeline"] .report-category-grid .library-row-copy strong'
+      );
+      expect(cssContent).toContain(
+        '[data-skin="timeline"] .report-category-grid .library-row-copy small'
+      );
+    });
   });
 
   describe("SetlistsPage (Gigs Index) under Timeline Skin", () => {

@@ -259,6 +259,23 @@ describe("Sleeve Skin Components", () => {
         expect(screen.getByText("Listening minutes")).toBeTruthy();
       });
     });
+
+    it("verifies sleeve.css defines two-row grid styles preserving artist, album, and track copy in report category grid", async () => {
+      const fs = await import("fs");
+      const path = await import("path");
+      const cssPath = path.resolve(__dirname, "sleeve.css");
+      const cssContent = fs.readFileSync(cssPath, "utf-8");
+
+      expect(cssContent).toContain('[data-skin="sleeve"] .report-category-grid .library-rank-row');
+      expect(cssContent).toContain('grid-template-areas: "media copy" "media actions" !important');
+      expect(cssContent).toContain('[data-skin="sleeve"] .report-category-grid .library-row-copy');
+      expect(cssContent).toContain(
+        '[data-skin="sleeve"] .report-category-grid .library-row-copy strong'
+      );
+      expect(cssContent).toContain(
+        '[data-skin="sleeve"] .report-category-grid .library-row-copy small'
+      );
+    });
   });
 
   describe("SetlistsPage (Gigs Index) in Sleeve Skin", () => {
