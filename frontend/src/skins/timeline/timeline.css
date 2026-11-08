@@ -395,7 +395,8 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
   margin-top: 12px;
   font-size: 12px;
   color: var(--color-muted);
@@ -404,32 +405,7 @@
 [data-skin="timeline"] .timeline-legend-item {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-}
-
-/* ─── Source Marker Shapes ───────────────────────────────────────────────── */
-[data-skin="timeline"] .timeline-marker-circle {
-  color: var(--color-ink);
-  font-size: 13px;
-  line-height: 1;
-}
-
-[data-skin="timeline"] .timeline-marker-diamond {
-  color: var(--tl-mark);
-  font-size: 13px;
-  line-height: 1;
-}
-
-[data-skin="timeline"] .timeline-marker-square {
-  color: var(--color-ink);
-  font-size: 13px;
-  line-height: 1;
-}
-
-[data-skin="timeline"] .timeline-marker-triangle {
-  color: var(--color-ink);
-  font-size: 13px;
-  line-height: 1;
+  gap: 6px;
 }
 
 /* ─── Vertical Time Rail ─────────────────────────────────────────────────── */

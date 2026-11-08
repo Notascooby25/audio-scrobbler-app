@@ -372,6 +372,7 @@ describe("Timeline Skin: Token Contract, Rules & Contrast Matrix", () => {
       expect(screen.getByText("YouTube")).toBeInTheDocument();
       expect(screen.getByText("Apple")).toBeInTheDocument();
       expect(screen.getByText("BBC")).toBeInTheDocument();
+      expect(screen.getByText("Gigs")).toBeInTheDocument();
     });
 
     it("highlights the current hour and marks empty hours", () => {
@@ -408,7 +409,7 @@ describe("Timeline Skin: Token Contract, Rules & Contrast Matrix", () => {
       expect(screen.getByText("Nothing yet today")).toBeInTheDocument();
     });
 
-    it("renders source markers for Spotify, YouTube, Apple Music, and BBC", () => {
+    it("renders source markers for Spotify, YouTube, Apple Music, BBC, and live gigs", () => {
       const now = Date.now();
       const scrobbles = [
         {
@@ -439,14 +440,22 @@ describe("Timeline Skin: Token Contract, Rules & Contrast Matrix", () => {
           played_at: new Date(now - 40000).toISOString(),
           source: "bbc",
         },
+        {
+          id: 5,
+          track_name: "Song E",
+          artist_name: "Artist E",
+          played_at: new Date(now - 50000).toISOString(),
+          source: "setlistfm",
+        },
       ];
 
       render(<TimelineRail scrobbles={scrobbles} />);
 
-      expect(screen.getByRole("img", { name: "Spotify" })).toBeInTheDocument();
-      expect(screen.getByRole("img", { name: "YouTube" })).toBeInTheDocument();
-      expect(screen.getByRole("img", { name: "Apple Music" })).toBeInTheDocument();
-      expect(screen.getByRole("img", { name: "BBC Sounds" })).toBeInTheDocument();
+      expect(screen.getByRole("img", { name: "Scrobbled via Spotify" })).toBeInTheDocument();
+      expect(screen.getByRole("img", { name: "Scrobbled via YouTube Music" })).toBeInTheDocument();
+      expect(screen.getByRole("img", { name: "Scrobbled via Apple Music" })).toBeInTheDocument();
+      expect(screen.getByRole("img", { name: "Scrobbled via BBC Sounds" })).toBeInTheDocument();
+      expect(screen.getByRole("img", { name: "Scrobbled from live gig" })).toBeInTheDocument();
     });
 
     it("renders quiet gaps when delta between consecutive scrobbles is >= 60 minutes", () => {

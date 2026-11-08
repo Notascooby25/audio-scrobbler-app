@@ -1,41 +1,56 @@
-import React, { useId } from 'react'
+import React, { useId } from "react";
 
 export function resolveSourceType(sourceOrSources) {
-  if (!sourceOrSources) return null
+  if (!sourceOrSources) return null;
   const list = Array.isArray(sourceOrSources)
     ? sourceOrSources.map((s) => String(s).toLowerCase().trim())
-    : [String(sourceOrSources).toLowerCase().trim()]
+    : [String(sourceOrSources).toLowerCase().trim()];
 
-  const hasSpotify = list.some((s) => s === 'spotify' || s === 'spotify_realtime' || s.startsWith('spotify'))
-  const hasYoutube = list.some((s) => s === 'youtube' || s === 'youtube_music' || s === 'youtubemusic')
-  const hasApple = list.some((s) => s === 'apple' || s === 'apple_music' || s === 'itunes')
-  const hasBbc = list.some((s) => s === 'bbc_sounds' || s === 'bbc' || s.includes('bbc'))
+  const hasSpotify = list.some(
+    (s) => s === "spotify" || s === "spotify_realtime" || s.startsWith("spotify")
+  );
+  const hasYoutube = list.some(
+    (s) => s === "youtube" || s === "youtube_music" || s === "youtubemusic"
+  );
+  const hasApple = list.some((s) => s === "apple" || s === "apple_music" || s === "itunes");
+  const hasBbc = list.some((s) => s === "bbc_sounds" || s === "bbc" || s.includes("bbc"));
+  const hasGig = list.some(
+    (s) =>
+      s === "setlistfm" || s === "setlist" || s === "gig" || s === "gigs" || s.includes("setlist")
+  );
+  const hasImport = list.some((s) => s === "import" || s === "imported");
 
-  if (hasSpotify && hasYoutube) return 'split'
-  if (hasSpotify) return 'spotify'
-  if (hasYoutube) return 'youtube'
-  if (hasApple) return 'apple'
-  if (hasBbc) return 'bbc'
-  if (list.some((s) => s.length > 0)) return 'import'
-  return null
+  if (hasSpotify && hasYoutube) return "split";
+  if (hasSpotify) return "spotify";
+  if (hasYoutube) return "youtube";
+  if (hasApple) return "apple";
+  if (hasBbc) return "bbc";
+  if (hasGig) return "gig";
+  if (hasImport) return "import";
+  if (list.some((s) => s.length > 0)) return "fallback";
+  return null;
 }
 
 export function getSourceLabel(type) {
   switch (type) {
-    case 'split':
-      return 'Scrobbled via Spotify and YouTube'
-    case 'spotify':
-      return 'Scrobbled via Spotify'
-    case 'youtube':
-      return 'Scrobbled via YouTube Music'
-    case 'apple':
-      return 'Scrobbled via Apple Music'
-    case 'bbc':
-      return 'Scrobbled via BBC Sounds'
-    case 'import':
-      return 'Imported scrobble'
+    case "split":
+      return "Scrobbled via Spotify and YouTube";
+    case "spotify":
+      return "Scrobbled via Spotify";
+    case "youtube":
+      return "Scrobbled via YouTube Music";
+    case "apple":
+      return "Scrobbled via Apple Music";
+    case "bbc":
+      return "Scrobbled via BBC Sounds";
+    case "gig":
+      return "Scrobbled from live gig";
+    case "import":
+      return "Imported scrobble";
+    case "fallback":
+      return "Scrobbled track";
     default:
-      return 'Source'
+      return "Source";
   }
 }
 
@@ -48,7 +63,7 @@ function SpotifyIcon() {
         d="M17.9 10.9C14.3 8.8 8.3 8.6 4.9 9.6c-.6.2-1.1-.2-1.3-.7-.2-.6.2-1.1.7-1.3 4-1.2 10.5-1 14.7 1.5.5.3.7 1 .4 1.5-.3.5-1 .7-1.5.3zm-.2 2.9c-.3.4-.8.5-1.2.3-3-1.8-7.5-2.4-11-1.3-.4.1-.9-.1-1-.6-.1-.4.1-.9.6-1 4-1.2 9-.6 12.3 1.4.4.2.5.8.3 1.2zm-1.4 2.8c-.2.3-.6.4-1 .2-2.6-1.6-5.8-2-9.6-1.1-.4.1-.7-.2-.8-.5-.1-.4.2-.7.5-.8 4.2-1 7.8-.5 10.7 1.3.3.1.4.6.2.9z"
       />
     </svg>
-  )
+  );
 }
 
 function YouTubeIcon() {
@@ -57,11 +72,11 @@ function YouTubeIcon() {
       <circle cx="12" cy="12" r="12" fill="var(--color-youtube)" />
       <polygon points="9.5,7.5 16.5,12 9.5,16.5" fill="var(--color-surface)" />
     </svg>
-  )
+  );
 }
 
 function SplitIcon() {
-  const clipId = useId()
+  const clipId = useId();
   return (
     <svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true" focusable="false">
       <defs>
@@ -81,7 +96,7 @@ function SplitIcon() {
       <path d="M12 0 A12 12 0 0 1 12 24 Z" fill="var(--color-youtube)" />
       <polygon points="14,8 19.5,12 14,16" fill="var(--color-surface)" />
     </svg>
-  )
+  );
 }
 
 function BbcSoundsIcon() {
@@ -89,12 +104,21 @@ function BbcSoundsIcon() {
     <svg viewBox="0 0 512 512" width="100%" height="100%" aria-hidden="true" focusable="false">
       <circle cx="256" cy="256" r="256" fill="var(--color-bbc, #FA6400)" />
       <g transform="translate(6, 0)">
-        <path fill="#ffffff" d="M122,304H78c-0.552,0-1.052-0.224-1.414-0.586S76,302.552,76,302v-92c0-0.552,0.224-1.052,0.586-1.414 S77.448,208,78,208h44c0.552,0,1.052,0.224,1.414,0.586S124,209.448,124,210v92c0,0.552-0.224,1.052-0.586,1.414 S122.552,304,122,304z" />
-        <path fill="#ffffff" d="M230,376h-80c-0.552,0-1.052-0.224-1.414-0.586S148,374.552,148,374V138c0-0.552,0.224-1.052,0.586-1.414 S149.448,136,150,136h80c0.552,0,1.052,0.224,1.414,0.586S232,137.448,232,138v236c0,0.552-0.224,1.052-0.586,1.414 S230.552,376,230,376z" />
-        <path fill="#ffffff" d="M422,424H258c-0.552,0-1.052-0.224-1.414-0.586S256,422.552,256,422V90c0-0.552,0.224-1.052,0.586-1.414 S257.448,88,258,88h164c0.552,0,1.052,0.224,1.414,0.586S424,89.448,424,90v332c0,0.552-0.224,1.052-0.586,1.414 S422.552,424,422,424z" />
+        <path
+          fill="#ffffff"
+          d="M122,304H78c-0.552,0-1.052-0.224-1.414-0.586S76,302.552,76,302v-92c0-0.552,0.224-1.052,0.586-1.414 S77.448,208,78,208h44c0.552,0,1.052,0.224,1.414,0.586S124,209.448,124,210v92c0,0.552-0.224,1.052-0.586,1.414 S122.552,304,122,304z"
+        />
+        <path
+          fill="#ffffff"
+          d="M230,376h-80c-0.552,0-1.052-0.224-1.414-0.586S148,374.552,148,374V138c0-0.552,0.224-1.052,0.586-1.414 S149.448,136,150,136h80c0.552,0,1.052,0.224,1.414,0.586S232,137.448,232,138v236c0,0.552-0.224,1.052-0.586,1.414 S230.552,376,230,376z"
+        />
+        <path
+          fill="#ffffff"
+          d="M422,424H258c-0.552,0-1.052-0.224-1.414-0.586S256,422.552,256,422V90c0-0.552,0.224-1.052,0.586-1.414 S257.448,88,258,88h164c0.552,0,1.052,0.224,1.414,0.586S424,89.448,424,90v332c0,0.552-0.224,1.052-0.586,1.414 S422.552,424,422,424z"
+        />
       </g>
     </svg>
-  )
+  );
 }
 
 function AppleIcon() {
@@ -106,7 +130,7 @@ function AppleIcon() {
         d="M15.2 9.5c-.1-1.7 1.4-2.7 1.5-2.7-1-1.5-2.6-1.7-3.2-1.7-1.4-.1-2.7.8-3.4.8-.7 0-1.8-.8-3-.8-1.3 0-2.6.8-3.3 2.1-1.4 2.5-.4 6.2.9 8.2.7 1 1.4 2.1 2.5 2.1 1 0 1.5-.7 2.8-.7 1.2 0 1.7.7 2.8.7 1.1 0 1.8-1 2.5-2 .8-1.2 1.1-2.4 1.2-2.4 0-.1-2.2-.9-2.3-3.6zM13.6 6.3c.6-.7 1-1.7.8-2.6-.8.1-1.9.6-2.5 1.3-.5.6-1 1.6-.8 2.5.9 0 1.9-.5 2.5-1.2z"
       />
     </svg>
-  )
+  );
 }
 
 function ImportIcon() {
@@ -117,25 +141,40 @@ function ImportIcon() {
         fill="var(--color-surface)"
         d="M11 5v7.586l-2.293-2.293a1 1 0 00-1.414 1.414l4 4a1 1 0 001.414 0l4-4a1 1 0 00-1.414-1.414L13 12.586V5a1 1 0 10-2 0z"
       />
-      <path
-        fill="var(--color-surface)"
-        d="M6 17a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1z"
-      />
+      <path fill="var(--color-surface)" d="M6 17a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1z" />
     </svg>
-  )
+  );
 }
 
-export default function SourceBadge({
-  source,
-  sources,
-  size = 'sm',
-  className = '',
-}) {
-  const sourceType = resolveSourceType(sources || source)
-  if (!sourceType) return null
+function GigIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="12" r="12" fill="var(--color-gig, #8b5cf6)" />
+      {/* Live concert microphone icon */}
+      <path
+        fill="var(--color-surface, #ffffff)"
+        d="M12 14c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3S9 4.34 9 6v5c0 1.66 1.34 3 3 3zm-1-8c0-.55.45-1 1-1s1 .45 1 1v5c0 .55-.45 1-1 1s-1-.45-1-1V6zm5.3 5c0 2.25-1.81 4.1-4.3 4.1s-4.3-1.85-4.3-4.1H6.7c0 2.68 2.08 4.88 4.8 5.23V20h2v-3.77c2.72-.35 4.8-2.55 4.8-5.23h-1.3z"
+      />
+    </svg>
+  );
+}
 
-  const label = getSourceLabel(sourceType)
-  const sizeClass = size === 'grid' ? 'source-badge-grid' : 'source-badge-list'
+function FallbackGeometricIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="12" r="12" fill="var(--color-source-fallback, #0d9488)" />
+      {/* Geometric rhombus / diamond in center */}
+      <polygon points="12,6 18,12 12,18 6,12" fill="var(--color-surface, #ffffff)" />
+    </svg>
+  );
+}
+
+export default function SourceBadge({ source, sources, size = "sm", className = "" }) {
+  const sourceType = resolveSourceType(sources || source);
+  if (!sourceType) return null;
+
+  const label = getSourceLabel(sourceType);
+  const sizeClass = size === "grid" ? "source-badge-grid" : "source-badge-list";
 
   return (
     <span
@@ -145,13 +184,17 @@ export default function SourceBadge({
       role="img"
       data-source={sourceType}
     >
-      <span className="visually-hidden-accessible">{sourceType === 'split' ? 'spotify youtube' : sourceType}</span>
-      {sourceType === 'spotify' && <SpotifyIcon />}
-      {sourceType === 'youtube' && <YouTubeIcon />}
-      {sourceType === 'apple' && <AppleIcon />}
-      {sourceType === 'split' && <SplitIcon />}
-      {sourceType === 'bbc' && <BbcSoundsIcon />}
-      {sourceType === 'import' && <ImportIcon />}
+      <span className="visually-hidden-accessible">
+        {sourceType === "split" ? "spotify youtube" : sourceType}
+      </span>
+      {sourceType === "spotify" && <SpotifyIcon />}
+      {sourceType === "youtube" && <YouTubeIcon />}
+      {sourceType === "apple" && <AppleIcon />}
+      {sourceType === "split" && <SplitIcon />}
+      {sourceType === "bbc" && <BbcSoundsIcon />}
+      {sourceType === "gig" && <GigIcon />}
+      {sourceType === "import" && <ImportIcon />}
+      {sourceType === "fallback" && <FallbackGeometricIcon />}
     </span>
-  )
+  );
 }

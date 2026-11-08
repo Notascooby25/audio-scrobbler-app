@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.38.5",
+    date: "2026-11-08",
+    changes: [
+      "Consistent Source Badges Across Themes: Updated source keys in Timeline and Sleeve themes to use official brand colors (Spotify green, Apple blue, BBC orange, YouTube red) and authentic mini source badges matching the Library page.",
+      "Live Gig Concert Scrobbles Badge: Added a dedicated live gig source badge (purple with concert microphone icon) for scrobbles logged from Setlist.fm concert setlists.",
+      "Geometric Fallback Marker: Added a geometric teal diamond fallback badge for scrobbles from any future or untyped data source, ensuring complete visual clarity.",
+    ],
+  },
+  {
     version: "0.38.4",
     date: "2026-11-08",
     changes: [
