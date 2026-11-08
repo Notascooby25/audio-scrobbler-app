@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.39.1",
+    date: "2026-11-08",
+    changes: [
+      "Timeline Skin Tablet & iPad Layout Consistency: Standardized container and card widths across Timeline skin pages (Today, Play, Library, Profile, and Connect) to 1120px to match the Gigs page, eliminating narrow squished columns on tablets.",
+      "Library Text Visibility on Tablet: Unlocked adequate room for scrobble rows alongside the year breakdown chart on iPad and ensured track title, artist, and album copy wrap gracefully without premature truncation.",
+      "Protected Mobile & Theme Invariants: Preserved all existing mobile (<= 640px) styles and Retro Jukebox arcade cabinet styles completely untouched.",
+    ],
+  },
+  {
     version: "0.39.0",
     date: "2026-11-08",
     changes: [

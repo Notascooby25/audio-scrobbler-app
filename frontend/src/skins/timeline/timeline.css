@@ -310,7 +310,7 @@
 }
 
 [data-skin="timeline"] .timeline-today-container {
-  max-width: 640px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 24px var(--space-gutter);
 }
@@ -636,7 +636,7 @@
 
 /* ─── Play Page (/play) ───────────────────────────────────────────────────── */
 [data-skin="timeline"] .timeline-play-page {
-  max-width: 560px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 0 16px 40px;
 }
@@ -847,7 +847,7 @@
 
 /* ─── Library Page (/library) ─────────────────────────────────────────────── */
 [data-skin="timeline"] .analytics-page {
-  max-width: 560px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 0 16px 40px;
 }
@@ -1106,6 +1106,8 @@
   font-weight: 600 !important;
   color: var(--color-ink) !important;
   line-height: 1.25 !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
 }
 
 [data-skin="timeline"] .library-row-copy small {
@@ -1114,6 +1116,8 @@
   font-weight: 400 !important;
   color: var(--color-muted) !important;
   line-height: 1.25 !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
 }
 
 [data-skin="timeline"] .library-scrobble-time {
@@ -1930,7 +1934,7 @@
 
 /* ─── Profile Page (/profile, /profile/:userId) ───────────────────────────── */
 [data-skin="timeline"] .profile-page {
-  max-width: 640px !important;
+  max-width: 1120px !important;
   margin: 0 auto !important;
   padding: 0 0 40px !important;
 }
@@ -2253,11 +2257,23 @@
 }
 
 /* ─── Connect Page (/connect) ─────────────────────────────────────────────── */
+[data-skin="timeline"] .dashboard {
+  max-width: 1120px !important;
+  margin: 0 auto !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 0 40px !important;
+}
+
+[data-skin="timeline"] .connect-sources-grid,
 [data-skin="timeline"] .connect-source-grid {
   display: grid !important;
   gap: 16px !important;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)) !important;
   margin-bottom: 24px !important;
+  max-width: 1120px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 [data-skin="timeline"] .connect-source-card,
@@ -2266,7 +2282,7 @@
   border: 1px solid var(--color-border) !important;
   border-radius: var(--radius-md) !important;
   padding: 20px !important;
-  margin-bottom: 16px !important;
+  margin-bottom: 0 !important;
 }
 
 [data-skin="timeline"] .connect-source-card h3,
