@@ -59,10 +59,10 @@ export default function VenueRoyaltyList({ venues = [] }) {
                   {v.venue_name}
                 </strong>
                 <small style={{ display: "block", color: "var(--color-muted)", fontSize: "11px" }}>
-                  {v.city}, {v.country} &middot; {v.distinct_artists} distinct artist
+                  {v.city}, {v.country} · {v.distinct_artists} distinct artist
                   {v.distinct_artists === 1 ? "" : "s"}
                   {v.festivals > 0
-                    ? ` &middot; ${v.festivals} festival${v.festivals === 1 ? "" : "s"}`
+                    ? ` · ${v.festivals} festival${v.festivals === 1 ? "" : "s"}`
                     : ""}
                 </small>
               </div>

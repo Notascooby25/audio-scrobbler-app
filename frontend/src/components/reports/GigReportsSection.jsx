@@ -441,7 +441,7 @@ export default function GigReportsSection({ token, userId }) {
                                 fontSize: "11px",
                               }}
                             >
-                              Seen {s.gig_date} at {s.venue_name} &middot; {s.plays_before} &rarr;{" "}
+                              Seen {s.gig_date} at {s.venue_name} · {s.plays_before} →{" "}
                               {s.plays_after} plays
                             </small>
                           </div>
