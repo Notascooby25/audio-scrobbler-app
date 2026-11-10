@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from ..models import AttendedConcert, ListeningEvent, UserPreferences
 from ..queries.analytics_queries import not_blocked_clause
+from .geocoding_service import find_cached
 from .gig_distance_service import _place, _queries, haversine_km
 
 _APOSTROPHES = re.compile(r"[\u2018\u2019\u02bc\u0060\u00b4]")
@@ -464,7 +465,14 @@ class GigReportsService:
             venue_q, city_q = _queries(c.venue_name, c.city, c.country)
             known, point, approx = _place(self.db, venue_q, city_q)
             if not known or point is None:
-                continue
+                # If venue lookup failed or is pending, fallback to city if cached
+                if city_q:
+                    city_known, city_point = find_cached(self.db, city_q)
+                    if city_known and city_point is not None:
+                        point = city_point
+                        approx = True
+                if point is None:
+                    continue
 
             pin_key = f"{round(point[0], 4)},{round(point[1], 4)}"
             pin = pins_map.setdefault(

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { UK_MAP_PATH, projectUkCoords } from "./ukMapData";
+import { UK_MAP_PATH, WORLD_MAP_PATH, projectUkCoords, projectWorldCoords } from "./ukMapData";
 
 // UK and Ireland default geographic framing
 const UK_BOUNDS = {
@@ -41,6 +41,7 @@ export default function GigOdysseyMap({
 }) {
   const [selectedPin, setSelectedPin] = useState(null);
   const [viewMode, setViewMode] = useState("uk"); // "uk" or "world"
+  const [ukZoom, setUkZoom] = useState("focus"); // "focus" (active gig area) or "all" (entire British Isles)
 
   if (!homeSet) {
     return (
@@ -62,42 +63,50 @@ export default function GigOdysseyMap({
   // Filter visible pins based on view mode
   const visiblePins = viewMode === "uk" && hasAbroad ? pins.filter((p) => !isPinAbroad(p)) : pins;
 
-  // Calculate bounding box or normalize coordinates
-  const allCoords = [];
+  // Calculate coordinates
+  const allUkCoords = [];
   if (homeCoords && homeCoords[0] && homeCoords[1]) {
-    allCoords.push({ lat: homeCoords[0], lng: homeCoords[1], isHome: true });
+    allUkCoords.push({ lat: homeCoords[0], lng: homeCoords[1], isHome: true });
   }
-  visiblePins.forEach((p) => {
+  const ukPins = pins.filter((p) => !isPinAbroad(p));
+  ukPins.forEach((p) => {
     if (p.lat && p.lng) {
-      allCoords.push({ lat: p.lat, lng: p.lng, pin: p });
+      allUkCoords.push({ lat: p.lat, lng: p.lng, pin: p });
     }
   });
 
-  let minLat, maxLat, minLng, maxLng;
-  if (viewMode === "world") {
-    // Global framing across all pins
-    minLat = Math.min(...allCoords.map((c) => c.lat), 30.0);
-    maxLat = Math.max(...allCoords.map((c) => c.lat), 60.0);
-    minLng = Math.min(...allCoords.map((c) => c.lng), -120.0);
-    maxLng = Math.max(...allCoords.map((c) => c.lng), 10.0);
+  // Calculate dynamic zoomed viewBox for UK focus area
+  let ukViewBox = "0 0 100 100";
+  if (ukZoom === "focus" && allUkCoords.length > 0) {
+    const lats = allUkCoords.map((c) => c.lat);
+    const lngs = allUkCoords.map((c) => c.lng);
+    const minLat = Math.min(...lats) - 0.45;
+    const maxLat = Math.max(...lats) + 0.45;
+    const minLng = Math.min(...lngs) - 0.7;
+    const maxLng = Math.max(...lngs) + 0.7;
+
+    const pTopLeft = projectUkCoords(minLng, maxLat);
+    const pBottomRight = projectUkCoords(maxLng, minLat);
+
+    const vbX = Math.max(0, pTopLeft.x);
+    const vbY = Math.max(0, pTopLeft.y);
+    const vbW = Math.min(100 - vbX, Math.max(30, pBottomRight.x - pTopLeft.x));
+    const vbH = Math.min(100 - vbY, Math.max(30, pBottomRight.y - pTopLeft.y));
+    ukViewBox = `${vbX.toFixed(2)} ${vbY.toFixed(2)} ${vbW.toFixed(2)} ${vbH.toFixed(2)}`;
   }
 
-  const latSpan = maxLat ? Math.max(maxLat - minLat, 3.0) : 1;
-  const lngSpan = maxLng ? Math.max(maxLng - minLng, 4.0) : 1;
-
-  // In UK viewMode, we use projectUkCoords to accurately match the UK silhouette outline
   const projectX = (lng, lat) => {
     if (viewMode === "uk") {
       return projectUkCoords(lng, lat).x;
     }
-    return ((lng - minLng) / lngSpan) * 80 + 10;
+    return projectWorldCoords(lng, lat).x;
   };
 
   const projectY = (lat, lng) => {
     if (viewMode === "uk") {
       return projectUkCoords(lng, lat).y;
     }
-    return (1 - (lat - minLat) / latSpan) * 75 + 12;
+    return projectWorldCoords(lng, lat).y;
   };
 
   const homeX = homeCoords ? projectX(homeCoords[1], homeCoords[0]) : 50;
@@ -123,39 +132,67 @@ export default function GigOdysseyMap({
           </span>
         </div>
 
-        {hasAbroad && (
-          <button
-            type="button"
-            className="sfm-link"
-            onClick={() => {
-              setSelectedPin(null);
-              setViewMode((prev) => (prev === "uk" ? "world" : "uk"));
-            }}
-            style={{
-              fontSize: "12px",
-              padding: "4px 10px",
-              borderRadius: "var(--radius-pill)",
-              border: "1px solid var(--color-border)",
-              background: "var(--color-surface)",
-              color: "var(--color-ink)",
-              cursor: "pointer",
-              fontWeight: 600,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              textTransform: "none",
-            }}
-          >
-            {viewMode === "uk" ? (
-              <>
-                ✈️ {abroadPins.length} gig{abroadPins.length === 1 ? "" : "s"} abroad (
-                {abroadPins[0]?.city || abroadPins[0]?.country || "International"}) · Zoom out
-              </>
-            ) : (
-              <>🇬🇧 Focus UK</>
-            )}
-          </button>
-        )}
+        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+          {viewMode === "uk" && (
+            <button
+              type="button"
+              className="sfm-link"
+              onClick={() => setUkZoom((z) => (z === "focus" ? "all" : "focus"))}
+              style={{
+                fontSize: "12px",
+                padding: "4px 10px",
+                borderRadius: "var(--radius-pill)",
+                border: "1px solid var(--color-border)",
+                background: "var(--color-surface)",
+                color: "var(--color-ink)",
+                cursor: "pointer",
+                fontWeight: 600,
+                textTransform: "none",
+              }}
+              title={
+                ukZoom === "focus"
+                  ? "Show full United Kingdom and Ireland"
+                  : "Zoom in to active gig regions"
+              }
+            >
+              {ukZoom === "focus" ? "🔍 Full UK view" : "🎯 Focus gig region"}
+            </button>
+          )}
+
+          {hasAbroad && (
+            <button
+              type="button"
+              className="sfm-link"
+              onClick={() => {
+                setSelectedPin(null);
+                setViewMode((prev) => (prev === "uk" ? "world" : "uk"));
+              }}
+              style={{
+                fontSize: "12px",
+                padding: "4px 10px",
+                borderRadius: "var(--radius-pill)",
+                border: "1px solid var(--color-border)",
+                background: "var(--color-surface)",
+                color: "var(--color-ink)",
+                cursor: "pointer",
+                fontWeight: 600,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                textTransform: "none",
+              }}
+            >
+              {viewMode === "uk" ? (
+                <>
+                  ✈️ {abroadPins.length} gig{abroadPins.length === 1 ? "" : "s"} abroad (
+                  {abroadPins[0]?.city || abroadPins[0]?.country || "International"}) · Zoom out
+                </>
+              ) : (
+                <>🇬🇧 Focus UK</>
+              )}
+            </button>
+          )}
+        </div>
       </div>
       <p className="chart-caption" style={{ marginBottom: "14px" }}>
         {viewMode === "uk"
@@ -168,7 +205,7 @@ export default function GigOdysseyMap({
         style={{
           position: "relative",
           width: "100%",
-          height: "380px",
+          height: "420px",
           background: "var(--tl-tile, var(--color-surface-subtle))",
           border: "1px solid var(--color-border)",
           borderRadius: "var(--radius-sm)",
@@ -176,9 +213,15 @@ export default function GigOdysseyMap({
         }}
       >
         <svg
-          viewBox="0 0 100 100"
+          viewBox={viewMode === "uk" ? ukViewBox : "0 0 100 100"}
           preserveAspectRatio="xMidYMid meet"
-          style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}
+          style={{
+            width: "100%",
+            height: "100%",
+            position: "absolute",
+            inset: 0,
+            transition: "viewBox 0.3s ease",
+          }}
         >
           {/* Subtle grid lines */}
           <line
@@ -236,19 +279,17 @@ export default function GigOdysseyMap({
             strokeDasharray="1,1"
           />
 
-          {/* UK & Ireland Geographic Silhouette (in UK Focus mode) */}
-          {viewMode === "uk" && (
-            <path
-              d={UK_MAP_PATH}
-              fill="var(--color-surface, #ffffff)"
-              stroke="var(--color-border)"
-              strokeWidth="0.35"
-              style={{
-                filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.06))",
-                opacity: 0.95,
-              }}
-            />
-          )}
+          {/* Map Landmass Silhouette */}
+          <path
+            d={viewMode === "uk" ? UK_MAP_PATH : WORLD_MAP_PATH}
+            fill="var(--color-surface, #ffffff)"
+            stroke="var(--color-border)"
+            strokeWidth={viewMode === "uk" ? "0.35" : "0.5"}
+            style={{
+              filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.06))",
+              opacity: 0.95,
+            }}
+          />
 
           {/* Travel arcs from home city */}
           {visiblePins.map((pin, i) => {

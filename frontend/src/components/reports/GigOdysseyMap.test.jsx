@@ -40,7 +40,9 @@ describe("GigOdysseyMap", () => {
 
     expect(screen.getByText(/Gig Odyssey Map/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Home: Leeds/i)[0]).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Manchester Academy \(5 gigs\)/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Manchester Academy \(5 gigs\)/i })
+    ).toBeInTheDocument();
     expect(screen.getByText("5")).toBeInTheDocument();
     // No international pins, so no zoom toggle
     expect(screen.queryByRole("button", { name: /Zoom out/i })).not.toBeInTheDocument();
