@@ -456,6 +456,19 @@ export default function UserGuideSection() {
                 if support acts had slight venue spelling differences). Tap a venue to expand every
                 act you saw there.
               </li>
+              <li>
+                <em>Gig Intelligence &amp; Odyssey Map:</em> On the Reports &gt; Gigs tab, explore
+                an interactive map of your concert history with round-trip journey arcs radiating
+                from your home city, total travel odometers, and milestone achievement badges (Solo
+                Explorer, Road Warrior, Century Club, Live First, Mud Survivor, and active monthly
+                gig streaks).
+              </li>
+              <li>
+                <em>Live-First Discoveries &amp; Listening Surges:</em> Uncover bands you saw live
+                in person before you ever recorded a stream, track post-concert listening surges (+%
+                bump in plays), and explore your concert cadence across days of the week. Customise
+                which panels you see or filter by focus sub-tabs.
+              </li>
             </ul>
           </li>
           <li>

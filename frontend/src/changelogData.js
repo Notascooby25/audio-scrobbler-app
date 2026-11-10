@@ -1,5 +1,17 @@
 export const CHANGELOG = [
   {
+    version: "0.40.0",
+    date: "2026-11-10",
+    changes: [
+      "Gig Intelligence Dashboard: Overhauled the Gigs tab in Reports with an interactive, multi-dimensional concert analytics suite featuring round-trip travel odometers, gig frequency, festival counters, and milestone badges.",
+      "Gig Odyssey Interactive Map: Rendered an interactive SVG world and regional map of all logged concert venues with hover tooltips, venue visit counts, and geodesic round-trip arcs radiating from your home city.",
+      "Live Milestones & Gamification Badges: Introduced milestone achievement badges (Solo Explorer, Road Warrior, Century Club, Live First, Mud Survivor, and active monthly gig streak trackers) with live progress tracking and unlock dates.",
+      "Live-First Discoveries & Venue Royalty: Added a dedicated discovery showcase highlighting artists seen live in concert before ever recording a scrobble, plus a Venue Stomping Grounds leaderboard ranking your top musical homes by distinct acts and visits.",
+      "Post-Gig Surge Leaderboard & Day-of-Week Rhythm: Added top post-gig listening surges tracking streaming spikes (+% listening volume) after concerts alongside a day-of-week concert cadence distribution chart.",
+      "Modular Sub-Tabs & Customizer Drawer: Grouped reports into focused sub-tabs (All Intelligence, Travel & Map, Badges & Streaks, Discoveries & Bump) and added a toggleable widget customizer that saves your preferred report view locally.",
+    ],
+  },
+  {
     version: "0.39.1",
     date: "2026-11-08",
     changes: [
