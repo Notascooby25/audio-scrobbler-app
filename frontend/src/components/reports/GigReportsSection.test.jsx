@@ -5,16 +5,18 @@ import GigReportsSection from "./GigReportsSection";
 import * as setlistsApi from "../../api/setlists";
 
 vi.mock("../../api/setlists", () => ({
-  fetchGigsByPeriod: vi.fn(),
-  fetchLiveGap: vi.fn(),
-  fetchGigBump: vi.fn(),
+  fetchArtistsSeenLeaderboard: vi.fn(),
   fetchFurthestGigs: vi.fn(),
-  fetchGigTravelAndVenues: vi.fn(),
   fetchGigBadges: vi.fn(),
-  fetchLiveFirstDiscoveries: vi.fn(),
-  fetchGigSurgeLeaderboard: vi.fn(),
+  fetchGigBump: vi.fn(),
+  fetchGigCadenceMatrix: vi.fn(),
   fetchGigDayOfWeek: vi.fn(),
   fetchGigMapPins: vi.fn(),
+  fetchGigsByPeriod: vi.fn(),
+  fetchGigSurgeLeaderboard: vi.fn(),
+  fetchGigTravelAndVenues: vi.fn(),
+  fetchLiveGap: vi.fn(),
+  fetchSongsHeardLeaderboard: vi.fn(),
 }));
 
 const bump = {
@@ -80,7 +82,9 @@ function mockReports({
   furthest = { home_set: true, located_gigs: 0, pending_gigs: 0, furthest: [] },
   travel = defaultTravel,
   badges = defaultBadges,
-  discoveries = [],
+  artists = [{ artist_name: "The Lottery Winners", count: 3 }],
+  cadenceMatrix = { years: [currentYear], daily_counts: { [`${currentYear}-05-10`]: 1 } },
+  songs = [{ song_name: "Letter to Myself", artist_name: "The Lottery Winners", count: 3 }],
   surge = [],
   dayOfWeek = [
     { day_name: "Fri", day_index: 4, gig_count: 5 },
@@ -97,7 +101,9 @@ function mockReports({
   setlistsApi.fetchFurthestGigs.mockResolvedValue(furthest);
   setlistsApi.fetchGigTravelAndVenues.mockResolvedValue(travel);
   setlistsApi.fetchGigBadges.mockResolvedValue(badges);
-  setlistsApi.fetchLiveFirstDiscoveries.mockResolvedValue(discoveries);
+  setlistsApi.fetchArtistsSeenLeaderboard.mockResolvedValue(artists);
+  setlistsApi.fetchGigCadenceMatrix.mockResolvedValue(cadenceMatrix);
+  setlistsApi.fetchSongsHeardLeaderboard.mockResolvedValue(songs);
   setlistsApi.fetchGigSurgeLeaderboard.mockResolvedValue(surge);
   setlistsApi.fetchGigDayOfWeek.mockResolvedValue(dayOfWeek);
   setlistsApi.fetchGigMapPins.mockResolvedValue(pins);

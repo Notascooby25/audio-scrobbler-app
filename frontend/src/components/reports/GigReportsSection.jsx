@@ -1,24 +1,28 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  fetchArtistsSeenLeaderboard,
   fetchFurthestGigs,
   fetchGigBadges,
   fetchGigBump,
+  fetchGigCadenceMatrix,
   fetchGigDayOfWeek,
   fetchGigMapPins,
   fetchGigsByPeriod,
   fetchGigSurgeLeaderboard,
   fetchGigTravelAndVenues,
-  fetchLiveFirstDiscoveries,
   fetchLiveGap,
+  fetchSongsHeardLeaderboard,
 } from "../../api/setlists";
 import BarTrendChart from "../charts/BarTrendChart";
 import FurthestVenues from "./FurthestVenues";
 import GigBadgesCatalog from "./GigBadgesCatalog";
+import GigCadenceHeatmap from "./GigCadenceHeatmap";
 import GigDayOfWeekChart from "./GigDayOfWeekChart";
 import GigHeroStatsBar from "./GigHeroStatsBar";
 import GigOdysseyMap from "./GigOdysseyMap";
-import LiveFirstDiscoveries from "./LiveFirstDiscoveries";
+import LiveArtistsSeenList from "./LiveArtistsSeenList";
+import SetlistReplayHighlights from "./SetlistReplayHighlights";
 import VenueRoyaltyList from "./VenueRoyaltyList";
 
 const YEARS_SHOWN = 5;
@@ -28,9 +32,11 @@ const WIDGET_STORAGE_KEY = "audio_scrobbler_gig_report_widgets";
 const DEFAULT_WIDGETS = {
   map: true,
   badges: true,
-  discoveries: true,
+  artists: true,
+  cadenceGrid: true,
   venues: true,
   bump: true,
+  replays: true,
   cadence: true,
   furthest: true,
   periods: true,
@@ -70,7 +76,9 @@ export default function GigReportsSection({ token, userId }) {
   const [furthest, setFurthest] = useState(null);
   const [travelStats, setTravelStats] = useState(null);
   const [badges, setBadges] = useState([]);
-  const [discoveries, setDiscoveries] = useState([]);
+  const [liveArtists, setLiveArtists] = useState([]);
+  const [cadenceMatrix, setCadenceMatrix] = useState(null);
+  const [setlistSongs, setSetlistSongs] = useState([]);
   const [surge, setSurge] = useState([]);
   const [cadence, setCadence] = useState([]);
   const [mapPins, setMapPins] = useState([]);
@@ -113,22 +121,38 @@ export default function GigReportsSection({ token, userId }) {
       fetchGigBump({ token, userId }),
       fetchGigTravelAndVenues({ token, userId }),
       fetchGigBadges({ token, userId }),
-      fetchLiveFirstDiscoveries({ token, userId }),
+      fetchArtistsSeenLeaderboard({ token, userId }),
+      fetchGigCadenceMatrix({ token, userId }),
+      fetchSongsHeardLeaderboard({ token, limit: 100, userId }),
       fetchGigSurgeLeaderboard({ token, userId }),
       fetchGigDayOfWeek({ token, userId }),
       fetchGigMapPins({ token, userId }),
     ])
       .then(
-        ([byPeriod, gap, gigBump, travel, badgeList, liveFirst, surgeList, dayCadence, pins]) => {
+        ([
+          byPeriod,
+          gap,
+          gigBump,
+          travel,
+          badgeList,
+          artistsList,
+          cadenceMat,
+          songsList,
+          surgeList,
+          dayCadence,
+          pins,
+        ]) => {
           setPeriods(byPeriod);
           setLiveGap(gap);
           setBump(gigBump);
           setTravelStats(travel);
           setBadges(badgeList);
-          setDiscoveries(liveFirst);
-          setSurge(surgeList);
-          setCadence(dayCadence);
-          setMapPins(pins);
+          setLiveArtists(artistsList || []);
+          setCadenceMatrix(cadenceMat || null);
+          setSetlistSongs(songsList || []);
+          setSurge(surgeList || []);
+          setCadence(dayCadence || []);
+          setMapPins(pins || []);
         }
       )
       .catch((err) => setError(err.message || "Couldn't load gig reports."));
@@ -266,13 +290,15 @@ export default function GigReportsSection({ token, userId }) {
           </div>
           {[
             { id: "map", label: "🗺️ Gig Odyssey Map" },
-            { id: "badges", label: "🏆 Badges & Streaks" },
-            { id: "discoveries", label: "⚡ Live First Discoveries" },
+            { id: "artists", label: "👑 Live Artist Rankings" },
+            { id: "cadenceGrid", label: "📅 Annual Gig Cadence" },
             { id: "venues", label: "🏛️ Venue Stomping Grounds" },
+            { id: "badges", label: "🏆 Badges & Streaks" },
             { id: "bump", label: "📈 Post-Gig Surge" },
-            { id: "cadence", label: "📅 Day of Week Rhythm" },
+            { id: "replays", label: "🔁 Setlist Replay Tracker" },
+            { id: "cadence", label: "📊 Day of Week Rhythm" },
             { id: "furthest", label: "📍 Furthest Gigs" },
-            { id: "periods", label: "📊 Gigs by Month & Year" },
+            { id: "periods", label: "📈 Gigs by Month & Year" },
             { id: "liveGap", label: "🎧 Live Gap" },
           ].map((item) => (
             <label
@@ -366,11 +392,22 @@ export default function GigReportsSection({ token, userId }) {
           </>
         )}
 
-        {/* DISCOVERIES & GIG BUMP SECTION */}
+        {/* ARTISTS & LIVE ARCHIVE SECTION */}
         {(activeTab === "all" || activeTab === "discovery") && (
           <>
-            {widgets.discoveries && discoveries.length > 0 && (
-              <LiveFirstDiscoveries discoveries={discoveries} />
+            {widgets.artists && liveArtists.length > 0 && (
+              <LiveArtistsSeenList artists={liveArtists} />
+            )}
+
+            {widgets.cadenceGrid && cadenceMatrix && <GigCadenceHeatmap matrix={cadenceMatrix} />}
+          </>
+        )}
+
+        {/* POST-GIG SURGE & REPLAYS SECTION */}
+        {(activeTab === "all" || activeTab === "discovery") && (
+          <>
+            {widgets.replays && setlistSongs.length > 0 && (
+              <SetlistReplayHighlights songs={setlistSongs} />
             )}
 
             {widgets.bump && (
