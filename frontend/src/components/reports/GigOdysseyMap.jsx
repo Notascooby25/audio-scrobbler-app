@@ -1,6 +1,37 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
+// UK and Ireland default geographic framing
+const UK_BOUNDS = {
+  minLat: 49.8,
+  maxLat: 59.5,
+  minLng: -8.5,
+  maxLng: 2.2,
+};
+
+function isPinAbroad(pin) {
+  if (!pin.lat || !pin.lng) return false;
+  // If explicitly not UK / Ireland or outside UK bounding box
+  const isOutsideBox =
+    pin.lat < UK_BOUNDS.minLat - 1.0 ||
+    pin.lat > UK_BOUNDS.maxLat + 1.0 ||
+    pin.lng < UK_BOUNDS.minLng - 1.0 ||
+    pin.lng > UK_BOUNDS.maxLng + 1.0;
+  const isForeignCountry =
+    pin.country &&
+    ![
+      "United Kingdom",
+      "UK",
+      "Great Britain",
+      "Ireland",
+      "Northern Ireland",
+      "Scotland",
+      "Wales",
+      "England",
+    ].includes(pin.country);
+  return isOutsideBox || isForeignCountry;
+}
+
 export default function GigOdysseyMap({
   homeSet = false,
   homeCity = "",
@@ -8,6 +39,7 @@ export default function GigOdysseyMap({
   pins = [],
 }) {
   const [selectedPin, setSelectedPin] = useState(null);
+  const [viewMode, setViewMode] = useState("uk"); // "uk" or "world"
 
   if (!homeSet) {
     return (
@@ -23,24 +55,40 @@ export default function GigOdysseyMap({
     );
   }
 
+  const abroadPins = pins.filter(isPinAbroad);
+  const hasAbroad = abroadPins.length > 0;
+
+  // Filter visible pins based on view mode
+  const visiblePins = viewMode === "uk" && hasAbroad ? pins.filter((p) => !isPinAbroad(p)) : pins;
+
   // Calculate bounding box or normalize coordinates
   const allCoords = [];
   if (homeCoords && homeCoords[0] && homeCoords[1]) {
     allCoords.push({ lat: homeCoords[0], lng: homeCoords[1], isHome: true });
   }
-  pins.forEach((p) => {
+  visiblePins.forEach((p) => {
     if (p.lat && p.lng) {
       allCoords.push({ lat: p.lat, lng: p.lng, pin: p });
     }
   });
 
-  const minLat = Math.min(...allCoords.map((c) => c.lat), 48.0);
-  const maxLat = Math.max(...allCoords.map((c) => c.lat), 58.0);
-  const minLng = Math.min(...allCoords.map((c) => c.lng), -8.0);
-  const maxLng = Math.max(...allCoords.map((c) => c.lng), 4.0);
+  let minLat, maxLat, minLng, maxLng;
+  if (viewMode === "uk") {
+    // Tight framing around UK & Ireland
+    minLat = Math.min(...allCoords.map((c) => c.lat), UK_BOUNDS.minLat);
+    maxLat = Math.max(...allCoords.map((c) => c.lat), UK_BOUNDS.maxLat);
+    minLng = Math.min(...allCoords.map((c) => c.lng), UK_BOUNDS.minLng);
+    maxLng = Math.max(...allCoords.map((c) => c.lng), UK_BOUNDS.maxLng);
+  } else {
+    // Global framing across all pins
+    minLat = Math.min(...allCoords.map((c) => c.lat), 30.0);
+    maxLat = Math.max(...allCoords.map((c) => c.lat), 60.0);
+    minLng = Math.min(...allCoords.map((c) => c.lng), -120.0);
+    maxLng = Math.max(...allCoords.map((c) => c.lng), 10.0);
+  }
 
-  const latSpan = Math.max(maxLat - minLat, 4.0);
-  const lngSpan = Math.max(maxLng - minLng, 6.0);
+  const latSpan = Math.max(maxLat - minLat, 3.0);
+  const lngSpan = Math.max(maxLng - minLng, 4.0);
 
   const projectX = (lng) => ((lng - minLng) / lngSpan) * 80 + 10;
   // Invert Y for screen coordinates (north is up)
@@ -56,17 +104,57 @@ export default function GigOdysseyMap({
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "baseline",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "8px",
           marginBottom: "8px",
         }}
       >
-        <h2>Gig Odyssey Map</h2>
-        <span style={{ fontSize: "12px", color: "var(--color-primary)", fontWeight: 600 }}>
-          Home: {homeCity || "Configured"}
-        </span>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
+          <h2 style={{ margin: 0 }}>Gig Odyssey Map</h2>
+          <span style={{ fontSize: "12px", color: "var(--color-primary)", fontWeight: 600 }}>
+            Home: {homeCity || "Configured"}
+          </span>
+        </div>
+
+        {hasAbroad && (
+          <button
+            type="button"
+            className="sfm-link"
+            onClick={() => {
+              setSelectedPin(null);
+              setViewMode((prev) => (prev === "uk" ? "world" : "uk"));
+            }}
+            style={{
+              fontSize: "12px",
+              padding: "4px 10px",
+              borderRadius: "var(--radius-pill)",
+              border: "1px solid var(--color-border)",
+              background: "var(--color-surface)",
+              color: "var(--color-ink)",
+              cursor: "pointer",
+              fontWeight: 600,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              textTransform: "none",
+            }}
+          >
+            {viewMode === "uk" ? (
+              <>
+                ✈️ {abroadPins.length} gig{abroadPins.length === 1 ? "" : "s"} abroad (
+                {abroadPins[0]?.city || abroadPins[0]?.country || "International"}) · Zoom out
+              </>
+            ) : (
+              <>🇬🇧 Focus UK</>
+            )}
+          </button>
+        )}
       </div>
       <p className="chart-caption" style={{ marginBottom: "14px" }}>
-        Venue hotspots, clusters, and travel connections from your home city.
+        {viewMode === "uk"
+          ? "Venue hotspots and travel connections across the UK & Ireland."
+          : "Global concert travel map and transatlantic flight arcs from your home city."}
       </p>
 
       <div
@@ -143,7 +231,7 @@ export default function GigOdysseyMap({
           />
 
           {/* Travel arcs from home city */}
-          {pins.map((pin, i) => {
+          {visiblePins.map((pin, i) => {
             const px = projectX(pin.lng);
             const py = projectY(pin.lat);
             const midX = (homeX + px) / 2;
@@ -181,7 +269,7 @@ export default function GigOdysseyMap({
         />
 
         {/* Venue Cluster Markers */}
-        {pins.map((pin, index) => {
+        {visiblePins.map((pin, index) => {
           const px = projectX(pin.lng);
           const py = projectY(pin.lat);
           const size = Math.min(22, 12 + pin.gig_count);
@@ -267,8 +355,11 @@ export default function GigOdysseyMap({
 
       {pins.length > 0 && (
         <div style={{ marginTop: "12px", fontSize: "12px", color: "var(--color-muted)" }}>
-          Showing <strong>{pins.length}</strong> located venue hotspot{pins.length === 1 ? "" : "s"}
-          . Click any pin to inspect artists seen.
+          Showing <strong>{visiblePins.length}</strong> located venue hotspot
+          {visiblePins.length === 1 ? "" : "s"}
+          {viewMode === "uk" && hasAbroad
+            ? ` in the UK & Ireland (${abroadPins.length} abroad). Click any pin to inspect artists seen.`
+            : ". Click any pin to inspect artists seen."}
         </div>
       )}
     </div>
