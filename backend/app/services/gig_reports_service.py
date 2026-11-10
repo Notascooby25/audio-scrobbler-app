@@ -283,3 +283,67 @@ class GigReportsService:
             "active_streak_months": active_streak,
             "venue_royalty": royalty[:10],
         }
+
+    def get_live_first_discoveries(self, user_id: int, limit: int = 20) -> list[dict[str, Any]]:
+        """Artists you experienced in person before ever scrobbling their music."""
+        # Find earliest gig date per artist
+        gigs = (
+            self.db.query(
+                AttendedConcert.artist_name,
+                AttendedConcert.venue_name,
+                AttendedConcert.city,
+                AttendedConcert.country,
+                AttendedConcert.event_date,
+            )
+            .filter(AttendedConcert.user_id == user_id)
+            .order_by(AttendedConcert.event_date.asc())
+            .all()
+        )
+        earliest_gigs: dict[str, dict[str, Any]] = {}
+        for g in gigs:
+            a_key = artist_key(g.artist_name)
+            if a_key not in earliest_gigs and g.event_date:
+                earliest_gigs[a_key] = {
+                    "artist_name": g.artist_name,
+                    "venue_name": g.venue_name,
+                    "city": g.city,
+                    "country": g.country,
+                    "gig_date": g.event_date,
+                }
+
+        # Query listening scrobbles
+        scrobbles = (
+            self.db.query(
+                ListeningEvent.artist_name,
+                func.min(ListeningEvent.played_at).label("first_played"),
+                func.count(ListeningEvent.id).label("total_plays"),
+            )
+            .filter(
+                ListeningEvent.user_id == user_id,
+                ListeningEvent.source != LIVE_SOURCE,
+                not_blocked_clause(user_id),
+            )
+            .group_by(ListeningEvent.artist_name)
+            .all()
+        )
+
+        discoveries = []
+        for row in scrobbles:
+            a_key = artist_key(row.artist_name)
+            if a_key in earliest_gigs:
+                gig_info = earliest_gigs[a_key]
+                if gig_info["gig_date"] <= row.first_played:
+                    discoveries.append(
+                        {
+                            "artist_name": gig_info["artist_name"],
+                            "venue_name": gig_info["venue_name"],
+                            "city": gig_info["city"],
+                            "country": gig_info["country"],
+                            "gig_date": gig_info["gig_date"].strftime("%d %b %Y"),
+                            "first_scrobble_date": row.first_played.strftime("%d %b %Y"),
+                            "lifetime_plays": row.total_plays,
+                        }
+                    )
+
+        discoveries.sort(key=lambda d: d["lifetime_plays"], reverse=True)
+        return discoveries[:limit]

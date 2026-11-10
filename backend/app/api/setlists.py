@@ -13,6 +13,7 @@ from ..schemas.setlists import (
     AddCompanionsRequest,
     ArtistLeaderboardItem,
     AttendedConcertResponse,
+    BadgeItem,
     DeleteConcertResponse,
     FileImportRequest,
     FileImportResponse,
@@ -23,6 +24,7 @@ from ..schemas.setlists import (
     GigInviteItem,
     GigsByPeriodResponse,
     GigTravelAndVenuesResponse,
+    LiveFirstDiscoveryItem,
     LiveGapItem,
     SetlistImportJobResponse,
     LogBillActRequest,
@@ -37,6 +39,7 @@ from ..schemas.setlists import (
     VenueLeaderboardItem,
 )
 from ..services.gig_distance_service import furthest_gigs, geocode_pending_venues
+from ..services.gig_badges_service import GigBadgesService
 from ..services.gig_reports_service import GigReportsService
 from ..services.setlist_profile_export_service import ProfileExportTooLargeError, build_profile_export
 from ..services.setlist_artwork_service import backfill_live_artwork
@@ -570,6 +573,30 @@ def get_gig_travel_and_venues(
         stats["located_events"] = 0
         stats["pending_events"] = 0
     return GigTravelAndVenuesResponse.model_validate(stats)
+
+
+@router.get("/stats/badges", response_model=list[BadgeItem])
+def get_gig_badges(
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's badges."),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[BadgeItem]:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    return [BadgeItem.model_validate(b) for b in GigBadgesService(db=db).evaluate_badges(target_user_id)]
+
+
+@router.get("/stats/live-first", response_model=list[LiveFirstDiscoveryItem])
+def get_live_first_discoveries(
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's discoveries."),
+    limit: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[LiveFirstDiscoveryItem]:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    return [
+        LiveFirstDiscoveryItem.model_validate(item)
+        for item in GigReportsService(db=db).get_live_first_discoveries(target_user_id, limit=limit)
+    ]
 
 
 @router.get("/export")

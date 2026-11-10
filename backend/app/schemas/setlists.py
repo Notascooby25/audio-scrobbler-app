@@ -308,3 +308,23 @@ class GigTravelAndVenuesResponse(BaseModel):
     pending_events: int
     active_streak_months: int
     venue_royalty: list[VenueRoyaltyItem] = Field(default_factory=list)
+
+
+class BadgeItem(BaseModel):
+    id: str
+    name: str
+    emoji: str
+    description: str
+    unlocked: bool
+    progress: int
+    target: int
+
+
+class LiveFirstDiscoveryItem(BaseModel):
+    artist_name: str
+    venue_name: str
+    city: str
+    country: str
+    gig_date: str
+    first_scrobble_date: str
+    lifetime_plays: int
