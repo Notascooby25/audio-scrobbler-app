@@ -358,6 +358,8 @@ class GigMapPinItem(BaseModel):
     country: str
     approximate: bool
     gig_count: int
+    is_festival: bool = False
+    festival_count: int = 0
     artists: list[str] = Field(default_factory=list)
 
 

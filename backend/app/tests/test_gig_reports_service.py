@@ -269,6 +269,25 @@ def test_gig_map_pins_and_day_of_week(db_session: Session):
     matrix = service.get_gig_cadence_matrix(user_id=1)
     assert matrix["daily_counts"]["2026-07-12"] == 1
 
+    # GeoCache mock for City, Country so pin is created
+    db_session.add(
+        GeoCache(
+            cache_key=cache_key("City, Country"),
+            lat=51.5,
+            lng=-0.1,
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+        )
+    )
+    db_session.commit()
+
     pins = service.get_gig_map_pins(user_id=1)
-    # Gigs without home city still show pins if located or empty
     assert isinstance(pins, list)
+    assert len(pins) == 1
+    assert pins[0]["is_festival"] is False
+    assert pins[0]["festival_count"] == 0
+
+    # Add a festival gig to the same location
+    _gig(db_session, "g6", "Festival Act", sun_day, festival=True)
+    pins2 = service.get_gig_map_pins(user_id=1)
+    assert pins2[0]["is_festival"] is True
+    assert pins2[0]["festival_count"] == 1

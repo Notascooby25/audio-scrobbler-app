@@ -485,10 +485,15 @@ class GigReportsService:
                     "country": c.country,
                     "approximate": approx,
                     "gig_count": 0,
+                    "is_festival": False,
+                    "festival_count": 0,
                     "artists": [],
                 },
             )
             pin["gig_count"] += 1
+            if c.is_festival:
+                pin["is_festival"] = True
+                pin["festival_count"] += 1
             if len(pin["artists"]) < 5 and c.artist_name not in pin["artists"]:
                 pin["artists"].append(c.artist_name)
 

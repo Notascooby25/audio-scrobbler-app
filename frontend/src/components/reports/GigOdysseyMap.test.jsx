@@ -90,4 +90,53 @@ describe("GigOdysseyMap", () => {
     expect(getByRole("button", { name: /Focus UK/i })).toBeInTheDocument();
     expect(getByRole("button", { name: /Zappos Theater/i })).toBeInTheDocument();
   });
+
+  it("toggles festival venues on and off when festival pins exist", () => {
+    const pinsWithFestival = [
+      {
+        lat: 53.4808,
+        lng: -2.2426,
+        venue_name: "Manchester Academy",
+        city: "Manchester",
+        country: "United Kingdom",
+        gig_count: 5,
+        is_festival: false,
+        artists: ["Fontaines D.C."],
+      },
+      {
+        lat: 50.785,
+        lng: -1.09,
+        venue_name: "Southsea Common",
+        city: "Portsmouth",
+        country: "United Kingdom",
+        gig_count: 42,
+        is_festival: true,
+        artists: ["Various Artists"],
+      },
+    ];
+
+    render(
+      <GigOdysseyMap
+        homeSet={true}
+        homeCity="Warwick"
+        homeCoords={[52.28, -1.58]}
+        pins={pinsWithFestival}
+      />
+    );
+
+    const festivalToggle = screen.getByRole("button", { name: /Festivals on/i });
+    expect(festivalToggle).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Southsea Common/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Manchester Academy/i })).toBeInTheDocument();
+
+    // Toggle festivals off
+    fireEvent.click(festivalToggle);
+    expect(screen.getByRole("button", { name: /Festivals off/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Southsea Common/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Manchester Academy/i })).toBeInTheDocument();
+
+    // Toggle festivals back on
+    fireEvent.click(screen.getByRole("button", { name: /Festivals off/i }));
+    expect(screen.getByRole("button", { name: /Southsea Common/i })).toBeInTheDocument();
+  });
 });

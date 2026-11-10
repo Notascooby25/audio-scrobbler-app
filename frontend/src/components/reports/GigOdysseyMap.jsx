@@ -42,6 +42,7 @@ export default function GigOdysseyMap({
   const [selectedPin, setSelectedPin] = useState(null);
   const [viewMode, setViewMode] = useState("uk"); // "uk" or "world"
   const [ukZoom, setUkZoom] = useState("focus"); // "focus" (active gig area) or "all" (entire British Isles)
+  const [showFestivals, setShowFestivals] = useState(true);
 
   if (!homeSet) {
     return (
@@ -57,18 +58,30 @@ export default function GigOdysseyMap({
     );
   }
 
-  const abroadPins = pins.filter(isPinAbroad);
+  // Check if any pin has festivals
+  const hasFestivalPins = pins.some((p) => p.is_festival || p.festival_count > 0);
+
+  // Filter pins by festival toggle
+  const filteredPins = pins.filter((p) => {
+    if (!showFestivals && (p.is_festival || p.festival_count > 0)) {
+      return false;
+    }
+    return true;
+  });
+
+  const abroadPins = filteredPins.filter(isPinAbroad);
   const hasAbroad = abroadPins.length > 0;
 
   // Filter visible pins based on view mode
-  const visiblePins = viewMode === "uk" && hasAbroad ? pins.filter((p) => !isPinAbroad(p)) : pins;
+  const visiblePins =
+    viewMode === "uk" && hasAbroad ? filteredPins.filter((p) => !isPinAbroad(p)) : filteredPins;
 
   // Calculate coordinates
   const allUkCoords = [];
   if (homeCoords && homeCoords[0] && homeCoords[1]) {
     allUkCoords.push({ lat: homeCoords[0], lng: homeCoords[1], isHome: true });
   }
-  const ukPins = pins.filter((p) => !isPinAbroad(p));
+  const ukPins = filteredPins.filter((p) => !isPinAbroad(p));
   ukPins.forEach((p) => {
     if (p.lat && p.lng) {
       allUkCoords.push({ lat: p.lat, lng: p.lng, pin: p });
@@ -133,6 +146,32 @@ export default function GigOdysseyMap({
         </div>
 
         <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+          {hasFestivalPins && (
+            <button
+              type="button"
+              className="sfm-link"
+              onClick={() => {
+                setSelectedPin(null);
+                setShowFestivals((prev) => !prev);
+              }}
+              style={{
+                fontSize: "12px",
+                padding: "4px 10px",
+                borderRadius: "var(--radius-pill)",
+                border: "1px solid var(--color-border)",
+                background: showFestivals ? "var(--color-surface)" : "var(--color-surface-subtle)",
+                color: showFestivals ? "var(--color-ink)" : "var(--color-muted)",
+                cursor: "pointer",
+                fontWeight: 600,
+                textTransform: "none",
+                opacity: showFestivals ? 1 : 0.75,
+              }}
+              title={showFestivals ? "Hide festival venues" : "Show festival venues"}
+            >
+              🎪 {showFestivals ? "Festivals on" : "Festivals off"}
+            </button>
+          )}
+
           {viewMode === "uk" && (
             <button
               type="button"
@@ -382,6 +421,23 @@ export default function GigOdysseyMap({
               <strong style={{ fontSize: "13px", color: "var(--color-ink)" }}>
                 {selectedPin.venue_name}
               </strong>
+              {selectedPin.is_festival && (
+                <span
+                  style={{
+                    marginLeft: "8px",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.04em",
+                    background: "var(--color-primary-subtle, #e0f2fe)",
+                    color: "var(--color-primary, #0369a1)",
+                    padding: "2px 6px",
+                    borderRadius: "var(--radius-pill)",
+                  }}
+                >
+                  🎪 Festival
+                </span>
+              )}
               <small style={{ display: "block", color: "var(--color-muted)", fontSize: "11px" }}>
                 {selectedPin.city}, {selectedPin.country} &middot; {selectedPin.gig_count} gig
                 {selectedPin.gig_count === 1 ? "" : "s"}
