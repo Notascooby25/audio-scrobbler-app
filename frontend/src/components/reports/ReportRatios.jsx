@@ -1,16 +1,17 @@
-import PropTypes from 'prop-types'
+import PropTypes from "prop-types";
 
 export default function ReportRatios({ summary }) {
-  const periodScrobbles = summary?.period_scrobbles || 0
-  const uniqueArtists = Math.max(1, summary?.unique_artists || 1)
-  const uniqueAlbums = Math.max(1, summary?.unique_albums || 1)
-  const uniqueTracks = summary?.unique_tracks || 0
-  const velocity = summary?.discovery_velocity
+  const periodScrobbles = summary?.period_scrobbles || 0;
+  const uniqueArtists = Math.max(1, summary?.unique_artists || 1);
+  const uniqueAlbums = Math.max(1, summary?.unique_albums || 1);
+  const uniqueTracks = summary?.unique_tracks || 0;
+  const velocity = summary?.discovery_velocity;
 
-  const scrobblesPerArtist = (periodScrobbles / uniqueArtists).toFixed(1)
-  const tracksPerAlbum = (uniqueTracks / uniqueAlbums).toFixed(1)
-  const newPct = velocity?.new_artists_percent != null ? velocity.new_artists_percent.toFixed(1) : '0.0'
-  const newArtists = velocity?.new_artists || 0
+  const scrobblesPerArtist = (periodScrobbles / uniqueArtists).toFixed(1);
+  const tracksPerAlbum = (uniqueTracks / uniqueAlbums).toFixed(1);
+  const newPct =
+    velocity?.new_artists_percent != null ? velocity.new_artists_percent.toFixed(1) : "0.0";
+  const newArtists = velocity?.new_artists || 0;
 
   return (
     <div className="report-ratios-grid" aria-label="Listening Ratios and Discovery">
@@ -46,11 +47,12 @@ export default function ReportRatios({ summary }) {
           <span className="ratio-sub">First-time artists</span>
         </div>
         <p className="ratio-desc">
-          {newArtists} artist{newArtists === 1 ? '' : 's'} heard for the first time in your scrobble history.
+          {newArtists} artist{newArtists === 1 ? "" : "s"} heard for the first time in your scrobble
+          history.
         </p>
       </div>
     </div>
-  )
+  );
 }
 
 ReportRatios.propTypes = {
@@ -65,4 +67,4 @@ ReportRatios.propTypes = {
       new_artists_percent: PropTypes.number,
     }),
   }),
-}
+};

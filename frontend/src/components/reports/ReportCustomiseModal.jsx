@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import PropTypes from 'prop-types'
+import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 
 export const DEFAULT_WIDGET_PREFERENCES = {
   showMilestones: true,
@@ -13,48 +13,48 @@ export const DEFAULT_WIDGET_PREFERENCES = {
   showRatios: true,
   showLeaderboards: true,
   leaderboardLimit: 5,
-}
+};
 
 export default function ReportCustomiseModal({ isOpen, preferences, onSave, onClose }) {
   const [draft, setDraft] = useState(() => ({
     ...DEFAULT_WIDGET_PREFERENCES,
     ...(preferences || {}),
-  }))
+  }));
 
   useEffect(() => {
     if (isOpen) {
       setDraft({
         ...DEFAULT_WIDGET_PREFERENCES,
         ...(preferences || {}),
-      })
+      });
     }
-  }, [isOpen, preferences])
+  }, [isOpen, preferences]);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   const handleToggle = (key) => {
     setDraft((prev) => ({
       ...prev,
       [key]: !prev[key],
-    }))
-  }
+    }));
+  };
 
   const handleLimitChange = (e) => {
-    const val = Number(e.target.value) || 5
+    const val = Number(e.target.value) || 5;
     setDraft((prev) => ({
       ...prev,
       leaderboardLimit: val === 10 ? 10 : 5,
-    }))
-  }
+    }));
+  };
 
   const handleSave = () => {
-    onSave(draft)
-    onClose()
-  }
+    onSave(draft);
+    onClose();
+  };
 
   const handleReset = () => {
-    setDraft(DEFAULT_WIDGET_PREFERENCES)
-  }
+    setDraft(DEFAULT_WIDGET_PREFERENCES);
+  };
 
   return (
     <div className="customise-modal-backdrop" onClick={onClose} role="presentation">
@@ -78,7 +78,8 @@ export default function ReportCustomiseModal({ isOpen, preferences, onSave, onCl
         </div>
 
         <p className="customise-modal-intro">
-          Choose which metrics, charts, and milestones appear on your listening report. Preferences are saved automatically to this device.
+          Choose which metrics, charts, and milestones appear on your listening report. Preferences
+          are saved automatically to this device.
         </p>
 
         <div className="customise-modal-body">
@@ -88,7 +89,7 @@ export default function ReportCustomiseModal({ isOpen, preferences, onSave, onCl
               <input
                 type="checkbox"
                 checked={Boolean(draft.showMilestones)}
-                onChange={() => handleToggle('showMilestones')}
+                onChange={() => handleToggle("showMilestones")}
               />
               <span>Streaks & Milestones (Active streak, peak day, heavy rotation, persona)</span>
             </label>
@@ -96,7 +97,7 @@ export default function ReportCustomiseModal({ isOpen, preferences, onSave, onCl
               <input
                 type="checkbox"
                 checked={Boolean(draft.showChallenge1001)}
-                onChange={() => handleToggle('showChallenge1001')}
+                onChange={() => handleToggle("showChallenge1001")}
               />
               <span>1001 Albums Challenge (Completed albums & progress)</span>
             </label>
@@ -104,7 +105,7 @@ export default function ReportCustomiseModal({ isOpen, preferences, onSave, onCl
               <input
                 type="checkbox"
                 checked={Boolean(draft.showLiveConnection)}
-                onChange={() => handleToggle('showLiveConnection')}
+                onChange={() => handleToggle("showLiveConnection")}
               />
               <span>Live Artist Connection (Cross-over with attended concerts)</span>
             </label>
@@ -116,7 +117,7 @@ export default function ReportCustomiseModal({ isOpen, preferences, onSave, onCl
               <input
                 type="checkbox"
                 checked={Boolean(draft.showScrobblesOverTime)}
-                onChange={() => handleToggle('showScrobblesOverTime')}
+                onChange={() => handleToggle("showScrobblesOverTime")}
               />
               <span>Scrobbles over time (Weekly trend)</span>
             </label>
@@ -124,7 +125,7 @@ export default function ReportCustomiseModal({ isOpen, preferences, onSave, onCl
               <input
                 type="checkbox"
                 checked={Boolean(draft.showListeningRoutines)}
-                onChange={() => handleToggle('showListeningRoutines')}
+                onChange={() => handleToggle("showListeningRoutines")}
               />
               <span>Listening routines (Heatmap)</span>
             </label>
@@ -132,7 +133,7 @@ export default function ReportCustomiseModal({ isOpen, preferences, onSave, onCl
               <input
                 type="checkbox"
                 checked={Boolean(draft.showListeningClock)}
-                onChange={() => handleToggle('showListeningClock')}
+                onChange={() => handleToggle("showListeningClock")}
               />
               <span>Listening Clock (24-hour radial)</span>
             </label>
@@ -140,7 +141,7 @@ export default function ReportCustomiseModal({ isOpen, preferences, onSave, onCl
               <input
                 type="checkbox"
                 checked={Boolean(draft.showDecades)}
-                onChange={() => handleToggle('showDecades')}
+                onChange={() => handleToggle("showDecades")}
               />
               <span>Music by decade</span>
             </label>
@@ -148,7 +149,7 @@ export default function ReportCustomiseModal({ isOpen, preferences, onSave, onCl
               <input
                 type="checkbox"
                 checked={Boolean(draft.showGenres)}
-                onChange={() => handleToggle('showGenres')}
+                onChange={() => handleToggle("showGenres")}
               />
               <span>Top genres</span>
             </label>
@@ -156,7 +157,7 @@ export default function ReportCustomiseModal({ isOpen, preferences, onSave, onCl
               <input
                 type="checkbox"
                 checked={Boolean(draft.showRatios)}
-                onChange={() => handleToggle('showRatios')}
+                onChange={() => handleToggle("showRatios")}
               />
               <span>Music ratios & Discovery velocity</span>
             </label>
@@ -168,7 +169,7 @@ export default function ReportCustomiseModal({ isOpen, preferences, onSave, onCl
               <input
                 type="checkbox"
                 checked={Boolean(draft.showLeaderboards)}
-                onChange={() => handleToggle('showLeaderboards')}
+                onChange={() => handleToggle("showLeaderboards")}
               />
               <span>Top Artists, Albums, and Tracks</span>
             </label>
@@ -204,7 +205,7 @@ export default function ReportCustomiseModal({ isOpen, preferences, onSave, onCl
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 ReportCustomiseModal.propTypes = {
@@ -212,4 +213,4 @@ ReportCustomiseModal.propTypes = {
   preferences: PropTypes.object,
   onSave: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
-}
+};
