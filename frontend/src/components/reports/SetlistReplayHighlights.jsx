@@ -47,7 +47,7 @@ export default function SetlistReplayHighlights({ songs = [] }) {
 
           return (
             <li
-              key={`${song.artist_name}-${song.song_name}`}
+              key={`${song.artist_name}-${song.track_name || song.song_name}-${idx}`}
               style={{
                 display: "flex",
                 flexDirection: "column",
@@ -77,7 +77,7 @@ export default function SetlistReplayHighlights({ songs = [] }) {
                   </span>
                   <div>
                     <strong style={{ color: "var(--color-ink)", fontSize: "14px" }}>
-                      {song.song_name}
+                      {song.track_name || song.song_name}
                     </strong>
                     <small
                       style={{
