@@ -22,6 +22,7 @@ from ..schemas.setlists import (
     GigCompanionsResponse,
     GigInviteItem,
     GigsByPeriodResponse,
+    GigTravelAndVenuesResponse,
     LiveGapItem,
     SetlistImportJobResponse,
     LogBillActRequest,
@@ -552,6 +553,23 @@ def get_gig_bump(
 ) -> GigBumpResponse:
     target_user_id = resolve_viewable_user_id(db, current_user, user_id)
     return GigBumpResponse.model_validate(GigReportsService(db=db).get_gig_bump(target_user_id))
+
+
+@router.get("/stats/travel-and-venues", response_model=GigTravelAndVenuesResponse)
+def get_gig_travel_and_venues(
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's gigs."),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> GigTravelAndVenuesResponse:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    # If viewing another user's gigs, suppress home-based distance calculations to preserve location privacy
+    stats = GigReportsService(db=db).get_gig_travel_and_venues(target_user_id)
+    if target_user_id != current_user.id:
+        stats["home_set"] = False
+        stats["total_distance_km"] = 0
+        stats["located_events"] = 0
+        stats["pending_events"] = 0
+    return GigTravelAndVenuesResponse.model_validate(stats)
 
 
 @router.get("/export")

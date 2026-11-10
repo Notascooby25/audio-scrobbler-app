@@ -11,8 +11,9 @@ from ..datetime_utils import utc_now
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
-from ..models import AttendedConcert, ListeningEvent
+from ..models import AttendedConcert, ListeningEvent, UserPreferences
 from ..queries.analytics_queries import not_blocked_clause
+from .gig_distance_service import _place, _queries, haversine_km
 
 _APOSTROPHES = re.compile(r"[\u2018\u2019\u02bc\u0060\u00b4]")
 
@@ -172,3 +173,113 @@ class GigReportsService:
             .scalar()
             or 0
         )
+
+    def get_gig_travel_and_venues(self, user_id: int, now: datetime | None = None) -> dict[str, Any]:
+        """Calculates total round-trip travel distance (deduplicated by event date + venue),
+        active monthly streak, and top venue royalty."""
+        now = now or utc_now()
+        preferences = self.db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
+        home = (
+            (preferences.home_lat, preferences.home_lng)
+            if preferences and preferences.home_lat and preferences.home_lng
+            else None
+        )
+
+        concerts = (
+            self.db.query(AttendedConcert)
+            .filter(AttendedConcert.user_id == user_id)
+            .order_by(desc(AttendedConcert.event_date))
+            .all()
+        )
+
+        # 1. Deduplicate visits by (date, venue, city) so multi-act festivals aren't multiplied
+        distinct_visits: dict[tuple[str, str, str], list[AttendedConcert]] = {}
+        # 2. Group by venue for Venue Royalty
+        venue_groups: dict[str, dict[str, Any]] = {}
+        # 3. Collect active months for streak
+        attended_months: set[tuple[int, int]] = set()
+
+        for c in concerts:
+            if c.event_date:
+                attended_months.add((c.event_date.year, c.event_date.month))
+                visit_key = (
+                    c.event_date.strftime("%Y-%m-%d"),
+                    c.venue_name.strip().casefold(),
+                    c.city.strip().casefold(),
+                )
+                distinct_visits.setdefault(visit_key, []).append(c)
+
+            v_key = f"{c.venue_name.strip()}|{c.city.strip()}|{c.country.strip()}".casefold()
+            v_info = venue_groups.setdefault(
+                v_key,
+                {
+                    "venue_name": c.venue_name.strip(),
+                    "city": c.city.strip(),
+                    "country": c.country.strip(),
+                    "gig_count": 0,
+                    "festivals": 0,
+                    "artists": set(),
+                },
+            )
+            v_info["gig_count"] += 1
+            if c.is_festival:
+                v_info["festivals"] += 1
+            v_info["artists"].add(c.artist_name.strip())
+
+        # Calculate travel distance
+        total_distance_km = 0.0
+        located_events = 0
+        pending_events = 0
+
+        if home:
+            for (_day, _v, _c), _gigs in distinct_visits.items():
+                first_gig = _gigs[0]
+                venue_q, city_q = _queries(first_gig.venue_name, first_gig.city, first_gig.country)
+                known, point, _approx = _place(self.db, venue_q, city_q)
+                if not known:
+                    pending_events += 1
+                    continue
+                if point is not None:
+                    # Round trip = 2 * distance
+                    one_way = haversine_km(home, point)
+                    total_distance_km += 2 * one_way
+                    located_events += 1
+
+        # Calculate active streak (consecutive months with a gig up to current or latest month)
+        active_streak = 0
+        cur_year, cur_month = now.year, now.month
+        # Check current month, if no gig yet check if previous month had a gig to continue streak
+        if (cur_year, cur_month) not in attended_months:
+            cur_month -= 1
+            if cur_month < 1:
+                cur_year, cur_month = cur_year - 1, 12
+
+        while (cur_year, cur_month) in attended_months:
+            active_streak += 1
+            cur_month -= 1
+            if cur_month < 1:
+                cur_year, cur_month = cur_year - 1, 12
+
+        # Format venue royalty
+        royalty = []
+        for v in venue_groups.values():
+            royalty.append(
+                {
+                    "venue_name": v["venue_name"],
+                    "city": v["city"],
+                    "country": v["country"],
+                    "gig_count": v["gig_count"],
+                    "festivals": v["festivals"],
+                    "distinct_artists": len(v["artists"]),
+                }
+            )
+        royalty.sort(key=lambda item: (item["gig_count"], item["distinct_artists"]), reverse=True)
+
+        return {
+            "home_set": home is not None,
+            "total_distance_km": round(total_distance_km),
+            "located_events": located_events,
+            "pending_events": pending_events,
+            "active_streak_months": active_streak,
+            "venue_royalty": royalty[:10],
+        }

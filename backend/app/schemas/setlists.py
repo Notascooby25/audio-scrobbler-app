@@ -290,3 +290,21 @@ class GigBumpResponse(BaseModel):
     average_plays_before: float
     average_plays_after: float
     change_percent: float | None = None
+
+
+class VenueRoyaltyItem(BaseModel):
+    venue_name: str
+    city: str
+    country: str
+    gig_count: int
+    festivals: int
+    distinct_artists: int
+
+
+class GigTravelAndVenuesResponse(BaseModel):
+    home_set: bool
+    total_distance_km: int
+    located_events: int
+    pending_events: int
+    active_streak_months: int
+    venue_royalty: list[VenueRoyaltyItem] = Field(default_factory=list)
