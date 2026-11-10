@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.42.0",
+    date: "2026-11-10",
+    changes: [
+      "Instant Gig Reports Tab Switching: Split data loading into staged progressive queries and introduced in-session memory caching, allowing the Gigs tab in Reports to render core widgets, maps, and cadence immediately without blocking on heavier calculations.",
+      "Optimized Post-Gig Surge & Bump Queries: Replaced sequential per-gig database queries in the backend with batched time-window queries, dramatically speeding up listening surge analysis.",
+      "Festival Venue Filtering: Added a 'Festivals on/off' filter button to the Gig Odyssey Map to seamlessly toggle between festival grounds and traditional music venues, alongside an active UK regional zoom focus.",
+    ],
+  },
+  {
     version: "0.41.0",
     date: "2026-11-10",
     changes: [
