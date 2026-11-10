@@ -278,6 +278,9 @@ class GigReportsService:
 
         return {
             "home_set": home is not None,
+            "home_city": preferences.home_city if preferences else None,
+            "home_lat": preferences.home_lat if preferences else None,
+            "home_lng": preferences.home_lng if preferences else None,
             "total_distance_km": round(total_distance_km),
             "located_events": located_events,
             "pending_events": pending_events,

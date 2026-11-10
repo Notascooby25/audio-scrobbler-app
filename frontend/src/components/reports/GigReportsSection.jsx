@@ -331,7 +331,16 @@ export default function GigReportsSection({ token, userId }) {
         {(activeTab === "all" || activeTab === "travel") && (
           <>
             {widgets.map && travelStats?.home_set && (
-              <GigOdysseyMap homeSet={travelStats.home_set} pins={mapPins} />
+              <GigOdysseyMap
+                homeSet={travelStats.home_set}
+                homeCity={travelStats.home_city}
+                homeCoords={
+                  travelStats.home_lat && travelStats.home_lng
+                    ? [travelStats.home_lat, travelStats.home_lng]
+                    : null
+                }
+                pins={mapPins}
+              />
             )}
 
             {widgets.venues && travelStats?.venue_royalty?.length > 0 && (

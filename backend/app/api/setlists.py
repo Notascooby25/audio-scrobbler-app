@@ -573,6 +573,9 @@ def get_gig_travel_and_venues(
     stats = GigReportsService(db=db).get_gig_travel_and_venues(target_user_id)
     if target_user_id != current_user.id:
         stats["home_set"] = False
+        stats["home_city"] = None
+        stats["home_lat"] = None
+        stats["home_lng"] = None
         stats["total_distance_km"] = 0
         stats["located_events"] = 0
         stats["pending_events"] = 0

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { UK_MAP_PATH, projectUkCoords } from "./ukMapData";
 
 // UK and Ireland default geographic framing
 const UK_BOUNDS = {
@@ -73,13 +74,7 @@ export default function GigOdysseyMap({
   });
 
   let minLat, maxLat, minLng, maxLng;
-  if (viewMode === "uk") {
-    // Tight framing around UK & Ireland
-    minLat = Math.min(...allCoords.map((c) => c.lat), UK_BOUNDS.minLat);
-    maxLat = Math.max(...allCoords.map((c) => c.lat), UK_BOUNDS.maxLat);
-    minLng = Math.min(...allCoords.map((c) => c.lng), UK_BOUNDS.minLng);
-    maxLng = Math.max(...allCoords.map((c) => c.lng), UK_BOUNDS.maxLng);
-  } else {
+  if (viewMode === "world") {
     // Global framing across all pins
     minLat = Math.min(...allCoords.map((c) => c.lat), 30.0);
     maxLat = Math.max(...allCoords.map((c) => c.lat), 60.0);
@@ -87,15 +82,26 @@ export default function GigOdysseyMap({
     maxLng = Math.max(...allCoords.map((c) => c.lng), 10.0);
   }
 
-  const latSpan = Math.max(maxLat - minLat, 3.0);
-  const lngSpan = Math.max(maxLng - minLng, 4.0);
+  const latSpan = maxLat ? Math.max(maxLat - minLat, 3.0) : 1;
+  const lngSpan = maxLng ? Math.max(maxLng - minLng, 4.0) : 1;
 
-  const projectX = (lng) => ((lng - minLng) / lngSpan) * 80 + 10;
-  // Invert Y for screen coordinates (north is up)
-  const projectY = (lat) => (1 - (lat - minLat) / latSpan) * 75 + 12;
+  // In UK viewMode, we use projectUkCoords to accurately match the UK silhouette outline
+  const projectX = (lng, lat) => {
+    if (viewMode === "uk") {
+      return projectUkCoords(lng, lat).x;
+    }
+    return ((lng - minLng) / lngSpan) * 80 + 10;
+  };
 
-  const homeX = homeCoords ? projectX(homeCoords[1]) : 50;
-  const homeY = homeCoords ? projectY(homeCoords[0]) : 50;
+  const projectY = (lat, lng) => {
+    if (viewMode === "uk") {
+      return projectUkCoords(lng, lat).y;
+    }
+    return (1 - (lat - minLat) / latSpan) * 75 + 12;
+  };
+
+  const homeX = homeCoords ? projectX(homeCoords[1], homeCoords[0]) : 50;
+  const homeY = homeCoords ? projectY(homeCoords[0], homeCoords[1]) : 50;
 
   return (
     <div className="chart-panel gig-odyssey-panel" data-testid="gig-odyssey-map">
@@ -162,8 +168,8 @@ export default function GigOdysseyMap({
         style={{
           position: "relative",
           width: "100%",
-          height: "280px",
-          background: "var(--tl-tile)",
+          height: "380px",
+          background: "var(--tl-tile, var(--color-surface-subtle))",
           border: "1px solid var(--color-border)",
           borderRadius: "var(--radius-sm)",
           overflow: "hidden",
@@ -171,7 +177,7 @@ export default function GigOdysseyMap({
       >
         <svg
           viewBox="0 0 100 100"
-          preserveAspectRatio="none"
+          preserveAspectRatio="xMidYMid meet"
           style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}
         >
           {/* Subtle grid lines */}
@@ -230,21 +236,35 @@ export default function GigOdysseyMap({
             strokeDasharray="1,1"
           />
 
+          {/* UK & Ireland Geographic Silhouette (in UK Focus mode) */}
+          {viewMode === "uk" && (
+            <path
+              d={UK_MAP_PATH}
+              fill="var(--color-surface, #ffffff)"
+              stroke="var(--color-border)"
+              strokeWidth="0.35"
+              style={{
+                filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.06))",
+                opacity: 0.95,
+              }}
+            />
+          )}
+
           {/* Travel arcs from home city */}
           {visiblePins.map((pin, i) => {
-            const px = projectX(pin.lng);
-            const py = projectY(pin.lat);
+            const px = projectX(pin.lng, pin.lat);
+            const py = projectY(pin.lat, pin.lng);
             const midX = (homeX + px) / 2;
-            const midY = (homeY + py) / 2 - 4; // curved arc
+            const midY = (homeY + py) / 2 - 3; // curved arc
             return (
               <path
                 key={`arc-${i}`}
                 d={`M ${homeX} ${homeY} Q ${midX} ${midY} ${px} ${py}`}
                 fill="none"
                 stroke="var(--color-primary)"
-                strokeWidth="0.6"
+                strokeWidth="0.5"
                 strokeDasharray="1.5,1.5"
-                opacity="0.6"
+                opacity="0.65"
               />
             );
           })}
@@ -270,8 +290,8 @@ export default function GigOdysseyMap({
 
         {/* Venue Cluster Markers */}
         {visiblePins.map((pin, index) => {
-          const px = projectX(pin.lng);
-          const py = projectY(pin.lat);
+          const px = projectX(pin.lng, pin.lat);
+          const py = projectY(pin.lat, pin.lng);
           const size = Math.min(22, 12 + pin.gig_count);
           return (
             <button

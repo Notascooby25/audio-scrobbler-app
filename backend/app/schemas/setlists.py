@@ -303,6 +303,9 @@ class VenueRoyaltyItem(BaseModel):
 
 class GigTravelAndVenuesResponse(BaseModel):
     home_set: bool
+    home_city: str | None = None
+    home_lat: float | None = None
+    home_lng: float | None = None
     total_distance_km: int
     located_events: int
     pending_events: int
