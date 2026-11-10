@@ -13,6 +13,8 @@ from ..schemas.setlists import (
     AddCompanionsRequest,
     ArtistLeaderboardItem,
     AttendedConcertResponse,
+    BadgeItem,
+    DayOfWeekCadenceItem,
     DeleteConcertResponse,
     FileImportRequest,
     FileImportResponse,
@@ -21,7 +23,11 @@ from ..schemas.setlists import (
     GigBumpResponse,
     GigCompanionsResponse,
     GigInviteItem,
+    GigMapPinItem,
     GigsByPeriodResponse,
+    GigSurgeItem,
+    GigTravelAndVenuesResponse,
+    LiveFirstDiscoveryItem,
     LiveGapItem,
     SetlistImportJobResponse,
     LogBillActRequest,
@@ -36,6 +42,7 @@ from ..schemas.setlists import (
     VenueLeaderboardItem,
 )
 from ..services.gig_distance_service import furthest_gigs, geocode_pending_venues
+from ..services.gig_badges_service import GigBadgesService
 from ..services.gig_reports_service import GigReportsService
 from ..services.setlist_profile_export_service import ProfileExportTooLargeError, build_profile_export
 from ..services.setlist_artwork_service import backfill_live_artwork
@@ -552,6 +559,84 @@ def get_gig_bump(
 ) -> GigBumpResponse:
     target_user_id = resolve_viewable_user_id(db, current_user, user_id)
     return GigBumpResponse.model_validate(GigReportsService(db=db).get_gig_bump(target_user_id))
+
+
+@router.get("/stats/travel-and-venues", response_model=GigTravelAndVenuesResponse)
+def get_gig_travel_and_venues(
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's gigs."),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> GigTravelAndVenuesResponse:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    # If viewing another user's gigs, suppress home-based distance calculations to preserve location privacy
+    stats = GigReportsService(db=db).get_gig_travel_and_venues(target_user_id)
+    if target_user_id != current_user.id:
+        stats["home_set"] = False
+        stats["total_distance_km"] = 0
+        stats["located_events"] = 0
+        stats["pending_events"] = 0
+    return GigTravelAndVenuesResponse.model_validate(stats)
+
+
+@router.get("/stats/badges", response_model=list[BadgeItem])
+def get_gig_badges(
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's badges."),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[BadgeItem]:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    return [BadgeItem.model_validate(b) for b in GigBadgesService(db=db).evaluate_badges(target_user_id)]
+
+
+@router.get("/stats/live-first", response_model=list[LiveFirstDiscoveryItem])
+def get_live_first_discoveries(
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's discoveries."),
+    limit: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[LiveFirstDiscoveryItem]:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    return [
+        LiveFirstDiscoveryItem.model_validate(item)
+        for item in GigReportsService(db=db).get_live_first_discoveries(target_user_id, limit=limit)
+    ]
+
+
+@router.get("/stats/surge-leaderboard", response_model=list[GigSurgeItem])
+def get_gig_surge_leaderboard(
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's gig surge."),
+    limit: int = Query(default=5, ge=1, le=50),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[GigSurgeItem]:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    return [
+        GigSurgeItem.model_validate(item)
+        for item in GigReportsService(db=db).get_gig_surge_leaderboard(target_user_id, limit=limit)
+    ]
+
+
+@router.get("/stats/day-of-week", response_model=list[DayOfWeekCadenceItem])
+def get_gig_day_of_week(
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's gig cadence."),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[DayOfWeekCadenceItem]:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    return [
+        DayOfWeekCadenceItem.model_validate(item)
+        for item in GigReportsService(db=db).get_gigs_day_of_week(target_user_id)
+    ]
+
+
+@router.get("/stats/map-pins", response_model=list[GigMapPinItem])
+def get_gig_map_pins(
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's gig map pins."),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[GigMapPinItem]:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    return [GigMapPinItem.model_validate(item) for item in GigReportsService(db=db).get_gig_map_pins(target_user_id)]
 
 
 @router.get("/export")

@@ -290,3 +290,69 @@ class GigBumpResponse(BaseModel):
     average_plays_before: float
     average_plays_after: float
     change_percent: float | None = None
+
+
+class VenueRoyaltyItem(BaseModel):
+    venue_name: str
+    city: str
+    country: str
+    gig_count: int
+    festivals: int
+    distinct_artists: int
+
+
+class GigTravelAndVenuesResponse(BaseModel):
+    home_set: bool
+    total_distance_km: int
+    located_events: int
+    pending_events: int
+    active_streak_months: int
+    venue_royalty: list[VenueRoyaltyItem] = Field(default_factory=list)
+
+
+class BadgeItem(BaseModel):
+    id: str
+    name: str
+    emoji: str
+    description: str
+    unlocked: bool
+    progress: int
+    target: int
+
+
+class LiveFirstDiscoveryItem(BaseModel):
+    artist_name: str
+    venue_name: str
+    city: str
+    country: str
+    gig_date: str
+    first_scrobble_date: str
+    lifetime_plays: int
+
+
+class GigSurgeItem(BaseModel):
+    artist_name: str
+    venue_name: str
+    gig_date: str
+    plays_before: int
+    plays_after: int
+    change_percent: float
+    absolute_gain: int
+
+
+class DayOfWeekCadenceItem(BaseModel):
+    day_index: int
+    day_name: str
+    count: int
+    percent: float
+
+
+class GigMapPinItem(BaseModel):
+    lat: float
+    lng: float
+    venue_name: str
+    city: str
+    country: str
+    approximate: bool
+    gig_count: int
+    artists: list[str] = Field(default_factory=list)

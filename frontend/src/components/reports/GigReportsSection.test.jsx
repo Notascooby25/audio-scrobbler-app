@@ -9,6 +9,12 @@ vi.mock("../../api/setlists", () => ({
   fetchLiveGap: vi.fn(),
   fetchGigBump: vi.fn(),
   fetchFurthestGigs: vi.fn(),
+  fetchGigTravelAndVenues: vi.fn(),
+  fetchGigBadges: vi.fn(),
+  fetchLiveFirstDiscoveries: vi.fn(),
+  fetchGigSurgeLeaderboard: vi.fn(),
+  fetchGigDayOfWeek: vi.fn(),
+  fetchGigMapPins: vi.fn(),
 }));
 
 const bump = {
@@ -18,6 +24,45 @@ const bump = {
   average_plays_after: 15,
   change_percent: 50,
 };
+
+const defaultTravel = {
+  home_set: true,
+  total_distance_km: 1200,
+  located_events: 5,
+  pending_events: 0,
+  active_streak_months: 4,
+  venue_royalty: [
+    {
+      venue_name: "The Fleece",
+      city: "Bristol",
+      country: "United Kingdom",
+      gig_count: 8,
+      festivals: 0,
+      distinct_artists: 12,
+    },
+  ],
+};
+
+const defaultBadges = [
+  {
+    id: "solo_explorer",
+    name: "Solo Explorer",
+    description: "Attended a gig solo",
+    emoji: "🧭",
+    unlocked: true,
+    progress: 1,
+    target: 1,
+  },
+  {
+    id: "road_warrior",
+    name: "Road Warrior",
+    description: "Travelled far",
+    emoji: "🚗",
+    unlocked: false,
+    progress: 1200,
+    target: 5000,
+  },
+];
 
 const currentYear = new Date().getFullYear();
 
@@ -33,14 +78,29 @@ function mockReports({
   byYear,
   liveGap = [],
   furthest = { home_set: true, located_gigs: 0, pending_gigs: 0, furthest: [] },
-}) {
+  travel = defaultTravel,
+  badges = defaultBadges,
+  discoveries = [],
+  surge = [],
+  dayOfWeek = [
+    { day_name: "Fri", day_index: 4, gig_count: 5 },
+    { day_name: "Sat", day_index: 5, gig_count: 8 },
+  ],
+  pins = [],
+} = {}) {
   setlistsApi.fetchGigsByPeriod.mockResolvedValue({
-    by_year: byYear,
+    by_year: byYear || [{ period: String(currentYear), gigs: 3, festivals: 1 }],
     by_month: [{ period: `${currentYear}-01`, gigs: 1, festivals: 0 }],
   });
   setlistsApi.fetchLiveGap.mockResolvedValue(liveGap);
   setlistsApi.fetchGigBump.mockResolvedValue(bump);
   setlistsApi.fetchFurthestGigs.mockResolvedValue(furthest);
+  setlistsApi.fetchGigTravelAndVenues.mockResolvedValue(travel);
+  setlistsApi.fetchGigBadges.mockResolvedValue(badges);
+  setlistsApi.fetchLiveFirstDiscoveries.mockResolvedValue(discoveries);
+  setlistsApi.fetchGigSurgeLeaderboard.mockResolvedValue(surge);
+  setlistsApi.fetchGigDayOfWeek.mockResolvedValue(dayOfWeek);
+  setlistsApi.fetchGigMapPins.mockResolvedValue(pins);
 }
 
 function yearRows() {
@@ -219,5 +279,59 @@ describe("GigReportsSection", () => {
     await waitFor(() =>
       expect(screen.getByRole("alert")).toHaveTextContent("Follow this user to see their gigs.")
     );
+  });
+
+  it("filters panels when switching between sub-tabs", async () => {
+    mockReports({
+      byYear: [{ period: String(currentYear), gigs: 2, festivals: 1 }],
+      badges: defaultBadges,
+      travel: defaultTravel,
+    });
+    renderSection();
+
+    expect(await screen.findByTestId("gig-hero-stats")).toBeInTheDocument();
+    expect(screen.getByText("Solo Explorer")).toBeInTheDocument();
+    expect(screen.getByText("The Fleece")).toBeInTheDocument();
+
+    // Switch to Badges & Streaks tab
+    fireEvent.click(screen.getByRole("button", { name: /Badges & Streaks/ }));
+    expect(screen.getByText("Solo Explorer")).toBeInTheDocument();
+    // Travel venues should not be rendered on Badges tab
+    expect(screen.queryByText("The Fleece")).not.toBeInTheDocument();
+
+    // Switch to Travel & Map tab
+    fireEvent.click(screen.getByRole("button", { name: /Travel & Map/ }));
+    expect(screen.getByText("The Fleece")).toBeInTheDocument();
+    expect(screen.queryByText("Solo Explorer")).not.toBeInTheDocument();
+
+    // Switch back to All Intelligence
+    fireEvent.click(screen.getByRole("button", { name: /All Intelligence/ }));
+    expect(screen.getByText("Solo Explorer")).toBeInTheDocument();
+    expect(screen.getByText("The Fleece")).toBeInTheDocument();
+  });
+
+  it("allows toggling widgets on and off via the customizer", async () => {
+    mockReports({
+      byYear: [{ period: String(currentYear), gigs: 2, festivals: 1 }],
+      badges: defaultBadges,
+    });
+    renderSection();
+
+    expect(await screen.findByText("Solo Explorer")).toBeInTheDocument();
+
+    // Open customizer
+    fireEvent.click(screen.getByRole("button", { name: /Customise widgets/ }));
+    const badgesCheckbox = screen.getByLabelText(/Badges & Streaks/);
+    expect(badgesCheckbox).toBeChecked();
+
+    // Turn badges off
+    fireEvent.click(badgesCheckbox);
+    expect(badgesCheckbox).not.toBeChecked();
+    expect(screen.queryByText("Solo Explorer")).not.toBeInTheDocument();
+
+    // Turn badges back on
+    fireEvent.click(badgesCheckbox);
+    expect(badgesCheckbox).toBeChecked();
+    expect(screen.getByText("Solo Explorer")).toBeInTheDocument();
   });
 });

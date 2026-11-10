@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
 import pytest
@@ -9,7 +9,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from backend.app.db import Base
-from backend.app.models import AttendedConcert, ListeningEvent
+from backend.app.models import AttendedConcert, GeoCache, ListeningEvent, UserPreferences
+from backend.app.services.geocoding_service import cache_key
 from backend.app.services.gig_reports_service import GigReportsService
 from backend.app.services.setlist_attendance_service import SetlistAttendanceService
 
@@ -176,5 +177,86 @@ def test_live_gap_matches_spelling_differences_between_spotify_and_setlist_fm(db
     _play(db_session, "Unseen Act", datetime(2026, 1, 3))
 
     gap = GigReportsService(db_session).get_live_gap(user_id=1)
-
     assert gap == [{"artist_name": "Unseen Act", "plays": 1}]
+
+
+def test_travel_distance_deduplicates_same_day_festival_venues(db_session: Session):
+    # Home City = Leeds (53.8008, -1.5491)
+    db_session.add(UserPreferences(user_id=1, home_city="Leeds", home_lat=53.8008, home_lng=-1.5491))
+    # Manchester venue: 53.4808, -2.2426 (~58 km one-way -> ~116 km round-trip)
+    query = "Manchester Academy, Manchester, United Kingdom"
+    db_session.add(
+        GeoCache(
+            cache_key=cache_key(query),
+            lat=53.4808,
+            lng=-2.2426,
+            expires_at=datetime.now(timezone.utc) + timedelta(days=1),
+        )
+    )
+    db_session.commit()
+
+    # Log 3 different bands on the same day at the same festival/venue
+    same_day = datetime(2026, 7, 10)
+    for idx, band in enumerate(["Band A", "Band B", "Band C"]):
+        db_session.add(
+            AttendedConcert(
+                user_id=1,
+                setlist_id=f"setlist-{idx}",
+                artist_name=band,
+                venue_name="Manchester Academy",
+                city="Manchester",
+                country="United Kingdom",
+                event_date=same_day,
+                is_festival=True,
+                festival_name="Sounds of the City",
+            )
+        )
+    db_session.commit()
+
+    service = GigReportsService(db_session)
+    stats = service.get_gig_travel_and_venues(user_id=1)
+
+    assert stats["total_distance_km"] == 116  # round-trip counted ONCE, not 3x
+    assert stats["venue_royalty"][0]["venue_name"] == "Manchester Academy"
+    assert stats["venue_royalty"][0]["gig_count"] == 3
+    assert stats["venue_royalty"][0]["distinct_artists"] == 3
+
+
+def test_gig_surge_leaderboard_requires_minimum_plays(db_session: Session):
+    # Artist with only 1 play before and 1 play after (< 5 plays) is filtered out
+    now = datetime(2026, 8, 1)
+    gig_day = datetime(2026, 7, 10)
+    _gig(db_session, "g1", "Quiet Band", gig_day)
+    _play(db_session, "Quiet Band", datetime(2026, 7, 1))
+    _play(db_session, "Quiet Band", datetime(2026, 7, 20))
+
+    # Artist with 2 plays before and 8 plays after (total 10 >= 5) is included
+    _gig(db_session, "g2", "Surge Band", gig_day)
+    for _ in range(2):
+        _play(db_session, "Surge Band", datetime(2026, 7, 5))
+    for _ in range(8):
+        _play(db_session, "Surge Band", datetime(2026, 7, 15))
+
+    service = GigReportsService(db_session)
+    surge = service.get_gig_surge_leaderboard(user_id=1, now=now)
+
+    assert len(surge) == 1
+    assert surge[0]["artist_name"] == "Surge Band"
+    assert surge[0]["plays_before"] == 2
+    assert surge[0]["plays_after"] == 8
+    assert surge[0]["change_percent"] == 300.0
+
+
+def test_gig_map_pins_and_day_of_week(db_session: Session):
+    # Sunday concert
+    sun_day = datetime(2026, 7, 12)  # Sunday
+    _gig(db_session, "g3", "Sunday Act", sun_day)
+
+    service = GigReportsService(db_session)
+    dow = service.get_gigs_day_of_week(user_id=1)
+    # Sunday index = 6
+    assert any(d["day_index"] == 6 and d["count"] >= 1 for d in dow)
+
+    pins = service.get_gig_map_pins(user_id=1)
+    # Gigs without home city still show pins if located or empty
+    assert isinstance(pins, list)
