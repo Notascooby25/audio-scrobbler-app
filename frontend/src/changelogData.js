@@ -1,5 +1,17 @@
 export const CHANGELOG = [
   {
+    version: "0.41.0",
+    date: "2026-11-10",
+    changes: [
+      "Venue Stomping Grounds Date Deduplication: Fixed venue visit counts so that visiting a venue once for a main act and multiple support acts (or a multi-act festival lineup) on the same date counts as 1 visit rather than inflating per act.",
+      "Instant Gig Reports Loading: Optimized post-gig queries and eliminated full unindexed scrobble scans so the Gigs tab in Reports loads immediately.",
+      "Live Artist Rankings: Added a live hall of fame ranking the artists you return to see the most often in concert, complete with show counts and relative volume indicators.",
+      "Annual Gig Cadence Activity Grid: Added a seasonal live concert activity matrix mapping gig frequency by month and day across every year.",
+      "Setlist Replay Tracker: Added a dedicated showcase of songs you've experienced performed live in concert across attended setlists.",
+      "Flexible Widget Customizer: Added individual on/off toggles in the widget customizer for all new live showcases, remembering your preferred dashboard configuration.",
+    ],
+  },
+  {
     version: "0.40.0",
     date: "2026-11-10",
     changes: [

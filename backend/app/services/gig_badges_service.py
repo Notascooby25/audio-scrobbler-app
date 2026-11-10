@@ -5,9 +5,9 @@ from typing import Any
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from ..models import AttendedConcert, GigCompanion, ListeningEvent, UserPreferences
+from ..models import AttendedConcert, GigCompanion, UserPreferences
 from .gig_distance_service import _place, _queries, haversine_km
-from .gig_reports_service import artist_key, LIVE_SOURCE
+from .gig_reports_service import artist_key
 
 
 class GigBadgesService:
@@ -125,29 +125,6 @@ class GigBadgesService:
             or 0
         )
 
-        # 13. Live First count
-        live_first_unlocked = False
-        earliest_scrobbles = (
-            self.db.query(
-                ListeningEvent.artist_name,
-                func.min(ListeningEvent.played_at).label("first_played"),
-            )
-            .filter(
-                ListeningEvent.user_id == user_id,
-                ListeningEvent.source != LIVE_SOURCE,
-            )
-            .group_by(ListeningEvent.artist_name)
-            .all()
-        )
-        first_played_map = {artist_key(name): dt for name, dt in earliest_scrobbles}
-        for c in concerts:
-            if not c.event_date:
-                continue
-            a_key = artist_key(c.artist_name)
-            if a_key in first_played_map and c.event_date <= first_played_map[a_key]:
-                live_first_unlocked = True
-                break
-
         max_artist_repeat = max(artist_counts.values()) if artist_counts else 0
         golden_year_max = max(len(months) for months in year_months.values()) if year_months else 0
 
@@ -162,12 +139,12 @@ class GigBadgesService:
                 "target": 1,
             },
             {
-                "id": "live_first",
-                "name": "Live First",
-                "emoji": "⚡",
-                "description": "Saw an artist live before your very first recorded scrobble",
-                "unlocked": live_first_unlocked,
-                "progress": 1 if live_first_unlocked else 0,
+                "id": "opening_act",
+                "name": "First Through the Doors",
+                "emoji": "🚪",
+                "description": "Arrived early and logged seeing a support band",
+                "unlocked": support_count >= 1,
+                "progress": min(support_count, 1),
                 "target": 1,
             },
             {

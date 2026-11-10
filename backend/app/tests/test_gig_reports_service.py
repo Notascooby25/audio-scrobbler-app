@@ -218,8 +218,13 @@ def test_travel_distance_deduplicates_same_day_festival_venues(db_session: Sessi
 
     assert stats["total_distance_km"] == 116  # round-trip counted ONCE, not 3x
     assert stats["venue_royalty"][0]["venue_name"] == "Manchester Academy"
-    assert stats["venue_royalty"][0]["gig_count"] == 3
+    assert stats["venue_royalty"][0]["gig_count"] == 1  # 3 bands on the same day count as 1 visit
     assert stats["venue_royalty"][0]["distinct_artists"] == 3
+
+    # Cadence matrix test: 3 bands on same date counts as 1 gig day
+    matrix = service.get_gig_cadence_matrix(user_id=1)
+    assert 2026 in matrix["years"]
+    assert matrix["daily_counts"]["2026-07-10"] == 1
 
 
 def test_gig_surge_leaderboard_requires_minimum_plays(db_session: Session):
@@ -248,15 +253,41 @@ def test_gig_surge_leaderboard_requires_minimum_plays(db_session: Session):
 
 
 def test_gig_map_pins_and_day_of_week(db_session: Session):
-    # Sunday concert
+    # Sunday concert with headliner plus two support acts on same date
     sun_day = datetime(2026, 7, 12)  # Sunday
-    _gig(db_session, "g3", "Sunday Act", sun_day)
+    _gig(db_session, "g3", "Sunday Headliner", sun_day)
+    _gig(db_session, "g4", "Sunday Support 1", sun_day, support=True)
+    _gig(db_session, "g5", "Sunday Support 2", sun_day, support=True)
 
     service = GigReportsService(db_session)
     dow = service.get_gigs_day_of_week(user_id=1)
-    # Sunday index = 6
-    assert any(d["day_index"] == 6 and d["count"] >= 1 for d in dow)
+    # Sunday index = 6, must count 1 gig outing rather than 3
+    sunday_stat = next(d for d in dow if d["day_index"] == 6)
+    assert sunday_stat["count"] == 1
+
+    # Cadence matrix must also count 1 gig for 2026-07-12
+    matrix = service.get_gig_cadence_matrix(user_id=1)
+    assert matrix["daily_counts"]["2026-07-12"] == 1
+
+    # GeoCache mock for City, Country so pin is created
+    db_session.add(
+        GeoCache(
+            cache_key=cache_key("City, Country"),
+            lat=51.5,
+            lng=-0.1,
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+        )
+    )
+    db_session.commit()
 
     pins = service.get_gig_map_pins(user_id=1)
-    # Gigs without home city still show pins if located or empty
     assert isinstance(pins, list)
+    assert len(pins) == 1
+    assert pins[0]["is_festival"] is False
+    assert pins[0]["festival_count"] == 0
+
+    # Add a festival gig to the same location
+    _gig(db_session, "g6", "Festival Act", sun_day, festival=True)
+    pins2 = service.get_gig_map_pins(user_id=1)
+    assert pins2[0]["is_festival"] is True
+    assert pins2[0]["festival_count"] == 1

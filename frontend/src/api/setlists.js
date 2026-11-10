@@ -500,3 +500,11 @@ export async function fetchGigMapPins({ token, userId = null }) {
   });
   return parseResponse(response);
 }
+
+export async function fetchGigCadenceMatrix({ token, userId = null }) {
+  const query = userId ? `?user_id=${encodeURIComponent(userId)}` : "";
+  const response = await fetch(`${API_BASE_URL}/setlists/stats/cadence-matrix${query}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { UK_MAP_PATH, WORLD_MAP_PATH, projectUkCoords, projectWorldCoords } from "./ukMapData";
 
 // UK and Ireland default geographic framing
 const UK_BOUNDS = {
@@ -40,6 +41,8 @@ export default function GigOdysseyMap({
 }) {
   const [selectedPin, setSelectedPin] = useState(null);
   const [viewMode, setViewMode] = useState("uk"); // "uk" or "world"
+  const [ukZoom, setUkZoom] = useState("focus"); // "focus" (active gig area) or "all" (entire British Isles)
+  const [showFestivals, setShowFestivals] = useState(true);
 
   if (!homeSet) {
     return (
@@ -55,47 +58,72 @@ export default function GigOdysseyMap({
     );
   }
 
-  const abroadPins = pins.filter(isPinAbroad);
+  // Check if any pin has festivals
+  const hasFestivalPins = pins.some((p) => p.is_festival || p.festival_count > 0);
+
+  // Filter pins by festival toggle
+  const filteredPins = pins.filter((p) => {
+    if (!showFestivals && (p.is_festival || p.festival_count > 0)) {
+      return false;
+    }
+    return true;
+  });
+
+  const abroadPins = filteredPins.filter(isPinAbroad);
   const hasAbroad = abroadPins.length > 0;
 
   // Filter visible pins based on view mode
-  const visiblePins = viewMode === "uk" && hasAbroad ? pins.filter((p) => !isPinAbroad(p)) : pins;
+  const visiblePins =
+    viewMode === "uk" && hasAbroad ? filteredPins.filter((p) => !isPinAbroad(p)) : filteredPins;
 
-  // Calculate bounding box or normalize coordinates
-  const allCoords = [];
+  // Calculate coordinates
+  const allUkCoords = [];
   if (homeCoords && homeCoords[0] && homeCoords[1]) {
-    allCoords.push({ lat: homeCoords[0], lng: homeCoords[1], isHome: true });
+    allUkCoords.push({ lat: homeCoords[0], lng: homeCoords[1], isHome: true });
   }
-  visiblePins.forEach((p) => {
+  const ukPins = filteredPins.filter((p) => !isPinAbroad(p));
+  ukPins.forEach((p) => {
     if (p.lat && p.lng) {
-      allCoords.push({ lat: p.lat, lng: p.lng, pin: p });
+      allUkCoords.push({ lat: p.lat, lng: p.lng, pin: p });
     }
   });
 
-  let minLat, maxLat, minLng, maxLng;
-  if (viewMode === "uk") {
-    // Tight framing around UK & Ireland
-    minLat = Math.min(...allCoords.map((c) => c.lat), UK_BOUNDS.minLat);
-    maxLat = Math.max(...allCoords.map((c) => c.lat), UK_BOUNDS.maxLat);
-    minLng = Math.min(...allCoords.map((c) => c.lng), UK_BOUNDS.minLng);
-    maxLng = Math.max(...allCoords.map((c) => c.lng), UK_BOUNDS.maxLng);
-  } else {
-    // Global framing across all pins
-    minLat = Math.min(...allCoords.map((c) => c.lat), 30.0);
-    maxLat = Math.max(...allCoords.map((c) => c.lat), 60.0);
-    minLng = Math.min(...allCoords.map((c) => c.lng), -120.0);
-    maxLng = Math.max(...allCoords.map((c) => c.lng), 10.0);
+  // Calculate dynamic zoomed viewBox for UK focus area
+  let ukViewBox = "0 0 100 100";
+  if (ukZoom === "focus" && allUkCoords.length > 0) {
+    const lats = allUkCoords.map((c) => c.lat);
+    const lngs = allUkCoords.map((c) => c.lng);
+    const minLat = Math.min(...lats) - 0.45;
+    const maxLat = Math.max(...lats) + 0.45;
+    const minLng = Math.min(...lngs) - 0.7;
+    const maxLng = Math.max(...lngs) + 0.7;
+
+    const pTopLeft = projectUkCoords(minLng, maxLat);
+    const pBottomRight = projectUkCoords(maxLng, minLat);
+
+    const vbX = Math.max(0, pTopLeft.x);
+    const vbY = Math.max(0, pTopLeft.y);
+    const vbW = Math.min(100 - vbX, Math.max(30, pBottomRight.x - pTopLeft.x));
+    const vbH = Math.min(100 - vbY, Math.max(30, pBottomRight.y - pTopLeft.y));
+    ukViewBox = `${vbX.toFixed(2)} ${vbY.toFixed(2)} ${vbW.toFixed(2)} ${vbH.toFixed(2)}`;
   }
 
-  const latSpan = Math.max(maxLat - minLat, 3.0);
-  const lngSpan = Math.max(maxLng - minLng, 4.0);
+  const projectX = (lng, lat) => {
+    if (viewMode === "uk") {
+      return projectUkCoords(lng, lat).x;
+    }
+    return projectWorldCoords(lng, lat).x;
+  };
 
-  const projectX = (lng) => ((lng - minLng) / lngSpan) * 80 + 10;
-  // Invert Y for screen coordinates (north is up)
-  const projectY = (lat) => (1 - (lat - minLat) / latSpan) * 75 + 12;
+  const projectY = (lat, lng) => {
+    if (viewMode === "uk") {
+      return projectUkCoords(lng, lat).y;
+    }
+    return projectWorldCoords(lng, lat).y;
+  };
 
-  const homeX = homeCoords ? projectX(homeCoords[1]) : 50;
-  const homeY = homeCoords ? projectY(homeCoords[0]) : 50;
+  const homeX = homeCoords ? projectX(homeCoords[1], homeCoords[0]) : 50;
+  const homeY = homeCoords ? projectY(homeCoords[0], homeCoords[1]) : 50;
 
   return (
     <div className="chart-panel gig-odyssey-panel" data-testid="gig-odyssey-map">
@@ -117,39 +145,93 @@ export default function GigOdysseyMap({
           </span>
         </div>
 
-        {hasAbroad && (
-          <button
-            type="button"
-            className="sfm-link"
-            onClick={() => {
-              setSelectedPin(null);
-              setViewMode((prev) => (prev === "uk" ? "world" : "uk"));
-            }}
-            style={{
-              fontSize: "12px",
-              padding: "4px 10px",
-              borderRadius: "var(--radius-pill)",
-              border: "1px solid var(--color-border)",
-              background: "var(--color-surface)",
-              color: "var(--color-ink)",
-              cursor: "pointer",
-              fontWeight: 600,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              textTransform: "none",
-            }}
-          >
-            {viewMode === "uk" ? (
-              <>
-                ✈️ {abroadPins.length} gig{abroadPins.length === 1 ? "" : "s"} abroad (
-                {abroadPins[0]?.city || abroadPins[0]?.country || "International"}) · Zoom out
-              </>
-            ) : (
-              <>🇬🇧 Focus UK</>
-            )}
-          </button>
-        )}
+        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+          {hasFestivalPins && (
+            <button
+              type="button"
+              className="sfm-link"
+              onClick={() => {
+                setSelectedPin(null);
+                setShowFestivals((prev) => !prev);
+              }}
+              style={{
+                fontSize: "12px",
+                padding: "4px 10px",
+                borderRadius: "var(--radius-pill)",
+                border: "1px solid var(--color-border)",
+                background: showFestivals ? "var(--color-surface)" : "var(--color-surface-subtle)",
+                color: showFestivals ? "var(--color-ink)" : "var(--color-muted)",
+                cursor: "pointer",
+                fontWeight: 600,
+                textTransform: "none",
+                opacity: showFestivals ? 1 : 0.75,
+              }}
+              title={showFestivals ? "Hide festival venues" : "Show festival venues"}
+            >
+              🎪 {showFestivals ? "Festivals on" : "Festivals off"}
+            </button>
+          )}
+
+          {viewMode === "uk" && (
+            <button
+              type="button"
+              className="sfm-link"
+              onClick={() => setUkZoom((z) => (z === "focus" ? "all" : "focus"))}
+              style={{
+                fontSize: "12px",
+                padding: "4px 10px",
+                borderRadius: "var(--radius-pill)",
+                border: "1px solid var(--color-border)",
+                background: "var(--color-surface)",
+                color: "var(--color-ink)",
+                cursor: "pointer",
+                fontWeight: 600,
+                textTransform: "none",
+              }}
+              title={
+                ukZoom === "focus"
+                  ? "Show full United Kingdom and Ireland"
+                  : "Zoom in to active gig regions"
+              }
+            >
+              {ukZoom === "focus" ? "🔍 Full UK view" : "🎯 Focus gig region"}
+            </button>
+          )}
+
+          {hasAbroad && (
+            <button
+              type="button"
+              className="sfm-link"
+              onClick={() => {
+                setSelectedPin(null);
+                setViewMode((prev) => (prev === "uk" ? "world" : "uk"));
+              }}
+              style={{
+                fontSize: "12px",
+                padding: "4px 10px",
+                borderRadius: "var(--radius-pill)",
+                border: "1px solid var(--color-border)",
+                background: "var(--color-surface)",
+                color: "var(--color-ink)",
+                cursor: "pointer",
+                fontWeight: 600,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                textTransform: "none",
+              }}
+            >
+              {viewMode === "uk" ? (
+                <>
+                  ✈️ {abroadPins.length} gig{abroadPins.length === 1 ? "" : "s"} abroad (
+                  {abroadPins[0]?.city || abroadPins[0]?.country || "International"}) · Zoom out
+                </>
+              ) : (
+                <>🇬🇧 Focus UK</>
+              )}
+            </button>
+          )}
+        </div>
       </div>
       <p className="chart-caption" style={{ marginBottom: "14px" }}>
         {viewMode === "uk"
@@ -162,17 +244,23 @@ export default function GigOdysseyMap({
         style={{
           position: "relative",
           width: "100%",
-          height: "280px",
-          background: "var(--tl-tile)",
+          height: "420px",
+          background: "var(--tl-tile, var(--color-surface-subtle))",
           border: "1px solid var(--color-border)",
           borderRadius: "var(--radius-sm)",
           overflow: "hidden",
         }}
       >
         <svg
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
-          style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}
+          viewBox={viewMode === "uk" ? ukViewBox : "0 0 100 100"}
+          preserveAspectRatio="xMidYMid meet"
+          style={{
+            width: "100%",
+            height: "100%",
+            position: "absolute",
+            inset: 0,
+            transition: "viewBox 0.3s ease",
+          }}
         >
           {/* Subtle grid lines */}
           <line
@@ -230,82 +318,85 @@ export default function GigOdysseyMap({
             strokeDasharray="1,1"
           />
 
+          {/* Map Landmass Silhouette */}
+          <path
+            d={viewMode === "uk" ? UK_MAP_PATH : WORLD_MAP_PATH}
+            fill="var(--color-surface, #ffffff)"
+            stroke="var(--color-border)"
+            strokeWidth={viewMode === "uk" ? "0.35" : "0.5"}
+            style={{
+              filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.06))",
+              opacity: 0.95,
+            }}
+          />
+
           {/* Travel arcs from home city */}
           {visiblePins.map((pin, i) => {
-            const px = projectX(pin.lng);
-            const py = projectY(pin.lat);
+            const px = projectX(pin.lng, pin.lat);
+            const py = projectY(pin.lat, pin.lng);
             const midX = (homeX + px) / 2;
-            const midY = (homeY + py) / 2 - 4; // curved arc
+            const midY = (homeY + py) / 2 - 2.5; // curved arc
             return (
               <path
                 key={`arc-${i}`}
                 d={`M ${homeX} ${homeY} Q ${midX} ${midY} ${px} ${py}`}
                 fill="none"
                 stroke="var(--color-primary)"
-                strokeWidth="0.6"
-                strokeDasharray="1.5,1.5"
+                strokeWidth="0.4"
+                strokeDasharray="1,1"
                 opacity="0.6"
               />
             );
           })}
+
+          {/* Home Beacon Marker */}
+          <g transform={`translate(${homeX}, ${homeY})`} style={{ cursor: "default" }}>
+            <circle r="2.2" fill="#10b981" opacity="0.3" />
+            <circle r="1.4" fill="#10b981" stroke="#ffffff" strokeWidth="0.4" />
+            <title>{`Home: ${homeCity || "Configured"}`}</title>
+          </g>
+
+          {/* Venue Cluster Markers */}
+          {visiblePins.map((pin, index) => {
+            const px = projectX(pin.lng, pin.lat);
+            const py = projectY(pin.lat, pin.lng);
+            const r = Math.min(2.8, 1.4 + pin.gig_count * 0.08);
+            const isSelected = selectedPin?.venue_name === pin.venue_name;
+            return (
+              <g
+                key={`pin-${index}`}
+                transform={`translate(${px}, ${py})`}
+                onClick={() => setSelectedPin(pin)}
+                style={{ cursor: "pointer" }}
+                className="map-marker-btn"
+                role="button"
+                tabIndex={0}
+                aria-label={`${pin.venue_name} (${pin.gig_count} gigs)`}
+              >
+                <circle
+                  r={r}
+                  fill={isSelected ? "var(--color-ink)" : "var(--color-primary)"}
+                  stroke="#ffffff"
+                  strokeWidth="0.3"
+                  style={{ filter: "drop-shadow(0 0.5px 1px rgba(0,0,0,0.3))" }}
+                />
+                {pin.gig_count > 1 && (
+                  <text
+                    textAnchor="middle"
+                    dy="0.4"
+                    fill="#ffffff"
+                    fontSize="1.1"
+                    fontWeight="700"
+                    pointerEvents="none"
+                  >
+                    {pin.gig_count}
+                  </text>
+                )}
+                <title>{`${pin.venue_name} (${pin.gig_count} gigs)`}</title>
+              </g>
+            );
+          })}
         </svg>
-
-        {/* Home Beacon Marker */}
-        <div
-          title={`Home: ${homeCity}`}
-          style={{
-            position: "absolute",
-            left: `${homeX}%`,
-            top: `${homeY}%`,
-            transform: "translate(-50%, -50%)",
-            width: "14px",
-            height: "14px",
-            borderRadius: "50%",
-            background: "#10b981",
-            border: "2px solid #ffffff",
-            boxShadow: "0 0 8px rgba(16, 185, 129, 0.7)",
-            zIndex: 10,
-          }}
-        />
-
-        {/* Venue Cluster Markers */}
-        {visiblePins.map((pin, index) => {
-          const px = projectX(pin.lng);
-          const py = projectY(pin.lat);
-          const size = Math.min(22, 12 + pin.gig_count);
-          return (
-            <button
-              key={`pin-${index}`}
-              type="button"
-              className="map-marker-btn"
-              onClick={() => setSelectedPin(pin)}
-              style={{
-                position: "absolute",
-                left: `${px}%`,
-                top: `${py}%`,
-                transform: "translate(-50%, -50%)",
-                width: `${size}px`,
-                height: `${size}px`,
-                borderRadius: "50%",
-                background: "var(--color-primary)",
-                border: "2px solid #ffffff",
-                cursor: "pointer",
-                padding: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#ffffff",
-                fontSize: "9px",
-                fontWeight: 700,
-                boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
-                zIndex: 5,
-              }}
-              title={`${pin.venue_name} (${pin.gig_count} gigs)`}
-            >
-              {pin.gig_count > 1 ? pin.gig_count : ""}
-            </button>
-          );
-        })}
 
         {/* Selected Venue Popover */}
         {selectedPin && (
@@ -330,6 +421,23 @@ export default function GigOdysseyMap({
               <strong style={{ fontSize: "13px", color: "var(--color-ink)" }}>
                 {selectedPin.venue_name}
               </strong>
+              {selectedPin.is_festival && (
+                <span
+                  style={{
+                    marginLeft: "8px",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.04em",
+                    background: "var(--color-primary-subtle, #e0f2fe)",
+                    color: "var(--color-primary, #0369a1)",
+                    padding: "2px 6px",
+                    borderRadius: "var(--radius-pill)",
+                  }}
+                >
+                  🎪 Festival
+                </span>
+              )}
               <small style={{ display: "block", color: "var(--color-muted)", fontSize: "11px" }}>
                 {selectedPin.city}, {selectedPin.country} &middot; {selectedPin.gig_count} gig
                 {selectedPin.gig_count === 1 ? "" : "s"}

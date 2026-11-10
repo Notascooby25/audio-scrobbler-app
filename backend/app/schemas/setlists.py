@@ -303,6 +303,9 @@ class VenueRoyaltyItem(BaseModel):
 
 class GigTravelAndVenuesResponse(BaseModel):
     home_set: bool
+    home_city: str | None = None
+    home_lat: float | None = None
+    home_lng: float | None = None
     total_distance_km: int
     located_events: int
     pending_events: int
@@ -355,4 +358,11 @@ class GigMapPinItem(BaseModel):
     country: str
     approximate: bool
     gig_count: int
+    is_festival: bool = False
+    festival_count: int = 0
     artists: list[str] = Field(default_factory=list)
+
+
+class GigCadenceMatrixResponse(BaseModel):
+    years: list[int] = Field(default_factory=list)
+    daily_counts: dict[str, int] = Field(default_factory=dict)

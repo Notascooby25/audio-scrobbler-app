@@ -6,9 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from backend.app.db import Base
-from backend.app.models import AttendedConcert, ListeningEvent
+from backend.app.models import AttendedConcert
 from backend.app.services.gig_badges_service import GigBadgesService
-from backend.app.services.gig_reports_service import GigReportsService
 
 
 @pytest.fixture
@@ -45,8 +44,8 @@ def test_solo_explorer_unlocked_when_no_companions(db_session: Session):
     assert badge_map["solo_explorer"]["progress"] == 1
 
 
-def test_live_first_detected_when_gig_precedes_first_scrobble(db_session: Session):
-    # Gig was on 2024-06-01
+def test_opening_act_unlocked_when_support_logged(db_session: Session):
+    # Support act gig on 2024-06-01
     db_session.add(
         AttendedConcert(
             user_id=1,
@@ -56,30 +55,12 @@ def test_live_first_detected_when_gig_precedes_first_scrobble(db_session: Sessio
             city="Manchester",
             country="United Kingdom",
             event_date=datetime(2024, 6, 1),
-            is_support_act=False,
-        )
-    )
-    # First Spotify scrobble was on 2024-08-15
-    db_session.add(
-        ListeningEvent(
-            user_id=1,
-            track_id="t1",
-            track_name="Fixer Upper",
-            artist_name="Yard Act",
-            played_at=datetime(2024, 8, 15),
-            source="spotify",
-            play_id="sp-1",
+            is_support_act=True,
         )
     )
     db_session.commit()
 
-    service = GigReportsService(db_session)
-    discoveries = service.get_live_first_discoveries(user_id=1)
-
-    assert len(discoveries) == 1
-    assert discoveries[0]["artist_name"] == "Yard Act"
-    assert discoveries[0]["lifetime_plays"] == 1
-
     badges = GigBadgesService(db_session).evaluate_badges(user_id=1)
     badge_map = {b["id"]: b for b in badges}
-    assert badge_map["live_first"]["unlocked"] is True
+    assert "opening_act" in badge_map
+    assert badge_map["opening_act"]["unlocked"] is True

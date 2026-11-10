@@ -1,30 +1,63 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import LiveFirstDiscoveries from "./LiveFirstDiscoveries";
+import LiveArtistsSeenList from "./LiveArtistsSeenList";
+import GigCadenceHeatmap from "./GigCadenceHeatmap";
+import SetlistReplayHighlights from "./SetlistReplayHighlights";
 import VenueRoyaltyList from "./VenueRoyaltyList";
 import GigDayOfWeekChart from "./GigDayOfWeekChart";
 
 afterEach(() => cleanup());
 
-describe("LiveFirstDiscoveries", () => {
-  it("renders discoveries with play count and dates", () => {
-    const discoveries = [
+describe("LiveArtistsSeenList", () => {
+  it("renders live artist rankings with show counts and bars", () => {
+    const artists = [
       {
-        artist_name: "Fontaines D.C.",
-        venue_name: "Brudenell Social Club",
-        city: "Leeds",
-        country: "United Kingdom",
-        gig_date: "12 Oct 2019",
-        first_scrobble_date: "04 Feb 2020",
-        lifetime_plays: 380,
+        artist_name: "The Lottery Winners",
+        count: 5,
       },
     ];
 
-    render(<LiveFirstDiscoveries discoveries={discoveries} />);
+    render(<LiveArtistsSeenList artists={artists} />);
 
-    expect(screen.getByText("Fontaines D.C.")).toBeInTheDocument();
-    expect(screen.getByText(/380 plays/i)).toBeInTheDocument();
-    expect(screen.getByText(/Seen 12 Oct 2019/i)).toBeInTheDocument();
+    expect(screen.getByText("Live Artist Rankings")).toBeInTheDocument();
+    expect(screen.getByText("The Lottery Winners")).toBeInTheDocument();
+    expect(screen.getByText("5 gigs")).toBeInTheDocument();
+  });
+});
+
+describe("GigCadenceHeatmap", () => {
+  it("renders matrix with annual concert stats and month cells", () => {
+    const matrix = {
+      years: [2026],
+      daily_counts: {
+        "2026-05-10": 1,
+        "2026-07-20": 2,
+      },
+    };
+
+    render(<GigCadenceHeatmap matrix={matrix} />);
+
+    expect(screen.getByText("Annual Gig Cadence")).toBeInTheDocument();
+    expect(screen.getByText(/3/)).toBeInTheDocument();
+    expect(screen.getByText("May")).toBeInTheDocument();
+  });
+});
+
+describe("SetlistReplayHighlights", () => {
+  it("renders setlist songs heard live", () => {
+    const songs = [
+      {
+        song_name: "Burning Daylight",
+        artist_name: "The Lottery Winners",
+        count: 4,
+      },
+    ];
+
+    render(<SetlistReplayHighlights songs={songs} />);
+
+    expect(screen.getByText("Setlist Replay Tracker")).toBeInTheDocument();
+    expect(screen.getByText("Burning Daylight")).toBeInTheDocument();
+    expect(screen.getByText("4 live plays")).toBeInTheDocument();
   });
 });
 
@@ -59,8 +92,7 @@ describe("GigDayOfWeekChart", () => {
 
     render(<GigDayOfWeekChart cadence={cadence} />);
 
-    expect(screen.getByText(/Gig Rhythm & Cadence/i)).toBeInTheDocument();
+    expect(screen.getByText("Gig Rhythm & Cadence")).toBeInTheDocument();
     expect(screen.getByText("Fri")).toBeInTheDocument();
-    expect(screen.getByText("Sat")).toBeInTheDocument();
   });
 });

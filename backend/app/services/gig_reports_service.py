@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from ..models import AttendedConcert, ListeningEvent, UserPreferences
 from ..queries.analytics_queries import not_blocked_clause
+from .geocoding_service import find_cached
 from .gig_distance_service import _place, _queries, haversine_km
 
 _APOSTROPHES = re.compile(r"[\u2018\u2019\u02bc\u0060\u00b4]")
@@ -29,7 +30,7 @@ def artist_key(name: str) -> str:
 # Plays counted on each side of a gig. Same-day plays are left out of both sides.
 GIG_WINDOW_DAYS = 14
 # Gig bump looks at the most recent gigs only, to keep the number of queries bounded
-GIG_BUMP_MAX_GIGS = 200
+GIG_BUMP_MAX_GIGS = 50
 # Scrobbles written from a gig's own setlist are not listening, so they never count
 LIVE_SOURCE = "setlistfm"
 
@@ -216,12 +217,13 @@ class GigReportsService:
                     "venue_name": c.venue_name.strip(),
                     "city": c.city.strip(),
                     "country": c.country.strip(),
-                    "gig_count": 0,
+                    "distinct_dates": set(),
                     "festivals": 0,
                     "artists": set(),
                 },
             )
-            v_info["gig_count"] += 1
+            if c.event_date:
+                v_info["distinct_dates"].add(c.event_date.strftime("%Y-%m-%d"))
             if c.is_festival:
                 v_info["festivals"] += 1
             v_info["artists"].add(c.artist_name.strip())
@@ -268,7 +270,7 @@ class GigReportsService:
                     "venue_name": v["venue_name"],
                     "city": v["city"],
                     "country": v["country"],
-                    "gig_count": v["gig_count"],
+                    "gig_count": len(v["distinct_dates"]),
                     "festivals": v["festivals"],
                     "distinct_artists": len(v["artists"]),
                 }
@@ -277,6 +279,9 @@ class GigReportsService:
 
         return {
             "home_set": home is not None,
+            "home_city": preferences.home_city if preferences else None,
+            "home_lat": preferences.home_lat if preferences else None,
+            "home_lng": preferences.home_lng if preferences else None,
             "total_distance_km": round(total_distance_km),
             "located_events": located_events,
             "pending_events": pending_events,
@@ -427,13 +432,14 @@ class GigReportsService:
         return results[:limit]
 
     def get_gigs_day_of_week(self, user_id: int) -> list[dict[str, Any]]:
-        """Returns distribution of concert dates by day of the week (0=Mon .. 6=Sun)."""
+        """Returns distribution of concert dates by day of the week (0=Mon .. 6=Sun), counting distinct dates."""
         concerts = self.db.query(AttendedConcert.event_date).filter(AttendedConcert.user_id == user_id).all()
+        # Deduplicate to unique calendar dates so multiple acts on the same night count as 1 gig
+        distinct_dates = {event_date.date() for (event_date,) in concerts if event_date}
         counts = [0] * 7
         day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-        for (event_date,) in concerts:
-            if event_date:
-                counts[event_date.weekday()] += 1
+        for d in distinct_dates:
+            counts[d.weekday()] += 1
 
         total = sum(counts)
         return [
@@ -459,7 +465,14 @@ class GigReportsService:
             venue_q, city_q = _queries(c.venue_name, c.city, c.country)
             known, point, approx = _place(self.db, venue_q, city_q)
             if not known or point is None:
-                continue
+                # If venue lookup failed or is pending, fallback to city if cached
+                if city_q:
+                    city_known, city_point = find_cached(self.db, city_q)
+                    if city_known and city_point is not None:
+                        point = city_point
+                        approx = True
+                if point is None:
+                    continue
 
             pin_key = f"{round(point[0], 4)},{round(point[1], 4)}"
             pin = pins_map.setdefault(
@@ -472,11 +485,41 @@ class GigReportsService:
                     "country": c.country,
                     "approximate": approx,
                     "gig_count": 0,
+                    "is_festival": False,
+                    "festival_count": 0,
                     "artists": [],
                 },
             )
             pin["gig_count"] += 1
+            if c.is_festival:
+                pin["is_festival"] = True
+                pin["festival_count"] += 1
             if len(pin["artists"]) < 5 and c.artist_name not in pin["artists"]:
                 pin["artists"].append(c.artist_name)
 
         return list(pins_map.values())
+
+    def get_gig_cadence_matrix(self, user_id: int) -> dict[str, Any]:
+        """Returns annual day-by-day gig counts so frontend can render an activity heatmap matrix."""
+        concerts = (
+            self.db.query(AttendedConcert.event_date)
+            .filter(AttendedConcert.user_id == user_id, AttendedConcert.event_date.isnot(None))
+            .order_by(AttendedConcert.event_date.asc())
+            .all()
+        )
+        if not concerts:
+            return {"years": [], "daily_counts": {}}
+
+        # Count unique gig outings per calendar date so multiple acts on the same date count as 1 gig
+        distinct_dates = {event_date.date() for (event_date,) in concerts if event_date}
+        daily: dict[str, int] = {}
+        years_seen: set[int] = set()
+        for d in sorted(distinct_dates):
+            day_str = d.strftime("%Y-%m-%d")
+            daily[day_str] = 1
+            years_seen.add(d.year)
+
+        return {
+            "years": sorted(years_seen, reverse=True),
+            "daily_counts": daily,
+        }
