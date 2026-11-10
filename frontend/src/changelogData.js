@@ -1,5 +1,18 @@
 export const CHANGELOG = [
   {
+    version: "0.43.0",
+    date: "2026-11-10",
+    changes: [
+      "Listening Streaks & Personal Milestones: Added active scrobble streaks (with a 1-day grace period), best streak in selected range, peak listening day, and your most played on-repeat track.",
+      "Period Persona Archetypes: Earn fun listening persona badges for the period based on your habits (Night Owl, Weekend Warrior, Discovery Voyager, Catalog Loyalist, and Deep Diver).",
+      "1001 Albums Challenge Milestone: Integrated canonical 1001 albums completed in the selected time window, overall challenge progress (e.g. 72 / 1001), and clickable album chips linking straight to the Jukebox.",
+      "Live Concert Cross-Over: Linked your attended concert history with current listening habits, highlighting scrobbles for bands you've experienced in concert.",
+      "Discovery Velocity & Music Ratios: Added a first-time artist discovery percentage to track exploration velocity alongside Explorer vs Repeater and Singles vs Albums.",
+      "Customisable Widgets Dashboard: Introduced an interactive 'Customise Widgets' modal allowing you to toggle any section on or off and switch Top Leaderboards between Top 5 and Top 10 items, persisted to your device.",
+      "Timeline Skin Aesthetic: Polished reports dashboard cards, pill badges, and customizer styling under the deep slate Timeline Skin theme.",
+    ],
+  },
+  {
     version: "0.42.0",
     date: "2026-11-10",
     changes: [

@@ -1,51 +1,67 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { MemoryRouter } from 'react-router-dom'
-import ReportsPage from './ReportsPage'
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
+import ReportsPage from "./ReportsPage";
 
-vi.mock('../api', () => ({
-  fetchReportsSummary: vi.fn().mockResolvedValue({ period_scrobbles: 10, comparison_percent: 0, listening_minutes: 50, average_per_day: 5 }),
-  fetchReportsCharts: vi.fn().mockResolvedValue({ weekly_scrobbles: [], listening_heatmap: [], listening_clock: [], music_by_decade: [] }),
+vi.mock("../api", () => ({
+  fetchReportsSummary: vi
+    .fn()
+    .mockResolvedValue({
+      period_scrobbles: 10,
+      comparison_percent: 0,
+      listening_minutes: 50,
+      average_per_day: 5,
+    }),
+  fetchReportsCharts: vi
+    .fn()
+    .mockResolvedValue({
+      weekly_scrobbles: [],
+      listening_heatmap: [],
+      listening_clock: [],
+      music_by_decade: [],
+    }),
   fetchReportsEntity: vi.fn().mockResolvedValue({ entries: [] }),
-  fetchFriendsComparison: vi.fn().mockResolvedValue({ has_friends: false, top_artists: [], top_tracks: [], leaderboard: [] }),
+  fetchFriendsComparison: vi
+    .fn()
+    .mockResolvedValue({ has_friends: false, top_artists: [], top_tracks: [], leaderboard: [] }),
   fetchUserProfile: vi.fn(),
-  fetchUserSettings: vi.fn().mockResolvedValue({ default_date_range: 'last.week' }),
-}))
+  fetchUserSettings: vi.fn().mockResolvedValue({ default_date_range: "last.week" }),
+}));
 
-vi.mock('../session', () => ({
-  readSession: vi.fn().mockReturnValue({ accessToken: 'fake-token', userId: 1 }),
-}))
+vi.mock("../session", () => ({
+  readSession: vi.fn().mockReturnValue({ accessToken: "fake-token", userId: 1 }),
+}));
 
-describe('ReportsPage with Friends Comparison', () => {
+describe("ReportsPage with Friends Comparison", () => {
   beforeEach(() => {
-    localStorage.clear()
-    vi.clearAllMocks()
-  })
-  afterEach(() => cleanup())
+    localStorage.clear();
+    vi.clearAllMocks();
+  });
+  afterEach(() => cleanup());
 
-  it('toggles the friends comparison section when button is clicked', async () => {
+  it("toggles the friends comparison section when button is clicked", async () => {
     render(
       <MemoryRouter>
         <ReportsPage />
       </MemoryRouter>
-    )
+    );
 
-    const toggleBtn = screen.getByRole('button', { name: /Compare with Friends/i })
-    expect(toggleBtn).toBeInTheDocument()
+    const toggleBtn = screen.getByRole("button", { name: /Compare with Friends/i });
+    expect(toggleBtn).toBeInTheDocument();
 
     // Initially closed
-    expect(screen.queryByRole('heading', { name: 'With Friends' })).not.toBeInTheDocument()
+    expect(screen.queryByRole("heading", { name: "With Friends" })).not.toBeInTheDocument();
 
     // Click to open
-    fireEvent.click(toggleBtn)
-    expect(await screen.findByRole('heading', { name: 'With Friends' })).toBeInTheDocument()
+    fireEvent.click(toggleBtn);
+    expect(await screen.findByRole("heading", { name: "With Friends" })).toBeInTheDocument();
 
     // Button label updates to indicate active / close
-    expect(screen.getByRole('button', { name: /Hide Friends Comparison/i })).toBeInTheDocument()
-  })
+    expect(screen.getByRole("button", { name: /Hide Friends Comparison/i })).toBeInTheDocument();
+  });
 
-  it('renders comparison percentages for all three metrics when compare_to_previous is true', async () => {
-    const { fetchReportsSummary } = await import('../api')
+  it("renders comparison percentages for all three metrics when compare_to_previous is true", async () => {
+    const { fetchReportsSummary } = await import("../api");
     fetchReportsSummary.mockResolvedValue({
       period_scrobbles: 244,
       comparison_percent: -36.6,
@@ -56,25 +72,25 @@ describe('ReportsPage with Friends Comparison', () => {
       average_per_day: 34.9,
       previous_average_per_day: 55.0,
       average_per_day_comparison_percent: -36.5,
-    })
+    });
 
     render(
       <MemoryRouter>
         <ReportsPage />
       </MemoryRouter>
-    )
+    );
 
     // Toggle compare to previous period
-    const compareToggle = screen.getByLabelText(/Compare to previous period/i)
-    fireEvent.click(compareToggle)
+    const compareToggle = screen.getByLabelText(/Compare to previous period/i);
+    fireEvent.click(compareToggle);
 
-    expect(await screen.findByText(/-36.6% vs previous \(385\)/)).toBeInTheDocument()
-    expect(screen.getByText(/-28.2% vs previous \(1,250\)/)).toBeInTheDocument()
-    expect(screen.getByText(/-36.5% vs previous \(55\)/)).toBeInTheDocument()
-  })
+    expect(await screen.findByText(/-36.6% vs previous \(385\)/)).toBeInTheDocument();
+    expect(screen.getByText(/-28.2% vs previous \(1,250\)/)).toBeInTheDocument();
+    expect(screen.getByText(/-36.5% vs previous \(55\)/)).toBeInTheDocument();
+  });
 
-  it('applies negative, positive, and neutral color classes to comparison delta labels', async () => {
-    const { fetchReportsSummary } = await import('../api')
+  it("applies negative, positive, and neutral color classes to comparison delta labels", async () => {
+    const { fetchReportsSummary } = await import("../api");
     fetchReportsSummary.mockResolvedValue({
       period_scrobbles: 500,
       comparison_percent: 25.5,
@@ -85,52 +101,94 @@ describe('ReportsPage with Friends Comparison', () => {
       average_per_day: 50.0,
       previous_average_per_day: 50.0,
       average_per_day_comparison_percent: 0,
-    })
+    });
 
     render(
       <MemoryRouter>
         <ReportsPage />
       </MemoryRouter>
-    )
+    );
 
-    const compareToggle = screen.getByLabelText(/Compare to previous period/i)
-    fireEvent.click(compareToggle)
+    const compareToggle = screen.getByLabelText(/Compare to previous period/i);
+    fireEvent.click(compareToggle);
 
-    const positiveEl = await screen.findByText(/\+25.5% vs previous \(400\)/)
-    const negativeEl = screen.getByText(/-20% vs previous \(1,000\)/)
-    const neutralEl = screen.getByText(/0% vs previous \(50\)/)
+    const positiveEl = await screen.findByText(/\+25.5% vs previous \(400\)/);
+    const negativeEl = screen.getByText(/-20% vs previous \(1,000\)/);
+    const neutralEl = screen.getByText(/0% vs previous \(50\)/);
 
-    expect(positiveEl).toHaveClass('stat-comparison-positive')
-    expect(negativeEl).toHaveClass('stat-comparison-negative')
-    expect(neutralEl).toHaveClass('stat-comparison-neutral')
-  })
+    expect(positiveEl).toHaveClass("stat-comparison-positive");
+    expect(negativeEl).toHaveClass("stat-comparison-negative");
+    expect(neutralEl).toHaveClass("stat-comparison-neutral");
+  });
 
-  it('displays loading feedback while reports are being fetched', async () => {
-    const { fetchReportsSummary } = await import('../api')
-    let resolveSummary
+  it("displays loading feedback while reports are being fetched", async () => {
+    const { fetchReportsSummary } = await import("../api");
+    let resolveSummary;
     const pendingPromise = new Promise((resolve) => {
-      resolveSummary = resolve
-    })
-    fetchReportsSummary.mockReturnValueOnce(pendingPromise)
+      resolveSummary = resolve;
+    });
+    fetchReportsSummary.mockReturnValueOnce(pendingPromise);
 
     render(
       <MemoryRouter>
         <ReportsPage />
       </MemoryRouter>
-    )
+    );
 
-    expect(screen.getByRole('status')).toHaveTextContent(/Updating listening report/i)
+    expect(screen.getByRole("status")).toHaveTextContent(/Updating listening report/i);
 
     resolveSummary({
       period_scrobbles: 10,
       comparison_percent: 0,
       listening_minutes: 50,
       average_per_day: 5,
-    })
+    });
 
     await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument()
-    })
-  })
-})
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+  });
 
+  it("opens customise widgets modal and saves updated widget layout", async () => {
+    const { fetchReportsSummary } = await import("../api");
+    fetchReportsSummary.mockResolvedValue({
+      period_scrobbles: 100,
+      comparison_percent: 0,
+      listening_minutes: 200,
+      average_per_day: 10,
+      current_streak_days: 12,
+      period_best_streak_days: 15,
+      persona: "Night Owl",
+      challenge_1001: { completed_in_period: 2, total_completed: 50, recent_albums: [] },
+      live_artists: { attended_artists_played: 1, total_scrobbles: 10, top_artists: [] },
+    });
+
+    render(
+      <MemoryRouter>
+        <ReportsPage />
+      </MemoryRouter>
+    );
+
+    const customiseBtn = await screen.findByRole("button", { name: /Customise report widgets/i });
+    expect(customiseBtn).toBeInTheDocument();
+
+    // Streaks milestone visible initially
+    expect(await screen.findByText(/12 Days/i)).toBeInTheDocument();
+
+    // Open modal
+    fireEvent.click(customiseBtn);
+    expect(screen.getByRole("dialog", { name: /Customise Report Widgets/i })).toBeInTheDocument();
+
+    // Toggle off Streaks
+    const streaksToggle = screen.getByLabelText(/Streaks & Milestones/i);
+    fireEvent.click(streaksToggle);
+
+    // Save
+    const saveBtn = screen.getByRole("button", { name: /Save Preferences/i });
+    fireEvent.click(saveBtn);
+
+    // Modal closes and milestones are hidden
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByText(/12 Days/i)).not.toBeInTheDocument();
+  });
+});

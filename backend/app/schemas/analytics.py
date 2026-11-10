@@ -149,6 +149,52 @@ class DiscoveriesEntry(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PeakDayEntry(BaseModel):
+    date: str
+    count: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class HeavyRotationEntry(BaseModel):
+    track_name: str
+    artist_name: str
+    count: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DiscoveryVelocityEntry(BaseModel):
+    new_artists: int = 0
+    total_artists: int = 0
+    new_artists_percent: float = 0.0
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class Challenge1001Entry(BaseModel):
+    completed_in_period: int = 0
+    total_completed: int = 0
+    recent_albums: list[str] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LiveArtistItem(BaseModel):
+    artist_name: str
+    count: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LiveArtistsEntry(BaseModel):
+    attended_artists_played: int = 0
+    total_scrobbles: int = 0
+    top_artists: list[LiveArtistItem] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ReportSummaryResponse(BaseModel):
     user_id: int
     range: str
@@ -168,6 +214,14 @@ class ReportSummaryResponse(BaseModel):
     unique_tracks: int = 0
     source_breakdown: list[SourceBreakdownEntry] = []
     new_discoveries: DiscoveriesEntry = DiscoveriesEntry()
+    current_streak_days: int = 0
+    period_best_streak_days: int = 0
+    peak_day: PeakDayEntry | None = None
+    heavy_rotation: HeavyRotationEntry | None = None
+    persona: str = "Discovery Voyager"
+    discovery_velocity: DiscoveryVelocityEntry = DiscoveryVelocityEntry()
+    challenge_1001: Challenge1001Entry = Challenge1001Entry()
+    live_artists: LiveArtistsEntry = LiveArtistsEntry()
 
 
 class ReportPoint(BaseModel):

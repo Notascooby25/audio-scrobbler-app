@@ -1,12 +1,22 @@
 from __future__ import annotations
 
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from ..models import Follow, GenreCache, LikedTrack, ListeningEvent, SavedAlbum
+from ..datetime_utils import utc_now
+from ..models import (
+    AttendedConcert,
+    Follow,
+    GenreCache,
+    LikedTrack,
+    ListeningEvent,
+    SavedAlbum,
+    User1001AlbumCompletion,
+)
+from .gig_reports_service import artist_key
 from ..queries.analytics_queries import (
     build_report_genre_artist_counts_query,
     build_report_heatmap_query,
@@ -26,11 +36,17 @@ from ..queries.analytics_queries import (
     build_report_decade_query,
     build_stats_summary_query,
     build_top_entities_query,
+    not_blocked_clause,
     resolve_date_range,
 )
 from ..schemas.analytics import (
+    Challenge1001Entry,
     ChartEntry,
     ChartResponse,
+    DiscoveryVelocityEntry,
+    HeavyRotationEntry,
+    LiveArtistItem,
+    LiveArtistsEntry,
     MonthlySummaryEntry,
     MonthlySummaryResponse,
     LibraryEntry,
@@ -38,6 +54,7 @@ from ..schemas.analytics import (
     LibraryScrobbleEntry,
     LibraryScrobbleResponse,
     HeatmapPoint,
+    PeakDayEntry,
     ReportChartsResponse,
     ReportPoint,
     ReportSummaryResponse,
@@ -49,6 +66,279 @@ from ..schemas.analytics import (
     TimelineEntry,
     TimelineResponse,
 )
+from .catalog_1001_service import get_1001_album_by_id
+
+
+def _calculate_streaks(db: Session, user_id: int, period_start: datetime, period_end: datetime) -> tuple[int, int]:
+    if not hasattr(db, "query"):
+        return 0, 0
+    # 1. Period best streak: get all distinct played dates within period
+    date_rows = (
+        db.query(func.date(ListeningEvent.played_at).label("pdate"))
+        .filter(
+            ListeningEvent.user_id == user_id,
+            ListeningEvent.played_at >= period_start,
+            ListeningEvent.played_at <= period_end,
+            not_blocked_clause(user_id),
+        )
+        .distinct()
+        .order_by("pdate")
+        .all()
+    )
+    period_best = 0
+    cur_chain = 0
+    prev_dt = None
+    for r in date_rows:
+        if not r.pdate:
+            continue
+        try:
+            d_val = datetime.strptime(str(r.pdate)[:10], "%Y-%m-%d").date()
+        except Exception:
+            continue
+        if prev_dt is None:
+            cur_chain = 1
+        elif (d_val - prev_dt).days == 1:
+            cur_chain += 1
+        elif (d_val - prev_dt).days > 1:
+            cur_chain = 1
+        prev_dt = d_val
+        if cur_chain > period_best:
+            period_best = cur_chain
+
+    # 2. Current streak: contiguous days backwards from today
+    all_dates_desc = (
+        db.query(func.date(ListeningEvent.played_at).label("pdate"))
+        .filter(
+            ListeningEvent.user_id == user_id,
+            not_blocked_clause(user_id),
+        )
+        .distinct()
+        .order_by(func.date(ListeningEvent.played_at).desc())
+        .limit(365)
+        .all()
+    )
+    current_streak = 0
+    today = utc_now().date()
+    yesterday = today - timedelta(days=1)
+
+    expected_date = None
+    for r in all_dates_desc:
+        if not r.pdate:
+            continue
+        try:
+            d_val = datetime.strptime(str(r.pdate)[:10], "%Y-%m-%d").date()
+        except Exception:
+            continue
+        if expected_date is None:
+            if d_val == today:
+                current_streak = 1
+                expected_date = yesterday
+            elif d_val == yesterday:
+                current_streak = 1
+                expected_date = yesterday - timedelta(days=1)
+            else:
+                break
+        elif d_val == expected_date:
+            current_streak += 1
+            expected_date = expected_date - timedelta(days=1)
+        else:
+            break
+
+    return current_streak, period_best
+
+
+def _calculate_peak_and_rotation(
+    db: Session, user_id: int, period_start: datetime, period_end: datetime
+) -> tuple[PeakDayEntry | None, HeavyRotationEntry | None]:
+    if not hasattr(db, "query"):
+        return None, None
+
+    # Peak day
+    peak_row = (
+        db.query(
+            func.date(ListeningEvent.played_at).label("pdate"),
+            func.count(ListeningEvent.id).label("cnt"),
+        )
+        .filter(
+            ListeningEvent.user_id == user_id,
+            ListeningEvent.played_at >= period_start,
+            ListeningEvent.played_at <= period_end,
+            not_blocked_clause(user_id),
+        )
+        .group_by("pdate")
+        .order_by(func.count(ListeningEvent.id).desc())
+        .first()
+    )
+    peak_day = None
+    if peak_row and peak_row.pdate:
+        peak_day = PeakDayEntry(date=str(peak_row.pdate)[:10], count=int(peak_row.cnt))
+
+    # Heavy rotation: most scrobbled track in period
+    rot_row = (
+        db.query(
+            ListeningEvent.track_name,
+            ListeningEvent.artist_name,
+            func.count(ListeningEvent.id).label("cnt"),
+        )
+        .filter(
+            ListeningEvent.user_id == user_id,
+            ListeningEvent.played_at >= period_start,
+            ListeningEvent.played_at <= period_end,
+            not_blocked_clause(user_id),
+        )
+        .group_by(ListeningEvent.track_name, ListeningEvent.artist_name)
+        .order_by(func.count(ListeningEvent.id).desc())
+        .first()
+    )
+    heavy_rotation = None
+    if rot_row and rot_row.track_name:
+        heavy_rotation = HeavyRotationEntry(
+            track_name=str(rot_row.track_name),
+            artist_name=str(rot_row.artist_name or "Unknown"),
+            count=int(rot_row.cnt),
+        )
+
+    return peak_day, heavy_rotation
+
+
+def _calculate_persona(
+    db: Session,
+    user_id: int,
+    period_start: datetime,
+    period_end: datetime,
+    current_count: int,
+    unique_artists: int,
+    discovery_pct: float,
+) -> str:
+    if not hasattr(db, "query") or current_count == 0:
+        return "Discovery Voyager"
+
+    try:
+        events = (
+            db.query(ListeningEvent.played_at)
+            .filter(
+                ListeningEvent.user_id == user_id,
+                ListeningEvent.played_at >= period_start,
+                ListeningEvent.played_at <= period_end,
+                not_blocked_clause(user_id),
+            )
+            .all()
+        )
+    except Exception:
+        events = []
+
+    night_count = 0
+    weekend_count = 0
+    for ev in events:
+        hr = ev.played_at.hour
+        if hr >= 22 or hr < 4:
+            night_count += 1
+        if ev.played_at.weekday() in (5, 6):
+            weekend_count += 1
+
+    total = max(len(events), 1)
+    if (night_count / total) >= 0.30:
+        return "Night Owl"
+    if (weekend_count / total) >= 0.50:
+        return "Weekend Warrior"
+    if discovery_pct >= 40.0:
+        return "Discovery Voyager"
+    if (current_count / max(unique_artists, 1)) >= 8.0:
+        return "Catalog Loyalist"
+    return "Deep Diver"
+
+
+def _get_1001_milestones(
+    db: Session, user_id: int, period_start: datetime, period_end: datetime
+) -> Challenge1001Entry:
+    if not hasattr(db, "query"):
+        return Challenge1001Entry()
+
+    total_completed = (
+        db.query(func.count(User1001AlbumCompletion.id))
+        .filter(
+            User1001AlbumCompletion.user_id == user_id,
+            User1001AlbumCompletion.is_completed == True,  # noqa: E712
+        )
+        .scalar()
+        or 0
+    )
+
+    completions_in_period = (
+        db.query(User1001AlbumCompletion.album_id)
+        .filter(
+            User1001AlbumCompletion.user_id == user_id,
+            User1001AlbumCompletion.is_completed == True,  # noqa: E712
+            User1001AlbumCompletion.completed_at >= period_start,
+            User1001AlbumCompletion.completed_at <= period_end,
+        )
+        .all()
+    )
+
+    recent_album_names: list[str] = []
+    for row in completions_in_period[:5]:
+        album_meta = get_1001_album_by_id(row.album_id)
+        if album_meta and album_meta.get("album"):
+            recent_album_names.append(str(album_meta.get("album")))
+        else:
+            recent_album_names.append(f"Album #{row.album_id}")
+
+    return Challenge1001Entry(
+        completed_in_period=len(completions_in_period),
+        total_completed=int(total_completed),
+        recent_albums=recent_album_names,
+    )
+
+
+def _get_live_artist_connection(
+    db: Session, user_id: int, period_start: datetime, period_end: datetime
+) -> LiveArtistsEntry:
+    if not hasattr(db, "query"):
+        return LiveArtistsEntry()
+
+    concert_artists = (
+        db.query(AttendedConcert.artist_name)
+        .filter(AttendedConcert.user_id == user_id)
+        .distinct()
+        .all()
+    )
+    if not concert_artists:
+        return LiveArtistsEntry()
+
+    attended_keys = {artist_key(r.artist_name): r.artist_name for r in concert_artists if r.artist_name}
+
+    artist_counts = (
+        db.query(
+            ListeningEvent.artist_name,
+            func.count(ListeningEvent.id).label("cnt"),
+        )
+        .filter(
+            ListeningEvent.user_id == user_id,
+            ListeningEvent.played_at >= period_start,
+            ListeningEvent.played_at <= period_end,
+            not_blocked_clause(user_id),
+        )
+        .group_by(ListeningEvent.artist_name)
+        .all()
+    )
+
+    top_matches: list[LiveArtistItem] = []
+    total_live_scrobbles = 0
+    for r in artist_counts:
+        if not r.artist_name:
+            continue
+        k = artist_key(r.artist_name)
+        if k in attended_keys:
+            top_matches.append(LiveArtistItem(artist_name=str(r.artist_name), count=int(r.cnt)))
+            total_live_scrobbles += int(r.cnt)
+
+    top_matches.sort(key=lambda x: x.count, reverse=True)
+
+    return LiveArtistsEntry(
+        attended_artists_played=len(top_matches),
+        total_scrobbles=total_live_scrobbles,
+        top_artists=top_matches[:5],
+    )
 
 
 def _liked_track_ids(db: Session, user_id: int, candidate_ids: set[str]) -> set[str]:
@@ -509,6 +799,22 @@ def get_report_summary(
     )
     new_discoveries = DiscoveriesEntry(artists=new_artists, albums=new_albums, tracks=new_tracks)
 
+    # Enhanced stats
+    current_streak, period_best = _calculate_streaks(db, user_id, period_start, period_end)
+    peak_day, heavy_rotation = _calculate_peak_and_rotation(db, user_id, period_start, period_end)
+    unique_artists_count = int(current.unique_artists)
+    discovery_pct = round((new_artists / max(unique_artists_count, 1)) * 100, 1)
+    persona = _calculate_persona(
+        db, user_id, period_start, period_end, current_count, unique_artists_count, discovery_pct
+    )
+    discovery_velocity = DiscoveryVelocityEntry(
+        new_artists=new_artists,
+        total_artists=unique_artists_count,
+        new_artists_percent=discovery_pct,
+    )
+    challenge_1001 = _get_1001_milestones(db, user_id, period_start, period_end)
+    live_artists = _get_live_artist_connection(db, user_id, period_start, period_end)
+
     return ReportSummaryResponse(
         user_id=user_id,
         range=range_key,
@@ -523,11 +829,19 @@ def get_report_summary(
         previous_average_per_day=previous_avg,
         average_per_day_comparison_percent=round(avg_comparison, 1),
         following_average_scrobbles=round(following_avg, 1) if following_avg is not None else None,
-        unique_artists=int(current.unique_artists),
+        unique_artists=unique_artists_count,
         unique_albums=int(current.unique_albums),
         unique_tracks=int(current.unique_tracks),
         source_breakdown=source_breakdown,
         new_discoveries=new_discoveries,
+        current_streak_days=current_streak,
+        period_best_streak_days=period_best,
+        peak_day=peak_day,
+        heavy_rotation=heavy_rotation,
+        persona=persona,
+        discovery_velocity=discovery_velocity,
+        challenge_1001=challenge_1001,
+        live_artists=live_artists,
     )
 
 

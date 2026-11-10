@@ -308,6 +308,23 @@ export default function UserGuideSection() {
             can also optionally stamp key stats directly onto the card, including total listening
             time with percentage change, active sources breakdown, and discovery counts!
           </li>
+          <li>
+            <strong>Streaks, Personas & Milestones:</strong> The Reports dashboard now celebrates
+            your listening habits with active streaks, peak listening days, heavy rotation tracks,
+            and earned persona archetypes (Night Owl, Weekend Warrior, Discovery Voyager, Catalog
+            Loyalist, and Deep Diver).
+          </li>
+          <li>
+            <strong>1001 Challenge & Live Gig Cross-Over:</strong> Track how many canonical albums
+            you've checked off from the <em>1001 Albums You Must Hear Before You Die</em> challenge
+            in the selected timeframe, and see which artists you've experienced live in concert that
+            you played this period.
+          </li>
+          <li>
+            <strong>Customisable Report Widgets:</strong> Click <em>⚙ Customise Widgets</em> in the
+            reports toolbar to toggle any card on or off, and choose whether your top leaderboards
+            display Top 5 or Top 10 items. Your preferences are saved automatically on your device.
+          </li>
         </ul>
       </article>
 
