@@ -277,6 +277,7 @@ export default function SetlistGigPage() {
             at {[gig.venue_name, gig.city, gig.country].filter(Boolean).join(", ")}
             {isUpcoming && <span className="sfm-tag">Upcoming</span>}
             {gig.is_support_act && <span className="sfm-tag is-muted">Support act</span>}
+            {gig.is_cover_band && <span className="sfm-tag is-muted">Cover band</span>}
           </p>
           {gig.tour_name && <p>Tour: {gig.tour_name}</p>}
           {isViewing && <p>From @{owner?.username || "..."}&apos;s gigs</p>}

@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.44.0",
+    date: "2026-11-10",
+    changes: [
+      "Gig Reports Past Events Cutoff: Filtered all widgets and leaderboards across the Gigs tab in Reports (Live Artist Rankings, Gig Odyssey Map, Live Gap, Venue Stomping Grounds, Cadence Grid, and Badges) to strictly exclude upcoming/future events whose date has not yet passed.",
+      "Same-Day Festival Deduplication: Fixed festival outing counts across Venue Stomping Grounds, Gigs by Period, and Gig Odyssey Map pins so that multiple acts logged on the same festival date count as 1 festival visit / gig rather than inflating per act.",
+      "Cover Band & Tribute Act Tagging: Added a dedicated 'Cover band / Tribute act' toggle when manually logging or editing gigs, complete with a visual badge in the gig detail header and timeline.",
+    ],
+  },
+  {
     version: "0.43.0",
     date: "2026-11-10",
     changes: [

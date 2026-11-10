@@ -238,11 +238,41 @@ def test_log_manual_concert_route():
     assert data["city"] == "Birmingham"
     assert data["notes"] == "Balcony tickets booked!"
     assert data["setlist_id"].startswith("manual-")
+    assert data["is_cover_band"] is False
 
     # Verify it shows in attendances
     gigs_res = client.get("/setlists/attendances")
     assert gigs_res.status_code == 200
-    assert any(g["artist_name"] == "Shed Seven" for g in gigs_res.json())
+    assert any(g["artist_name"] == "Shed Seven" and g["is_cover_band"] is False for g in gigs_res.json())
+
+    # Log with is_cover_band = True
+    cover_payload = {
+        "artist_name": "Antarctic Monkeys",
+        "venue_name": "The Roadmender",
+        "city": "Northampton",
+        "country": "United Kingdom",
+        "event_date": "2026-11-20",
+        "is_cover_band": True,
+    }
+    cover_res = client.post("/setlists/manual", json=cover_payload)
+    assert cover_res.status_code == 201
+    cover_id = cover_res.json()["id"]
+    assert cover_res.json()["is_cover_band"] is True
+
+    # Update to is_cover_band = False
+    patch_res = client.patch(
+        f"/setlists/{cover_id}",
+        json={
+            "artist_name": "Antarctic Monkeys",
+            "venue_name": "The Roadmender",
+            "city": "Northampton",
+            "country": "United Kingdom",
+            "event_date": "2026-11-20",
+            "is_cover_band": False,
+        },
+    )
+    assert patch_res.status_code == 200
+    assert patch_res.json()["is_cover_band"] is False
 
 
 def test_get_single_attendance_is_owner_only():

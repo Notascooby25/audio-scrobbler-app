@@ -48,6 +48,7 @@ class ImportedGigRow(BaseModel):
     is_support_act: bool | None = None
     is_festival: bool | None = None
     festival_name: str | None = Field(None, max_length=255)
+    is_cover_band: bool | None = None
     setlist_url: str | None = Field(None, max_length=500)
     notes: str | None = Field(None, max_length=2000)
     raw_data: dict[str, Any] | None = None
@@ -224,6 +225,7 @@ def import_gigs_from_file(
             is_support_act=bool(row.is_support_act),
             is_festival=bool(row.is_festival),
             festival_name=festival_name_for(bool(row.is_festival), row.festival_name),
+            is_cover_band=bool(row.is_cover_band),
             raw_data=setlist_data or row.raw_data or {"id": setlist_id, "sets": {"set": []}, "is_manual": is_manual},
             song_count=len(songs),
             notes=row.notes,

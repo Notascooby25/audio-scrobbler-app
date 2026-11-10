@@ -476,6 +476,7 @@ class SetlistAttendanceService:
         allow_duplicate: bool = False,
         is_festival: bool | None = None,
         festival_name: str | None = None,
+        is_cover_band: bool | None = None,
     ) -> AttendedConcert:
         """Corrects a gig's details. Its scrobbles, and support acts logged under it, move
         with it. Setlist.fm's copy (raw_data) is left alone, so Refresh only updates songs."""
@@ -513,6 +514,8 @@ class SetlistAttendanceService:
             concert.is_festival = is_festival
         if is_festival is not None or festival_name is not None:
             concert.festival_name = festival_name_for(concert.is_festival, festival_name)
+        if is_cover_band is not None:
+            concert.is_cover_band = is_cover_band
         for gig in [concert, *supports]:
             gig.event_date = gig.event_date + shift
             if venue_moved:
@@ -555,6 +558,7 @@ class SetlistAttendanceService:
         allow_duplicate: bool = True,
         is_festival: bool = False,
         festival_name: str | None = None,
+        is_cover_band: bool = False,
     ) -> AttendedConcert:
         try:
             event_dt = datetime.strptime(event_date_str, "%Y-%m-%d")
@@ -587,6 +591,7 @@ class SetlistAttendanceService:
             "sets": {"set": []},
             "url": clean_url or "",
             "is_manual": True,
+            "is_cover_band": is_cover_band,
         }
 
         concert = AttendedConcert(
@@ -601,6 +606,7 @@ class SetlistAttendanceService:
             is_support_act=False,
             is_festival=is_festival,
             festival_name=festival_name_for(is_festival, festival_name),
+            is_cover_band=is_cover_band,
             raw_data=raw_data,
             song_count=0,
             notes=clean_notes,

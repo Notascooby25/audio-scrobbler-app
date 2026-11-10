@@ -63,4 +63,25 @@ describe("EditGigModal festival name", () => {
       )
     );
   });
+
+  it("toggles cover band status and passes isCoverBand in updateConcert", async () => {
+    setlistsApi.updateConcert.mockResolvedValue({ ...gig, is_cover_band: true });
+    render(<EditGigModal gig={gig} token="test-token" onClose={vi.fn()} onSaved={vi.fn()} />);
+
+    const coverCheckbox = screen.getByRole("checkbox", { name: /Cover band \/ Tribute act/i });
+    expect(coverCheckbox).not.toBeChecked();
+
+    fireEvent.click(coverCheckbox);
+    expect(coverCheckbox).toBeChecked();
+
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", { name: "Save changes" })
+    );
+
+    await waitFor(() =>
+      expect(setlistsApi.updateConcert).toHaveBeenCalledWith(
+        expect.objectContaining({ isCoverBand: true })
+      )
+    );
+  });
 });

@@ -583,6 +583,11 @@ describe("SetlistsPage", () => {
       target: { value: "2026-11-14" },
     });
 
+    const coverCheckbox = screen.getByRole("checkbox", { name: /cover band \/ tribute act/i });
+    expect(coverCheckbox).not.toBeChecked();
+    fireEvent.click(coverCheckbox);
+    expect(coverCheckbox).toBeChecked();
+
     // Submit modal
     const saveBtn = screen.getByRole("button", { name: /log concert/i });
     fireEvent.click(saveBtn);
@@ -594,6 +599,7 @@ describe("SetlistsPage", () => {
           venueName: "O2 Academy Birmingham",
           city: "Birmingham",
           eventDate: "2026-11-14",
+          isCoverBand: true,
         })
       );
     });

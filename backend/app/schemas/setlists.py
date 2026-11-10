@@ -28,6 +28,7 @@ class LogManualConcertRequest(BaseModel):
     setlist_url: str | None = Field(None, max_length=500)
     is_festival: bool = False
     festival_name: str | None = Field(None, max_length=255)
+    is_cover_band: bool = False
     allow_duplicate: bool = False
 
 
@@ -42,6 +43,7 @@ class UpdateConcertRequest(BaseModel):
     is_festival: bool | None = None
     # None leaves the name as it is; blank clears it
     festival_name: str | None = Field(None, max_length=255)
+    is_cover_band: bool | None = None
     allow_duplicate: bool = False
 
 
@@ -97,6 +99,7 @@ class AttendedConcertResponse(BaseModel):
     is_support_act: bool = False
     is_festival: bool = False
     festival_name: str | None = None
+    is_cover_band: bool = False
     parent_setlist_id: str | None = None
     song_count: int = 0
     raw_data: dict[str, Any] | None = None
@@ -118,6 +121,7 @@ class ArtistGigItem(BaseModel):
     is_support: bool
     is_festival: bool = False
     festival_name: str | None = None
+    is_cover_band: bool = False
     song_count: int
     notes: str | None = None
     raw_data: dict[str, Any] | None = None
@@ -141,6 +145,7 @@ class ConcertRefItem(BaseModel):
     is_support: bool = False
     is_festival: bool = False
     festival_name: str | None = None
+    is_cover_band: bool = False
 
 
 class SongLeaderboardItem(BaseModel):

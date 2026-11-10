@@ -86,8 +86,16 @@ export default function MyGigsTimeline({
                   key: gig.id,
                   date: gig.event_date,
                   title: gig.artist_name,
-                  meta: [gig.festival_name || gig.venue_name, gig.city, gig.country].filter(Boolean).join(", "),
-                  tag: isFuture ? "Upcoming" : gig.is_support_act ? "Support" : null,
+                  meta: [gig.festival_name || gig.venue_name, gig.city, gig.country]
+                    .filter(Boolean)
+                    .join(", "),
+                  tag: isFuture
+                    ? "Upcoming"
+                    : gig.is_support_act
+                      ? "Support"
+                      : gig.is_cover_band
+                        ? "Cover"
+                        : null,
                   tagMuted: !isFuture,
                   onOpen: onOpenGig ? () => onOpenGig(gig.id) : null,
                   onRemove: onRemoveGig ? () => onRemoveGig(gig) : null,

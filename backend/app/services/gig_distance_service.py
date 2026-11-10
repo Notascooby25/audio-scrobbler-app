@@ -6,6 +6,7 @@ from typing import Any
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
+from ..datetime_utils import utc_now
 from ..models import AttendedConcert, UserPreferences
 from .geocoding_service import GeocodingUnavailableError, find_cached, locate
 from .preferences_service import get_or_create
@@ -129,12 +130,14 @@ def furthest_gigs(db: Session, user_id: int) -> dict[str, Any]:
         return {"home_set": False, "located_gigs": 0, "pending_gigs": 0, "furthest": []}
     home = (preferences.home_lat, preferences.home_lng)
 
-    gigs = (
+    today = utc_now().date()
+    all_gigs = (
         db.query(AttendedConcert)
         .filter(AttendedConcert.user_id == user_id, AttendedConcert.is_support_act.is_(False))
         .order_by(desc(AttendedConcert.event_date))
         .all()
     )
+    gigs = [g for g in all_gigs if g.event_date and g.event_date.date() < today]
     venues: dict[str, dict[str, Any]] = {}
     for gig in gigs:
         venue_query, city_query = _queries(gig.venue_name, gig.city, gig.country)

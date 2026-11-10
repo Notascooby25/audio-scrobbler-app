@@ -120,6 +120,16 @@ describe("SetlistGigPage", () => {
     expect(screen.getByText(/at Watergate Bay/)).toBeInTheDocument();
   });
 
+  it("shows the Cover band badge when is_cover_band is true", async () => {
+    setlistsApi.fetchAttendance.mockResolvedValueOnce({
+      ...gig,
+      is_cover_band: true,
+    });
+    renderGigPage();
+
+    expect(await screen.findByText("Cover band")).toBeInTheDocument();
+  });
+
   it("goes back to the list it came from", async () => {
     setlistsApi.fetchAttendance.mockResolvedValue(gig);
     renderGigPage(["/setlists"]);
@@ -177,6 +187,7 @@ describe("SetlistGigPage", () => {
         tourName: "My Big Day",
         isFestival: false,
         festivalName: null,
+        isCoverBand: false,
         allowDuplicate: false,
       })
     );

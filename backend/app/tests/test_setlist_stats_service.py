@@ -386,3 +386,17 @@ def test_gig_bill_skips_lookup_for_odd_venue_ids_from_imported_data(db_session: 
 
     setlist_service.get_venue_date_setlists.assert_not_called()
     assert bill["complete"] is False
+
+
+def test_artists_leaderboard_excludes_upcoming_events(db_session: Session):
+    past_gig = _concert("past_gig", "The Cure", "Wembley", datetime(2024, 10, 1))
+    upcoming_gig = _concert("upcoming_gig", "Radiohead", "O2", datetime(2028, 5, 1))
+    db_session.add_all([past_gig, upcoming_gig])
+    db_session.commit()
+
+    service = SetlistStatsService(db=db_session)
+    leaderboard = service.get_artists_seen_leaderboard(user_id=1, now=datetime(2026, 1, 1))
+    artist_names = [a["artist_name"] for a in leaderboard]
+
+    assert "The Cure" in artist_names
+    assert "Radiohead" not in artist_names

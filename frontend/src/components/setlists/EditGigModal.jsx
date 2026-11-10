@@ -12,6 +12,7 @@ export default function EditGigModal({ gig, onClose, onSaved, token }) {
   const [tourName, setTourName] = useState(gig.tour_name || "");
   const [isFestival, setIsFestival] = useState(Boolean(gig.is_festival));
   const [festivalName, setFestivalName] = useState(gig.festival_name || "");
+  const [isCoverBand, setIsCoverBand] = useState(Boolean(gig.is_cover_band));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [duplicateInfo, setDuplicateInfo] = useState(null);
@@ -36,6 +37,7 @@ export default function EditGigModal({ gig, onClose, onSaved, token }) {
         tourName: tourName.trim() || null,
         isFestival,
         festivalName: isFestival ? festivalName.trim() || null : null,
+        isCoverBand,
         allowDuplicate,
       });
       setDuplicateInfo(null);
@@ -152,6 +154,15 @@ export default function EditGigModal({ gig, onClose, onSaved, token }) {
               />
             </label>
           )}
+
+          <label className="sfm-check">
+            <input
+              type="checkbox"
+              checked={isCoverBand}
+              onChange={(e) => setIsCoverBand(e.target.checked)}
+            />
+            <span>Cover band / Tribute act</span>
+          </label>
           {!gig.is_support_act && (
             <p className="sfm-gig-meta">
               Support acts you logged with this gig move to the new date and venue too.
