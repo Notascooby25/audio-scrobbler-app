@@ -446,3 +446,57 @@ export async function answerGigInvite({ token, inviteId, add }) {
   );
   return parseResponse(response);
 }
+
+export async function fetchGigTravelAndVenues({ token, userId = null }) {
+  const query = userId ? `?user_id=${encodeURIComponent(userId)}` : "";
+  const response = await fetch(`${API_BASE_URL}/setlists/stats/travel-and-venues${query}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function fetchGigBadges({ token, userId = null }) {
+  const query = userId ? `?user_id=${encodeURIComponent(userId)}` : "";
+  const response = await fetch(`${API_BASE_URL}/setlists/stats/badges${query}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function fetchLiveFirstDiscoveries({ token, userId = null, limit = 20 }) {
+  const params = new URLSearchParams();
+  if (userId) params.set("user_id", userId);
+  if (limit) params.set("limit", limit);
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  const response = await fetch(`${API_BASE_URL}/setlists/stats/live-first${qs}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function fetchGigSurgeLeaderboard({ token, userId = null, limit = 5 }) {
+  const params = new URLSearchParams();
+  if (userId) params.set("user_id", userId);
+  if (limit) params.set("limit", limit);
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  const response = await fetch(`${API_BASE_URL}/setlists/stats/surge-leaderboard${qs}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function fetchGigDayOfWeek({ token, userId = null }) {
+  const query = userId ? `?user_id=${encodeURIComponent(userId)}` : "";
+  const response = await fetch(`${API_BASE_URL}/setlists/stats/day-of-week${query}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function fetchGigMapPins({ token, userId = null }) {
+  const query = userId ? `?user_id=${encodeURIComponent(userId)}` : "";
+  const response = await fetch(`${API_BASE_URL}/setlists/stats/map-pins${query}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
