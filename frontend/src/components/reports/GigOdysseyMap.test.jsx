@@ -39,8 +39,8 @@ describe("GigOdysseyMap", () => {
     );
 
     expect(screen.getByText(/Gig Odyssey Map/i)).toBeInTheDocument();
-    expect(screen.getByText(/Home: Leeds/i)).toBeInTheDocument();
-    expect(screen.getByTitle(/Manchester Academy \(5 gigs\)/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Home: Leeds/i)[0]).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Manchester Academy \(5 gigs\)/i })).toBeInTheDocument();
     expect(screen.getByText("5")).toBeInTheDocument();
     // No international pins, so no zoom toggle
     expect(screen.queryByRole("button", { name: /Zoom out/i })).not.toBeInTheDocument();
@@ -68,7 +68,7 @@ describe("GigOdysseyMap", () => {
       },
     ];
 
-    const { getByRole, queryByTitle } = render(
+    const { getByRole, queryByRole } = render(
       <GigOdysseyMap
         homeSet={true}
         homeCity="Leeds"
@@ -80,12 +80,12 @@ describe("GigOdysseyMap", () => {
     // In UK focus mode, only UK pin is visible on the stage, and zoom toggle shows
     const zoomToggle = getByRole("button", { name: /1 gig abroad.*Zoom out/i });
     expect(zoomToggle).toBeInTheDocument();
-    expect(queryByTitle(/Manchester Academy/i)).toBeInTheDocument();
-    expect(queryByTitle(/Zappos Theater/i)).not.toBeInTheDocument();
+    expect(getByRole("button", { name: /Manchester Academy/i })).toBeInTheDocument();
+    expect(queryByRole("button", { name: /Zappos Theater/i })).not.toBeInTheDocument();
 
     // Click zoom out to enter World view
     fireEvent.click(zoomToggle);
     expect(getByRole("button", { name: /Focus UK/i })).toBeInTheDocument();
-    expect(queryByTitle(/Zappos Theater/i)).toBeInTheDocument();
+    expect(getByRole("button", { name: /Zappos Theater/i })).toBeInTheDocument();
   });
 });

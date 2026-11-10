@@ -255,77 +255,68 @@ export default function GigOdysseyMap({
             const px = projectX(pin.lng, pin.lat);
             const py = projectY(pin.lat, pin.lng);
             const midX = (homeX + px) / 2;
-            const midY = (homeY + py) / 2 - 3; // curved arc
+            const midY = (homeY + py) / 2 - 2.5; // curved arc
             return (
               <path
                 key={`arc-${i}`}
                 d={`M ${homeX} ${homeY} Q ${midX} ${midY} ${px} ${py}`}
                 fill="none"
                 stroke="var(--color-primary)"
-                strokeWidth="0.5"
-                strokeDasharray="1.5,1.5"
-                opacity="0.65"
+                strokeWidth="0.4"
+                strokeDasharray="1,1"
+                opacity="0.6"
               />
             );
           })}
+
+          {/* Home Beacon Marker */}
+          <g transform={`translate(${homeX}, ${homeY})`} style={{ cursor: "default" }}>
+            <circle r="2.2" fill="#10b981" opacity="0.3" />
+            <circle r="1.4" fill="#10b981" stroke="#ffffff" strokeWidth="0.4" />
+            <title>{`Home: ${homeCity || "Configured"}`}</title>
+          </g>
+
+          {/* Venue Cluster Markers */}
+          {visiblePins.map((pin, index) => {
+            const px = projectX(pin.lng, pin.lat);
+            const py = projectY(pin.lat, pin.lng);
+            const r = Math.min(2.8, 1.4 + pin.gig_count * 0.08);
+            const isSelected = selectedPin?.venue_name === pin.venue_name;
+            return (
+              <g
+                key={`pin-${index}`}
+                transform={`translate(${px}, ${py})`}
+                onClick={() => setSelectedPin(pin)}
+                style={{ cursor: "pointer" }}
+                className="map-marker-btn"
+                role="button"
+                tabIndex={0}
+                aria-label={`${pin.venue_name} (${pin.gig_count} gigs)`}
+              >
+                <circle
+                  r={r}
+                  fill={isSelected ? "var(--color-ink)" : "var(--color-primary)"}
+                  stroke="#ffffff"
+                  strokeWidth="0.3"
+                  style={{ filter: "drop-shadow(0 0.5px 1px rgba(0,0,0,0.3))" }}
+                />
+                {pin.gig_count > 1 && (
+                  <text
+                    textAnchor="middle"
+                    dy="0.4"
+                    fill="#ffffff"
+                    fontSize="1.1"
+                    fontWeight="700"
+                    pointerEvents="none"
+                  >
+                    {pin.gig_count}
+                  </text>
+                )}
+                <title>{`${pin.venue_name} (${pin.gig_count} gigs)`}</title>
+              </g>
+            );
+          })}
         </svg>
-
-        {/* Home Beacon Marker */}
-        <div
-          title={`Home: ${homeCity}`}
-          style={{
-            position: "absolute",
-            left: `${homeX}%`,
-            top: `${homeY}%`,
-            transform: "translate(-50%, -50%)",
-            width: "14px",
-            height: "14px",
-            borderRadius: "50%",
-            background: "#10b981",
-            border: "2px solid #ffffff",
-            boxShadow: "0 0 8px rgba(16, 185, 129, 0.7)",
-            zIndex: 10,
-          }}
-        />
-
-        {/* Venue Cluster Markers */}
-        {visiblePins.map((pin, index) => {
-          const px = projectX(pin.lng, pin.lat);
-          const py = projectY(pin.lat, pin.lng);
-          const size = Math.min(22, 12 + pin.gig_count);
-          return (
-            <button
-              key={`pin-${index}`}
-              type="button"
-              className="map-marker-btn"
-              onClick={() => setSelectedPin(pin)}
-              style={{
-                position: "absolute",
-                left: `${px}%`,
-                top: `${py}%`,
-                transform: "translate(-50%, -50%)",
-                width: `${size}px`,
-                height: `${size}px`,
-                borderRadius: "50%",
-                background: "var(--color-primary)",
-                border: "2px solid #ffffff",
-                cursor: "pointer",
-                padding: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#ffffff",
-                fontSize: "9px",
-                fontWeight: 700,
-                boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
-                zIndex: 5,
-              }}
-              title={`${pin.venue_name} (${pin.gig_count} gigs)`}
-            >
-              {pin.gig_count > 1 ? pin.gig_count : ""}
-            </button>
-          );
-        })}
 
         {/* Selected Venue Popover */}
         {selectedPin && (
