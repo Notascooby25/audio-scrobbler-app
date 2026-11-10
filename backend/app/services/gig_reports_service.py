@@ -8,7 +8,7 @@ from typing import Any
 
 from ..datetime_utils import utc_now
 
-from sqlalchemy import desc, func
+from sqlalchemy import case, desc, func
 from sqlalchemy.orm import Session
 
 from ..models import AttendedConcert, ListeningEvent, UserPreferences
@@ -142,12 +142,70 @@ class GigReportsService:
             )
         ]
 
-        before_total = 0
-        after_total = 0
+        if not gig_days:
+            return {
+                "window_days": GIG_WINDOW_DAYS,
+                "gigs_analysed": 0,
+                "average_plays_before": 0.0,
+                "average_plays_after": 0.0,
+                "change_percent": None,
+            }
+
+        # Build list of (before_start, before_end, after_start, after_end) date windows
+        windows = []
         for day in gig_days:
             day_start = datetime.combine(day.date(), datetime.min.time())
-            before_total += self._count_plays(user_id, day_start - window, day_start)
-            after_total += self._count_plays(user_id, day_start + one_day, day_start + one_day + window)
+            windows.append(
+                (
+                    day_start - window,
+                    day_start,
+                    day_start + one_day,
+                    day_start + one_day + window,
+                )
+            )
+
+        # Single batched query over the combined date ranges using CASE WHEN
+        overall_min = min(w[0] for w in windows)
+        overall_max = max(w[3] for w in windows)
+
+        before_conditions = [
+            case(
+                (
+                    (ListeningEvent.played_at >= b_start) & (ListeningEvent.played_at < b_end),
+                    1,
+                ),
+                else_=0,
+            )
+            for b_start, b_end, _, _ in windows
+        ]
+        after_conditions = [
+            case(
+                (
+                    (ListeningEvent.played_at >= a_start) & (ListeningEvent.played_at < a_end),
+                    1,
+                ),
+                else_=0,
+            )
+            for _, _, a_start, a_end in windows
+        ]
+
+        row = (
+            self.db.query(
+                func.sum(sum(before_conditions)).label("before_sum"),
+                func.sum(sum(after_conditions)).label("after_sum"),
+            )
+            .filter(
+                ListeningEvent.user_id == user_id,
+                ListeningEvent.source != LIVE_SOURCE,
+                ListeningEvent.played_at >= overall_min,
+                ListeningEvent.played_at < overall_max,
+                not_blocked_clause(user_id),
+            )
+            .first()
+        )
+
+        before_total = int(row.before_sum or 0) if row else 0
+        after_total = int(row.after_sum or 0) if row else 0
 
         gigs = len(gig_days)
         average_before = round(before_total / gigs, 1) if gigs else 0.0
@@ -375,44 +433,52 @@ class GigReportsService:
             .all()
         )
 
-        artist_surges: dict[str, dict[str, Any]] = {}
+        if not gigs:
+            return []
+
+        # Deduplicate to unique artists (keeping their earliest or most recent qualifying gig)
+        unique_gigs: dict[str, tuple[str, datetime, str]] = {}
         for artist, gig_date, venue in gigs:
             a_key = artist_key(artist)
-            if a_key in artist_surges:
-                continue
+            if a_key not in unique_gigs:
+                unique_gigs[a_key] = (artist, gig_date, venue)
 
+        # Batch load scrobbles in the earliest to latest overall window
+        earliest_window_start = min(
+            datetime.combine(item[1].date(), datetime.min.time()) - window for item in unique_gigs.values()
+        )
+        latest_window_end = max(
+            datetime.combine(item[1].date(), datetime.min.time()) + one_day + window for item in unique_gigs.values()
+        )
+
+        scrobbles = (
+            self.db.query(ListeningEvent.artist_name, ListeningEvent.played_at)
+            .filter(
+                ListeningEvent.user_id == user_id,
+                ListeningEvent.source != LIVE_SOURCE,
+                ListeningEvent.played_at >= earliest_window_start,
+                ListeningEvent.played_at < latest_window_end,
+                not_blocked_clause(user_id),
+            )
+            .all()
+        )
+
+        # Group timestamps by normalized artist key
+        scrobbles_by_artist: dict[str, list[datetime]] = {}
+        for a_name, played_at in scrobbles:
+            if a_name and played_at:
+                scrobbles_by_artist.setdefault(artist_key(a_name), []).append(played_at)
+
+        artist_surges: dict[str, dict[str, Any]] = {}
+        for a_key, (artist, gig_date, venue) in unique_gigs.items():
             day_start = datetime.combine(gig_date.date(), datetime.min.time())
             before_start = day_start - window
             after_start = day_start + one_day
             after_end = after_start + window
 
-            before_count = (
-                self.db.query(func.count(ListeningEvent.id))
-                .filter(
-                    ListeningEvent.user_id == user_id,
-                    ListeningEvent.source != LIVE_SOURCE,
-                    ListeningEvent.played_at >= before_start,
-                    ListeningEvent.played_at < day_start,
-                    ListeningEvent.artist_name.ilike(artist),
-                    not_blocked_clause(user_id),
-                )
-                .scalar()
-                or 0
-            )
-
-            after_count = (
-                self.db.query(func.count(ListeningEvent.id))
-                .filter(
-                    ListeningEvent.user_id == user_id,
-                    ListeningEvent.source != LIVE_SOURCE,
-                    ListeningEvent.played_at >= after_start,
-                    ListeningEvent.played_at < after_end,
-                    ListeningEvent.artist_name.ilike(artist),
-                    not_blocked_clause(user_id),
-                )
-                .scalar()
-                or 0
-            )
+            plays = scrobbles_by_artist.get(a_key, [])
+            before_count = sum(1 for p in plays if before_start <= p < day_start)
+            after_count = sum(1 for p in plays if after_start <= p < after_end)
 
             # Minimum 5 total plays threshold
             if (before_count + after_count) >= 5 and after_count > before_count:

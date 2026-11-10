@@ -69,19 +69,27 @@ function yearsSinceFirstGig(byYear) {
   return years;
 }
 
+// In-memory session cache to eliminate loading delay when switching tabs
+const reportsSessionCache = new Map();
+
 export default function GigReportsSection({ token, userId }) {
-  const [periods, setPeriods] = useState(null);
-  const [liveGap, setLiveGap] = useState([]);
-  const [bump, setBump] = useState(null);
-  const [furthest, setFurthest] = useState(null);
-  const [travelStats, setTravelStats] = useState(null);
-  const [badges, setBadges] = useState([]);
-  const [liveArtists, setLiveArtists] = useState([]);
-  const [cadenceMatrix, setCadenceMatrix] = useState(null);
-  const [setlistSongs, setSetlistSongs] = useState([]);
-  const [surge, setSurge] = useState([]);
-  const [cadence, setCadence] = useState([]);
-  const [mapPins, setMapPins] = useState([]);
+  const cacheKey = `${token || ""}:${userId || "me"}`;
+  const cached = reportsSessionCache.get(cacheKey);
+
+  const [periods, setPeriods] = useState(() => cached?.periods || null);
+  const [liveGap, setLiveGap] = useState(() => cached?.liveGap || []);
+  const [bump, setBump] = useState(() => cached?.bump || null);
+  const [furthest, setFurthest] = useState(() => cached?.furthest || null);
+  const [travelStats, setTravelStats] = useState(() => cached?.travelStats || null);
+  const [badges, setBadges] = useState(() => cached?.badges || []);
+  const [liveArtists, setLiveArtists] = useState(() => cached?.liveArtists || []);
+  const [cadenceMatrix, setCadenceMatrix] = useState(() => cached?.cadenceMatrix || null);
+  const [setlistSongs, setSetlistSongs] = useState(() => cached?.setlistSongs || []);
+  const [surge, setSurge] = useState(() => cached?.surge || []);
+  const [cadence, setCadence] = useState(() => cached?.cadence || []);
+  const [mapPins, setMapPins] = useState(() => cached?.mapPins || []);
+
+  const [surgeLoading, setSurgeLoading] = useState(() => !cached?.bump);
 
   const [activeTab, setActiveTab] = useState("all");
   const [showCustomizer, setShowCustomizer] = useState(false);
@@ -115,55 +123,80 @@ export default function GigReportsSection({ token, userId }) {
     if (!token) return;
     setError("");
 
+    // If cached in session, we already have initial values, but we still refresh silently
+    // Stage 1: Fast Core Data (Venues, Map, Heatmap, Artists, Songs, Cadence)
     Promise.all([
       fetchGigsByPeriod({ token, userId }),
-      fetchLiveGap({ token, userId }),
-      fetchGigBump({ token, userId }),
       fetchGigTravelAndVenues({ token, userId }),
-      fetchGigBadges({ token, userId }),
       fetchArtistsSeenLeaderboard({ token, userId }),
       fetchGigCadenceMatrix({ token, userId }),
       fetchSongsHeardLeaderboard({ token, limit: 100, userId }),
-      fetchGigSurgeLeaderboard({ token, userId }),
       fetchGigDayOfWeek({ token, userId }),
       fetchGigMapPins({ token, userId }),
+      fetchGigBadges({ token, userId }),
     ])
       .then(
-        ([
-          byPeriod,
-          gap,
-          gigBump,
-          travel,
-          badgeList,
-          artistsList,
-          cadenceMat,
-          songsList,
-          surgeList,
-          dayCadence,
-          pins,
-        ]) => {
+        ([byPeriod, travel, artistsList, cadenceMat, songsList, dayCadence, pins, badgeList]) => {
           setPeriods(byPeriod);
-          setLiveGap(gap);
-          setBump(gigBump);
           setTravelStats(travel);
-          setBadges(badgeList);
           setLiveArtists(artistsList || []);
           setCadenceMatrix(cadenceMat || null);
           setSetlistSongs(songsList || []);
-          setSurge(surgeList || []);
           setCadence(dayCadence || []);
           setMapPins(pins || []);
+          setBadges(badgeList || []);
+
+          const currentCache = reportsSessionCache.get(cacheKey) || {};
+          reportsSessionCache.set(cacheKey, {
+            ...currentCache,
+            periods: byPeriod,
+            travelStats: travel,
+            liveArtists: artistsList || [],
+            cadenceMatrix: cadenceMat || null,
+            setlistSongs: songsList || [],
+            cadence: dayCadence || [],
+            mapPins: pins || [],
+            badges: badgeList || [],
+          });
         }
       )
       .catch((err) => setError(err.message || "Couldn't load gig reports."));
-  }, [token, userId]);
+
+    // Stage 2: Heavy / Calculated Insights (Post-Gig Bump, Surge, Live Gap)
+    Promise.all([
+      fetchGigBump({ token, userId }),
+      fetchGigSurgeLeaderboard({ token, userId }),
+      fetchLiveGap({ token, userId }),
+    ])
+      .then(([gigBump, surgeList, gap]) => {
+        setBump(gigBump);
+        setSurge(surgeList || []);
+        setLiveGap(gap || []);
+        setSurgeLoading(false);
+
+        const currentCache = reportsSessionCache.get(cacheKey) || {};
+        reportsSessionCache.set(cacheKey, {
+          ...currentCache,
+          bump: gigBump,
+          surge: surgeList || [],
+          liveGap: gap || [],
+        });
+      })
+      .catch(() => {
+        setSurgeLoading(false);
+      });
+  }, [token, userId, cacheKey]);
 
   useEffect(() => {
     if (!token || !isOwnReport) return;
     fetchFurthestGigs({ token })
-      .then(setFurthest)
+      .then((res) => {
+        setFurthest(res);
+        const currentCache = reportsSessionCache.get(cacheKey) || {};
+        reportsSessionCache.set(cacheKey, { ...currentCache, furthest: res });
+      })
       .catch(() => setFurthest(null));
-  }, [token, isOwnReport]);
+  }, [token, isOwnReport, cacheKey]);
 
   if (error) {
     return (
@@ -452,6 +485,12 @@ export default function GigReportsSection({ token, userId }) {
                 <p className="chart-caption">
                   Average plays in the 14 days before and after past gigs.
                 </p>
+
+                {surgeLoading && !bump && (
+                  <p className="notice" style={{ margin: "16px 0", fontSize: "13px" }}>
+                    Analyzing post-gig listening patterns...
+                  </p>
+                )}
 
                 {bump && (
                   <div className="report-facts" style={{ marginBottom: "16px" }}>

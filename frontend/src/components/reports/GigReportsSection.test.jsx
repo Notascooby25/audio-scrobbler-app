@@ -340,4 +340,28 @@ describe("GigReportsSection", () => {
     expect(badgesCheckbox).toBeChecked();
     expect(screen.getByText("Solo Explorer")).toBeInTheDocument();
   });
+
+  it("renders fast widgets immediately while heavier surge metrics resolve", async () => {
+    let resolveBump;
+    const bumpPromise = new Promise((resolve) => {
+      resolveBump = resolve;
+    });
+    mockReports({
+      byYear: [{ period: String(currentYear), gigs: 5, festivals: 0 }],
+      travel: defaultTravel,
+    });
+    setlistsApi.fetchGigBump.mockReturnValue(bumpPromise);
+    renderSection({ token: "unique-token-progressive" });
+
+    // Venue royalty should be rendered immediately without waiting for bump
+    expect(await screen.findByText("The Fleece")).toBeInTheDocument();
+    expect(screen.getByText(/Analyzing post-gig listening patterns/i)).toBeInTheDocument();
+
+    // Now resolve bump
+    resolveBump(bump);
+    await waitFor(() => {
+      expect(screen.queryByText(/Analyzing post-gig listening patterns/i)).not.toBeInTheDocument();
+      expect(screen.getByText("+50% Surge")).toBeInTheDocument();
+    });
+  });
 });
