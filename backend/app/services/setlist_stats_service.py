@@ -12,6 +12,7 @@ import httpx
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
+from ..datetime_utils import utc_now
 from ..models import AttendedConcert, ListeningEvent
 from .setlist_service import SetlistApiAuthError, SetlistApiKeyMissingError, SetlistRateLimitError
 
@@ -37,6 +38,7 @@ def _concert_ref(c: AttendedConcert) -> dict[str, Any]:
         "is_support": c.is_support_act,
         "is_festival": c.is_festival,
         "festival_name": c.festival_name,
+        "is_cover_band": c.is_cover_band,
     }
 
 
@@ -97,6 +99,7 @@ class SetlistStatsService:
                     "is_support_act": c.is_support_act,
                     "is_festival": c.is_festival,
                     "festival_name": c.festival_name,
+                    "is_cover_band": c.is_cover_band,
                     "parent_setlist_id": c.parent_setlist_id,
                     "song_count": c.song_count,
                     "raw_data": c.raw_data,
@@ -180,17 +183,19 @@ class SetlistStatsService:
         acts.sort(key=lambda a: (a["role"] != "headliner", not a["logged"]))
         return {"acts": acts, "complete": complete, "capped": capped}
 
-    def get_artists_seen_leaderboard(self, user_id: int) -> list[dict[str, Any]]:
+    def get_artists_seen_leaderboard(self, user_id: int, now: datetime | None = None) -> list[dict[str, Any]]:
+        today = (now or utc_now()).date()
         all_concerts = (
             self.db.query(AttendedConcert)
             .filter_by(user_id=user_id)
             .order_by(desc(AttendedConcert.event_date), desc(AttendedConcert.id))
             .all()
         )
+        concerts = [c for c in all_concerts if c.event_date and c.event_date.date() < today]
 
         gigs_by_artist: dict[str, list[dict[str, Any]]] = {}
         last_seen: dict[str, datetime] = {}
-        for c in all_concerts:
+        for c in concerts:
             if c.artist_name not in gigs_by_artist:
                 gigs_by_artist[c.artist_name] = []
                 last_seen[c.artist_name] = c.event_date or datetime.min
@@ -206,6 +211,7 @@ class SetlistStatsService:
                     "is_support": c.is_support_act,
                     "is_festival": c.is_festival,
                     "festival_name": c.festival_name,
+                    "is_cover_band": c.is_cover_band,
                     "song_count": c.song_count,
                     "notes": c.notes,
                     "raw_data": c.raw_data,
@@ -313,6 +319,7 @@ class SetlistStatsService:
                 "is_support_act",
                 "is_festival",
                 "festival_name",
+                "is_cover_band",
                 "song_count",
                 "setlist_url",
             ]
@@ -330,6 +337,7 @@ class SetlistStatsService:
                         "is_support_act": g.is_support_act,
                         "is_festival": g.is_festival,
                         "festival_name": _sanitize_csv_cell(g.festival_name or ""),
+                        "is_cover_band": g.is_cover_band,
                         "song_count": g.song_count,
                         "setlist_url": _sanitize_csv_cell(g.setlist_url or ""),
                     }
@@ -350,6 +358,7 @@ class SetlistStatsService:
                 "is_support_act": g.is_support_act,
                 "is_festival": g.is_festival,
                 "festival_name": g.festival_name,
+                "is_cover_band": g.is_cover_band,
                 "parent_setlist_id": g.parent_setlist_id,
                 "song_count": g.song_count,
                 "setlist_url": g.setlist_url,

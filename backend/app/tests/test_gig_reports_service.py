@@ -219,6 +219,7 @@ def test_travel_distance_deduplicates_same_day_festival_venues(db_session: Sessi
     assert stats["total_distance_km"] == 116  # round-trip counted ONCE, not 3x
     assert stats["venue_royalty"][0]["venue_name"] == "Manchester Academy"
     assert stats["venue_royalty"][0]["gig_count"] == 1  # 3 bands on the same day count as 1 visit
+    assert stats["venue_royalty"][0]["festivals"] == 1  # 3 festival bands on the same day count as 1 festival visit!
     assert stats["venue_royalty"][0]["distinct_artists"] == 3
 
     # Cadence matrix test: 3 bands on same date counts as 1 gig day
@@ -291,3 +292,42 @@ def test_gig_map_pins_and_day_of_week(db_session: Session):
     pins2 = service.get_gig_map_pins(user_id=1)
     assert pins2[0]["is_festival"] is True
     assert pins2[0]["festival_count"] == 1
+
+
+def test_upcoming_events_excluded_from_gig_reports(db_session: Session):
+    past_date = datetime(2025, 5, 10)
+    today_date = datetime(2026, 11, 10)
+    future_date = datetime(2026, 12, 1)
+
+    # 1 past gig
+    _gig(db_session, "past_1", "Past Band", past_date)
+    # 1 gig happening today (should be treated as upcoming/excluded until date passes)
+    _gig(db_session, "today_1", "Today Band", today_date)
+    # 1 gig in the future
+    _gig(db_session, "future_1", "Future Band", future_date)
+
+    service = GigReportsService(db_session)
+    now = datetime(2026, 11, 10, 12, 0)
+
+    # Gigs by period: only past_date is included
+    periods = service.get_gigs_by_period(user_id=1, now=now)
+    assert len(periods["by_year"]) == 1
+    assert periods["by_year"][0]["period"] == "2025"
+    assert periods["by_year"][0]["gigs"] == 1
+
+    # Map pins: only past gig pinned
+    pins = service.get_gig_map_pins(user_id=1, now=now)
+    # Only past_1 is mapped (if geocached)
+    for p in pins:
+        assert "Future Band" not in p["artists"]
+        assert "Today Band" not in p["artists"]
+
+    # Day of week: only past_date
+    dow = service.get_gigs_day_of_week(user_id=1, now=now)
+    assert sum(d["count"] for d in dow) == 1
+
+    # Cadence matrix: only 2025-05-10
+    matrix = service.get_gig_cadence_matrix(user_id=1, now=now)
+    assert "2026-11-10" not in matrix["daily_counts"]
+    assert "2026-12-01" not in matrix["daily_counts"]
+    assert matrix["daily_counts"]["2025-05-10"] == 1

@@ -51,30 +51,42 @@ class GigReportsService:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def get_gigs_by_period(self, user_id: int) -> dict[str, list[dict[str, Any]]]:
+    def get_gigs_by_period(self, user_id: int, now: datetime | None = None) -> dict[str, list[dict[str, Any]]]:
+        today = (now or utc_now()).date()
         rows = (
-            self.db.query(AttendedConcert.event_date, AttendedConcert.is_festival)
+            self.db.query(AttendedConcert.event_date, AttendedConcert.venue_name, AttendedConcert.is_festival)
             .filter(AttendedConcert.user_id == user_id)
             .all()
         )
-        if not rows:
+        # Only count events whose date has passed
+        past_rows = [r for r in rows if r[0] and r[0].date() < today]
+        if not past_rows:
             return {"by_year": [], "by_month": []}
+
+        # Deduplicate multiple acts on the same day at the same venue/festival into 1 gig visit
+        visits: dict[tuple[str, str], bool] = {}
+        for event_date, venue_name, is_festival in past_rows:
+            day_str = event_date.strftime("%Y-%m-%d")
+            v_norm = (venue_name or "").strip().casefold()
+            visit_key = (day_str, v_norm)
+            # If any band logged at this visit was marked as a festival, mark the visit as festival
+            visits[visit_key] = visits.get(visit_key, False) or bool(is_festival)
 
         gigs_by_month: Counter[str] = Counter()
         festivals_by_month: Counter[str] = Counter()
         gigs_by_year: Counter[str] = Counter()
         festivals_by_year: Counter[str] = Counter()
-        for event_date, is_festival in rows:
-            month = event_date.strftime("%Y-%m")
-            year = event_date.strftime("%Y")
+        for (day_str, _venue), is_festival in visits.items():
+            month = day_str[:7]
+            year = day_str[:4]
             gigs_by_month[month] += 1
             gigs_by_year[year] += 1
             if is_festival:
                 festivals_by_month[month] += 1
                 festivals_by_year[year] += 1
 
-        first = min(event_date for event_date, _ in rows)
-        last = max(event_date for event_date, _ in rows)
+        first = min(event_date for event_date, _, _ in past_rows)
+        last = max(event_date for event_date, _, _ in past_rows)
         by_month = [
             {"period": key, "gigs": gigs_by_month[key], "festivals": festivals_by_month[key]}
             for key in _month_keys(first, last)
@@ -85,11 +97,15 @@ class GigReportsService:
         ]
         return {"by_year": by_year, "by_month": by_month}
 
-    def get_live_gap(self, user_id: int, limit: int = 20) -> list[dict[str, Any]]:
+    def get_live_gap(self, user_id: int, limit: int = 20, now: datetime | None = None) -> list[dict[str, Any]]:
         """Artists you play a lot on Spotify but have never logged a gig for."""
+        today = (now or utc_now()).date()
         seen_live = {
             artist_key(name)
-            for (name,) in self.db.query(AttendedConcert.artist_name).filter(AttendedConcert.user_id == user_id)
+            for (name, event_date) in self.db.query(AttendedConcert.artist_name, AttendedConcert.event_date).filter(
+                AttendedConcert.user_id == user_id
+            )
+            if event_date and event_date.date() < today
         }
         # Spotify and Setlist.fm spell names differently (accents, curly apostrophes), so the
         # rows are grouped by a normalised key in Python, not by SQL lower()
@@ -237,6 +253,7 @@ class GigReportsService:
         """Calculates total round-trip travel distance (deduplicated by event date + venue),
         active monthly streak, and top venue royalty."""
         now = now or utc_now()
+        today = now.date()
         preferences = self.db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
         home = (
             (preferences.home_lat, preferences.home_lng)
@@ -244,12 +261,13 @@ class GigReportsService:
             else None
         )
 
-        concerts = (
+        all_concerts = (
             self.db.query(AttendedConcert)
             .filter(AttendedConcert.user_id == user_id)
             .order_by(desc(AttendedConcert.event_date))
             .all()
         )
+        concerts = [c for c in all_concerts if c.event_date and c.event_date.date() < today]
 
         # 1. Deduplicate visits by (date, venue, city) so multi-act festivals aren't multiplied
         distinct_visits: dict[tuple[str, str, str], list[AttendedConcert]] = {}
@@ -276,14 +294,14 @@ class GigReportsService:
                     "city": c.city.strip(),
                     "country": c.country.strip(),
                     "distinct_dates": set(),
-                    "festivals": 0,
+                    "distinct_festival_dates": set(),
                     "artists": set(),
                 },
             )
             if c.event_date:
                 v_info["distinct_dates"].add(c.event_date.strftime("%Y-%m-%d"))
-            if c.is_festival:
-                v_info["festivals"] += 1
+                if c.is_festival:
+                    v_info["distinct_festival_dates"].add(c.event_date.strftime("%Y-%m-%d"))
             v_info["artists"].add(c.artist_name.strip())
 
         # Calculate travel distance
@@ -329,7 +347,7 @@ class GigReportsService:
                     "city": v["city"],
                     "country": v["country"],
                     "gig_count": len(v["distinct_dates"]),
-                    "festivals": v["festivals"],
+                    "festivals": len(v["distinct_festival_dates"]),
                     "distinct_artists": len(v["artists"]),
                 }
             )
@@ -347,8 +365,11 @@ class GigReportsService:
             "venue_royalty": royalty[:10],
         }
 
-    def get_live_first_discoveries(self, user_id: int, limit: int = 20) -> list[dict[str, Any]]:
+    def get_live_first_discoveries(
+        self, user_id: int, limit: int = 20, now: datetime | None = None
+    ) -> list[dict[str, Any]]:
         """Artists you experienced in person before ever scrobbling their music."""
+        today = (now or utc_now()).date()
         # Find earliest gig date per artist
         gigs = (
             self.db.query(
@@ -365,7 +386,7 @@ class GigReportsService:
         earliest_gigs: dict[str, dict[str, Any]] = {}
         for g in gigs:
             a_key = artist_key(g.artist_name)
-            if a_key not in earliest_gigs and g.event_date:
+            if a_key not in earliest_gigs and g.event_date and g.event_date.date() < today:
                 earliest_gigs[a_key] = {
                     "artist_name": g.artist_name,
                     "venue_name": g.venue_name,
@@ -497,11 +518,12 @@ class GigReportsService:
         results.sort(key=lambda s: (s["absolute_gain"], s["change_percent"]), reverse=True)
         return results[:limit]
 
-    def get_gigs_day_of_week(self, user_id: int) -> list[dict[str, Any]]:
+    def get_gigs_day_of_week(self, user_id: int, now: datetime | None = None) -> list[dict[str, Any]]:
         """Returns distribution of concert dates by day of the week (0=Mon .. 6=Sun), counting distinct dates."""
+        today = (now or utc_now()).date()
         concerts = self.db.query(AttendedConcert.event_date).filter(AttendedConcert.user_id == user_id).all()
-        # Deduplicate to unique calendar dates so multiple acts on the same night count as 1 gig
-        distinct_dates = {event_date.date() for (event_date,) in concerts if event_date}
+        # Deduplicate to unique calendar dates so multiple acts on the same night count as 1 gig (strictly past dates)
+        distinct_dates = {event_date.date() for (event_date,) in concerts if event_date and event_date.date() < today}
         counts = [0] * 7
         day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
         for d in distinct_dates:
@@ -518,8 +540,9 @@ class GigReportsService:
             for i in range(7)
         ]
 
-    def get_gig_map_pins(self, user_id: int) -> list[dict[str, Any]]:
+    def get_gig_map_pins(self, user_id: int, now: datetime | None = None) -> list[dict[str, Any]]:
         """Returns geocoded map pins for all attended concerts with coordinates from GeoCache."""
+        today = (now or utc_now()).date()
         concerts = (
             self.db.query(AttendedConcert)
             .filter(AttendedConcert.user_id == user_id)
@@ -528,6 +551,8 @@ class GigReportsService:
         )
         pins_map: dict[str, dict[str, Any]] = {}
         for c in concerts:
+            if not c.event_date or c.event_date.date() >= today:
+                continue
             venue_q, city_q = _queries(c.venue_name, c.city, c.country)
             known, point, approx = _place(self.db, venue_q, city_q)
             if not known or point is None:
@@ -554,19 +579,28 @@ class GigReportsService:
                     "is_festival": False,
                     "festival_count": 0,
                     "artists": [],
+                    "_distinct_dates": set(),
+                    "_distinct_festival_dates": set(),
                 },
             )
-            pin["gig_count"] += 1
+            day_str = c.event_date.strftime("%Y-%m-%d")
+            pin["_distinct_dates"].add(day_str)
             if c.is_festival:
                 pin["is_festival"] = True
-                pin["festival_count"] += 1
+                pin["_distinct_festival_dates"].add(day_str)
             if len(pin["artists"]) < 5 and c.artist_name not in pin["artists"]:
                 pin["artists"].append(c.artist_name)
 
+        # Set final deduplicated counts
+        for pin in pins_map.values():
+            pin["gig_count"] = len(pin.pop("_distinct_dates"))
+            pin["festival_count"] = len(pin.pop("_distinct_festival_dates"))
+
         return list(pins_map.values())
 
-    def get_gig_cadence_matrix(self, user_id: int) -> dict[str, Any]:
+    def get_gig_cadence_matrix(self, user_id: int, now: datetime | None = None) -> dict[str, Any]:
         """Returns annual day-by-day gig counts so frontend can render an activity heatmap matrix."""
+        today = (now or utc_now()).date()
         concerts = (
             self.db.query(AttendedConcert.event_date)
             .filter(AttendedConcert.user_id == user_id, AttendedConcert.event_date.isnot(None))
@@ -577,7 +611,7 @@ class GigReportsService:
             return {"years": [], "daily_counts": {}}
 
         # Count unique gig outings per calendar date so multiple acts on the same date count as 1 gig
-        distinct_dates = {event_date.date() for (event_date,) in concerts if event_date}
+        distinct_dates = {event_date.date() for (event_date,) in concerts if event_date and event_date.date() < today}
         daily: dict[str, int] = {}
         years_seen: set[int] = set()
         for d in sorted(distinct_dates):

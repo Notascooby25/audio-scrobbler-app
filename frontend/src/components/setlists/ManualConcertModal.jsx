@@ -12,6 +12,7 @@ export default function ManualConcertModal({ isOpen, onClose, onSaved, token }) 
   const [setlistUrl, setSetlistUrl] = useState("");
   const [isFestival, setIsFestival] = useState(false);
   const [festivalName, setFestivalName] = useState("");
+  const [isCoverBand, setIsCoverBand] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [duplicateInfo, setDuplicateInfo] = useState(null);
@@ -40,6 +41,7 @@ export default function ManualConcertModal({ isOpen, onClose, onSaved, token }) 
         setlistUrl: setlistUrl.trim() || null,
         isFestival,
         festivalName: isFestival ? festivalName.trim() || null : null,
+        isCoverBand,
         allowDuplicate,
       });
       setDuplicateInfo(null);
@@ -164,6 +166,15 @@ export default function ManualConcertModal({ isOpen, onClose, onSaved, token }) 
               />
             </label>
           )}
+
+          <label className="sfm-check">
+            <input
+              type="checkbox"
+              checked={isCoverBand}
+              onChange={(e) => setIsCoverBand(e.target.checked)}
+            />
+            <span>Cover band / Tribute act</span>
+          </label>
 
           <label className="sfm-field">
             Setlist.fm Link or Tour URL (optional)

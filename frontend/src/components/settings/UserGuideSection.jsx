@@ -471,20 +471,22 @@ export default function UserGuideSection() {
               <li>
                 <em>Venues:</em> Ranks venues by nights visited (counting one visit per night even
                 if support acts had slight venue spelling differences). Tap a venue to expand every
-                act you saw there.
+                act you saw there. Multi-act festival bills on the same date count as 1 festival
+                visit.
               </li>
               <li>
                 <em>Gig Intelligence &amp; Odyssey Map:</em> On the Reports &gt; Gigs tab, explore
-                an interactive map of your concert history with round-trip journey arcs radiating
-                from your home city, total travel odometers, and milestone achievement badges (Solo
-                Explorer, Road Warrior, Century Club, Live First, Mud Survivor, and active monthly
-                gig streaks).
+                an interactive map of your past concert history (strictly events that have already
+                occurred) with round-trip journey arcs radiating from your home city, total travel
+                odometers, and milestone achievement badges (Solo Explorer, Road Warrior, Century
+                Club, Live First, Mud Survivor, and active monthly gig streaks).
               </li>
               <li>
                 <em>Live-First Discoveries &amp; Listening Surges:</em> Uncover bands you saw live
                 in person before you ever recorded a stream, track post-concert listening surges (+%
                 bump in plays), and explore your concert cadence across days of the week. Customise
-                which panels you see or filter by focus sub-tabs.
+                which panels you see or filter by focus sub-tabs. You can also tag gigs as
+                <em>Cover band / Tribute act</em> when logging or editing shows.
               </li>
             </ul>
           </li>

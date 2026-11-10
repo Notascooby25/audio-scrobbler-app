@@ -57,11 +57,13 @@ def test_csv_export_includes_the_festival_tick_and_name(db_session: Session):
 
     assert row["is_festival"] == "True"
     assert row["festival_name"] == "Victorious Festival 2026"
+    assert row["is_cover_band"] == "False"
 
 
 def test_json_export_includes_the_festival_tick_and_name(db_session: Session):
     concert = _festival_gig(db_session)
     concert.festival_name = "Victorious Festival 2026"
+    concert.is_cover_band = True
     db_session.commit()
 
     content, _ = SetlistStatsService(db=db_session).export_attended_gigs(1, format="json")
@@ -69,6 +71,7 @@ def test_json_export_includes_the_festival_tick_and_name(db_session: Session):
 
     assert row["is_festival"] is True
     assert row["festival_name"] == "Victorious Festival 2026"
+    assert row["is_cover_band"] is True
 
 
 def _csv_for(rows: list[dict[str, str]]) -> str:

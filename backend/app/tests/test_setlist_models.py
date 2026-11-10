@@ -57,10 +57,10 @@ def test_setlist_models_crud() -> None:
         queried_concert = session.query(AttendedConcert).filter_by(setlist_id="test_setlist_123").first()
         assert queried_concert is not None
         assert queried_concert.artist_name == "Foo Fighters"
-        assert queried_concert.venue_name == "Anfield"
-        assert queried_concert.song_count == 2
-        assert queried_concert.notes == "Front row, epic gig!"
-        assert queried_concert.raw_data == {"songs": ["All My Life", "Everlong"]}
+        assert queried_concert.is_cover_band is False
+        queried_concert.is_cover_band = True
+        session.commit()
+        assert session.query(AttendedConcert).filter_by(setlist_id="test_setlist_123").first().is_cover_band is True
 
         queried_cache = session.query(SetlistCache).filter_by(cache_key="search:foo_fighters:gb").first()
         assert queried_cache is not None

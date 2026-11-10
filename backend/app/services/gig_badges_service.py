@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from ..datetime_utils import utc_now
 from ..models import AttendedConcert, GigCompanion, UserPreferences
 from .gig_distance_service import _place, _queries, haversine_km
 from .gig_reports_service import artist_key
@@ -14,14 +15,16 @@ class GigBadgesService:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def evaluate_badges(self, user_id: int) -> list[dict[str, Any]]:
+    def evaluate_badges(self, user_id: int, now: datetime | None = None) -> list[dict[str, Any]]:
         """Evaluates live music milestone badges for a user."""
-        concerts = (
+        today = (now or utc_now()).date()
+        all_concerts = (
             self.db.query(AttendedConcert)
             .filter(AttendedConcert.user_id == user_id)
             .order_by(AttendedConcert.event_date.asc())
             .all()
         )
+        concerts = [c for c in all_concerts if c.event_date and c.event_date.date() < today]
 
         preferences = self.db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
         home = (
