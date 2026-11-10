@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it } from "vitest";
 import GigOdysseyMap from "./GigOdysseyMap";
@@ -42,5 +42,50 @@ describe("GigOdysseyMap", () => {
     expect(screen.getByText(/Home: Leeds/i)).toBeInTheDocument();
     expect(screen.getByTitle(/Manchester Academy \(5 gigs\)/i)).toBeInTheDocument();
     expect(screen.getByText("5")).toBeInTheDocument();
+    // No international pins, so no zoom toggle
+    expect(screen.queryByRole("button", { name: /Zoom out/i })).not.toBeInTheDocument();
+  });
+
+  it("defaults to UK focus and displays zoom toggle when international gigs exist", () => {
+    const pinsWithAbroad = [
+      {
+        lat: 53.4808,
+        lng: -2.2426,
+        venue_name: "Manchester Academy",
+        city: "Manchester",
+        country: "United Kingdom",
+        gig_count: 5,
+        artists: ["Fontaines D.C."],
+      },
+      {
+        lat: 36.1699,
+        lng: -115.1398,
+        venue_name: "Zappos Theater",
+        city: "Las Vegas",
+        country: "United States",
+        gig_count: 1,
+        artists: ["Gwen Stefani"],
+      },
+    ];
+
+    const { getByRole, queryByTitle } = render(
+      <GigOdysseyMap
+        homeSet={true}
+        homeCity="Leeds"
+        homeCoords={[53.8008, -1.5491]}
+        pins={pinsWithAbroad}
+      />
+    );
+
+    // In UK focus mode, only UK pin is visible on the stage, and zoom toggle shows
+    const zoomToggle = getByRole("button", { name: /1 gig abroad.*Zoom out/i });
+    expect(zoomToggle).toBeInTheDocument();
+    expect(queryByTitle(/Manchester Academy/i)).toBeInTheDocument();
+    expect(queryByTitle(/Zappos Theater/i)).not.toBeInTheDocument();
+
+    // Click zoom out to enter World view
+    fireEvent.click(zoomToggle);
+    expect(getByRole("button", { name: /Focus UK/i })).toBeInTheDocument();
+    expect(queryByTitle(/Zappos Theater/i)).toBeInTheDocument();
   });
 });
