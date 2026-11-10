@@ -356,3 +356,8 @@ class GigMapPinItem(BaseModel):
     approximate: bool
     gig_count: int
     artists: list[str] = Field(default_factory=list)
+
+
+class GigCadenceMatrixResponse(BaseModel):
+    years: list[int] = Field(default_factory=list)
+    daily_counts: dict[str, int] = Field(default_factory=dict)

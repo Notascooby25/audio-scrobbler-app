@@ -29,7 +29,7 @@ def artist_key(name: str) -> str:
 # Plays counted on each side of a gig. Same-day plays are left out of both sides.
 GIG_WINDOW_DAYS = 14
 # Gig bump looks at the most recent gigs only, to keep the number of queries bounded
-GIG_BUMP_MAX_GIGS = 200
+GIG_BUMP_MAX_GIGS = 50
 # Scrobbles written from a gig's own setlist are not listening, so they never count
 LIVE_SOURCE = "setlistfm"
 
@@ -216,12 +216,13 @@ class GigReportsService:
                     "venue_name": c.venue_name.strip(),
                     "city": c.city.strip(),
                     "country": c.country.strip(),
-                    "gig_count": 0,
+                    "distinct_dates": set(),
                     "festivals": 0,
                     "artists": set(),
                 },
             )
-            v_info["gig_count"] += 1
+            if c.event_date:
+                v_info["distinct_dates"].add(c.event_date.strftime("%Y-%m-%d"))
             if c.is_festival:
                 v_info["festivals"] += 1
             v_info["artists"].add(c.artist_name.strip())
@@ -268,7 +269,7 @@ class GigReportsService:
                     "venue_name": v["venue_name"],
                     "city": v["city"],
                     "country": v["country"],
-                    "gig_count": v["gig_count"],
+                    "gig_count": len(v["distinct_dates"]),
                     "festivals": v["festivals"],
                     "distinct_artists": len(v["artists"]),
                 }
@@ -480,3 +481,28 @@ class GigReportsService:
                 pin["artists"].append(c.artist_name)
 
         return list(pins_map.values())
+
+    def get_gig_cadence_matrix(self, user_id: int) -> dict[str, Any]:
+        """Returns annual day-by-day gig counts so frontend can render an activity heatmap matrix."""
+        concerts = (
+            self.db.query(AttendedConcert.event_date)
+            .filter(AttendedConcert.user_id == user_id, AttendedConcert.event_date.isnot(None))
+            .order_by(AttendedConcert.event_date.asc())
+            .all()
+        )
+        if not concerts:
+            return {"years": [], "daily_counts": {}}
+
+        # Count unique gigs per calendar date
+        daily: Counter[str] = Counter()
+        years_seen: set[int] = set()
+        for (event_date,) in concerts:
+            if event_date:
+                day_str = event_date.strftime("%Y-%m-%d")
+                daily[day_str] += 1
+                years_seen.add(event_date.year)
+
+        return {
+            "years": sorted(years_seen, reverse=True),
+            "daily_counts": dict(daily),
+        }

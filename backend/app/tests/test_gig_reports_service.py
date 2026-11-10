@@ -218,8 +218,13 @@ def test_travel_distance_deduplicates_same_day_festival_venues(db_session: Sessi
 
     assert stats["total_distance_km"] == 116  # round-trip counted ONCE, not 3x
     assert stats["venue_royalty"][0]["venue_name"] == "Manchester Academy"
-    assert stats["venue_royalty"][0]["gig_count"] == 3
+    assert stats["venue_royalty"][0]["gig_count"] == 1  # 3 bands on the same day count as 1 visit
     assert stats["venue_royalty"][0]["distinct_artists"] == 3
+
+    # Cadence matrix test
+    matrix = service.get_gig_cadence_matrix(user_id=1)
+    assert 2026 in matrix["years"]
+    assert matrix["daily_counts"]["2026-07-10"] == 3  # 3 gigs logged on that day
 
 
 def test_gig_surge_leaderboard_requires_minimum_plays(db_session: Session):

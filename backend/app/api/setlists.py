@@ -19,6 +19,7 @@ from ..schemas.setlists import (
     FileImportRequest,
     FileImportResponse,
     GigBillResponse,
+    GigCadenceMatrixResponse,
     FurthestGigsResponse,
     GigBumpResponse,
     GigCompanionsResponse,
@@ -637,6 +638,16 @@ def get_gig_map_pins(
 ) -> list[GigMapPinItem]:
     target_user_id = resolve_viewable_user_id(db, current_user, user_id)
     return [GigMapPinItem.model_validate(item) for item in GigReportsService(db=db).get_gig_map_pins(target_user_id)]
+
+
+@router.get("/stats/cadence-matrix", response_model=GigCadenceMatrixResponse)
+def get_gig_cadence_matrix(
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's gig cadence matrix."),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> GigCadenceMatrixResponse:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    return GigCadenceMatrixResponse.model_validate(GigReportsService(db=db).get_gig_cadence_matrix(target_user_id))
 
 
 @router.get("/export")
