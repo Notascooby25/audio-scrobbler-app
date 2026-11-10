@@ -347,3 +347,136 @@ class GigReportsService:
 
         discoveries.sort(key=lambda d: d["lifetime_plays"], reverse=True)
         return discoveries[:limit]
+
+    def get_gig_surge_leaderboard(
+        self, user_id: int, limit: int = 5, now: datetime | None = None
+    ) -> list[dict[str, Any]]:
+        """Finds individual artists with the largest play surge in the 14 days following a concert,
+        requiring at least 5 plays in the 28-day combined window to eliminate statistical noise."""
+        now = now or utc_now()
+        window = timedelta(days=GIG_WINDOW_DAYS)
+        one_day = timedelta(days=1)
+        latest_gig_day = now - window - one_day
+
+        gigs = (
+            self.db.query(AttendedConcert.artist_name, AttendedConcert.event_date, AttendedConcert.venue_name)
+            .filter(
+                AttendedConcert.user_id == user_id,
+                AttendedConcert.is_support_act.is_(False),
+                AttendedConcert.event_date <= latest_gig_day,
+            )
+            .order_by(desc(AttendedConcert.event_date))
+            .limit(GIG_BUMP_MAX_GIGS)
+            .all()
+        )
+
+        artist_surges: dict[str, dict[str, Any]] = {}
+        for artist, gig_date, venue in gigs:
+            a_key = artist_key(artist)
+            if a_key in artist_surges:
+                continue
+
+            day_start = datetime.combine(gig_date.date(), datetime.min.time())
+            before_start = day_start - window
+            after_start = day_start + one_day
+            after_end = after_start + window
+
+            before_count = (
+                self.db.query(func.count(ListeningEvent.id))
+                .filter(
+                    ListeningEvent.user_id == user_id,
+                    ListeningEvent.source != LIVE_SOURCE,
+                    ListeningEvent.played_at >= before_start,
+                    ListeningEvent.played_at < day_start,
+                    ListeningEvent.artist_name.ilike(artist),
+                    not_blocked_clause(user_id),
+                )
+                .scalar()
+                or 0
+            )
+
+            after_count = (
+                self.db.query(func.count(ListeningEvent.id))
+                .filter(
+                    ListeningEvent.user_id == user_id,
+                    ListeningEvent.source != LIVE_SOURCE,
+                    ListeningEvent.played_at >= after_start,
+                    ListeningEvent.played_at < after_end,
+                    ListeningEvent.artist_name.ilike(artist),
+                    not_blocked_clause(user_id),
+                )
+                .scalar()
+                or 0
+            )
+
+            # Minimum 5 total plays threshold
+            if (before_count + after_count) >= 5 and after_count > before_count:
+                change = round((after_count - before_count) / before_count * 100, 1) if before_count else 100.0
+                artist_surges[a_key] = {
+                    "artist_name": artist,
+                    "venue_name": venue,
+                    "gig_date": gig_date.strftime("%d %b %Y"),
+                    "plays_before": before_count,
+                    "plays_after": after_count,
+                    "change_percent": change,
+                    "absolute_gain": after_count - before_count,
+                }
+
+        results = list(artist_surges.values())
+        results.sort(key=lambda s: (s["absolute_gain"], s["change_percent"]), reverse=True)
+        return results[:limit]
+
+    def get_gigs_day_of_week(self, user_id: int) -> list[dict[str, Any]]:
+        """Returns distribution of concert dates by day of the week (0=Mon .. 6=Sun)."""
+        concerts = self.db.query(AttendedConcert.event_date).filter(AttendedConcert.user_id == user_id).all()
+        counts = [0] * 7
+        day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        for (event_date,) in concerts:
+            if event_date:
+                counts[event_date.weekday()] += 1
+
+        total = sum(counts)
+        return [
+            {
+                "day_index": i,
+                "day_name": day_names[i],
+                "count": counts[i],
+                "percent": round(counts[i] / total * 100, 1) if total > 0 else 0.0,
+            }
+            for i in range(7)
+        ]
+
+    def get_gig_map_pins(self, user_id: int) -> list[dict[str, Any]]:
+        """Returns geocoded map pins for all attended concerts with coordinates from GeoCache."""
+        concerts = (
+            self.db.query(AttendedConcert)
+            .filter(AttendedConcert.user_id == user_id)
+            .order_by(desc(AttendedConcert.event_date))
+            .all()
+        )
+        pins_map: dict[str, dict[str, Any]] = {}
+        for c in concerts:
+            venue_q, city_q = _queries(c.venue_name, c.city, c.country)
+            known, point, approx = _place(self.db, venue_q, city_q)
+            if not known or point is None:
+                continue
+
+            pin_key = f"{round(point[0], 4)},{round(point[1], 4)}"
+            pin = pins_map.setdefault(
+                pin_key,
+                {
+                    "lat": point[0],
+                    "lng": point[1],
+                    "venue_name": c.venue_name,
+                    "city": c.city,
+                    "country": c.country,
+                    "approximate": approx,
+                    "gig_count": 0,
+                    "artists": [],
+                },
+            )
+            pin["gig_count"] += 1
+            if len(pin["artists"]) < 5 and c.artist_name not in pin["artists"]:
+                pin["artists"].append(c.artist_name)
+
+        return list(pins_map.values())

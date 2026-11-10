@@ -328,3 +328,31 @@ class LiveFirstDiscoveryItem(BaseModel):
     gig_date: str
     first_scrobble_date: str
     lifetime_plays: int
+
+
+class GigSurgeItem(BaseModel):
+    artist_name: str
+    venue_name: str
+    gig_date: str
+    plays_before: int
+    plays_after: int
+    change_percent: float
+    absolute_gain: int
+
+
+class DayOfWeekCadenceItem(BaseModel):
+    day_index: int
+    day_name: str
+    count: int
+    percent: float
+
+
+class GigMapPinItem(BaseModel):
+    lat: float
+    lng: float
+    venue_name: str
+    city: str
+    country: str
+    approximate: bool
+    gig_count: int
+    artists: list[str] = Field(default_factory=list)

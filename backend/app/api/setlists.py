@@ -14,6 +14,7 @@ from ..schemas.setlists import (
     ArtistLeaderboardItem,
     AttendedConcertResponse,
     BadgeItem,
+    DayOfWeekCadenceItem,
     DeleteConcertResponse,
     FileImportRequest,
     FileImportResponse,
@@ -22,7 +23,9 @@ from ..schemas.setlists import (
     GigBumpResponse,
     GigCompanionsResponse,
     GigInviteItem,
+    GigMapPinItem,
     GigsByPeriodResponse,
+    GigSurgeItem,
     GigTravelAndVenuesResponse,
     LiveFirstDiscoveryItem,
     LiveGapItem,
@@ -597,6 +600,43 @@ def get_live_first_discoveries(
         LiveFirstDiscoveryItem.model_validate(item)
         for item in GigReportsService(db=db).get_live_first_discoveries(target_user_id, limit=limit)
     ]
+
+
+@router.get("/stats/surge-leaderboard", response_model=list[GigSurgeItem])
+def get_gig_surge_leaderboard(
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's gig surge."),
+    limit: int = Query(default=5, ge=1, le=50),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[GigSurgeItem]:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    return [
+        GigSurgeItem.model_validate(item)
+        for item in GigReportsService(db=db).get_gig_surge_leaderboard(target_user_id, limit=limit)
+    ]
+
+
+@router.get("/stats/day-of-week", response_model=list[DayOfWeekCadenceItem])
+def get_gig_day_of_week(
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's gig cadence."),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[DayOfWeekCadenceItem]:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    return [
+        DayOfWeekCadenceItem.model_validate(item)
+        for item in GigReportsService(db=db).get_gigs_day_of_week(target_user_id)
+    ]
+
+
+@router.get("/stats/map-pins", response_model=list[GigMapPinItem])
+def get_gig_map_pins(
+    user_id: int | None = Query(default=None, description="Optional: view a followed user's gig map pins."),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[GigMapPinItem]:
+    target_user_id = resolve_viewable_user_id(db, current_user, user_id)
+    return [GigMapPinItem.model_validate(item) for item in GigReportsService(db=db).get_gig_map_pins(target_user_id)]
 
 
 @router.get("/export")

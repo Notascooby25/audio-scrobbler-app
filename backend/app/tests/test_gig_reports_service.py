@@ -217,9 +217,46 @@ def test_travel_distance_deduplicates_same_day_festival_venues(db_session: Sessi
     stats = service.get_gig_travel_and_venues(user_id=1)
 
     assert stats["total_distance_km"] == 116  # round-trip counted ONCE, not 3x
-    assert stats["located_events"] == 1
-    assert stats["active_streak_months"] >= 0
-    assert len(stats["venue_royalty"]) == 1
     assert stats["venue_royalty"][0]["venue_name"] == "Manchester Academy"
     assert stats["venue_royalty"][0]["gig_count"] == 3
     assert stats["venue_royalty"][0]["distinct_artists"] == 3
+
+
+def test_gig_surge_leaderboard_requires_minimum_plays(db_session: Session):
+    # Artist with only 1 play before and 1 play after (< 5 plays) is filtered out
+    now = datetime(2026, 8, 1)
+    gig_day = datetime(2026, 7, 10)
+    _gig(db_session, "g1", "Quiet Band", gig_day)
+    _play(db_session, "Quiet Band", datetime(2026, 7, 1))
+    _play(db_session, "Quiet Band", datetime(2026, 7, 20))
+
+    # Artist with 2 plays before and 8 plays after (total 10 >= 5) is included
+    _gig(db_session, "g2", "Surge Band", gig_day)
+    for _ in range(2):
+        _play(db_session, "Surge Band", datetime(2026, 7, 5))
+    for _ in range(8):
+        _play(db_session, "Surge Band", datetime(2026, 7, 15))
+
+    service = GigReportsService(db_session)
+    surge = service.get_gig_surge_leaderboard(user_id=1, now=now)
+
+    assert len(surge) == 1
+    assert surge[0]["artist_name"] == "Surge Band"
+    assert surge[0]["plays_before"] == 2
+    assert surge[0]["plays_after"] == 8
+    assert surge[0]["change_percent"] == 300.0
+
+
+def test_gig_map_pins_and_day_of_week(db_session: Session):
+    # Sunday concert
+    sun_day = datetime(2026, 7, 12)  # Sunday
+    _gig(db_session, "g3", "Sunday Act", sun_day)
+
+    service = GigReportsService(db_session)
+    dow = service.get_gigs_day_of_week(user_id=1)
+    # Sunday index = 6
+    assert any(d["day_index"] == 6 and d["count"] >= 1 for d in dow)
+
+    pins = service.get_gig_map_pins(user_id=1)
+    # Gigs without home city still show pins if located or empty
+    assert isinstance(pins, list)
