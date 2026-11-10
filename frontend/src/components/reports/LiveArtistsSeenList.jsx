@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const INITIAL_LIMIT = 10;
+const INITIAL_LIMIT = 5;
 
 export default function LiveArtistsSeenList({ artists = [] }) {
   const [showAll, setShowAll] = useState(false);
@@ -144,7 +144,7 @@ export default function LiveArtistsSeenList({ artists = [] }) {
             }}
             onClick={() => setShowAll((prev) => !prev)}
           >
-            {showAll ? "Show top 10 only" : `Show all ${artists.length} artists`}
+            {showAll ? "Show top 5 only" : `Show all ${artists.length} artists`}
           </button>
         </div>
       )}

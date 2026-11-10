@@ -428,13 +428,14 @@ class GigReportsService:
         return results[:limit]
 
     def get_gigs_day_of_week(self, user_id: int) -> list[dict[str, Any]]:
-        """Returns distribution of concert dates by day of the week (0=Mon .. 6=Sun)."""
+        """Returns distribution of concert dates by day of the week (0=Mon .. 6=Sun), counting distinct dates."""
         concerts = self.db.query(AttendedConcert.event_date).filter(AttendedConcert.user_id == user_id).all()
+        # Deduplicate to unique calendar dates so multiple acts on the same night count as 1 gig
+        distinct_dates = {event_date.date() for (event_date,) in concerts if event_date}
         counts = [0] * 7
         day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-        for (event_date,) in concerts:
-            if event_date:
-                counts[event_date.weekday()] += 1
+        for d in distinct_dates:
+            counts[d.weekday()] += 1
 
         total = sum(counts)
         return [
@@ -493,16 +494,16 @@ class GigReportsService:
         if not concerts:
             return {"years": [], "daily_counts": {}}
 
-        # Count unique gigs per calendar date
-        daily: Counter[str] = Counter()
+        # Count unique gig outings per calendar date so multiple acts on the same date count as 1 gig
+        distinct_dates = {event_date.date() for (event_date,) in concerts if event_date}
+        daily: dict[str, int] = {}
         years_seen: set[int] = set()
-        for (event_date,) in concerts:
-            if event_date:
-                day_str = event_date.strftime("%Y-%m-%d")
-                daily[day_str] += 1
-                years_seen.add(event_date.year)
+        for d in sorted(distinct_dates):
+            day_str = d.strftime("%Y-%m-%d")
+            daily[day_str] = 1
+            years_seen.add(d.year)
 
         return {
             "years": sorted(years_seen, reverse=True),
-            "daily_counts": dict(daily),
+            "daily_counts": daily,
         }

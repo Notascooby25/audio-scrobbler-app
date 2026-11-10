@@ -221,10 +221,10 @@ def test_travel_distance_deduplicates_same_day_festival_venues(db_session: Sessi
     assert stats["venue_royalty"][0]["gig_count"] == 1  # 3 bands on the same day count as 1 visit
     assert stats["venue_royalty"][0]["distinct_artists"] == 3
 
-    # Cadence matrix test
+    # Cadence matrix test: 3 bands on same date counts as 1 gig day
     matrix = service.get_gig_cadence_matrix(user_id=1)
     assert 2026 in matrix["years"]
-    assert matrix["daily_counts"]["2026-07-10"] == 3  # 3 gigs logged on that day
+    assert matrix["daily_counts"]["2026-07-10"] == 1
 
 
 def test_gig_surge_leaderboard_requires_minimum_plays(db_session: Session):
@@ -253,14 +253,21 @@ def test_gig_surge_leaderboard_requires_minimum_plays(db_session: Session):
 
 
 def test_gig_map_pins_and_day_of_week(db_session: Session):
-    # Sunday concert
+    # Sunday concert with headliner plus two support acts on same date
     sun_day = datetime(2026, 7, 12)  # Sunday
-    _gig(db_session, "g3", "Sunday Act", sun_day)
+    _gig(db_session, "g3", "Sunday Headliner", sun_day)
+    _gig(db_session, "g4", "Sunday Support 1", sun_day, support=True)
+    _gig(db_session, "g5", "Sunday Support 2", sun_day, support=True)
 
     service = GigReportsService(db_session)
     dow = service.get_gigs_day_of_week(user_id=1)
-    # Sunday index = 6
-    assert any(d["day_index"] == 6 and d["count"] >= 1 for d in dow)
+    # Sunday index = 6, must count 1 gig outing rather than 3
+    sunday_stat = next(d for d in dow if d["day_index"] == 6)
+    assert sunday_stat["count"] == 1
+
+    # Cadence matrix must also count 1 gig for 2026-07-12
+    matrix = service.get_gig_cadence_matrix(user_id=1)
+    assert matrix["daily_counts"]["2026-07-12"] == 1
 
     pins = service.get_gig_map_pins(user_id=1)
     # Gigs without home city still show pins if located or empty

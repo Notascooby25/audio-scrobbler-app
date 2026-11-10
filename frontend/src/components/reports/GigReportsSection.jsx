@@ -395,21 +395,34 @@ export default function GigReportsSection({ token, userId }) {
         {/* ARTISTS & LIVE ARCHIVE SECTION */}
         {(activeTab === "all" || activeTab === "discovery") && (
           <>
-            {widgets.artists && liveArtists.length > 0 && (
-              <LiveArtistsSeenList artists={liveArtists} />
+            {/* Side-by-side compact card grid for Live Artists and Setlist Replays */}
+            {((widgets.artists && liveArtists.length > 0) ||
+              (widgets.replays && setlistSongs.length > 0)) && (
+              <div
+                className="live-highlights-grid"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+                  gap: "1rem",
+                  alignItems: "start",
+                }}
+              >
+                {widgets.artists && liveArtists.length > 0 && (
+                  <LiveArtistsSeenList artists={liveArtists} />
+                )}
+                {widgets.replays && setlistSongs.length > 0 && (
+                  <SetlistReplayHighlights songs={setlistSongs} />
+                )}
+              </div>
             )}
 
             {widgets.cadenceGrid && cadenceMatrix && <GigCadenceHeatmap matrix={cadenceMatrix} />}
           </>
         )}
 
-        {/* POST-GIG SURGE & REPLAYS SECTION */}
+        {/* POST-GIG SURGE SECTION */}
         {(activeTab === "all" || activeTab === "discovery") && (
           <>
-            {widgets.replays && setlistSongs.length > 0 && (
-              <SetlistReplayHighlights songs={setlistSongs} />
-            )}
-
             {widgets.bump && (
               <div className="chart-panel">
                 <div

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const INITIAL_LIMIT = 10;
+const INITIAL_LIMIT = 5;
 
 export default function SetlistReplayHighlights({ songs = [] }) {
   const [showAll, setShowAll] = useState(false);
@@ -144,7 +144,7 @@ export default function SetlistReplayHighlights({ songs = [] }) {
             }}
             onClick={() => setShowAll((prev) => !prev)}
           >
-            {showAll ? "Show top 10 only" : `Show all ${songs.length} tracks`}
+            {showAll ? "Show top 5 only" : `Show all ${songs.length} tracks`}
           </button>
         </div>
       )}
