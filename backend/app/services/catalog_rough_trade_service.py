@@ -15,6 +15,19 @@ from .text_cleaning import clean_title
 
 _DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "rough_trade_albums.json"
 
+AVAILABLE_PARENT_GENRES: list[str] = [
+    "Rock",
+    "Pop",
+    "Electronic",
+    "Soul",
+    "Jazz",
+    "Punk",
+    "Hip Hop",
+    "Folk",
+    "Metal",
+    "Funk",
+]
+
 
 @lru_cache(maxsize=1)
 def get_canonical_rough_trade_albums() -> list[dict[str, Any]]:
@@ -157,6 +170,7 @@ def get_user_rough_trade_catalog(db: Session, user_id: int) -> dict[str, Any]:
         "overall_completion_pct": overall_pct,
         "year_stats": year_stats,
         "pending_confirmation": pending_album_dict,
+        "available_genres": AVAILABLE_PARENT_GENRES,
     }
 
 
