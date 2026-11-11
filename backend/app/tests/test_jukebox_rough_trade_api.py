@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -10,7 +9,7 @@ from sqlalchemy.pool import StaticPool
 from backend.app.api.deps import get_current_user
 from backend.app.db import Base, get_db
 from backend.app.main import app
-from backend.app.models import ListeningEvent, User
+from backend.app.models import User
 
 
 @pytest.fixture

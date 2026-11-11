@@ -60,11 +60,7 @@ def get_user_rough_trade_catalog(db: Session, user_id: int) -> dict[str, Any]:
             "pending_confirmation": None,
         }
 
-    completions = (
-        db.query(UserRoughTradeAlbumCompletion)
-        .filter(UserRoughTradeAlbumCompletion.user_id == user_id)
-        .all()
-    )
+    completions = db.query(UserRoughTradeAlbumCompletion).filter(UserRoughTradeAlbumCompletion.user_id == user_id).all()
     completions_map: dict[int, UserRoughTradeAlbumCompletion] = {c.album_id: c for c in completions}
 
     # Fetch user listening events (scrobbles) to compute track-level listening matches
@@ -192,7 +188,9 @@ def toggle_user_rough_trade_album_completion(
             record.completed_at = None
 
     # Clear pending confirmation for this album
-    db.query(UserRoughTradePendingConfirmation).filter_by(user_id=user_id, album_id=album_id).update({"dismissed": True})
+    db.query(UserRoughTradePendingConfirmation).filter_by(user_id=user_id, album_id=album_id).update(
+        {"dismissed": True}
+    )
     db.commit()
 
     count = db.query(UserRoughTradeAlbumCompletion).filter_by(user_id=user_id, is_completed=True).count()
