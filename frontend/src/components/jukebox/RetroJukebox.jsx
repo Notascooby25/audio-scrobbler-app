@@ -23,6 +23,7 @@ export default function RetroJukebox({
   excludeCompleted = false,
   setExcludeCompleted,
   onToggle1001Completed,
+  onToggleRoughTradeCompleted,
 }) {
   const [spinning, setSpinning] = useState(false);
 
@@ -94,7 +95,7 @@ export default function RetroJukebox({
           }}
         >
           {sessionActive
-            ? `Lucky Dip Pick • ${sourceMode === "1001" ? "1001 Albums" : mode}`
+            ? `Lucky Dip Pick • ${sourceMode === "1001" ? "1001 Albums" : sourceMode === "rough_trade" ? "Rough Trade Top 100" : mode}`
             : "Today's Featured Pick"}
         </div>
         <h3
@@ -120,7 +121,7 @@ export default function RetroJukebox({
           }}
         >
           {currentPick
-            ? `${currentPick.artist_name} (${currentPick.release_year || "Unknown"})`
+            ? `${currentPick.artist_name} (${currentPick.year || currentPick.release_year || "Unknown"})`
             : ""}
         </p>
 
@@ -146,6 +147,46 @@ export default function RetroJukebox({
               onClick={() =>
                 onToggle1001Completed &&
                 onToggle1001Completed(currentPick.id, !currentPick.is_completed)
+              }
+              style={{
+                border: "2px solid #394651",
+                borderRadius: "6px",
+                padding: "3px 8px",
+                fontSize: "11px",
+                fontWeight: 700,
+                background: currentPick.is_completed ? "#3cc8b4" : "#fff",
+                color: currentPick.is_completed ? "#fff" : "#394651",
+                cursor: "pointer",
+              }}
+              aria-label={`Mark ${currentPick.album_name} as ${
+                currentPick.is_completed ? "unplayed" : "played"
+              }`}
+            >
+              {currentPick.is_completed ? "✓ Played" : "Mark Played"}
+            </button>
+          </div>
+        )}
+
+        {currentPick && sourceMode === "rough_trade" && (
+          <div
+            style={{
+              marginTop: "6px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "6px",
+            }}
+          >
+            <div style={{ fontSize: "11px", color: "#555555", fontWeight: 600 }}>
+              {currentPick.rank ? `Rank #${currentPick.rank} • ` : ""}
+              Rough Trade {currentPick.year}
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                onToggleRoughTradeCompleted &&
+                onToggleRoughTradeCompleted(currentPick.id, !currentPick.is_completed)
               }
               style={{
                 border: "2px solid #394651",
