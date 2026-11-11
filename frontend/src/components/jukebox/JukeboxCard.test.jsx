@@ -178,4 +178,36 @@ describe("JukeboxCard", () => {
     const confirmBtn = screen.getByRole("button", { name: /Yes, mark played/i });
     fireEvent.click(confirmBtn);
   });
+
+  it("updates current pick to Played when clicking Mark Played in Flat view for Rough Trade", async () => {
+    render(<JukeboxCard token="mock-token" />);
+    expect(await screen.findByText(/Album Jukebox/i)).toBeInTheDocument();
+
+    // Switch to Rough Trade mode
+    const rtBtn = screen.getByRole("button", { name: /Rough Trade Top 100/i });
+    fireEvent.click(rtBtn);
+    expect(await screen.findByText(/Progress: 1 \/ 700/i)).toBeInTheDocument();
+
+    // Spin Lucky Dip to pick an album
+    const luckyDipBtn = screen.getByRole("button", { name: /Lucky Dip \(Spin\)/i });
+    fireEvent.click(luckyDipBtn);
+
+    // Find the Mark Played / Played button on the pick after spin animation finishes
+    const actionBtn = await screen.findByRole(
+      "button",
+      { name: /Mark .* as (?:played|unplayed)/i },
+      { timeout: 3000 }
+    );
+    const initiallyCompleted = actionBtn.textContent.includes("Played") && actionBtn.textContent.includes("✓");
+
+    // Click the toggle button
+    fireEvent.click(actionBtn);
+
+    // Button should immediately flip its state
+    const expectedLabel = initiallyCompleted ? /Mark .* as played/i : /Mark .* as unplayed/i;
+    const expectedText = initiallyCompleted ? "Mark Played" : "✓ Played";
+    expect(
+      await screen.findByRole("button", { name: expectedLabel }, { timeout: 3000 })
+    ).toHaveTextContent(expectedText);
+  });
 });
