@@ -450,3 +450,32 @@ class User1001PendingConfirmation(Base):
     album_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
     opened_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     dismissed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+
+class UserRoughTradeAlbumCompletion(Base):
+    __tablename__ = "user_rough_trade_album_completions"
+    __table_args__ = (UniqueConstraint("user_id", "album_id", name="uq_user_rough_trade_album_completion"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    album_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    is_completed: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    source: Mapped[str] = mapped_column(String(32), default="manual", nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+
+
+class UserRoughTradePendingConfirmation(Base):
+    __tablename__ = "user_rough_trade_pending_confirmations"
+    __table_args__ = (UniqueConstraint("user_id", "album_id", name="uq_user_rough_trade_pending_confirmation"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    album_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    opened_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    dismissed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
