@@ -93,7 +93,7 @@ def get_user_1001_catalog(db: Session, user_id: int) -> dict[str, Any]:
             key = (normalize_match_str(art), normalize_match_str(alb))
             user_tracks[key].add(trk.strip())
 
-    # Check 90% threshold for unrecorded albums
+    # Check 85% threshold for unrecorded albums
     newly_seeded: list[User1001AlbumCompletion] = []
     for album in albums:
         aid = album["id"]
@@ -105,12 +105,12 @@ def get_user_1001_catalog(db: Session, user_id: int) -> dict[str, Any]:
         )
         played_tracks = user_tracks.get(key, set())
         track_count = album.get("track_count") or 10
-        if len(played_tracks) > 0 and (len(played_tracks) / track_count) >= 0.90:
+        if len(played_tracks) > 0 and (len(played_tracks) / track_count) >= 0.85:
             rec = User1001AlbumCompletion(
                 user_id=user_id,
                 album_id=aid,
                 is_completed=True,
-                source="scrobble_90pct",
+                source="scrobble_85pct",
                 completed_at=utc_now(),
             )
             db.add(rec)

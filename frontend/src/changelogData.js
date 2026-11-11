@@ -1,5 +1,15 @@
 export const CHANGELOG = [
   {
+    version: "0.45.0",
+    date: "2026-11-11",
+    changes: [
+      "Rough Trade Top 100 Albums: Added a new third catalog source to the Album Jukebox featuring all 700 canonical records across 7 annual editions (2020 to 2026) of Rough Trade Records' prestigious Albums of the Year.",
+      "Year-by-Year Filtering & Discovery: Explore Rough Trade picks across the entire multi-year collection or focus down to individual years (2020 through 2026), complete with parent genre filters and lucky dip spins.",
+      "Played Tracking & Checklist Modal: Track your Rough Trade listening progress with an interactive progress pill, an 'Exclude previously played albums' toggle, post-listen confirmation prompts when opening in Spotify, and a full-featured checklist modal with per-year tabs and search.",
+      "Dual View Support: Fully integrated across both the clean modern Flat View and the retro skeuomorphic arcade cabinet.",
+    ],
+  },
+  {
     version: "0.44.0",
     date: "2026-11-10",
     changes: [

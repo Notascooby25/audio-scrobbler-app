@@ -40,11 +40,12 @@ export const GENRE_KEYWORDS = {
 };
 
 export function useJukeboxEngine(albums = []) {
-  const [sourceMode, setSourceMode] = useState("library"); // "library" | "1001"
+  const [sourceMode, setSourceMode] = useState("library"); // "library" | "1001" | "rough_trade"
   const [excludeCompleted, setExcludeCompleted] = useState(false);
   const [filters, setFilters] = useState({
     artist: "",
     decade: new Set(),
+    year: new Set(),
     genre: new Set(),
     length: new Set(),
     added: new Set(),
@@ -78,6 +79,7 @@ export function useJukeboxEngine(albums = []) {
     setFilters({
       artist: "",
       decade: new Set(),
+      year: new Set(),
       genre: new Set(),
       length: new Set(),
       added: new Set(),
@@ -93,8 +95,12 @@ export function useJukeboxEngine(albums = []) {
         const q = filters.artist.trim().toLowerCase();
         if (!album.artist_name || !album.artist_name.toLowerCase().includes(q)) return false;
       }
+      if (filters.year.size > 0) {
+        const yr = album.year || album.release_year;
+        if (!yr || (!filters.year.has(Number(yr)) && !filters.year.has(String(yr)))) return false;
+      }
       if (filters.decade.size > 0) {
-        const year = album.release_year || album.decade;
+        const year = album.release_year || album.decade || album.year;
         if (!year) return false;
         const decadeStr = String(Math.floor(year / 10) * 10);
         const decadeWithS = `${decadeStr}s`;

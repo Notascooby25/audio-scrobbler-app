@@ -18,6 +18,7 @@ export default function JukeboxFilters({
 
   // Extract available decades dynamically from loaded albums
   const availableDecades = useMemo(() => {
+    if (sourceMode === "rough_trade") return [];
     const set = new Set();
     albums.forEach((a) => {
       const year = a.release_year || a.decade;
@@ -32,9 +33,24 @@ export default function JukeboxFilters({
     return Array.from(set).sort((a, b) => b - a);
   }, [albums, sourceMode]);
 
+  // Extract available years for Rough Trade mode
+  const availableYears = useMemo(() => {
+    if (sourceMode !== "rough_trade") return [];
+    const set = new Set();
+    albums.forEach((a) => {
+      const yr = a.year || a.release_year;
+      if (yr) set.add(Number(yr));
+    });
+    if (set.size === 0) {
+      [2026, 2025, 2024, 2023, 2022, 2021, 2020].forEach((y) => set.add(y));
+    }
+    return Array.from(set).sort((a, b) => b - a);
+  }, [albums, sourceMode]);
+
   const activeFilterCount =
     (filters.artist.trim() ? 1 : 0) +
     filters.decade.size +
+    (filters.year ? filters.year.size : 0) +
     filters.genre.size +
     filters.length.size +
     (excludeCompleted ? 1 : 0) +
@@ -78,13 +94,7 @@ export default function JukeboxFilters({
       : active
         ? "var(--color-primary)"
         : "var(--color-surface)",
-    color: isRetro
-      ? active
-        ? "#FFFFFF"
-        : "#24212b"
-      : active
-        ? "#FFFFFF"
-        : "var(--color-ink)",
+    color: isRetro ? (active ? "#FFFFFF" : "#24212b") : active ? "#FFFFFF" : "var(--color-ink)",
     boxShadow: isRetro ? "0 1px 0 #394651" : "none",
     cursor: "pointer",
   });
@@ -165,8 +175,8 @@ export default function JukeboxFilters({
             color: isRetro ? "#24212b" : "var(--color-ink)",
           }}
         >
-          {/* Exclude Played Checkbox (1001 Albums mode) */}
-          {sourceMode === "1001" && (
+          {/* Exclude Played Checkbox (1001 Albums & Rough Trade mode) */}
+          {(sourceMode === "1001" || sourceMode === "rough_trade") && (
             <div
               style={{
                 paddingBottom: "4px",
@@ -198,7 +208,7 @@ export default function JukeboxFilters({
           )}
 
           {/* Mode Selector (in Library mode) */}
-          {sourceMode !== "1001" && (
+          {sourceMode === "library" && (
             <div>
               <div style={sectionHeadingStyle}>POOL SELECTION MODE</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
@@ -240,6 +250,29 @@ export default function JukeboxFilters({
             />
           </div>
 
+          {/* Year Filters (Rough Trade mode) */}
+          {sourceMode === "rough_trade" && availableYears.length > 0 && (
+            <div>
+              <div style={sectionHeadingStyle}>YEAR</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                {availableYears.map((yr) => {
+                  const active =
+                    filters.year && (filters.year.has(yr) || filters.year.has(String(yr)));
+                  return (
+                    <button
+                      key={yr}
+                      type="button"
+                      onClick={() => toggleFilter("year", yr)}
+                      style={getChipStyle(active, true)}
+                    >
+                      {yr}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Decade Filters */}
           {availableDecades.length > 0 && (
             <div>
@@ -264,7 +297,7 @@ export default function JukeboxFilters({
           )}
 
           {/* Length Filters (Library mode) */}
-          {sourceMode !== "1001" && (
+          {sourceMode === "library" && (
             <div>
               <div style={sectionHeadingStyle}>ALBUM LENGTH</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>

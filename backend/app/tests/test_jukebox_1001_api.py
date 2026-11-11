@@ -99,7 +99,7 @@ def test_get_1001_albums_seeding_and_threshold(client, db_session, test_user):
     data2 = resp2.json()
     album1_updated = next(a for a in data2["albums"] if a["id"] == 1)
     assert album1_updated["is_completed"] is True
-    assert album1_updated["source"] == "scrobble_90pct"
+    assert album1_updated["source"] == "scrobble_85pct"
     assert data2["completed_count"] >= 1
 
 

@@ -731,3 +731,54 @@ export async function dismiss1001PendingPlay({ token, albumId = null }) {
   });
   return parseResponse(response);
 }
+
+export async function fetchRoughTradeAlbums({ token }) {
+  const response = await fetch(`${API_BASE_URL}/jukebox/rough-trade-albums`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function toggleRoughTradeAlbumCompleted({
+  token,
+  albumId,
+  isCompleted,
+  source = "manual",
+}) {
+  const response = await fetch(
+    `${API_BASE_URL}/jukebox/rough-trade-albums/${albumId}/toggle-completed`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ is_completed: isCompleted, source }),
+    }
+  );
+  return parseResponse(response);
+}
+
+export async function recordRoughTradePendingPlay({ token, albumId }) {
+  const response = await fetch(`${API_BASE_URL}/jukebox/rough-trade-albums/pending-play`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ album_id: albumId }),
+  });
+  return parseResponse(response);
+}
+
+export async function dismissRoughTradePendingPlay({ token, albumId = null }) {
+  const response = await fetch(`${API_BASE_URL}/jukebox/rough-trade-albums/dismiss-pending`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(albumId !== null ? { album_id: albumId } : {}),
+  });
+  return parseResponse(response);
+}

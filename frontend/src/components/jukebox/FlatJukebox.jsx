@@ -25,6 +25,7 @@ export default function FlatJukebox({
   excludeCompleted = false,
   setExcludeCompleted,
   onToggle1001Completed,
+  onToggleRoughTradeCompleted,
 }) {
   const [spinning, setSpinning] = useState(false);
   const [artFailed, setArtFailed] = useState(false);
@@ -48,6 +49,13 @@ export default function FlatJukebox({
     (currentPick
       ? `https://open.spotify.com/search/${encodeURIComponent(currentPick.artist_name + " " + currentPick.album_name)}`
       : "#");
+
+  const sourceBadgeLabel =
+    sourceMode === "1001"
+      ? "1001 Albums"
+      : sourceMode === "rough_trade"
+        ? "Rough Trade Top 100"
+        : "Album Jukebox";
 
   return (
     <div
@@ -81,7 +89,7 @@ export default function FlatJukebox({
               borderRadius: "4px",
             }}
           >
-            {sourceMode === "1001" ? "1001 Albums" : "Album Jukebox"}
+            {sourceBadgeLabel}
           </span>
           <span
             style={{
@@ -96,7 +104,7 @@ export default function FlatJukebox({
         </div>
         <span style={{ fontSize: "12px", color: "var(--color-muted)" }}>
           <strong>{filteredAlbums.length}</strong> records available{" "}
-          {mode !== "any" && sourceMode !== "1001" && `(pool: ${pool.length})`}
+          {mode !== "any" && sourceMode === "library" && `(pool: ${pool.length})`}
         </span>
       </div>
 
@@ -201,7 +209,7 @@ export default function FlatJukebox({
             }}
           >
             {sessionActive
-              ? `Lucky Dip Pick • ${sourceMode === "1001" ? "1001 Albums" : mode}`
+              ? `Lucky Dip Pick • ${sourceMode === "1001" ? "1001 Albums" : sourceMode === "rough_trade" ? "Rough Trade Top 100" : mode}`
               : "Today's Featured Pick"}
           </div>
 
@@ -237,7 +245,7 @@ export default function FlatJukebox({
               }}
             >
               {currentPick
-                ? `${currentPick.artist_name} • ${currentPick.release_year || "Unknown Year"}`
+                ? `${currentPick.artist_name} • ${currentPick.year || currentPick.release_year || "Unknown Year"}`
                 : "Select Lucky Dip to spin"}
             </div>
 
@@ -269,7 +277,35 @@ export default function FlatJukebox({
               </button>
             )}
 
-            {sourceMode !== "1001" && currentPick && (
+            {sourceMode === "rough_trade" && currentPick && (
+              <button
+                type="button"
+                onClick={() =>
+                  onToggleRoughTradeCompleted &&
+                  onToggleRoughTradeCompleted(currentPick.id, !currentPick.is_completed)
+                }
+                style={{
+                  background: currentPick.is_completed
+                    ? "var(--color-primary)"
+                    : "var(--color-surface)",
+                  color: currentPick.is_completed ? "#FFFFFF" : "var(--color-ink)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "4px",
+                  padding: "3px 8px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
+                aria-label={`Mark ${currentPick.album_name} as ${
+                  currentPick.is_completed ? "unplayed" : "played"
+                }`}
+              >
+                {currentPick.is_completed ? "✓ Played" : "Mark Played"}
+              </button>
+            )}
+
+            {sourceMode === "library" && currentPick && (
               <LikedHeart
                 liked={Boolean(currentPick.is_liked)}
                 interactive={Boolean(onToggleLike)}
@@ -279,7 +315,7 @@ export default function FlatJukebox({
               />
             )}
           </div>
-          {currentPick && sourceMode !== "1001" && (
+          {currentPick && sourceMode === "library" && (
             <div
               style={{
                 fontSize: "11px",
@@ -305,6 +341,18 @@ export default function FlatJukebox({
               {currentPick.genres &&
                 currentPick.genres.length > 0 &&
                 ` • ${currentPick.genres.join(", ")}`}
+            </div>
+          )}
+          {currentPick && sourceMode === "rough_trade" && (
+            <div
+              style={{
+                fontSize: "11px",
+                color: "var(--color-muted)",
+                marginTop: "4px",
+              }}
+            >
+              {currentPick.rank ? `Rank #${currentPick.rank} • ` : ""}
+              Rough Trade Albums of the Year {currentPick.year}
             </div>
           )}
         </div>

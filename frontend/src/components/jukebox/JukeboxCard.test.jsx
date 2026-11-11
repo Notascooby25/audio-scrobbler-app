@@ -52,6 +52,41 @@ vi.mock("../../api", () => ({
     .mockResolvedValue({ album_id: 1, is_completed: true, completed_count: 2 }),
   dismiss1001PendingPlay: vi.fn().mockResolvedValue({ status: "ok" }),
   record1001PendingPlay: vi.fn().mockResolvedValue({ status: "ok" }),
+  fetchRoughTradeAlbums: vi.fn().mockResolvedValue({
+    albums: [
+      {
+        id: "rt-2020-1",
+        rank: 1,
+        album_name: "Untitled (Black Is)",
+        artist_name: "SAULT",
+        year: 2020,
+        is_completed: false,
+      },
+      {
+        id: "rt-2025-1",
+        rank: 1,
+        album_name: "Future Vintage",
+        artist_name: "Test Artist",
+        year: 2025,
+        is_completed: true,
+      },
+    ],
+    completed_count: 1,
+    total_albums: 700,
+    year_stats: { 2020: { completed: 0, total: 100, pct: 0.0 } },
+    pending_confirmation: {
+      album_id: "rt-2020-1",
+      album_name: "Untitled (Black Is)",
+      artist_name: "SAULT",
+      artwork_url: "",
+      opened_at: "2026-11-05T00:00:00Z",
+    },
+  }),
+  toggleRoughTradeAlbumCompleted: vi
+    .fn()
+    .mockResolvedValue({ album_id: "rt-2020-1", is_completed: true, completed_count: 2 }),
+  dismissRoughTradePendingPlay: vi.fn().mockResolvedValue({ status: "ok" }),
+  recordRoughTradePendingPlay: vi.fn().mockResolvedValue({ status: "ok" }),
 }));
 
 describe("JukeboxCard", () => {
@@ -121,5 +156,26 @@ describe("JukeboxCard", () => {
     expect(
       await screen.findByRole("button", { name: /Mark .* as (?:played|unplayed)|✓ Played/i })
     ).toBeInTheDocument();
+  });
+
+  it("switches to Rough Trade mode, showing progress and confirmation prompt", async () => {
+    render(<JukeboxCard token="mock-token" />);
+    expect(await screen.findByText(/Album Jukebox/i)).toBeInTheDocument();
+
+    // Switch to Rough Trade mode
+    const rtBtn = screen.getByRole("button", { name: /Rough Trade Top 100/i });
+    expect(rtBtn).toBeInTheDocument();
+    fireEvent.click(rtBtn);
+
+    // Verify progress button is displayed
+    expect(await screen.findByText(/Progress: 1 \/ 700/i)).toBeInTheDocument();
+
+    // Verify confirmation prompt banner for Rough Trade
+    expect(screen.getByText(/DID YOU LISTEN TO THIS ALBUM\?/i)).toBeInTheDocument();
+    expect(screen.getByText(/Untitled \(Black Is\)/i)).toBeInTheDocument();
+
+    // Click confirm button
+    const confirmBtn = screen.getByRole("button", { name: /Yes, mark played/i });
+    fireEvent.click(confirmBtn);
   });
 });

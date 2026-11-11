@@ -272,17 +272,18 @@ export default function UserGuideSection() {
             buttons, active tabs, charts, and heatmaps seamlessly.
           </li>
           <li>
-            <strong>Album Jukebox & 1001 Albums Challenge:</strong> Return to whole-album listening
-            and beat choice paralysis with the Album Jukebox on your Play page. You can toggle
-            between
-            <strong>My Library</strong> (drawing from your Spotify Saved Albums or most-scrobbled
-            Library Archive) and <strong>1001 Albums</strong> (the full canonical{" "}
-            <em>1001 Albums You Must Hear Before You Die</em> list). Both modes offer unified decade
-            and parent genre filtering (Rock, Pop, Electronic, Soul, Jazz, Punk, Hip Hop, Folk,
-            Metal, Funk). In 1001 mode, you can exclude previously played records, track overall
-            completion via the progress button, open a decade-tabbed checklist modal to manually
-            check off records, and confirm completed albums via the post-listen prompt when you open
-            a pick in Spotify.
+            <strong>Album Jukebox, 1001 Albums & Rough Trade Challenges:</strong> Return to
+            whole-album listening and beat choice paralysis with the Album Jukebox on your Play
+            page. You can toggle between <strong>My Library</strong> (drawing from your Spotify
+            Saved Albums or most-scrobbled Library Archive), <strong>1001 Albums</strong> (the full
+            canonical <em>1001 Albums You Must Hear Before You Die</em> list), and{" "}
+            <strong>Rough Trade Top 100</strong> (700 canonical records across 7 annual editions
+            from 2020 through 2026). All modes offer unified parent genre filtering (Rock, Pop,
+            Electronic, Soul, Jazz, Punk, Hip Hop, Folk, Metal, Funk) with year/decade selectors. In
+            both challenge modes, you can exclude previously played records, track overall
+            completion via the progress button, open a dedicated checklist modal to manually check
+            off records, and confirm completed albums via the post-listen prompt when you open a
+            pick in Spotify.
           </li>
           <li>
             <strong>Customizable Visible Amounts & Pagination:</strong> In the Library, you can

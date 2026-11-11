@@ -2,26 +2,38 @@ import { useEffect, useState } from "react";
 import {
   fetch1001Albums,
   fetchJukeboxAlbums,
+  fetchRoughTradeAlbums,
   likeAlbum,
   record1001PendingPlay,
   dismiss1001PendingPlay,
+  recordRoughTradePendingPlay,
+  dismissRoughTradePendingPlay,
   recordJukeboxPick,
   toggle1001AlbumCompleted,
+  toggleRoughTradeAlbumCompleted,
   unlikeAlbum,
 } from "../../api";
 import Albums1001ChecklistModal from "./1001AlbumsChecklistModal";
+import RoughTradeChecklistModal from "./RoughTradeChecklistModal";
 import FlatJukebox from "./FlatJukebox";
 import RetroJukebox from "./RetroJukebox";
 import { useJukeboxEngine } from "./useJukeboxEngine";
 
 export default function JukeboxCard({ token }) {
-  const [sourceMode, setSourceMode] = useState("library"); // "library" | "1001"
+  const [sourceMode, setSourceMode] = useState("library"); // "library" | "1001" | "rough_trade"
   const [libraryAlbums, setLibraryAlbums] = useState([]);
   const [albums1001, setAlbums1001] = useState([]);
   const [completed1001Count, setCompleted1001Count] = useState(0);
   const [total1001Count, setTotal1001Count] = useState(1001);
   const [pendingConfirmation, setPendingConfirmation] = useState(null);
   const [isChecklistOpen, setIsChecklistOpen] = useState(false);
+
+  // Rough Trade state
+  const [roughTradeAlbums, setRoughTradeAlbums] = useState([]);
+  const [completedRoughTradeCount, setCompletedRoughTradeCount] = useState(0);
+  const [totalRoughTradeCount, setTotalRoughTradeCount] = useState(700);
+  const [roughTradePendingConfirmation, setRoughTradePendingConfirmation] = useState(null);
+  const [isRoughTradeChecklistOpen, setIsRoughTradeChecklistOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [themeMode, setThemeMode] = useState(
@@ -30,7 +42,12 @@ export default function JukeboxCard({ token }) {
   const [error, setError] = useState("");
   const [liking, setLiking] = useState(false);
 
-  const activeAlbums = sourceMode === "1001" ? albums1001 : libraryAlbums;
+  const activeAlbums =
+    sourceMode === "1001"
+      ? albums1001
+      : sourceMode === "rough_trade"
+        ? roughTradeAlbums
+        : libraryAlbums;
   const engine = useJukeboxEngine(activeAlbums);
 
   const handleToggleLike = async (pick) => {
@@ -108,6 +125,21 @@ export default function JukeboxCard({ token }) {
       } finally {
         setLoading(false);
       }
+    } else if (nextMode === "rough_trade" && roughTradeAlbums.length === 0) {
+      setLoading(true);
+      try {
+        const data = await fetchRoughTradeAlbums({ token });
+        setRoughTradeAlbums(data.albums || []);
+        setCompletedRoughTradeCount(data.completed_count || 0);
+        setTotalRoughTradeCount(data.total_albums || 700);
+        if (data.pending_confirmation) {
+          setRoughTradePendingConfirmation(data.pending_confirmation);
+        }
+      } catch (err) {
+        setError(err.message || "Failed to load Rough Trade albums");
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -165,6 +197,63 @@ export default function JukeboxCard({ token }) {
     }
   };
 
+  const handleConfirmRoughTradePendingPlay = async () => {
+    if (!roughTradePendingConfirmation) return;
+    const albumId = roughTradePendingConfirmation.album_id;
+    try {
+      await toggleRoughTradeAlbumCompleted({
+        token,
+        albumId,
+        isCompleted: true,
+        source: "confirmation_prompt",
+      });
+      setRoughTradeAlbums((prev) =>
+        prev.map((a) => (a.id === albumId ? { ...a, is_completed: true } : a))
+      );
+      setCompletedRoughTradeCount((c) => c + 1);
+      setRoughTradePendingConfirmation(null);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleDismissRoughTradePendingPlay = async () => {
+    if (!roughTradePendingConfirmation) return;
+    try {
+      await dismissRoughTradePendingPlay({
+        token,
+        albumId: roughTradePendingConfirmation.album_id,
+      });
+      setRoughTradePendingConfirmation(null);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleToggleRoughTradeCompleted = async (albumId, isCompleted) => {
+    try {
+      const res = await toggleRoughTradeAlbumCompleted({
+        token,
+        albumId,
+        isCompleted,
+        source: isCompleted ? "manual" : "manual_unmark",
+      });
+      setRoughTradeAlbums((prev) =>
+        prev.map((a) => (a.id === albumId ? { ...a, is_completed: isCompleted } : a))
+      );
+      if (typeof res.completed_count === "number") {
+        setCompletedRoughTradeCount(res.completed_count);
+      } else {
+        setCompletedRoughTradeCount((c) => (isCompleted ? c + 1 : Math.max(0, c - 1)));
+      }
+      if (roughTradePendingConfirmation && roughTradePendingConfirmation.album_id === albumId) {
+        setRoughTradePendingConfirmation(null);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   const toggleThemeMode = () => {
     const next = themeMode === "flat" ? "arcade" : "flat";
     setThemeMode(next);
@@ -176,6 +265,8 @@ export default function JukeboxCard({ token }) {
     if (engine.currentPick) {
       if (sourceMode === "1001") {
         record1001PendingPlay({ token, albumId: engine.currentPick.id }).catch(() => {});
+      } else if (sourceMode === "rough_trade") {
+        recordRoughTradePendingPlay({ token, albumId: engine.currentPick.id }).catch(() => {});
       } else {
         recordJukeboxPick({ token, albumId: engine.currentPick.id, mode: engine.mode }).catch(
           () => {}
@@ -224,6 +315,11 @@ export default function JukeboxCard({ token }) {
 
   const completionPct =
     total1001Count > 0 ? Math.round((completed1001Count / total1001Count) * 100) : 0;
+
+  const roughTradeCompletionPct =
+    totalRoughTradeCount > 0
+      ? Math.round((completedRoughTradeCount / totalRoughTradeCount) * 100)
+      : 0;
 
   return (
     <div style={{ marginBottom: "24px" }}>
@@ -283,9 +379,26 @@ export default function JukeboxCard({ token }) {
           >
             📖 1001 Albums
           </button>
+          <button
+            type="button"
+            className={`jukebox-source-tab-btn ${sourceMode === "rough_trade" ? "active" : ""}`}
+            onClick={() => handleSwitchSource("rough_trade")}
+            style={{
+              padding: "5px 12px",
+              borderRadius: "6px",
+              fontSize: "12px",
+              fontWeight: 600,
+              border: "none",
+              background: sourceMode === "rough_trade" ? "var(--color-surface)" : "transparent",
+              color: sourceMode === "rough_trade" ? "var(--color-ink)" : "var(--color-muted)",
+              cursor: "pointer",
+            }}
+          >
+            🎸 Rough Trade Top 100
+          </button>
         </div>
 
-        {/* Right side controls: Progress bar button (1001 mode) and Theme view switch */}
+        {/* Right side controls: Progress bar button (1001 & Rough Trade mode) and Theme view switch */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           {sourceMode === "1001" && (
             <button
@@ -312,6 +425,32 @@ export default function JukeboxCard({ token }) {
             </button>
           )}
 
+          {sourceMode === "rough_trade" && (
+            <button
+              type="button"
+              onClick={() => setIsRoughTradeChecklistOpen(true)}
+              style={{
+                fontSize: "12px",
+                fontWeight: 600,
+                padding: "6px 12px",
+                borderRadius: "6px",
+                border: "1px solid var(--color-border)",
+                background: "var(--color-surface)",
+                color: "var(--color-ink)",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <span>
+                Progress: {completedRoughTradeCount} / {totalRoughTradeCount} (
+                {roughTradeCompletionPct}%)
+              </span>
+              <span style={{ color: "var(--color-primary)" }}>↗</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={toggleThemeMode}
@@ -331,7 +470,7 @@ export default function JukeboxCard({ token }) {
         </div>
       </div>
 
-      {/* Confirmation prompt banner (when user has an album opened in Spotify awaiting confirmation) */}
+      {/* Confirmation prompt banner (1001 Albums mode) */}
       {sourceMode === "1001" && pendingConfirmation && (
         <div
           role="region"
@@ -404,6 +543,79 @@ export default function JukeboxCard({ token }) {
         </div>
       )}
 
+      {/* Confirmation prompt banner (Rough Trade mode) */}
+      {sourceMode === "rough_trade" && roughTradePendingConfirmation && (
+        <div
+          role="region"
+          aria-label="Rough Trade album listen confirmation"
+          style={{
+            background: "var(--color-surface-hover, var(--color-canvas))",
+            border: "1px solid var(--color-primary)",
+            borderRadius: "8px",
+            padding: "12px 16px",
+            marginBottom: "12px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "12px",
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--color-primary)" }}>
+              🎧 DID YOU LISTEN TO THIS ALBUM?
+            </div>
+            <div
+              style={{
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "var(--color-ink)",
+                marginTop: "2px",
+              }}
+            >
+              {roughTradePendingConfirmation.album_name}{" "}
+              <span style={{ fontWeight: 400, color: "var(--color-muted)" }}>
+                by {roughTradePendingConfirmation.artist_name}
+              </span>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              type="button"
+              onClick={handleConfirmRoughTradePendingPlay}
+              style={{
+                padding: "6px 12px",
+                borderRadius: "6px",
+                background: "var(--color-primary)",
+                color: "#FFFFFF",
+                border: "none",
+                fontSize: "12px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              ✓ Yes, mark played
+            </button>
+            <button
+              type="button"
+              onClick={handleDismissRoughTradePendingPlay}
+              style={{
+                padding: "6px 12px",
+                borderRadius: "6px",
+                background: "transparent",
+                color: "var(--color-muted)",
+                border: "1px solid var(--color-border)",
+                fontSize: "12px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              ✕ Not yet
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Jukebox Display */}
       {themeMode === "flat" ? (
         <FlatJukebox
@@ -429,6 +641,7 @@ export default function JukeboxCard({ token }) {
           excludeCompleted={engine.excludeCompleted}
           setExcludeCompleted={engine.setExcludeCompleted}
           onToggle1001Completed={handleToggle1001Completed}
+          onToggleRoughTradeCompleted={handleToggleRoughTradeCompleted}
         />
       ) : (
         <RetroJukebox
@@ -452,6 +665,7 @@ export default function JukeboxCard({ token }) {
           excludeCompleted={engine.excludeCompleted}
           setExcludeCompleted={engine.setExcludeCompleted}
           onToggle1001Completed={handleToggle1001Completed}
+          onToggleRoughTradeCompleted={handleToggleRoughTradeCompleted}
         />
       )}
 
@@ -463,6 +677,16 @@ export default function JukeboxCard({ token }) {
         completedCount={completed1001Count}
         totalCount={total1001Count}
         onToggleCompleted={handleToggle1001Completed}
+      />
+
+      {/* Rough Trade Checklist Modal */}
+      <RoughTradeChecklistModal
+        isOpen={isRoughTradeChecklistOpen}
+        onClose={() => setIsRoughTradeChecklistOpen(false)}
+        albums={roughTradeAlbums}
+        completedCount={completedRoughTradeCount}
+        totalCount={totalRoughTradeCount}
+        onToggleCompleted={handleToggleRoughTradeCompleted}
       />
     </div>
   );
