@@ -1,66 +1,73 @@
-# Differential Security Review: Song-Title Accent Color Theme (v0.28.9)
+# Differential Security Review: Rough Trade Top 100 Albums Integration
 
-**Date:** 2026-10-30  
-**Target:** Branch `feat/accent-color-theme` (Commits: `f2ce5a3..7d04218`)  
-**Base:** `origin/main` (Commit: `4af2d10`)  
-**Review Type:** Security-Focused Differential Code Review  
+**Branch:** `feat/rough-trade-top-100`  
+**Target:** `main`  
+**Review Date:** 2026-11-11  
 
 ---
 
 ## 1. Executive Summary
 
-This feature adds personalized signature accent colors across the site using 8 curated song-title presets (`blue_monday`, `spotify_green`, `red_red_wine`, `purple_rain`, `fools_gold`, `paint_it_black`, `pretty_in_pink`, `orange_crush`).
+- **Total Changed Files:** 27 files (+9704, -42 lines)
+- **Classification:** MEDIUM (focused review of new endpoints, auth validation, database tables, and frontend integration)
+- **Overall Risk Rating:** LOW
+- **Findings Summary:**
+  - Critical: 0
+  - High: 0
+  - Medium: 0
+  - Low: 0
+  - Informational: 2 (documented below)
 
-All changes were assessed across backend models, database constraints, input validation schemas, services, API endpoints, CSS tokens, and React frontend components.
-
-**Security Verdict:** **PASS (ZERO Vulnerabilities Found)**.  
-No secrets, credentials, or dangerous operations are introduced. All user inputs are strictly whitelisted, parameterized, and constrained at both the schema and database levels.
+All automated tests passed:
+- Backend: 448 passed, 13 skipped in 13.52s.
+- Frontend: 525 passed across 74 test suites in 27.37s.
+- Playwright E2E: 18 passed in 11.1s.
 
 ---
 
-## 2. Risk Classification & Triage
+## 2. Scope & Files Analyzed
 
-| Component / File | Risk Level | Description |
-|---|---|---|
-| `backend/migrations/versions/0027_add_accent_color.py` | LOW | Adds column `accent_color` with DB `CHECK` constraint. |
-| `backend/app/models.py` | LOW | Model mapping with `CheckConstraint`. |
-| `backend/app/schemas/preferences.py` | MEDIUM | Pydantic schema validation for incoming payload. |
-| `backend/app/services/preferences_service.py` | MEDIUM | Whitelist enforcement during `update()` calls. |
-| `backend/app/tests/test_preferences.py` | LOW | Automated test coverage for valid/invalid accent payloads. |
-| `frontend/src/styles.css` | LOW | CSS variables and modern `color-mix()` tokens. |
-| `frontend/src/pages/SettingsPage.jsx` | LOW | UI swatch selector and preference dispatch. |
-| `frontend/index.html` & `frontend/src/App.jsx` | LOW | Zero-flash hydration via `data-accent` attribute. |
+| File | Risk Level | Callers / Blast Radius | Tests Present |
+|---|---|---|---|
+| `backend/app/api/jukebox_rough_trade.py` | MEDIUM | New router mounted in `main.py` | `test_jukebox_rough_trade_api.py` |
+| `backend/app/services/catalog_rough_trade_service.py` | MEDIUM | Called by router | `test_catalog_rough_trade_service.py` |
+| `backend/app/services/catalog_1001_service.py` | LOW | Existing service | `test_catalog_1001_service.py` |
+| `backend/app/models.py` | LOW | Schema additions | `test_rough_trade_models.py` |
+| `backend/migrations/versions/0035_add_rough_trade_albums_tables.py` | MEDIUM | Migration upgrade/downgrade | Migration verification |
+| `frontend/src/api.js` | LOW | Client-side HTTP wrappers | Frontend test suite |
+| `frontend/src/components/jukebox/*` | LOW | UI presentation & modal logic | Unit & component tests |
 
 ---
 
 ## 3. Security Analysis by Domain
 
 ### 3.1 Authentication & Authorization
-- **Assessment:** All preference updates require valid JWT authentication (`token: session.accessToken`). The existing auth dependencies (`get_current_user`) protect the `/users/me/settings` endpoint.
-- **Access Control:** A user can only read and mutate their own preferences (`UserPreferences.user_id == current_user.id`). No cross-user escalation or parameter tampering is possible.
+- **Endpoint Protection:** All endpoints on `/jukebox/rough-trade-albums` (`GET /`, `POST /{album_id}/toggle-completed`, `POST /pending-play`, `POST /dismiss-pending`) enforce `current_user: User = Depends(get_current_user)` requiring a valid Bearer JWT.
+- **Tenant Isolation:** All database queries for album completion and pending confirmation filter explicitly by `user_id = current_user.id`. Users cannot view or toggle completions on behalf of other users.
 
-### 3.2 Injection & Input Sanitization
-- **Database Level:** Alembic migration `0027_add_accent_color.py` and SQLAlchemy model `UserPreferences` enforce a strict `CHECK (accent_color IN ('blue_monday', 'spotify_green', ...))` constraint.
-- **Application Level:** `preferences_service.py` validates `value in ACCENT_COLORS` before setting attributes on the model, raising `ValueError` (HTTP 400 Bad Request) on unexpected values.
-- **Frontend / DOM Injection:** The accent color is injected purely as an HTML attribute `data-accent="<preset>"` via `document.documentElement.setAttribute('data-accent', accent)`. It is never passed to `innerHTML` or `dangerouslySetInnerHTML`. No DOM-based XSS vectors exist.
+### 3.2 Input Validation & Injection
+- **Parameter Types:** `album_id: str = Path(...)` and payload schemas use Pydantic v2 schemas (`ToggleRoughTradeCompletionRequest`, `PendingPlayRequest`, `DismissPendingPlayRequest`) validating `is_completed: bool` and `source: str`.
+- **SQL Injection:** All database operations utilize SQLAlchemy parameterized ORM queries (`session.query(...)`). No raw string SQL interpolation exists.
+- **Catalog Lookup Safety:** `get_rough_trade_album_by_id(album_id)` validates against canonical JSON keys in memory and returns a 404 HTTP exception if not found.
 
-### 3.3 Secrets & Sensitive Configuration
-- Zero secrets, API keys, or credentials were added or modified.
-- All secrets continue to be loaded from environment variables and `.env.production`.
+### 3.3 Data Integrity & Concurrency
+- **Transaction Commits:** Immediate `db.commit()` is executed on toggles and pending confirmation updates.
+- **Race Condition Safety:** Existing completion rows are queried and updated or inserted with unique constraints `(user_id, album_id)` in the table schema.
+- **Negative Cache Poisoning:** Canonical catalog data is static and loaded safely at module import from validated JSON.
 
-### 3.4 Accessibility & WCAG AA Contrast Compliance
-- All 8 curated color presets were audited against WCAG AA standards:
-  - Standard Spotify green (`#1DB954`) and bright orange (`#F97316`) were tuned to `#169C46` and `#EA580C` to ensure white text on buttons and active pills achieves $\ge 3.0:1$ contrast.
-  - Automated tests in `frontend/src/textContrast.test.js` verify both mathematical luminance ratios ($\ge 3.0:1$) and token presence.
-
-### 3.5 Blast Radius & Regressions
-- Total modified files: 19 files.
-- Python tests: 375 passed, 0 failed.
-- Frontend tests: 311 passed across 51 test suites, 0 failed.
-- Production build: Succeeded with 0 errors.
+### 3.4 Client Isolation & Token Security
+- **No Token Leaks:** No access tokens, refresh tokens, or client credentials are exposed in JSON payloads or logged to client headers.
+- **Privacy:** User scrobbles for albums are queried with standard internal matching without leaking sensitive identifiers.
 
 ---
 
-## 4. Conclusion & Recommendation
+## 4. Informational Observations
 
-The branch `feat/accent-color-theme` is secure, robust, and fully tested. It is ready to be merged into `main` and deployed to production.
+1. **Static Catalog Immutability:** `ROUGH_TRADE_ALBUMS` in `catalog_rough_trade_service.py` is cached in memory. In multi-process workers (e.g. gunicorn/uvicorn), all processes load the same frozen 700 albums safely.
+2. **Auto-Detection Threshold:** The completion threshold was adjusted to 85% for both 1001 Albums and Rough Trade per instructions and tested with full edge case coverage in unit tests.
+
+---
+
+## 5. Conclusion
+
+No security vulnerabilities, regressions, or broken access controls were found. The branch is clean, verified, and safe to merge.
