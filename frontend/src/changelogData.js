@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.45.2",
+    date: "2026-11-11",
+    changes: [
+      "Jukebox Mark Played Button Fix: Fixed an issue where clicking the 'Mark Played' button on the current album pick in Flat Jukebox appeared unresponsive and failed to toggle the visual played status.",
+    ],
+  },
+  {
     version: "0.45.1",
     date: "2026-11-11",
     changes: [

@@ -174,6 +174,11 @@ export default function JukeboxCard({ token }) {
   };
 
   const handleToggle1001Completed = async (albumId, isCompleted) => {
+    if (engine.setCurrentPick) {
+      engine.setCurrentPick((prev) =>
+        prev && prev.id === albumId ? { ...prev, is_completed: isCompleted } : prev
+      );
+    }
     try {
       const res = await toggle1001AlbumCompleted({
         token,
@@ -193,13 +198,22 @@ export default function JukeboxCard({ token }) {
         setPendingConfirmation(null);
       }
     } catch {
-      // ignore
+      if (engine.setCurrentPick) {
+        engine.setCurrentPick((prev) =>
+          prev && prev.id === albumId ? { ...prev, is_completed: !isCompleted } : prev
+        );
+      }
     }
   };
 
   const handleConfirmRoughTradePendingPlay = async () => {
     if (!roughTradePendingConfirmation) return;
     const albumId = roughTradePendingConfirmation.album_id;
+    if (engine.setCurrentPick) {
+      engine.setCurrentPick((prev) =>
+        prev && prev.id === albumId ? { ...prev, is_completed: true } : prev
+      );
+    }
     try {
       await toggleRoughTradeAlbumCompleted({
         token,
@@ -231,6 +245,11 @@ export default function JukeboxCard({ token }) {
   };
 
   const handleToggleRoughTradeCompleted = async (albumId, isCompleted) => {
+    if (engine.setCurrentPick) {
+      engine.setCurrentPick((prev) =>
+        prev && prev.id === albumId ? { ...prev, is_completed: isCompleted } : prev
+      );
+    }
     try {
       const res = await toggleRoughTradeAlbumCompleted({
         token,
@@ -250,7 +269,11 @@ export default function JukeboxCard({ token }) {
         setRoughTradePendingConfirmation(null);
       }
     } catch {
-      // ignore
+      if (engine.setCurrentPick) {
+        engine.setCurrentPick((prev) =>
+          prev && prev.id === albumId ? { ...prev, is_completed: !isCompleted } : prev
+        );
+      }
     }
   };
 

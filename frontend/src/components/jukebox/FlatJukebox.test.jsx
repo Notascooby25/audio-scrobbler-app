@@ -111,6 +111,26 @@ describe("FlatJukebox", () => {
     expect(img).toHaveAttribute("src", "https://example.com/cover.jpg");
   });
 
+  it("renders Rough Trade completion toggle button and calls onToggleRoughTradeCompleted", () => {
+    const onToggleRoughTradeCompleted = vi.fn();
+    render(
+      <FlatJukebox
+        {...defaultProps}
+        sourceMode="rough_trade"
+        currentPick={{
+          ...defaultProps.currentPick,
+          id: "rt-2022-1",
+          is_completed: false,
+        }}
+        onToggleRoughTradeCompleted={onToggleRoughTradeCompleted}
+      />
+    );
+    const tickBtn = screen.getByRole("button", { name: /Mark Abbey Road as played/i });
+    expect(tickBtn).toHaveTextContent("Mark Played");
+    fireEvent.click(tickBtn);
+    expect(onToggleRoughTradeCompleted).toHaveBeenCalledWith("rt-2022-1", true);
+  });
+
   it("does not force whiteSpace nowrap on album title and artist, allowing wrapping", () => {
     render(
       <FlatJukebox
