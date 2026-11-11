@@ -152,4 +152,39 @@ describe("useJukeboxEngine", () => {
 
     expect(result.current.filteredAlbums.map((a) => a.album_name)).toEqual(["Album 2025"]);
   });
+
+  it("filters by both year AND genre simultaneously for Rough Trade mode", () => {
+    const albums = [
+      { id: "rt-2024-1", album_name: "Pop 2024", year: 2024, genres: ["Pop"] },
+      { id: "rt-2024-2", album_name: "Rock 2024", year: 2024, genres: ["Rock"] },
+      { id: "rt-2023-1", album_name: "Pop 2023", year: 2023, genres: ["Pop"] },
+      { id: "rt-2023-2", album_name: "Rock 2023", year: 2023, genres: ["Rock"] },
+    ];
+    const { result } = renderHook(() => useJukeboxEngine(albums));
+
+    act(() => {
+      result.current.setSourceMode("rough_trade");
+      result.current.toggleFilter("year", 2024);
+      result.current.toggleFilter("genre", "Pop");
+    });
+
+    expect(result.current.filteredAlbums.map((a) => a.album_name)).toEqual(["Pop 2024"]);
+  });
+
+  it("returns 0 available albums when year and genre have no overlap", () => {
+    const albums = [
+      { id: "rt-2024-1", album_name: "Rock 2024", year: 2024, genres: ["Rock"] },
+      { id: "rt-2023-1", album_name: "Metal 2023", year: 2023, genres: ["Metal"] },
+    ];
+    const { result } = renderHook(() => useJukeboxEngine(albums));
+
+    act(() => {
+      result.current.setSourceMode("rough_trade");
+      result.current.toggleFilter("year", 2024);
+      result.current.toggleFilter("genre", "Metal");
+    });
+
+    expect(result.current.filteredAlbums.length).toBe(0);
+    expect(result.current.canRoll).toBe(false);
+  });
 });

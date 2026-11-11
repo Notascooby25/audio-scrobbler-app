@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.45.1",
+    date: "2026-11-11",
+    changes: [
+      "Rough Trade Genre & Year Filtering: Enriched all 700 Rough Trade Top 100 albums with parent genre classifications (Rock, Pop, Electronic, Hip Hop, Soul, Jazz, Folk, Funk, Metal, and Punk), allowing you to combine year and genre filters (e.g. 2024 Pop albums) for focused lucky dips.",
+      "Empty Filter Pool Handling: When a selected year and genre combination has no matching releases, the Jukebox clearly indicates zero available records and gracefully disables rolling.",
+    ],
+  },
+  {
     version: "0.45.0",
     date: "2026-11-11",
     changes: [

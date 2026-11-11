@@ -31,6 +31,9 @@ def test_rough_trade_dataset_validity():
         assert artist and artist.strip(), f"Missing artist for album {aid}"
         assert title and title.strip(), f"Missing title for album {aid}"
         assert album.get("track_count", 0) > 0, f"Track count must be > 0 for {aid}"
+        assert isinstance(album.get("genres"), list) and len(album["genres"]) > 0, (
+            f"Genres must be non-empty list for {aid}"
+        )
 
         years_count[year] = years_count.get(year, 0) + 1
 
