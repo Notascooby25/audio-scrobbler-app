@@ -123,7 +123,7 @@ describe("useJukeboxEngine", () => {
     expect(result.current.filteredAlbums.map((a) => a.album_name)).toEqual(["Kid A"]);
   });
 
-  it("excludeCompleted filter omits completed albums in 1001 mode", () => {
+  it("excludeCompleted filter omits completed albums in 1001 or rough trade mode", () => {
     const albums = [
       { id: 1, album_name: "Album One", is_completed: true },
       { id: 2, album_name: "Album Two", is_completed: false },
@@ -135,5 +135,21 @@ describe("useJukeboxEngine", () => {
     });
 
     expect(result.current.filteredAlbums.map((a) => a.album_name)).toEqual(["Album Two"]);
+  });
+
+  it("filters by year correctly for Rough Trade mode", () => {
+    const albums = [
+      { id: "rt-2020-1", album_name: "Album 2020", year: 2020 },
+      { id: "rt-2025-1", album_name: "Album 2025", year: 2025 },
+      { id: "rt-2026-1", album_name: "Album 2026", year: 2026 },
+    ];
+    const { result } = renderHook(() => useJukeboxEngine(albums));
+
+    act(() => {
+      result.current.setSourceMode("rough_trade");
+      result.current.toggleFilter("year", 2025);
+    });
+
+    expect(result.current.filteredAlbums.map((a) => a.album_name)).toEqual(["Album 2025"]);
   });
 });
