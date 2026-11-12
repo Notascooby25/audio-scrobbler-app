@@ -26,6 +26,7 @@ vi.mock("./api", () => ({
   fetchRediscoverTracks: vi.fn().mockResolvedValue({ tracks: [] }),
   fetchJukeboxAlbums: vi.fn().mockResolvedValue({ albums: [], source: "spotify_saved" }),
   recordJukeboxPick: vi.fn().mockResolvedValue({ status: "ok" }),
+  fetchActiveRecommendations: vi.fn().mockResolvedValue([]),
 }));
 
 import {

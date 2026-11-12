@@ -19,6 +19,8 @@ import {
   redirectToAuthorization,
   fetchNotifications,
   markNotificationsRead,
+  deleteNotification,
+  clearNotifications,
 } from "../api";
 import { readSession } from "../session";
 import ImportProgressBar from "../components/ImportProgressBar";
@@ -994,6 +996,28 @@ export default function SettingsPage() {
               borderBottom: "0.5px solid var(--color-border)",
             }}
           >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+              <span className="panel-meta" style={{ margin: 0 }}>Recent Activity</span>
+              {notifications.length > 0 && (
+                <button
+                  type="button"
+                  className="button button-ghost"
+                  style={{ textTransform: "none", fontSize: "0.8rem", padding: "4px 8px" }}
+                  onClick={async () => {
+                    if (!session?.accessToken) return;
+                    try {
+                      await clearNotifications({ token: session.accessToken, readOnly: true });
+                      setNotifications((prev) => prev.filter((n) => !n.is_read));
+                    } catch (err) {
+                      console.error("Failed to clear read notifications", err);
+                    }
+                  }}
+                >
+                  Clear read notifications
+                </button>
+              )}
+            </div>
+
             {notificationsLoading && <p className="panel-meta">Loading notifications...</p>}
             {!notificationsLoading && notifications.length === 0 && (
               <p className="panel-meta">No recent notifications.</p>
@@ -1008,19 +1032,64 @@ export default function SettingsPage() {
                       backgroundColor: n.is_read ? "transparent" : "var(--color-surface)",
                       borderRadius: "4px",
                       marginBottom: "0.5rem",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      border: "1px solid var(--color-border)",
                     }}
                   >
-                    <div style={{ fontWeight: "bold" }}>{n.title}</div>
-                    <div style={{ fontSize: "0.9rem", marginTop: "0.25rem" }}>{n.message}</div>
-                    <div
+                    <div style={{ flexGrow: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontWeight: "bold" }}>{n.title}</span>
+                        {n.link && (
+                          <Link
+                            to={n.link}
+                            style={{
+                              fontSize: "0.75rem",
+                              color: "var(--color-primary)",
+                              textDecoration: "underline",
+                            }}
+                          >
+                            View
+                          </Link>
+                        )}
+                      </div>
+                      <div style={{ fontSize: "0.9rem", marginTop: "0.25rem" }}>{n.message}</div>
+                      <div
+                        style={{
+                          fontSize: "0.8rem",
+                          color: "var(--color-meta)",
+                          marginTop: "0.25rem",
+                        }}
+                      >
+                        {new Date(n.created_at).toLocaleString()}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label="Delete notification"
+                      title="Delete"
                       style={{
-                        fontSize: "0.8rem",
+                        background: "none",
+                        border: "none",
                         color: "var(--color-meta)",
-                        marginTop: "0.25rem",
+                        cursor: "pointer",
+                        fontSize: "1.1rem",
+                        lineHeight: 1,
+                        padding: "0 0 0 8px",
+                      }}
+                      onClick={async () => {
+                        if (!session?.accessToken) return;
+                        try {
+                          await deleteNotification({ token: session.accessToken, notificationId: n.id });
+                          setNotifications((prev) => prev.filter((item) => item.id !== n.id));
+                        } catch (err) {
+                          console.error("Failed to delete notification", err);
+                        }
                       }}
                     >
-                      {new Date(n.created_at).toLocaleString()}
-                    </div>
+                      &times;
+                    </button>
                   </li>
                 ))}
               </ul>

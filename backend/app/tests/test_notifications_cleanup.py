@@ -35,6 +35,10 @@ def setup_function():
     db.close()
 
 
+def teardown_function():
+    app.dependency_overrides.clear()
+
+
 def test_delete_single_notification():
     db = TestingSession()
     user = User(spotify_user_id="user_notif", username="user_notif", display_name="Test", refresh_token_cipher="test_cipher", is_active=True)

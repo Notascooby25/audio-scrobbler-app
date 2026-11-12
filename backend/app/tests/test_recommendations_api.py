@@ -37,6 +37,10 @@ def setup_function():
     db.close()
 
 
+def teardown_function():
+    app.dependency_overrides.clear()
+
+
 def test_create_recommendation_success():
     db = TestingSession()
     u1 = User(spotify_user_id="user1", username="user1", display_name="Alice", refresh_token_cipher="test_cipher", is_active=True)

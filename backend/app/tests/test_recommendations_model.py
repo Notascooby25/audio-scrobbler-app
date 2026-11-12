@@ -1,10 +1,6 @@
 from __future__ import annotations
 
-import pytest
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-
-from backend.app.models import Base, MusicRecommendation, Notification, User
+from backend.app.models import MusicRecommendation, Notification
 
 
 def test_music_recommendation_model_attributes():
