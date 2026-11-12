@@ -613,6 +613,61 @@ export async function markNotificationsRead({ token }) {
   return res.json();
 }
 
+export async function deleteNotification({ token, notificationId }) {
+  const res = await fetch(`${API_BASE_URL}/notifications/${notificationId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to delete notification");
+  return res.json();
+}
+
+export async function clearNotifications({ token, readOnly = true }) {
+  const res = await fetch(`${API_BASE_URL}/notifications?read_only=${readOnly}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to clear notifications");
+  return res.json();
+}
+
+export async function sendRecommendation({ token, payload }) {
+  const res = await fetch(`${API_BASE_URL}/recommendations`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to send recommendation");
+  }
+  return res.json();
+}
+
+export async function fetchActiveRecommendations({ token }) {
+  const res = await fetch(`${API_BASE_URL}/recommendations/active`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch active recommendations");
+  return res.json();
+}
+
+export async function updateRecommendationStatus({ token, recommendationId, status }) {
+  const res = await fetch(`${API_BASE_URL}/recommendations/${recommendationId}/status`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) throw new Error("Failed to update recommendation status");
+  return res.json();
+}
+
 export async function subscribeToPushNotifications({ token, subscription }) {
   const res = await fetch(`${API_BASE_URL}/notifications/push/subscribe`, {
     method: "POST",

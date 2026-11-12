@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from pywebpush import WebPushException, webpush
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from ..api.deps import get_current_user
@@ -53,6 +53,35 @@ def mark_notifications_read(
         .where(Notification.user_id == current_user.id, Notification.is_read == False)
         .values(is_read=True)
     )
+    db.execute(stmt)
+    db.commit()
+    return {"status": "ok"}
+
+
+@router.delete("/{notification_id}")
+def delete_notification(
+    notification_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    stmt = delete(Notification).where(
+        Notification.id == notification_id,
+        Notification.user_id == current_user.id,
+    )
+    db.execute(stmt)
+    db.commit()
+    return {"status": "ok"}
+
+
+@router.delete("")
+def delete_notifications(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+    read_only: bool = True,
+):
+    stmt = delete(Notification).where(Notification.user_id == current_user.id)
+    if read_only:
+        stmt = stmt.where(Notification.is_read == True)
     db.execute(stmt)
     db.commit()
     return {"status": "ok"}

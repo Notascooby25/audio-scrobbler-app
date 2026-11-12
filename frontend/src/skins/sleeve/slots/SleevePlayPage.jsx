@@ -1,6 +1,7 @@
 import React from "react";
 import JukeboxCard from "../../../components/jukebox/JukeboxCard";
 import RediscoverCard from "../../../components/RediscoverCard";
+import FriendRecommendationsCard from "../../../components/recommend/FriendRecommendationsCard";
 import { readSession } from "../../../session";
 import { Link } from "react-router-dom";
 
@@ -33,6 +34,8 @@ export default function SleevePlayPage() {
       <header className="sleeve-page-header">
         <h1 className="sleeve-page-title">Play</h1>
       </header>
+
+      <FriendRecommendationsCard token={session.accessToken} />
 
       <section className="sleeve-jukebox-section" aria-label="Album Jukebox">
         <JukeboxCard token={session.accessToken} />

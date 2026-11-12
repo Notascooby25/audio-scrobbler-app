@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.46.0",
+    date: "2026-11-12",
+    changes: [
+      "Music Recommendations to Friends: Tap the new Share icon next to any heart on tracks or albums to recommend music to people you follow, complete with an optional personal note.",
+      "Play Page Discovery Hero: Incoming recommendations now appear right at the top of the Play page across all skins with friend notes, artwork, and a direct 'Play on Spotify' button that marks the recommendation as listened.",
+      "Notification Stream Decluttering: Clean up clogged notifications with a new 'Clear read notifications' button and individual delete actions, plus direct links to Play on recommendation alerts.",
+    ],
+  },
+  {
     version: "0.45.2",
     date: "2026-11-11",
     changes: [
