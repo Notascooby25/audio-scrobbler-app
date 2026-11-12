@@ -640,19 +640,14 @@ export async function sendRecommendation({ token, payload }) {
     },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Failed to send recommendation");
-  }
-  return res.json();
+  return parseResponse(res);
 }
 
 export async function fetchActiveRecommendations({ token }) {
   const res = await fetch(`${API_BASE_URL}/recommendations/active`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error("Failed to fetch active recommendations");
-  return res.json();
+  return parseResponse(res);
 }
 
 export async function updateRecommendationStatus({ token, recommendationId, status }) {
@@ -664,8 +659,7 @@ export async function updateRecommendationStatus({ token, recommendationId, stat
     },
     body: JSON.stringify({ status }),
   });
-  if (!res.ok) throw new Error("Failed to update recommendation status");
-  return res.json();
+  return parseResponse(res);
 }
 
 export async function subscribeToPushNotifications({ token, subscription }) {

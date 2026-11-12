@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.46.2",
+    date: "2026-11-12",
+    changes: [
+      "Recommend Modal Full-Screen Portal: Mounted the recommendation modal directly to document body via React portal, preventing dialog containment inside album cards and containers.",
+      "Recommendation API Error Clarity: Standardized recommendation network error extraction to surface specific server response details.",
+    ],
+  },
+  {
     version: "0.46.1",
     date: "2026-11-12",
     changes: [
