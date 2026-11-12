@@ -679,6 +679,19 @@ export async function subscribeToPushNotifications({ token, subscription }) {
   return res.json();
 }
 
+export async function unsubscribeFromPushNotifications({ token, endpoint }) {
+  const res = await fetch(`${API_BASE_URL}/notifications/push/unsubscribe`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ endpoint }),
+  });
+  if (!res.ok) throw new Error("Failed to turn off push notifications");
+  return res.json();
+}
+
 export async function fetchVapidPublicKey() {
   const res = await fetch(`${API_BASE_URL}/notifications/push/vapid_public_key`);
   if (!res.ok) throw new Error("Failed to fetch VAPID key");

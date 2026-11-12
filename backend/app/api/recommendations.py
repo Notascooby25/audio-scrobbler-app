@@ -14,6 +14,7 @@ from ..schemas.recommendations import (
     MusicRecommendationResponse,
     MusicRecommendationStatusUpdate,
 )
+from ..services.push_service import queue_push
 
 router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 
@@ -66,15 +67,17 @@ def create_recommendation(
     db.add(rec)
 
     sender_name = current_user.display_name or current_user.username or "A friend"
+    message = f"{sender_name} recommended {payload.title} by {payload.artist_name}"
     notif = Notification(
         user_id=payload.receiver_id,
         title="Music Recommendation",
-        message=f"{sender_name} recommended {payload.title} by {payload.artist_name}",
+        message=message,
         type="recommendation",
         link="/play",
     )
     db.add(notif)
     db.commit()
+    queue_push(payload.receiver_id, "Music Recommendation", message, "/play")
     db.refresh(rec)
 
     response_data = MusicRecommendationResponse.model_validate(rec)

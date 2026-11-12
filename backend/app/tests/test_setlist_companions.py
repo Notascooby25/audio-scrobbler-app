@@ -119,6 +119,16 @@ def test_inviting_lists_them_and_notifies_them():
     db.close()
 
 
+def test_inviting_also_sends_a_phone_push_to_the_invited_person():
+    with patch("backend.app.services.setlist_companion_service.queue_push") as push:
+        assert _invite([SAM]).status_code == 200
+
+    push.assert_called_once()
+    user_id, title, body, url = push.call_args.args
+    assert (user_id, title, url) == (SAM, "Were you at this gig?", "/gigs")
+    assert "Andy says you were at Doves" in body
+
+
 def test_the_invited_person_adds_the_gig_with_support_acts_and_no_setlist_calls():
     _invite([SAM])
     act_as(SAM)
