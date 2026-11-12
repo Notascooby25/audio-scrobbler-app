@@ -226,7 +226,10 @@ class SetlistStatsService:
             {"artist_name": name, "count": len(gigs_by_artist[name]), "gigs": gigs_by_artist[name]} for name in names
         ]
 
-    def get_songs_heard_leaderboard(self, user_id: int, limit: int = 1000) -> list[dict[str, Any]]:
+    def get_songs_heard_leaderboard(
+        self, user_id: int, limit: int = 1000, now: datetime | None = None
+    ) -> list[dict[str, Any]]:
+        today = (now or utc_now()).date()
         events = (
             self.db.query(
                 ListeningEvent.track_name,
@@ -240,20 +243,29 @@ class SetlistStatsService:
             )
             .all()
         )
+        future_setlist_ids = {
+            c.setlist_id
+            for c in self.db.query(AttendedConcert.setlist_id, AttendedConcert.event_date).filter_by(user_id=user_id)
+            if c.event_date and c.event_date.date() >= today
+        }
         concerts = {
             c.setlist_id: c
             for c in self.db.query(AttendedConcert).filter_by(user_id=user_id).order_by(AttendedConcert.id).all()
+            if c.event_date and c.event_date.date() < today
         }
 
         counts: dict[tuple[str, str], int] = {}
         setlists_by_song: dict[tuple[str, str], list[str]] = {}
         for track_name, artist_name, play_id, raw_metadata in events:
+            setlist_id = _event_setlist_id(play_id, raw_metadata)
+            if setlist_id in future_setlist_ids:
+                continue
             key = (track_name, artist_name)
             counts[key] = counts.get(key, 0) + 1
-            setlist_id = _event_setlist_id(play_id, raw_metadata)
-            seen = setlists_by_song.setdefault(key, [])
-            if setlist_id in concerts and setlist_id not in seen:
-                seen.append(setlist_id)
+            if setlist_id in concerts:
+                seen = setlists_by_song.setdefault(key, [])
+                if setlist_id not in seen:
+                    seen.append(setlist_id)
 
         ordered = sorted(counts, key=lambda k: (-counts[k], k[0], k[1]))[:limit]
         results = []
@@ -270,13 +282,15 @@ class SetlistStatsService:
             )
         return results
 
-    def get_venues_visited_leaderboard(self, user_id: int) -> list[dict[str, Any]]:
-        concerts = (
+    def get_venues_visited_leaderboard(self, user_id: int, now: datetime | None = None) -> list[dict[str, Any]]:
+        today = (now or utc_now()).date()
+        all_concerts = (
             self.db.query(AttendedConcert)
             .filter_by(user_id=user_id)
             .order_by(desc(AttendedConcert.event_date), desc(AttendedConcert.id))
             .all()
         )
+        concerts = [c for c in all_concerts if c.event_date and c.event_date.date() < today]
 
         gigs_by_venue: dict[tuple[str, str], list[AttendedConcert]] = {}
         for c in concerts:

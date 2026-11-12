@@ -65,7 +65,18 @@ def test_report_summary_enhanced_fields(db_session: Session):
         source="spotify",
         play_id="p3",
     )
-    db_session.add_all([event1, event2, event3])
+    event4 = ListeningEvent(
+        user_id=user.id,
+        track_id="t3",
+        track_name="Parklife",
+        artist_name="Blur",
+        album_name="Parklife",
+        played_at=datetime(2026, 10, 17, 14, 0, tzinfo=timezone.utc).replace(tzinfo=None),
+        duration_ms=180000,
+        source="spotify",
+        play_id="p4",
+    )
+    db_session.add_all([event1, event2, event3, event4])
 
     # 2. Add 1001 album completion
     comp = User1001AlbumCompletion(
@@ -77,7 +88,7 @@ def test_report_summary_enhanced_fields(db_session: Session):
     )
     db_session.add(comp)
 
-    # 3. Add attended concert for Pulp
+    # 3. Add attended concert for Pulp (past) and Shed Seven (future upcoming)
     concert = AttendedConcert(
         user_id=user.id,
         setlist_id="c1",
@@ -88,7 +99,17 @@ def test_report_summary_enhanced_fields(db_session: Session):
         event_date=datetime(2023, 7, 1, 20, 0, tzinfo=timezone.utc).replace(tzinfo=None),
         song_count=18,
     )
-    db_session.add(concert)
+    future_concert = AttendedConcert(
+        user_id=user.id,
+        setlist_id="c2_future",
+        artist_name="Blur",
+        venue_name="Wembley Stadium",
+        city="London",
+        country="United Kingdom",
+        event_date=datetime(2028, 7, 1, 20, 0, tzinfo=timezone.utc).replace(tzinfo=None),
+        song_count=20,
+    )
+    db_session.add_all([concert, future_concert])
     db_session.commit()
 
     # Call get_report_summary for custom range encompassing Oct 2026
@@ -114,7 +135,7 @@ def test_report_summary_enhanced_fields(db_session: Session):
     assert summary.heavy_rotation.count == 2
     assert summary.persona == "Night Owl"
     assert summary.discovery_velocity is not None
-    assert summary.discovery_velocity.total_artists == 2
+    assert summary.discovery_velocity.total_artists == 3
     assert summary.challenge_1001 is not None
     assert summary.challenge_1001.completed_in_period == 1
     assert summary.challenge_1001.total_completed >= 1
@@ -123,3 +144,4 @@ def test_report_summary_enhanced_fields(db_session: Session):
     assert summary.live_artists.total_scrobbles == 2
     assert len(summary.live_artists.top_artists) == 1
     assert summary.live_artists.top_artists[0].artist_name == "Pulp"
+    assert "Blur" not in [a.artist_name for a in summary.live_artists.top_artists]

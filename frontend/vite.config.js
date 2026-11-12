@@ -63,6 +63,7 @@ export default defineConfig({
       "/tools": { target: backendUrl, changeOrigin: true },
       "/notifications": { target: backendUrl, changeOrigin: true },
       "/jukebox": { target: backendUrl, changeOrigin: true },
+      "/recommendations": { target: backendUrl, changeOrigin: true },
     },
   },
 });
