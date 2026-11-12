@@ -12,8 +12,6 @@ import {
   startArtworkBackfill,
   fetchImportBatches,
   advancedDeleteImports,
-  subscribeToPushNotifications,
-  sendTestNotification,
   downloadScrobblesExport,
   requestSpotifyAuthorization,
   redirectToAuthorization,
@@ -29,6 +27,7 @@ import ScopeCreepTools from "../components/ScopeCreepTools";
 import YouTubeScrobblerTools from "../components/YouTubeScrobblerTools";
 import UserGuideSection from "../components/settings/UserGuideSection";
 import FaqSection from "../components/settings/FaqSection";
+import DevicePushSection from "../components/settings/DevicePushSection";
 import HomeCitySection from "../components/settings/HomeCitySection";
 import BlockedItemsSection from "../components/settings/BlockedItemsSection";
 import { useSkin } from "../skins/useSkin";
@@ -70,19 +69,6 @@ const ACCENT_PRESETS = [
   { id: "pretty_in_pink", name: "Pretty in Pink", artist: "The Psychedelic Furs", hex: "#EC4899" },
   { id: "orange_crush", name: "Orange Crush", artist: "R.E.M.", hex: "#EA580C" },
 ];
-function urlBase64ToUint8Array(base64String) {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
-
 export default function SettingsPage() {
   const session = readSession();
   const { id: activeSkinId, skin: currentSkin, setSkin } = useSkin();
@@ -1137,112 +1123,7 @@ export default function SettingsPage() {
             System & Health Alerts
           </label>
 
-          <div
-            style={{
-              marginTop: "2rem",
-              paddingTop: "1.5rem",
-              borderTop: "0.5px solid var(--color-border)",
-              maxWidth: "100%",
-              boxSizing: "border-box",
-            }}
-          >
-            <h3 style={{ fontSize: "1rem", marginBottom: "0.5rem" }}>Device Push Notifications</h3>
-            <p className="notice" style={{ marginBottom: "1rem" }}>
-              Receive alerts directly on your device even when the app is closed.
-            </p>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={async () => {
-                if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-                  alert("Push notifications are not supported by your browser.");
-                  return;
-                }
-                try {
-                  const permission = await Notification.requestPermission();
-                  if (permission === "granted") {
-                    const vapidRes = await fetch(
-                      `${import.meta.env.VITE_API_BASE_URL || ""}/notifications/push/vapid_public_key`
-                    );
-                    const vapidData = await vapidRes.json();
-                    const reg = await navigator.serviceWorker.ready;
-                    let existingSub = await reg.pushManager.getSubscription();
-                    if (existingSub) {
-                      // If keys changed or there's a stale subscription, Chrome throws a Push Service Error
-                      // unless we unsubscribe from the old one first.
-                      await existingSub.unsubscribe();
-                    }
-
-                    const sub = await reg.pushManager.subscribe({
-                      userVisibleOnly: true,
-                      applicationServerKey: urlBase64ToUint8Array(
-                        vapidData.vapid_public_key.trim()
-                      ),
-                    });
-                    await subscribeToPushNotifications({
-                      token: session.accessToken,
-                      subscription: sub.toJSON(),
-                    });
-                    alert("Subscribed to push notifications successfully!");
-                  } else {
-                    alert("Permission for notifications was denied.");
-                  }
-                } catch (err) {
-                  alert("Failed to subscribe: " + err.message);
-                }
-              }}
-            >
-              Enable Device Notifications
-            </button>
-            <button
-              type="button"
-              className="settings-button"
-              style={{
-                marginLeft: "1rem",
-                background: "var(--color-surface)",
-                color: "var(--color-ink)",
-              }}
-              onClick={async () => {
-                try {
-                  const res = await sendTestNotification({ token: session.accessToken });
-                  if (res.status === "error") {
-                    alert(`Test notification failed: ${res.message}`);
-                    return;
-                  }
-                  alert(
-                    `Test notification requested! Server sent to ${res.sent_to} registered device(s).`
-                  );
-                } catch (err) {
-                  alert("Failed to send test notification: " + err.message);
-                }
-              }}
-            >
-              Send Test Notification
-            </button>
-            <div
-              style={{
-                marginTop: "1rem",
-                padding: "1rem",
-                backgroundColor: "var(--color-surface)",
-                borderRadius: "8px",
-                fontSize: "0.9rem",
-              }}
-            >
-              <p style={{ fontWeight: "bold", marginBottom: "0.5rem" }}>Setup Instructions:</p>
-              <ul style={{ paddingLeft: "1.2rem", margin: 0 }}>
-                <li style={{ marginBottom: "0.5rem" }}>
-                  <strong>iOS:</strong> You must first add this app to your Home Screen (Share → Add
-                  to Home Screen). Open it from your home screen, then come back to this menu to
-                  enable notifications.
-                </li>
-                <li>
-                  <strong>Android/Desktop:</strong> Click 'Enable' and accept the browser permission
-                  prompt. If on mobile, install the app via your browser menu for the best
-                  experience.
-                </li>
-              </ul>
-            </div>
-          </div>
+          <DevicePushSection token={session.accessToken} />
         </section>
       )}
       {activeTab === "guide" && (

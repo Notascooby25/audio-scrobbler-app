@@ -42,5 +42,9 @@ class PushSubscriptionCreate(BaseModel):
         return v
 
 
+class PushSubscriptionRemove(BaseModel):
+    endpoint: str
+
+
 class UnreadCountResponse(BaseModel):
     count: int

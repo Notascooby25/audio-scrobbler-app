@@ -134,3 +134,19 @@ def test_other_failure_keeps_the_device_and_reports_error():
 
 def test_default_contact_address_when_unset():
     assert notifications_module.settings.vapid_subject.startswith("mailto:")
+
+
+def test_unsubscribe_removes_only_that_device_for_that_user():
+    _add_subscription()
+    db = TestingSession()
+    other = User(spotify_user_id="other", username="other", display_name="O", refresh_token_cipher="c", is_active=True)
+    db.add(other)
+    db.commit()
+    db.add(PushSubscription(user_id=other.id, endpoint="https://fcm.googleapis.com/x", p256dh="p", auth="a"))
+    db.commit()
+    db.close()
+
+    resp = client.post("/notifications/push/unsubscribe", json={"endpoint": "https://fcm.googleapis.com/x"})
+
+    assert resp.json() == {"status": "unsubscribed"}
+    assert _count(PushSubscription) == 1  # the other user's device with the same endpoint survives

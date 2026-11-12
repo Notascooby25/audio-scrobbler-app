@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
@@ -160,3 +162,28 @@ def test_active_recommendations_and_status_update():
     resp2 = client.get("/recommendations/active")
     assert resp2.status_code == 200
     assert len(resp2.json()) == 0
+
+
+def test_create_recommendation_also_sends_a_phone_push():
+    db = TestingSession()
+    u1 = User(spotify_user_id="p1", username="p1", display_name="Alice", refresh_token_cipher="c", is_active=True)
+    u2 = User(spotify_user_id="p2", username="p2", display_name="Bob", refresh_token_cipher="c", is_active=True)
+    db.add_all([u1, u2])
+    db.commit()
+    db.refresh(u1)
+    db.refresh(u2)
+    db.add(Follow(follower_id=u1.id, followee_id=u2.id))
+    db.commit()
+    u2_id = u2.id
+    db.refresh(u1)
+    db.close()
+    app.dependency_overrides[get_current_user] = lambda: u1
+
+    with patch("backend.app.api.recommendations.queue_push") as push:
+        resp = client.post(
+            "/recommendations",
+            json={"receiver_id": u2_id, "item_type": "track", "title": "Glasgow", "artist_name": "The Snuts"},
+        )
+
+    assert resp.status_code == 201
+    push.assert_called_once_with(u2_id, "Music Recommendation", "Alice recommended Glasgow by The Snuts", "/play")

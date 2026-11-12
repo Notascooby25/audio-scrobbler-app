@@ -11,12 +11,10 @@ from ..api.deps import get_current_user
 from ..config import settings
 from ..db import get_db
 from ..models import Notification, PushSubscription, User
-from ..schemas.notifications import NotificationResponse, PushSubscriptionCreate, UnreadCountResponse
+from ..schemas.notifications import NotificationResponse, PushSubscriptionCreate, PushSubscriptionRemove, UnreadCountResponse
+from ..services.push_service import EXPIRED_PUSH_STATUS_CODES
 
 logger = logging.getLogger(__name__)
-
-# HTTP statuses a push service returns when a device registration is permanently gone.
-EXPIRED_PUSH_STATUS_CODES = (404, 410)
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -115,6 +113,22 @@ def subscribe_push(
         )
         db.commit()
     return {"status": "subscribed"}
+
+@router.post("/push/unsubscribe")
+def unsubscribe_push(
+    sub: PushSubscriptionRemove,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    db.execute(
+        delete(PushSubscription).where(
+            PushSubscription.user_id == current_user.id,
+            PushSubscription.endpoint == sub.endpoint,
+        )
+    )
+    db.commit()
+    return {"status": "unsubscribed"}
+
 
 @router.get("/push/vapid_public_key")
 def get_vapid_public_key():

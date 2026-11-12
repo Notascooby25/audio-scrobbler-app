@@ -343,8 +343,9 @@ const FAQ_DATA = [
     answer: (
       <>
         <p>
-          You can receive weekly recap summaries and listening streak notifications right on your
-          device:
+          You can receive recap summaries, music recommendations from friends, and gig requests
+          right on your device. Settings shows whether this device is enabled, and you can turn it
+          off again there:
         </p>
         <ul>
           <li>

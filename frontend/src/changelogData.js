@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.47.0",
+    date: "2026-11-12",
+    changes: [
+      "Phone Alerts For Friends' Activity: Music recommendations, 'Were you at this gig?' requests, 'Gig added' replies and finished Setlist.fm imports now also send a notification to your phone, not just the bell.",
+      "Notification Status In Settings: Settings now shows whether this device is enabled, not enabled or blocked, and has a Turn Off Device Notifications button.",
+    ],
+  },
+  {
     version: "0.46.4",
     date: "2026-11-12",
     changes: [

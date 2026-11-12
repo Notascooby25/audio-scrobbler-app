@@ -9,6 +9,7 @@ from ..datetime_utils import utc_now
 from sqlalchemy.orm import Session
 
 from ..models import Notification, SetlistImportJob
+from .push_service import queue_push
 from .setlist_attendance_service import SetlistAttendanceService
 from .setlist_import_service import sync_user_setlist_history
 from .setlist_service import SetlistRateLimitError, SetlistService
@@ -174,16 +175,13 @@ def resume_due_jobs(db: Session, setlist_service: SetlistService | None = None, 
         job.message = result.get("message")
         if job.status == "done":
             what = "gigs updated with songs" if job.kind == "file_songs" else "gigs added"
-            db.add(
-                Notification(
-                    user_id=job.user_id,
-                    title="Setlist.fm import finished",
-                    message=f"Your paused import has finished: {job.imported_count} {what}.",
-                    type="general",
-                )
-            )
+            message = f"Your paused import has finished: {job.imported_count} {what}."
+            db.add(Notification(user_id=job.user_id, title="Setlist.fm import finished", message=message, type="general"))
             counts["finished"] += 1
         else:
+            message = None
             counts["failed"] += 1
         db.commit()
+        if message:
+            queue_push(job.user_id, "Setlist.fm import finished", message, "/gigs")
     return counts

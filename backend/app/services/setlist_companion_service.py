@@ -7,6 +7,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..models import AttendedConcert, Follow, GigCompanion, Notification, User
+from .push_service import queue_push
 from .setlist_attendance_service import DuplicateGigError, SetlistAttendanceService, extract_songs_from_setlist_data
 from .setlist_service import SetlistService
 
@@ -84,6 +85,7 @@ def add_companions(db: Session, owner: User, concert_id: int, friend_ids: list[i
         raise PermissionError("You can only add people you follow.")
 
     existing = {r.friend_id for r in db.query(GigCompanion).filter_by(concert_id=gig.id)}
+    to_push: list[tuple[int, str]] = []
     for fid in wanted:
         if fid in existing:
             continue
@@ -102,7 +104,10 @@ def add_companions(db: Session, owner: User, concert_id: int, friend_ids: list[i
         already_told = db.query(Notification).filter_by(user_id=fid, message=message, is_read=False).first()
         if own_copy is None and already_told is None:
             db.add(Notification(user_id=fid, title="Were you at this gig?", message=message, type="general"))
+            to_push.append((fid, message))
     db.commit()
+    for fid, message in to_push:
+        queue_push(fid, "Were you at this gig?", message, "/gigs")
     return list_companions(db, owner.id, gig.id)
 
 
@@ -229,15 +234,10 @@ def add_invited_gig(db: Session, user: User, invite_id: int) -> AttendedConcert:
 
     row.status = "added"
     row.friend_concert_id = own_copy.id
-    db.add(
-        Notification(
-            user_id=row.owner_id,
-            title="Gig added",
-            message=f"{user.display_name} added {_gig_label(gig)} to their gigs.",
-            type="general",
-        )
-    )
+    message = f"{user.display_name} added {_gig_label(gig)} to their gigs."
+    db.add(Notification(user_id=row.owner_id, title="Gig added", message=message, type="general"))
     db.commit()
+    queue_push(row.owner_id, "Gig added", message, "/gigs")
     db.refresh(own_copy)
     return own_copy
 
@@ -270,14 +270,9 @@ def add_friends_gig(db: Session, user: User, owner_id: int, concert_id: int) -> 
     ):
         row.status = "added"
         row.friend_concert_id = own_copy.id
-    db.add(
-        Notification(
-            user_id=owner_id,
-            title="Gig added",
-            message=f"{user.display_name} was at {_gig_label(gig)} too and added it to their gigs.",
-            type="general",
-        )
-    )
+    message = f"{user.display_name} was at {_gig_label(gig)} too and added it to their gigs."
+    db.add(Notification(user_id=owner_id, title="Gig added", message=message, type="general"))
     db.commit()
+    queue_push(owner_id, "Gig added", message, "/gigs")
     db.refresh(own_copy)
     return own_copy
