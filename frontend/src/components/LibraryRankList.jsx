@@ -1,6 +1,7 @@
 import Artwork from "./Artwork";
 import EntryMenu from "./EntryMenu";
 import LikedHeart from "./LikedHeart";
+import RecommendButton from "./recommend/RecommendButton";
 import SourceBadge from "./SourceBadge";
 import { Link } from "react-router-dom";
 
@@ -103,7 +104,21 @@ export default function LibraryRankList({
                         <SourceBadge sources={entry.sources} size="grid" />
                       )}
                       {(kind === "tracks" || kind === "albums") && (
-                        <div className="grid-card-like">
+                        <div className="grid-card-like" style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                          {token && (
+                            <RecommendButton
+                              token={token}
+                              item={{
+                                itemType: kind === "tracks" ? "track" : "album",
+                                title: entry.label,
+                                artist: entry.secondary || entry.label,
+                                album: kind === "tracks" ? entry.album_name : entry.label,
+                                imageUrl: entry.artwork_url,
+                                spotifyUri: entry.spotify_uri,
+                              }}
+                              inGrid
+                            />
+                          )}
                           <LikedHeart
                             liked={entry.is_liked}
                             interactive={isOwnLibrary}
@@ -211,15 +226,30 @@ export default function LibraryRankList({
                     )}
                   </span>
                 </span>
-                <div className="library-rank-actions">
+                <div className="library-rank-actions" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   {(kind === "tracks" || kind === "albums") && (
-                    <LikedHeart
-                      liked={entry.is_liked}
-                      interactive={isOwnLibrary}
-                      label={entry.label}
-                      busy={isItemBusy}
-                      onToggle={onToggleLike ? () => onToggleLike(entry, kind) : undefined}
-                    />
+                    <>
+                      {token && (
+                        <RecommendButton
+                          token={token}
+                          item={{
+                            itemType: kind === "tracks" ? "track" : "album",
+                            title: entry.label,
+                            artist: entry.secondary || entry.label,
+                            album: kind === "tracks" ? entry.album_name : entry.label,
+                            imageUrl: entry.artwork_url,
+                            spotifyUri: entry.spotify_uri,
+                          }}
+                        />
+                      )}
+                      <LikedHeart
+                        liked={entry.is_liked}
+                        interactive={isOwnLibrary}
+                        label={entry.label}
+                        busy={isItemBusy}
+                        onToggle={onToggleLike ? () => onToggleLike(entry, kind) : undefined}
+                      />
+                    </>
                   )}
                   <div className="library-bar-track">
                     <Link

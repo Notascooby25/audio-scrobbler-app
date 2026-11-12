@@ -425,7 +425,7 @@ describe("LibraryRankList", () => {
       </MemoryRouter>
     );
 
-    expect(screen.queryByRole("button", { name: /Boxer/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Like on Spotify|Unlike on Spotify/i })).not.toBeInTheDocument();
     expect(screen.getByTitle("Liked on Spotify")).toBeInTheDocument();
   });
 
