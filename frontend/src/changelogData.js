@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.48.0",
+    date: "2026-11-12",
+    changes: [
+      "New Version Banner: When a newer version of the app is live, a thin banner now appears at the top of the page with Update now and Later buttons. Update now clears the saved offline copy and reloads, so you really get the new version first time. It never reloads by itself.",
+    ],
+  },
+  {
     version: "0.47.0",
     date: "2026-11-12",
     changes: [

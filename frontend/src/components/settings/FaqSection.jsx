@@ -364,6 +364,30 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "new-version-banner",
+    category: "General & Appearance",
+    question: "Why does a banner say a new version is available?",
+    answer: (
+      <>
+        <p>
+          The app checks every few minutes, and whenever you come back to it, whether a newer
+          version has been released. If one has, a thin banner appears at the top of the page.
+        </p>
+        <ul>
+          <li>
+            <strong>Update now</strong> clears the app&apos;s saved offline copy and reloads, so you
+            get the new version straight away. You stay signed in.
+          </li>
+          <li>
+            <strong>Later</strong> hides the banner for now. It comes back at the next check if you
+            haven&apos;t updated.
+          </li>
+        </ul>
+        <p>The app never reloads on its own, so it won&apos;t interrupt what you&apos;re doing.</p>
+      </>
+    ),
+  },
+  {
     id: "setlists-scrobbling",
     category: "Set Lists & Gigs",
     question: "How does concert scrobbling from Setlist.fm work?",
