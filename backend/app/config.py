@@ -40,6 +40,9 @@ class Settings:
     enable_deezer_artwork_lookup: bool = os.getenv("ENABLE_DEEZER_LOOKUP", "true").lower() == "true"
     vapid_public_key: str = os.getenv("VAPID_PUBLIC_KEY", "")
     vapid_private_key: str = os.getenv("VAPID_PRIVATE_KEY", "")
+    # Contact address sent to push services, e.g. "mailto:you@example.com".
+    # Apple in particular can reject placeholder addresses.
+    vapid_subject: str = os.getenv("VAPID_SUBJECT", "").strip() or "mailto:admin@example.com"
     vapid_claims: dict[str, str] = None  # Setup dynamically
     setlist_fm_api_key: str = os.getenv("SETLIST_FM_API_KEY", "").strip("'\" \r\n")
     cors_origins: str = os.getenv(
