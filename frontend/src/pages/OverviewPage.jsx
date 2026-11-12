@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import AnalyticsPage from "../components/AnalyticsPage";
 import RediscoverCard from "../components/RediscoverCard";
 import JukeboxCard from "../components/jukebox/JukeboxCard";
+import FriendRecommendationsCard from "../components/recommend/FriendRecommendationsCard";
 import { readSession } from "../session";
 import Slot from "../skins/Slot";
 
@@ -15,6 +16,7 @@ function ClassicOverviewContent({ session }) {
         </p>
       ) : (
         <>
+          <FriendRecommendationsCard token={session.accessToken} />
           <JukeboxCard token={session.accessToken} />
           <RediscoverCard token={session.accessToken} />
         </>

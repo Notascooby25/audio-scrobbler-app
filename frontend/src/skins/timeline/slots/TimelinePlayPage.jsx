@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import JukeboxCard from "../../../components/jukebox/JukeboxCard";
 import RediscoverCard from "../../../components/RediscoverCard";
+import FriendRecommendationsCard from "../../../components/recommend/FriendRecommendationsCard";
 import { readSession } from "../../../session";
 
 /**
@@ -35,6 +36,8 @@ export default function TimelinePlayPage() {
         <h1 className="timeline-page-title">Play</h1>
         <p className="timeline-page-subtitle">An album from your own history, start to finish.</p>
       </header>
+
+      <FriendRecommendationsCard token={session.accessToken} />
 
       <section className="timeline-jukebox-section" aria-label="Album Jukebox">
         <JukeboxCard token={session.accessToken} />
