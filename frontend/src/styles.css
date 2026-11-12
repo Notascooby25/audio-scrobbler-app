@@ -7380,3 +7380,54 @@ button.sfm-row-remove:hover:not(:disabled) {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* "New version available" banner (UpdateBanner). Flat by design: no shadow, no gradient. */
+.update-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--color-accent-soft);
+  border-bottom: 0.5px solid var(--color-border);
+  color: var(--color-ink);
+  font-size: 0.9rem;
+}
+
+.update-banner__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.update-banner__primary,
+.update-banner__later {
+  min-height: 2.25rem;
+  padding: 0 0.9rem;
+  border: 0.5px solid var(--color-border);
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  cursor: pointer;
+}
+
+.update-banner__primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-surface);
+}
+
+.update-banner__later {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+@media (max-width: 720px) {
+  .update-banner__primary,
+  .update-banner__later {
+    min-height: 2.75rem;
+  }
+}
+
