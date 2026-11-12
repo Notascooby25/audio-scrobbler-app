@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { fetchFollowing, sendRecommendation } from "../../api";
 
 export default function RecommendModal({ token, item, onClose }) {
@@ -36,15 +37,15 @@ export default function RecommendModal({ token, item, onClose }) {
       await sendRecommendation({
         token,
         payload: {
-          receiver_id: selectedUserId,
+          receiver_id: Number(selectedUserId),
           item_type: item.itemType || "track",
-          title: item.title,
-          artist_name: item.artist,
-          album_name: item.album || null,
+          title: String(item.title || "").slice(0, 255),
+          artist_name: String(item.artist || item.title || "").slice(0, 255),
+          album_name: item.album ? String(item.album).slice(0, 255) : null,
           image_url: item.imageUrl || null,
           spotify_uri: item.spotifyUri || null,
           spotify_url: item.spotifyUrl || null,
-          note: note.trim() || null,
+          note: note.trim() ? note.trim().slice(0, 280) : null,
         },
       });
       onClose();
@@ -54,12 +55,13 @@ export default function RecommendModal({ token, item, onClose }) {
     }
   };
 
-  return (
+  const modalContent = (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="recommend-modal-title"
       className="modal-backdrop"
+      style={{ zIndex: 10000 }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -231,4 +233,6 @@ export default function RecommendModal({ token, item, onClose }) {
       </div>
     </div>
   );
+
+  return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 }
