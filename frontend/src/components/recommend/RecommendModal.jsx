@@ -59,34 +59,24 @@ export default function RecommendModal({ token, item, onClose }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="recommend-modal-title"
-      style={{
-        position: "fixed",
-        inset: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.7)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 9999,
-        padding: "16px",
-      }}
+      className="modal-backdrop"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div
-        style={{
-          background: "var(--color-bg, #1a1a1a)",
-          border: "1px solid var(--color-border, #333)",
-          borderRadius: "8px",
-          width: "100%",
-          maxWidth: "460px",
-          padding: "20px",
-          boxSizing: "border-box",
-          color: "var(--color-text, #fff)",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-          <h2 id="recommend-modal-title" style={{ margin: 0, fontSize: "1.1rem" }}>
+      <div className="modal-dialog" style={{ maxWidth: "460px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "16px",
+          }}
+        >
+          <h2
+            id="recommend-modal-title"
+            style={{ margin: 0, fontSize: "1.15rem", color: "var(--color-ink)" }}
+          >
             Recommend to a Friend
           </h2>
           <button
@@ -95,10 +85,11 @@ export default function RecommendModal({ token, item, onClose }) {
             style={{
               background: "none",
               border: "none",
-              color: "var(--color-meta, #888)",
-              fontSize: "1.2rem",
+              color: "var(--color-muted)",
+              fontSize: "1.4rem",
               cursor: "pointer",
               padding: "4px 8px",
+              lineHeight: 1,
               textTransform: "none",
             }}
             aria-label="Close"
@@ -107,34 +98,55 @@ export default function RecommendModal({ token, item, onClose }) {
           </button>
         </div>
 
-        <div style={{ fontSize: "0.9rem", color: "var(--color-meta, #aaa)", marginBottom: "14px" }}>
-          Sharing <strong>{item.title}</strong> by <strong>{item.artist}</strong>
+        <div style={{ fontSize: "0.9rem", color: "var(--color-muted)", marginBottom: "14px" }}>
+          Sharing <strong>{item.title}</strong>
+          {item.artist && item.artist !== item.title ? ` by ${item.artist}` : ""}
         </div>
 
         {error && (
-          <div style={{ color: "#e53935", fontSize: "0.85rem", marginBottom: "12px" }}>
+          <div
+            style={{
+              color: "var(--color-danger, #d32f2f)",
+              background: "var(--color-danger-soft, #fde8e8)",
+              padding: "8px 12px",
+              borderRadius: "4px",
+              fontSize: "0.85rem",
+              marginBottom: "12px",
+            }}
+          >
             {error}
           </div>
         )}
 
         {loading ? (
-          <p style={{ color: "var(--color-meta, #888)", fontSize: "0.9rem" }}>Loading followed users...</p>
+          <p style={{ color: "var(--color-muted)", fontSize: "0.9rem" }}>
+            Loading followed users...
+          </p>
         ) : following.length === 0 ? (
-          <p style={{ color: "var(--color-meta, #888)", fontSize: "0.9rem" }}>
+          <p style={{ color: "var(--color-muted)", fontSize: "0.9rem" }}>
             You aren&apos;t following anyone yet. Visit Profiles to find and follow friends first!
           </p>
         ) : (
           <form onSubmit={handleSubmit}>
-            <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "6px" }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                color: "var(--color-ink)",
+                marginBottom: "6px",
+              }}
+            >
               Choose a friend:
             </label>
             <div
               style={{
                 maxHeight: "150px",
                 overflowY: "auto",
-                border: "1px solid var(--color-border, #333)",
-                borderRadius: "4px",
+                border: "1px solid var(--color-border)",
+                borderRadius: "6px",
                 marginBottom: "14px",
+                background: "var(--color-canvas)",
               }}
             >
               {following.map((u) => {
@@ -144,23 +156,39 @@ export default function RecommendModal({ token, item, onClose }) {
                     key={u.id}
                     onClick={() => setSelectedUserId(u.id)}
                     style={{
-                      padding: "8px 12px",
+                      padding: "10px 12px",
                       cursor: "pointer",
-                      background: isSelected ? "var(--color-primary-dim, #2a3b2a)" : "transparent",
-                      borderBottom: "1px solid var(--color-border, #222)",
+                      background: isSelected
+                        ? "var(--color-accent-soft, rgba(0, 102, 255, 0.1))"
+                        : "transparent",
+                      borderBottom: "1px solid var(--color-border-subtle, #eee)",
+                      color: "var(--color-ink)",
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
                     }}
                   >
-                    <span style={{ fontWeight: isSelected ? 600 : 400 }}>{u.display_name || u.username}</span>
-                    {isSelected && <span style={{ color: "var(--color-primary, #4caf50)" }}>✓</span>}
+                    <span style={{ fontWeight: isSelected ? 600 : 400, color: "var(--color-ink)" }}>
+                      {u.display_name || u.username}
+                    </span>
+                    {isSelected && (
+                      <span style={{ color: "var(--color-primary)", fontWeight: 700 }}>✓</span>
+                    )}
                   </div>
                 );
               })}
             </div>
 
-            <label htmlFor="recommend-note" style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "6px" }}>
+            <label
+              htmlFor="recommend-note"
+              style={{
+                display: "block",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                color: "var(--color-ink)",
+                marginBottom: "6px",
+              }}
+            >
               Add a note (optional):
             </label>
             <textarea
@@ -174,23 +202,19 @@ export default function RecommendModal({ token, item, onClose }) {
                 width: "100%",
                 boxSizing: "border-box",
                 padding: "8px",
-                borderRadius: "4px",
-                background: "var(--color-surface, #222)",
-                color: "var(--color-text, #fff)",
-                border: "1px solid var(--color-border, #444)",
+                borderRadius: "6px",
+                background: "var(--color-canvas)",
+                color: "var(--color-ink)",
+                border: "1px solid var(--color-border)",
                 marginBottom: "16px",
                 resize: "vertical",
                 fontSize: "0.9rem",
+                fontFamily: "inherit",
               }}
             />
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-              <button
-                type="button"
-                onClick={onClose}
-                className="button button-ghost"
-                style={{ textTransform: "none" }}
-              >
+            <div className="modal-actions" style={{ marginTop: 0 }}>
+              <button type="button" onClick={onClose} className="modal-cancel-button">
                 Cancel
               </button>
               <button

@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.46.1",
+    date: "2026-11-12",
+    changes: [
+      "Recommend Modal Contrast & Legibility: Fixed friend selector row contrast in light and dark modes, and surfaced clear backend error messages if a send fails.",
+      "Album Grid Cover Share Button: Refined the grid overlay actions bar with dedicated pill container formatting so the share button and like heart sit side-by-side without squishing.",
+      "Expanded Music Recommendations: Added share buttons across the Today page timeline rail, the chronological scrobble feed, and artist rankings (with instant Spotify search links).",
+    ],
+  },
+  {
     version: "0.46.0",
     date: "2026-11-12",
     changes: [

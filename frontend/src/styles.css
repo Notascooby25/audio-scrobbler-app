@@ -2860,6 +2860,38 @@ button:disabled {
   height: 28px;
 }
 
+.grid-card-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  min-height: 28px;
+}
+
+.grid-card-actions .recommend-btn-grid {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.grid-card-actions .liked-heart {
+  color: var(--color-surface);
+}
+
+.grid-card-actions .liked-heart-active {
+  color: var(--color-danger);
+}
+
 .liked-heart {
   color: var(--color-muted);
   display: inline-flex;
@@ -4841,6 +4873,15 @@ dd {
   .grid-select-scrim {
     width: 44px !important;
     height: 44px !important;
+  }
+  .grid-card-actions {
+    min-height: 44px !important;
+    padding: 2px 10px !important;
+    gap: 8px !important;
+  }
+  .grid-card-actions .recommend-btn-grid {
+    width: 32px !important;
+    height: 32px !important;
   }
 }
 

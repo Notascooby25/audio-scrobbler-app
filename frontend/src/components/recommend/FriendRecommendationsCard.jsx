@@ -30,7 +30,26 @@ export default function FriendRecommendationsCard({ token }) {
   const current = recommendations[currentIndex] || recommendations[0];
 
   const handlePlayOnSpotify = async () => {
-    const targetUrl = current.spotify_url || (current.spotify_uri ? `https://open.spotify.com/track/${current.spotify_uri.split(":").pop()}` : null);
+    let targetUrl = current.spotify_url;
+    if (!targetUrl && current.spotify_uri) {
+      const parts = current.spotify_uri.split(":");
+      const spotifyId = parts.pop();
+      const type =
+        parts.pop() ||
+        (current.item_type === "album"
+          ? "album"
+          : current.item_type === "artist"
+            ? "artist"
+            : "track");
+      targetUrl = `https://open.spotify.com/${type}/${spotifyId}`;
+    }
+    if (!targetUrl) {
+      const query =
+        current.item_type === "artist"
+          ? current.artist_name || current.title
+          : `${current.artist_name || ""} ${current.title}`.trim();
+      targetUrl = `https://open.spotify.com/search/${encodeURIComponent(query)}`;
+    }
     if (targetUrl) {
       window.open(targetUrl, "_blank", "noopener,noreferrer");
     }
@@ -85,9 +104,24 @@ export default function FriendRecommendationsCard({ token }) {
         marginBottom: "1.5rem",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "12px",
+        }}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, textTransform: "none", color: "var(--color-text, #fff)" }}>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "1rem",
+              fontWeight: 700,
+              textTransform: "none",
+              color: "var(--color-text, #fff)",
+            }}
+          >
             Recommended by Friends
           </h2>
           <span
@@ -105,12 +139,26 @@ export default function FriendRecommendationsCard({ token }) {
         </div>
 
         {recommendations.length > 1 && (
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.8rem", color: "var(--color-meta, #888)" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "0.8rem",
+              color: "var(--color-meta, #888)",
+            }}
+          >
             <button
               type="button"
               onClick={handlePrev}
               aria-label="Previous recommendation"
-              style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: "2px 4px" }}
+              style={{
+                background: "none",
+                border: "none",
+                color: "inherit",
+                cursor: "pointer",
+                padding: "2px 4px",
+              }}
             >
               &lt;
             </button>
@@ -121,7 +169,13 @@ export default function FriendRecommendationsCard({ token }) {
               type="button"
               onClick={handleNext}
               aria-label="Next recommendation"
-              style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: "2px 4px" }}
+              style={{
+                background: "none",
+                border: "none",
+                color: "inherit",
+                cursor: "pointer",
+                padding: "2px 4px",
+              }}
             >
               &gt;
             </button>
@@ -143,7 +197,13 @@ export default function FriendRecommendationsCard({ token }) {
           <img
             src={current.image_url}
             alt=""
-            style={{ width: "56px", height: "56px", borderRadius: "4px", objectFit: "cover", flexShrink: 0 }}
+            style={{
+              width: "56px",
+              height: "56px",
+              borderRadius: "4px",
+              objectFit: "cover",
+              flexShrink: 0,
+            }}
           />
         ) : (
           <div
@@ -165,7 +225,9 @@ export default function FriendRecommendationsCard({ token }) {
         )}
 
         <div style={{ flexGrow: 1, minWidth: 0 }}>
-          <div style={{ fontSize: "0.8rem", color: "var(--color-primary, #1db954)", fontWeight: 600 }}>
+          <div
+            style={{ fontSize: "0.8rem", color: "var(--color-primary, #1db954)", fontWeight: 600 }}
+          >
             {current.sender_name || "A friend"} recommended:
           </div>
           <div
@@ -181,10 +243,20 @@ export default function FriendRecommendationsCard({ token }) {
             {current.title}
           </div>
           <div style={{ fontSize: "0.85rem", color: "var(--color-meta, #aaa)" }}>
-            {current.artist_name} {current.album_name && current.album_name !== current.title && `• ${current.album_name}`}
+            {current.artist_name}{" "}
+            {current.album_name &&
+              current.album_name !== current.title &&
+              `• ${current.album_name}`}
           </div>
           {current.note && (
-            <div style={{ fontSize: "0.8rem", color: "var(--color-meta-light, #ddd)", fontStyle: "italic", marginTop: "2px" }}>
+            <div
+              style={{
+                fontSize: "0.8rem",
+                color: "var(--color-meta-light, #ddd)",
+                fontStyle: "italic",
+                marginTop: "2px",
+              }}
+            >
               &ldquo;{current.note}&rdquo;
             </div>
           )}
@@ -202,7 +274,7 @@ export default function FriendRecommendationsCard({ token }) {
               borderRadius: "20px",
             }}
           >
-            Play on Spotify
+            {current.item_type === "artist" ? "Open on Spotify" : "Play on Spotify"}
           </button>
           <button
             type="button"
