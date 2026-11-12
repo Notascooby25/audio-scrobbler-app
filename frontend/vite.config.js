@@ -13,8 +13,26 @@ const allowedHosts = process.env.VITE_ALLOWED_HOSTS
   ? process.env.VITE_ALLOWED_HOSTS.split(",").map((host) => host.trim())
   : undefined;
 
-export default defineConfig({
-  plugins: [react()],
+// Each production build gets an id, baked into the bundle and published in
+// version.json, so a running app can tell when a newer build has gone live
+// (see src/components/UpdateBanner.jsx). Dev and test have no build id.
+const buildId = String(Date.now());
+
+const emitVersionJson = {
+  name: "emit-version-json",
+  apply: "build",
+  generateBundle() {
+    this.emitFile({
+      type: "asset",
+      fileName: "version.json",
+      source: JSON.stringify({ build: buildId }),
+    });
+  },
+};
+
+export default defineConfig(({ command }) => ({
+  plugins: [react(), emitVersionJson],
+  define: command === "build" ? { "import.meta.env.VITE_BUILD_ID": JSON.stringify(buildId) } : {},
   server: {
     host: "0.0.0.0",
     port: 5173,
@@ -66,4 +84,4 @@ export default defineConfig({
       "/recommendations": { target: backendUrl, changeOrigin: true },
     },
   },
-});
+}));
