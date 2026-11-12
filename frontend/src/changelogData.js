@@ -3,6 +3,7 @@ export const CHANGELOG = [
     version: "0.46.3",
     date: "2026-11-12",
     changes: [
+      "Recommendations Proxy Routing: Added /recommendations to Nginx and Vite reverse proxy configurations, resolving HTTP 405 errors when sharing recommendations in production.",
       "Strict Past-Only Filtering for Live Stats: Excluded upcoming and future concerts from 'Seen-Live Artists Played' on the Reports page, as well as the 'Artists Seen', 'Songs Heard', and 'Venues Visited' leaderboards on the Gigs page so scheduled shows are never counted as concerts already attended.",
     ],
   },
