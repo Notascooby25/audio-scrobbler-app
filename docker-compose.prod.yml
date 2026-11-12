@@ -43,6 +43,9 @@ services:
       ALLOWED_SPOTIFY_USER_IDS: ${ALLOWED_SPOTIFY_USER_IDS:-}
       CORS_ORIGINS: ${CORS_ORIGINS}
       SETLIST_FM_API_KEY: ${SETLIST_FM_API_KEY:-}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz')"]
       interval: 10s
@@ -79,6 +82,8 @@ services:
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID}
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET}
       SETLIST_FM_API_KEY: ${SETLIST_FM_API_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
     # To enable worker file-based import, mount a host directory at /data/imports and set WORKER_FILE_IMPORT_ENABLED=true:
     # volumes:
     #   - ${WORKER_IMPORT_HOST_DIR}:/data/imports

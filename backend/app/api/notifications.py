@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
@@ -11,6 +12,11 @@ from ..config import settings
 from ..db import get_db
 from ..models import Notification, PushSubscription, User
 from ..schemas.notifications import NotificationResponse, PushSubscriptionCreate, UnreadCountResponse
+
+logger = logging.getLogger(__name__)
+
+# HTTP statuses a push service returns when a device registration is permanently gone.
+EXPIRED_PUSH_STATUS_CODES = (404, 410)
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -119,14 +125,15 @@ def test_push_notification(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    if not settings.vapid_private_key:
+    if not settings.vapid_private_key or not settings.vapid_public_key:
         return {"status": "error", "message": "VAPID keys not configured on server"}
-        
+
     subs = db.scalars(select(PushSubscription).where(PushSubscription.user_id == current_user.id)).all()
     if not subs:
         return {"status": "error", "message": "No active subscriptions found"}
-        
+
     success = 0
+    expired: list[int] = []
     for sub in subs:
         try:
             webpush(
@@ -140,12 +147,28 @@ def test_push_notification(
                     'url': '/settings?tab=notifications'
                 }),
                 vapid_private_key=settings.vapid_private_key,
-                vapid_claims={"sub": "mailto:admin@example.com"}
+                vapid_claims={"sub": settings.vapid_subject}
             )
             success += 1
         except WebPushException as e:
-            print(f"WebPush exception: {e}")
-            
+            logger.warning("WebPush failed for subscription %s: %s", sub.id, e)
+            status_code = getattr(getattr(e, "response", None), "status_code", None)
+            if status_code in EXPIRED_PUSH_STATUS_CODES:
+                expired.append(sub.id)
+
+    # Forget devices the push service says are gone, so they stop being retried.
+    if expired:
+        db.execute(delete(PushSubscription).where(PushSubscription.id.in_(expired)))
+
+    if success == 0:
+        db.commit()
+        message = (
+            "Your device registration had expired and was removed. Press 'Enable Device Notifications' again."
+            if expired
+            else "The push service rejected the message. Check the server logs."
+        )
+        return {"status": "error", "message": message, "sent_to": 0}
+
     # Also add it to the in-app notification bell list
     db.add(Notification(
         user_id=current_user.id,
@@ -154,5 +177,5 @@ def test_push_notification(
         type="general"
     ))
     db.commit()
-            
+
     return {"status": "ok", "sent_to": success}

@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.46.4",
+    date: "2026-11-12",
+    changes: [
+      "Phone Notifications Fixed: The live server was never given the keys it needs to send push notifications, so no device could sign up. They are now passed through to the app and the background worker.",
+      "Clearer Test Notification: The Send Test Notification button now shows the real reason when something is wrong, instead of 'sent to undefined devices'.",
+      "Tidier Push Registrations: Devices that a push service reports as gone are removed automatically, and the contact address sent to Apple and Google is now configurable.",
+    ],
+  },
+  {
     version: "0.46.3",
     date: "2026-11-12",
     changes: [

@@ -1205,6 +1205,10 @@ export default function SettingsPage() {
               onClick={async () => {
                 try {
                   const res = await sendTestNotification({ token: session.accessToken });
+                  if (res.status === "error") {
+                    alert(`Test notification failed: ${res.message}`);
+                    return;
+                  }
                   alert(
                     `Test notification requested! Server sent to ${res.sent_to} registered device(s).`
                   );

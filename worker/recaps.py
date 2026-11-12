@@ -50,6 +50,10 @@ class PushSubscription(Base):
 
 database_url = os.environ.get("DATABASE_URL", "")
 vapid_private_key = os.environ.get("VAPID_PRIVATE_KEY", "")
+vapid_subject = os.environ.get("VAPID_SUBJECT", "").strip() or "mailto:admin@example.com"
+
+# HTTP statuses a push service returns when a device registration is permanently gone.
+EXPIRED_PUSH_STATUS_CODES = (404, 410)
 
 def generate_recaps():
     logger.info("Starting scheduled recaps generation...")
@@ -132,10 +136,15 @@ def generate_recaps():
                                 'url': '/settings?tab=notifications'
                             }),
                             vapid_private_key=vapid_private_key,
-                            vapid_claims={"sub": "mailto:admin@example.com"}
+                            vapid_claims={"sub": vapid_subject}
                         )
                     except WebPushException as e:
                         logger.error(f"Failed to send webpush to user {pref.user_id}: {e}")
+                        status_code = getattr(getattr(e, "response", None), "status_code", None)
+                        if status_code in EXPIRED_PUSH_STATUS_CODES:
+                            # The push service says this device is gone; stop retrying it.
+                            db.delete(sub)
+                            db.commit()
             
         logger.info("Recaps generation completed successfully.")
     except Exception:
