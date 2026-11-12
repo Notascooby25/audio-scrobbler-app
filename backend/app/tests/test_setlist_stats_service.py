@@ -285,8 +285,8 @@ def test_export_attended_gigs_json_and_csv(db_session: Session):
 
 
 def test_venue_visits_merge_spelling_variants_on_the_same_night(db_session: Session):
-    headliner = _concert("h1", "Shed Seven", "O2 Academy", datetime(2026, 11, 14, 20))
-    support = _concert("s1", "The Clause", "o2  academy ", datetime(2026, 11, 14, 19), is_support_act=True)
+    headliner = _concert("h1", "Shed Seven", "O2 Academy", datetime(2025, 11, 14, 20))
+    support = _concert("s1", "The Clause", "o2  academy ", datetime(2025, 11, 14, 19), is_support_act=True)
     # Manual entries default to "United Kingdom" even where Setlist.fm says "England"
     support.country = "England"
     earlier = _concert("h2", "Shed Seven", "O2 Academy", datetime(2025, 4, 4, 20))
@@ -400,3 +400,17 @@ def test_artists_leaderboard_excludes_upcoming_events(db_session: Session):
 
     assert "The Cure" in artist_names
     assert "Radiohead" not in artist_names
+
+
+def test_venues_leaderboard_excludes_upcoming_events(db_session: Session):
+    past_gig = _concert("past_v", "The Cure", "Wembley", datetime(2024, 10, 1))
+    upcoming_gig = _concert("upcoming_v", "Radiohead", "Madison Square Garden", datetime(2028, 5, 1))
+    db_session.add_all([past_gig, upcoming_gig])
+    db_session.commit()
+
+    service = SetlistStatsService(db=db_session)
+    leaderboard = service.get_venues_visited_leaderboard(user_id=1, now=datetime(2026, 1, 1))
+    venue_names = [v["venue_name"] for v in leaderboard]
+
+    assert "Wembley" in venue_names
+    assert "Madison Square Garden" not in venue_names

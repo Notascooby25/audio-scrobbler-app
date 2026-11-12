@@ -248,9 +248,7 @@ def _calculate_persona(
     return "Deep Diver"
 
 
-def _get_1001_milestones(
-    db: Session, user_id: int, period_start: datetime, period_end: datetime
-) -> Challenge1001Entry:
+def _get_1001_milestones(db: Session, user_id: int, period_start: datetime, period_end: datetime) -> Challenge1001Entry:
     if not hasattr(db, "query"):
         return Challenge1001Entry()
 
@@ -296,9 +294,14 @@ def _get_live_artist_connection(
     if not hasattr(db, "query"):
         return LiveArtistsEntry()
 
+    now = utc_now()
     concert_artists = (
         db.query(AttendedConcert.artist_name)
-        .filter(AttendedConcert.user_id == user_id)
+        .filter(
+            AttendedConcert.user_id == user_id,
+            AttendedConcert.event_date.isnot(None),
+            AttendedConcert.event_date < now,
+        )
         .distinct()
         .all()
     )
