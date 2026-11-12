@@ -1,6 +1,7 @@
 import React from "react";
 import Artwork from "../../../components/Artwork";
 import LikedHeart from "../../../components/LikedHeart";
+import RecommendButton from "../../../components/recommend/RecommendButton";
 import SourceBadge from "../../../components/SourceBadge";
 
 export function formatTimelineTime(dateValue) {
@@ -16,7 +17,12 @@ export function formatTimelineTime(dateValue) {
     .replace(/\s+/g, "");
 }
 
-export default function TimelineRail({ scrobbles = [], nowPlaying = null, onToggleLike = null }) {
+export default function TimelineRail({
+  scrobbles = [],
+  nowPlaying = null,
+  onToggleLike = null,
+  token = null,
+}) {
   if (scrobbles.length === 0 && !nowPlaying?.is_playing) {
     return (
       <div className="timeline-empty-rail" aria-live="polite">
@@ -144,6 +150,19 @@ export default function TimelineRail({ scrobbles = [], nowPlaying = null, onTogg
                   <span className="timeline-track-artist">{track.artist_name}</span>
                 </div>
                 <div className="timeline-track-side">
+                  {token && (
+                    <RecommendButton
+                      token={token}
+                      item={{
+                        itemType: "track",
+                        title: track.track_name,
+                        artist: track.artist_name,
+                        album: track.album_name,
+                        imageUrl: track.artwork_url,
+                        spotifyUri: track.spotify_uri,
+                      }}
+                    />
+                  )}
                   {onToggleLike && (
                     <LikedHeart
                       liked={Boolean(track.is_liked)}

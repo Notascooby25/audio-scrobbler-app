@@ -1,5 +1,6 @@
 import Artwork from "./Artwork";
 import LikedHeart from "./LikedHeart";
+import RecommendButton from "./recommend/RecommendButton";
 import SourceBadge from "./SourceBadge";
 import { formatScrobbleTime } from "../timeFormatting";
 
@@ -15,6 +16,7 @@ function dayLabel(value) {
 
 export default function LibraryScrobbleList({
   scrobbles = [],
+  token,
   view,
   showSourceBadges = true,
   showArtwork = true,
@@ -70,14 +72,29 @@ export default function LibraryScrobbleList({
                       label={scrobble.track_name}
                     />
                   )}
-                  <LikedHeart
-                    liked={scrobble.is_liked}
-                    className="scrobble-grid-heart"
-                    interactive={isOwnLibrary}
-                    label={scrobble.track_name}
-                    busy={likingKeys.has(scrobble.id)}
-                    onToggle={onToggleLike ? () => onToggleLike(scrobble, "scrobble") : undefined}
-                  />
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                    {token && (
+                      <RecommendButton
+                        token={token}
+                        item={{
+                          itemType: "track",
+                          title: scrobble.track_name,
+                          artist: scrobble.artist_name,
+                          album: scrobble.album_name,
+                          imageUrl: scrobble.artwork_url,
+                          spotifyUri: scrobble.spotify_uri,
+                        }}
+                      />
+                    )}
+                    <LikedHeart
+                      liked={scrobble.is_liked}
+                      className="scrobble-grid-heart"
+                      interactive={isOwnLibrary}
+                      label={scrobble.track_name}
+                      busy={likingKeys.has(scrobble.id)}
+                      onToggle={onToggleLike ? () => onToggleLike(scrobble, "scrobble") : undefined}
+                    />
+                  </div>
                   <span className="library-row-copy">
                     <strong>{scrobble.track_name}</strong>
                     <small>{scrobble.artist_name}</small>

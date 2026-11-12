@@ -64,4 +64,30 @@ describe("RecommendModal", () => {
       expect(onClose).toHaveBeenCalled();
     });
   });
+
+  it("displays error message if sending recommendation fails", async () => {
+    vi.spyOn(api, "fetchFollowing").mockResolvedValue({
+      results: [{ id: 2, display_name: "Bob", username: "bob" }],
+    });
+    vi.spyOn(api, "sendRecommendation").mockRejectedValue(
+      new Error("You can only recommend music to users you follow")
+    );
+    const onClose = vi.fn();
+
+    render(<RecommendModal token="test-token" item={item} onClose={onClose} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Bob")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText("Bob"));
+    fireEvent.click(screen.getByRole("button", { name: /Send Recommendation/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("You can only recommend music to users you follow")
+      ).toBeInTheDocument();
+    });
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });

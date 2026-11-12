@@ -115,7 +115,8 @@ describe("LibraryScrobbleList", () => {
       />
     );
 
-    expect(screen.queryByRole("button", { name: /Video Games/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Like on Spotify" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Unlike on Spotify" })).not.toBeInTheDocument();
     expect(screen.getByTitle("Liked on Spotify")).toBeInTheDocument();
   });
 

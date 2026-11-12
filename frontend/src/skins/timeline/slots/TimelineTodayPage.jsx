@@ -186,6 +186,7 @@ export default function TimelineTodayPage() {
             scrobbles={todayScrobbles}
             nowPlaying={nowPlaying}
             onToggleLike={handleToggleLike}
+            token={session?.accessToken}
           />
         </div>
       </div>
