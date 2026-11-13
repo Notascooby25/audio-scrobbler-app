@@ -3,7 +3,7 @@ export const CHANGELOG = [
     version: "0.49.0",
     date: "2026-11-13",
     changes: [
-      "Clearer Recommendations: Friends' recommendations now sit under a Recommendations heading, with \"Jenny recommends\" beneath it. Every pick waiting for you is listed at once, each with Play and Not for me, so there are no arrows to find.",
+      "Clearer Recommendations: Recommendations from friends now sit under a Recommendations heading, with 'Jenny recommends' beneath it. Every pick waiting for you is listed at once, each with Play and Not for me, so there are no arrows to find.",
       "Readable Recommendation Text: The recommendation heading and title were invisible in the light theme and are now readable, and the button text meets contrast on every accent colour.",
     ],
   },
