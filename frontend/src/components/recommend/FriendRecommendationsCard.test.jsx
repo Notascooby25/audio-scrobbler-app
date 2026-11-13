@@ -240,6 +240,36 @@ describe("FriendRecommendationsCard", () => {
     await waitFor(() => expect(screen.queryByText("Glasgow")).toBeNull());
   });
 
+  it.each(["javascript:alert(1)", "https://evil.example/steal", "http://open.spotify.com/album/1"])(
+    "never opens a link that is not an https Spotify link (%s)",
+    async (badUrl) => {
+      vi.spyOn(api, "updateRecommendationStatus").mockResolvedValue({ id: 9, status: "listened" });
+      const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+      await renderCard([
+        { ...bob, id: 9, spotify_url: badUrl, spotify_uri: null, title: "Safe Title" },
+      ]);
+
+      fireEvent.click(screen.getByRole("button", { name: /^Play on Spotify$/i }));
+
+      await waitFor(() => expect(openSpy).toHaveBeenCalled());
+      expect(openSpy.mock.calls[0][0]).toMatch(/^https:\/\/open\.spotify\.com\/search\//);
+    }
+  );
+
+  it.each([
+    "javascript:alert(1)",
+    "http://tracker.example/pixel.gif",
+    "data:image/png;base64,AAAA",
+  ])("does not load cover art from %s", async (badImage) => {
+    const { container } = await renderCard([{ ...alice, image_url: badImage }]);
+    expect(container.querySelector("img")).toBeNull();
+  });
+
+  it("still loads https cover art", async () => {
+    const { container } = await renderCard([alice]);
+    expect(container.querySelector("img")).toHaveAttribute("src", "https://example.com/art.jpg");
+  });
+
   it("uses no inline styles", async () => {
     const { container } = await renderCard([alice, bob]);
     expect(container.querySelectorAll("[style]")).toHaveLength(0);

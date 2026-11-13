@@ -3,8 +3,24 @@ import { fetchActiveRecommendations, updateRecommendationStatus } from "../../ap
 
 const MAX_ROWS = 4;
 
+// Links and cover art come from another user, so only trust plain https values.
+function parseHttps(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url : null;
+  } catch {
+    return null;
+  }
+}
+
+function safeSpotifyUrl(value) {
+  const url = parseHttps(value);
+  return url && url.hostname === "open.spotify.com" ? url.href : null;
+}
+
 function buildSpotifyUrl(rec) {
-  if (rec.spotify_url) return rec.spotify_url;
+  const direct = safeSpotifyUrl(rec.spotify_url);
+  if (direct) return direct;
   if (rec.spotify_uri) {
     const parts = rec.spotify_uri.split(":");
     const spotifyId = parts.pop();
@@ -33,8 +49,9 @@ function metaOf(rec) {
 }
 
 function Art({ rec }) {
-  if (rec.image_url) {
-    return <img className="friend-recs__art" src={rec.image_url} alt="" loading="lazy" />;
+  const image = parseHttps(rec.image_url);
+  if (image) {
+    return <img className="friend-recs__art" src={image.href} alt="" loading="lazy" />;
   }
   return (
     <div className="friend-recs__art" aria-hidden="true">
