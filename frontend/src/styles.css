@@ -7431,3 +7431,344 @@ button.sfm-row-remove:hover:not(:disabled) {
   }
 }
 
+/* Friend recommendations */
+.friend-recs {
+  --friend-recs-on-accent: var(--color-on-accent, #ffffff);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-ink);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+:root[data-accent="spotify_green"] .friend-recs,
+:root[data-accent="fools_gold"] .friend-recs,
+:root[data-accent="pretty_in_pink"] .friend-recs,
+:root[data-accent="orange_crush"] .friend-recs {
+  --friend-recs-on-accent: #111111;
+}
+
+.friend-recs__head {
+  align-items: center;
+  border-bottom: 1px solid var(--color-border-subtle);
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px;
+}
+
+.friend-recs__title {
+  color: var(--color-ink);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 0;
+  text-transform: none;
+}
+
+.friend-recs__count {
+  align-items: center;
+  background: var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-ink);
+  display: inline-flex;
+  font-size: 0.75rem;
+  font-weight: 600;
+  gap: 6px;
+  padding: 3px 10px 3px 8px;
+}
+
+.friend-recs__count::before {
+  background: var(--color-primary);
+  border-radius: 50%;
+  content: "";
+  height: 7px;
+  width: 7px;
+}
+
+.friend-recs__featured {
+  align-items: start;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 112px minmax(0, 1fr);
+  padding: 20px;
+}
+
+.friend-recs__art {
+  aspect-ratio: 1;
+  background: var(--color-border);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  display: grid;
+  font-size: 1.75rem;
+  font-weight: 700;
+  object-fit: cover;
+  place-items: center;
+  width: 100%;
+}
+
+.friend-recs__who {
+  align-items: center;
+  color: var(--color-muted);
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.friend-recs__who strong {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.friend-recs__avatar {
+  align-items: center;
+  background: var(--color-ink);
+  border-radius: 50%;
+  color: var(--color-surface);
+  display: inline-flex;
+  flex: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  height: 24px;
+  justify-content: center;
+  width: 24px;
+}
+
+.friend-recs__item-title {
+  color: var(--color-ink);
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.friend-recs__item-title:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.friend-recs__meta {
+  color: var(--color-muted);
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.friend-recs__note {
+  background: var(--color-canvas);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  margin: 12px 0 0;
+  max-width: 56ch;
+  padding: 10px 14px;
+}
+
+.friend-recs__actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 16px;
+}
+
+.friend-recs__btn {
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  min-height: 44px;
+  padding: 0 18px;
+  text-transform: none;
+}
+
+.friend-recs__btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.friend-recs__btn--primary,
+.friend-recs__btn--primary:hover:not(:disabled) {
+  background: var(--color-primary);
+  color: var(--friend-recs-on-accent);
+}
+
+.friend-recs__btn--primary:hover:not(:disabled) {
+  border-color: var(--color-ink);
+}
+
+.friend-recs__btn--outline,
+.friend-recs__btn--quiet {
+  background: transparent;
+  border-color: var(--color-border);
+}
+
+.friend-recs__btn--outline {
+  color: var(--color-ink);
+}
+
+.friend-recs__btn--quiet {
+  color: var(--color-muted);
+}
+
+.friend-recs__btn--outline:hover:not(:disabled),
+.friend-recs__btn--quiet:hover:not(:disabled) {
+  background: transparent;
+  border-color: var(--color-ink);
+  color: var(--color-ink);
+}
+
+.friend-recs__rest {
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.friend-recs__rest-label {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin: 0;
+  padding: 12px 20px 4px;
+  text-transform: uppercase;
+}
+
+.friend-recs__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.friend-recs__row {
+  align-items: center;
+  border-top: 1px solid var(--color-border-subtle);
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  padding: 10px 20px;
+}
+
+.friend-recs__list > .friend-recs__row:first-child {
+  border-top: 0;
+}
+
+.friend-recs__row .friend-recs__art {
+  font-size: 0.9375rem;
+}
+
+.friend-recs__row-main {
+  background: transparent;
+  border: 0;
+  color: var(--color-ink);
+  display: block;
+  font-size: inherit;
+  font-weight: 400;
+  letter-spacing: 0;
+  min-height: 44px;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+  text-transform: none;
+}
+
+.friend-recs__row-main:hover:not(:disabled) {
+  background: transparent;
+}
+
+.friend-recs__row-main:hover .friend-recs__row-title {
+  text-decoration: underline;
+}
+
+.friend-recs__row-meta {
+  color: var(--color-muted);
+  display: block;
+  font-size: 0.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.friend-recs__row-meta strong {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.friend-recs__row-title {
+  display: block;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.friend-recs__row-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.friend-recs__row-actions .friend-recs__btn {
+  font-size: 0.8125rem;
+  padding: 0 14px;
+}
+
+.friend-recs__more {
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--color-border-subtle);
+  border-radius: 0;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  letter-spacing: 0;
+  min-height: 44px;
+  text-transform: none;
+  width: 100%;
+}
+
+.friend-recs__more:hover:not(:disabled) {
+  background: transparent;
+  color: var(--color-ink);
+}
+
+@media (max-width: 600px) {
+  .friend-recs__head {
+    padding: 12px 16px;
+  }
+
+  .friend-recs__featured {
+    gap: 14px;
+    grid-template-columns: 72px minmax(0, 1fr);
+    padding: 16px;
+  }
+
+  .friend-recs__art {
+    font-size: 1.25rem;
+  }
+
+  .friend-recs__item-title {
+    font-size: 1.1875rem;
+  }
+
+  .friend-recs__actions .friend-recs__btn {
+    flex: 1 1 100%;
+  }
+
+  .friend-recs__rest-label {
+    padding-inline: 16px;
+  }
+
+  .friend-recs__row {
+    grid-template-columns: 44px minmax(0, 1fr);
+    padding: 10px 16px;
+  }
+
+  .friend-recs__row-actions {
+    grid-column: 1 / -1;
+  }
+
+  .friend-recs__row-actions .friend-recs__btn {
+    flex: 1;
+  }
+}
+/* End friend recommendations */
