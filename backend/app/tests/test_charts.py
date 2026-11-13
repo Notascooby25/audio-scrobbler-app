@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -12,6 +13,7 @@ from backend.app.datetime_utils import utc_now
 from backend.app.db import Base
 from backend.app.main import app
 from backend.app.models import Follow, ListeningEvent, User
+from backend.app.queries.analytics_queries import build_top_entities_query
 
 engine = create_engine(
     "sqlite://",
@@ -213,3 +215,10 @@ def test_charts_aggregates_sources():
     nat = next(e for e in entries if e["label"] == "The National")
     assert set(nat["sources"]) == {"spotify", "youtube"}
 
+
+
+def test_top_entities_query_rejects_removed_playlists_entity():
+    # Playlists were removed from Reports, so the query builder must treat them like
+    # any other unsupported entity instead of quietly building a playlist query.
+    with pytest.raises(ValueError, match="Unsupported chart entity"):
+        build_top_entities_query(1, "playlists", "overall")

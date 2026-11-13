@@ -171,23 +171,6 @@ CHART_RANGES = (*CHART_RANGE_TO_DAYS.keys(), "overall")
 DATE_RANGE_PRESETS = ("last.week", "last.month", "last.year", "all.time", "custom")
 
 
-class extract_playlist_uri(FunctionElement):
-    name = "extract_playlist_uri"
-    inherit_cache = True
-
-
-@compiles(extract_playlist_uri, "sqlite")
-def sqlite_extract_playlist_uri(element, compiler, **kw):
-    arg = compiler.process(element.clauses.clauses[0], **kw)
-    return f"case when json_extract({arg}, '$.context.type') = 'playlist' then json_extract({arg}, '$.context.uri') else null end"
-
-
-@compiles(extract_playlist_uri, "postgresql")
-def pg_extract_playlist_uri(element, compiler, **kw):
-    arg = compiler.process(element.clauses.clauses[0], **kw)
-    return f"case when {arg}->'context'->>'type' = 'playlist' then {arg}->'context'->>'uri' else null end"
-
-
 def build_top_entities_query(
     user_id: int,
     entity: str,
@@ -202,9 +185,6 @@ def build_top_entities_query(
         group_columns = [ListeningEvent.track_name, ListeningEvent.artist_name]
     elif entity == "albums":
         group_columns = [ListeningEvent.album_name, ListeningEvent.artist_name]
-    elif entity == "playlists":
-        playlist_uri_expr = extract_playlist_uri(ListeningEvent.raw_metadata)
-        group_columns = [playlist_uri_expr.label("playlist_uri")]
     else:
         raise ValueError(f"Unsupported chart entity: {entity!r}")
 
@@ -224,8 +204,6 @@ def build_top_entities_query(
     statement = select(*selected_columns).where(ListeningEvent.user_id == user_id).where(not_blocked_clause(user_id))
     if entity == "albums":
         statement = statement.where(ListeningEvent.album_name.isnot(None))
-    elif entity == "playlists":
-        statement = statement.where(playlist_uri_expr.isnot(None))
 
     if start is not None:
         statement = statement.where(ListeningEvent.played_at >= start)
