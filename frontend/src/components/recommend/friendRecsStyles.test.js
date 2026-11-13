@@ -66,6 +66,15 @@ describe("friend recommendations styles", () => {
     expect(body).toMatch(/min-height:\s*44px/);
   });
 
+  it("Sleeve's blanket button and hover rules skip the card's buttons", () => {
+    const sleeveCss = fs.readFileSync(
+      path.resolve(__dirname, "../../skins/sleeve/sleeve.css"),
+      "utf-8"
+    );
+    const exclusions = sleeveCss.match(/:not\(\s*\[class\*="friend-recs__"\]\s*\)/g) || [];
+    expect(exclusions.length).toBeGreaterThanOrEqual(2);
+  });
+
   it("button text passes 4.5:1 on every accent colour", () => {
     const accents = [
       ...stylesContent.matchAll(/:root\[data-accent="([a-z_]+)"\]\s*\{([^}]*)\}/g),

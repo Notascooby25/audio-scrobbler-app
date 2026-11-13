@@ -7657,14 +7657,18 @@ button.sfm-row-remove:hover:not(:disabled) {
   font-size: 0.9375rem;
 }
 
-.friend-recs__row-main {
+/* Two classes so skins that style every button (Sleeve) cannot box these text buttons. */
+.friend-recs .friend-recs__row-main {
   background: transparent;
   border: 0;
+  border-radius: 0;
   color: var(--color-ink);
   display: block;
+  font-family: inherit;
   font-size: inherit;
   font-weight: 400;
   letter-spacing: 0;
+  line-height: 1.4;
   min-height: 44px;
   min-width: 0;
   padding: 0;
@@ -7672,7 +7676,7 @@ button.sfm-row-remove:hover:not(:disabled) {
   text-transform: none;
 }
 
-.friend-recs__row-main:hover:not(:disabled) {
+.friend-recs .friend-recs__row-main:hover:not(:disabled) {
   background: transparent;
 }
 
@@ -7713,12 +7717,13 @@ button.sfm-row-remove:hover:not(:disabled) {
   padding: 0 14px;
 }
 
-.friend-recs__more {
+.friend-recs .friend-recs__more {
   background: transparent;
   border: 0;
   border-top: 1px solid var(--color-border-subtle);
   border-radius: 0;
   color: var(--color-muted);
+  font-family: inherit;
   font-size: 0.8125rem;
   letter-spacing: 0;
   min-height: 44px;
@@ -7726,7 +7731,7 @@ button.sfm-row-remove:hover:not(:disabled) {
   width: 100%;
 }
 
-.friend-recs__more:hover:not(:disabled) {
+.friend-recs .friend-recs__more:hover:not(:disabled) {
   background: transparent;
   color: var(--color-ink);
 }
