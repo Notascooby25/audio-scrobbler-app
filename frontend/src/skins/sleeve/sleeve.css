@@ -119,7 +119,7 @@
     .jukebox-source-tab-btn
   ):not(.rediscover-tab-btn):not(.pagination-page):not(.sfm-page-btn):not(.date-range-pill):not(
     .modal-confirm-button
-  ):not(.danger-button),
+  ):not(.danger-button):not([class*="friend-recs__"]),
 [data-skin="sleeve"] .secondary-button,
 [data-skin="sleeve"] button.secondary-button,
 [data-skin="sleeve"] .btn-secondary,
@@ -135,7 +135,8 @@
   text-transform: none;
 }
 
-[data-skin="sleeve"] button:hover:not(:disabled):not(.active):not([aria-current="page"]),
+[data-skin="sleeve"]
+  button:hover:not(:disabled):not(.active):not([aria-current="page"]):not([class*="friend-recs__"]),
 [data-skin="sleeve"] .secondary-button:hover:not(:disabled),
 [data-skin="sleeve"] button.secondary-button:hover:not(:disabled),
 [data-skin="sleeve"] .btn-secondary:hover:not(:disabled),

@@ -1,301 +1,234 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { fetchActiveRecommendations, updateRecommendationStatus } from "../../api";
+
+const MAX_ROWS = 4;
+
+// Links and cover art come from another user, so only trust plain https values.
+function parseHttps(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url : null;
+  } catch {
+    return null;
+  }
+}
+
+function safeSpotifyUrl(value) {
+  const url = parseHttps(value);
+  return url && url.hostname === "open.spotify.com" ? url.href : null;
+}
+
+function buildSpotifyUrl(rec) {
+  const direct = safeSpotifyUrl(rec.spotify_url);
+  if (direct) return direct;
+  if (rec.spotify_uri) {
+    const parts = rec.spotify_uri.split(":");
+    const spotifyId = parts.pop();
+    const type =
+      parts.pop() ||
+      (rec.item_type === "album" ? "album" : rec.item_type === "artist" ? "artist" : "track");
+    return `https://open.spotify.com/${type}/${spotifyId}`;
+  }
+  const query =
+    rec.item_type === "artist"
+      ? rec.artist_name || rec.title
+      : `${rec.artist_name || ""} ${rec.title}`.trim();
+  return `https://open.spotify.com/search/${encodeURIComponent(query)}`;
+}
+
+function senderOf(rec) {
+  return rec.sender_name || "A friend";
+}
+
+function metaOf(rec) {
+  if (rec.item_type === "artist") return "Artist";
+  const kind = rec.item_type === "album" ? "Album" : "Song";
+  const base = rec.artist_name ? `${kind} by ${rec.artist_name}` : kind;
+  const album = rec.album_name && rec.album_name !== rec.title ? ` · ${rec.album_name}` : "";
+  return rec.item_type === "album" ? base : `${base}${album}`;
+}
+
+function Art({ rec }) {
+  const image = parseHttps(rec.image_url);
+  if (image) {
+    return <img className="friend-recs__art" src={image.href} alt="" loading="lazy" />;
+  }
+  return (
+    <div className="friend-recs__art" aria-hidden="true">
+      {(rec.title || "?").charAt(0).toUpperCase()}
+    </div>
+  );
+}
 
 export default function FriendRecommendationsCard({ token }) {
   const [recommendations, setRecommendations] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [featuredId, setFeaturedId] = useState(null);
+  const [showAll, setShowAll] = useState(false);
+  const [busyIds, setBusyIds] = useState(() => new Set());
   const [loading, setLoading] = useState(true);
+  const busyRef = useRef(new Set());
+  const titleRef = useRef(null);
+  const focusAfterPromote = useRef(false);
 
-  const loadRecommendations = () => {
+  useEffect(() => {
     if (!token) return;
     fetchActiveRecommendations({ token })
       .then((data) => {
         setRecommendations(data || []);
-        setCurrentIndex(0);
+        setFeaturedId(null);
         setLoading(false);
       })
       .catch(() => {
         setLoading(false);
       });
-  };
+  }, [token]);
 
   useEffect(() => {
-    loadRecommendations();
-  }, [token]);
+    if (focusAfterPromote.current) {
+      focusAfterPromote.current = false;
+      titleRef.current?.focus();
+    }
+  }, [featuredId]);
 
   if (loading || !recommendations || recommendations.length === 0) {
     return null;
   }
 
-  const current = recommendations[currentIndex] || recommendations[0];
+  const featured = recommendations.find((r) => r.id === featuredId) || recommendations[0];
+  const others = recommendations.filter((r) => r.id !== featured.id);
+  const visibleRows = showAll ? others : others.slice(0, MAX_ROWS);
+  const hiddenCount = others.length - MAX_ROWS;
 
-  const handlePlayOnSpotify = async () => {
-    let targetUrl = current.spotify_url;
-    if (!targetUrl && current.spotify_uri) {
-      const parts = current.spotify_uri.split(":");
-      const spotifyId = parts.pop();
-      const type =
-        parts.pop() ||
-        (current.item_type === "album"
-          ? "album"
-          : current.item_type === "artist"
-            ? "artist"
-            : "track");
-      targetUrl = `https://open.spotify.com/${type}/${spotifyId}`;
-    }
-    if (!targetUrl) {
-      const query =
-        current.item_type === "artist"
-          ? current.artist_name || current.title
-          : `${current.artist_name || ""} ${current.title}`.trim();
-      targetUrl = `https://open.spotify.com/search/${encodeURIComponent(query)}`;
-    }
-    if (targetUrl) {
-      window.open(targetUrl, "_blank", "noopener,noreferrer");
-    }
+  const promote = (id) => {
+    focusAfterPromote.current = true;
+    setFeaturedId(id);
+  };
+
+  const settle = async (rec, status, beforeSave) => {
+    if (busyRef.current.has(rec.id)) return;
+    busyRef.current.add(rec.id);
+    setBusyIds(new Set(busyRef.current));
+    if (beforeSave) beforeSave();
     try {
-      await updateRecommendationStatus({
-        token,
-        recommendationId: current.id,
-        status: "listened",
-      });
-      setRecommendations((prev) => prev.filter((r) => r.id !== current.id));
-      if (currentIndex >= recommendations.length - 1) {
-        setCurrentIndex(Math.max(0, recommendations.length - 2));
-      }
+      await updateRecommendationStatus({ token, recommendationId: rec.id, status });
+      setRecommendations((prev) => prev.filter((r) => r.id !== rec.id));
+      setFeaturedId((prev) => (prev === rec.id ? null : prev));
     } catch {
-      // Ignore failure to update
+      // Keep the pick so it is not lost; the next load will show it again.
+    } finally {
+      busyRef.current.delete(rec.id);
+      setBusyIds(new Set(busyRef.current));
     }
   };
 
-  const handleDismiss = async () => {
-    try {
-      await updateRecommendationStatus({
-        token,
-        recommendationId: current.id,
-        status: "dismissed",
-      });
-      setRecommendations((prev) => prev.filter((r) => r.id !== current.id));
-      if (currentIndex >= recommendations.length - 1) {
-        setCurrentIndex(Math.max(0, recommendations.length - 2));
-      }
-    } catch {
-      // Ignore failure
-    }
-  };
+  const play = (rec) =>
+    settle(rec, "listened", () => {
+      window.open(buildSpotifyUrl(rec), "_blank", "noopener,noreferrer");
+    });
 
-  const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % recommendations.length);
-  };
+  const dismiss = (rec) => settle(rec, "dismissed");
 
-  const handlePrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + recommendations.length) % recommendations.length);
-  };
+  const openVerb = (rec) => (rec.item_type === "artist" ? "Open" : "Play");
 
   return (
-    <section
-      className="friend-recommendations-card"
-      aria-label="Recommended by Friends"
-      style={{
-        background: "var(--color-surface, #1e1e1e)",
-        border: "1px solid var(--color-border, #333)",
-        borderRadius: "8px",
-        padding: "16px",
-        marginBottom: "1.5rem",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "12px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <h2
-            style={{
-              margin: 0,
-              fontSize: "1rem",
-              fontWeight: 700,
-              textTransform: "none",
-              color: "var(--color-text, #fff)",
-            }}
-          >
-            Recommended by Friends
-          </h2>
-          <span
-            style={{
-              fontSize: "0.75rem",
-              background: "var(--color-primary, #1db954)",
-              color: "#000",
-              fontWeight: 700,
-              padding: "2px 8px",
-              borderRadius: "12px",
-            }}
-          >
-            {recommendations.length} New
-          </span>
-        </div>
-
-        {recommendations.length > 1 && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              fontSize: "0.8rem",
-              color: "var(--color-meta, #888)",
-            }}
-          >
-            <button
-              type="button"
-              onClick={handlePrev}
-              aria-label="Previous recommendation"
-              style={{
-                background: "none",
-                border: "none",
-                color: "inherit",
-                cursor: "pointer",
-                padding: "2px 4px",
-              }}
-            >
-              &lt;
-            </button>
-            <span>
-              {currentIndex + 1} of {recommendations.length}
-            </span>
-            <button
-              type="button"
-              onClick={handleNext}
-              aria-label="Next recommendation"
-              style={{
-                background: "none",
-                border: "none",
-                color: "inherit",
-                cursor: "pointer",
-                padding: "2px 4px",
-              }}
-            >
-              &gt;
-            </button>
-          </div>
-        )}
+    <section className="friend-recs" aria-labelledby="friend-recs-heading">
+      <div className="friend-recs__head">
+        <h2 className="friend-recs__title" id="friend-recs-heading">
+          Recommendations
+        </h2>
+        <span className="friend-recs__count">{recommendations.length} new</span>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: "14px",
-          alignItems: "center",
-          background: "var(--color-surface-dim, rgba(255, 255, 255, 0.04))",
-          padding: "12px",
-          borderRadius: "6px",
-        }}
-      >
-        {current.image_url ? (
-          <img
-            src={current.image_url}
-            alt=""
-            style={{
-              width: "56px",
-              height: "56px",
-              borderRadius: "4px",
-              objectFit: "cover",
-              flexShrink: 0,
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              width: "56px",
-              height: "56px",
-              background: "#333",
-              borderRadius: "4px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "0.75rem",
-              color: "#aaa",
-              flexShrink: 0,
-            }}
-          >
-            MUSIC
+      <div className="friend-recs__featured">
+        <Art rec={featured} />
+        <div>
+          <div className="friend-recs__who">
+            <span className="friend-recs__avatar" aria-hidden="true">
+              {senderOf(featured).charAt(0).toUpperCase()}
+            </span>
+            <span>
+              <strong>{senderOf(featured)}</strong> recommends
+            </span>
           </div>
-        )}
-
-        <div style={{ flexGrow: 1, minWidth: 0 }}>
-          <div
-            style={{ fontSize: "0.8rem", color: "var(--color-primary, #1db954)", fontWeight: 600 }}
-          >
-            {current.sender_name || "A friend"} recommended:
-          </div>
-          <div
-            style={{
-              fontWeight: 700,
-              fontSize: "0.95rem",
-              color: "var(--color-text, #fff)",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {current.title}
-          </div>
-          <div style={{ fontSize: "0.85rem", color: "var(--color-meta, #aaa)" }}>
-            {current.artist_name}{" "}
-            {current.album_name &&
-              current.album_name !== current.title &&
-              `• ${current.album_name}`}
-          </div>
-          {current.note && (
-            <div
-              style={{
-                fontSize: "0.8rem",
-                color: "var(--color-meta-light, #ddd)",
-                fontStyle: "italic",
-                marginTop: "2px",
-              }}
+          <p className="friend-recs__item-title" tabIndex={-1} ref={titleRef}>
+            {featured.title}
+          </p>
+          <p className="friend-recs__meta">{metaOf(featured)}</p>
+          {featured.note && <p className="friend-recs__note">&ldquo;{featured.note}&rdquo;</p>}
+          <div className="friend-recs__actions">
+            <button
+              type="button"
+              className="friend-recs__btn friend-recs__btn--primary"
+              disabled={busyIds.has(featured.id)}
+              onClick={() => play(featured)}
             >
-              &ldquo;{current.note}&rdquo;
-            </div>
+              {openVerb(featured) === "Open" ? "Open on Spotify" : "Play on Spotify"}
+            </button>
+            <button
+              type="button"
+              className="friend-recs__btn friend-recs__btn--quiet"
+              disabled={busyIds.has(featured.id)}
+              onClick={() => dismiss(featured)}
+            >
+              Not for me
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {others.length > 0 && (
+        <div className="friend-recs__rest">
+          <h3 className="friend-recs__rest-label">Also waiting for you</h3>
+          <ul className="friend-recs__list">
+            {visibleRows.map((rec) => (
+              <li className="friend-recs__row" key={rec.id}>
+                <Art rec={rec} />
+                <button
+                  type="button"
+                  className="friend-recs__row-main"
+                  aria-label={`Show ${senderOf(rec)}'s recommendation: ${rec.title}`}
+                  onClick={() => promote(rec.id)}
+                >
+                  <span className="friend-recs__row-meta">
+                    <strong>{senderOf(rec)}</strong> recommends
+                  </span>
+                  <span className="friend-recs__row-title">{rec.title}</span>
+                  <span className="friend-recs__row-meta">{rec.artist_name}</span>
+                </button>
+                <div className="friend-recs__row-actions">
+                  <button
+                    type="button"
+                    className="friend-recs__btn friend-recs__btn--outline"
+                    aria-label={`${openVerb(rec)} ${rec.title} on Spotify`}
+                    disabled={busyIds.has(rec.id)}
+                    onClick={() => play(rec)}
+                  >
+                    {openVerb(rec)}
+                  </button>
+                  <button
+                    type="button"
+                    className="friend-recs__btn friend-recs__btn--quiet"
+                    aria-label={`Not for me: ${rec.title}`}
+                    disabled={busyIds.has(rec.id)}
+                    onClick={() => dismiss(rec)}
+                  >
+                    Not for me
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          {hiddenCount > 0 && (
+            <button
+              type="button"
+              className="friend-recs__more"
+              onClick={() => setShowAll((value) => !value)}
+            >
+              {showAll ? "Show fewer" : `Show ${hiddenCount} more`}
+            </button>
           )}
         </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-          <button
-            type="button"
-            onClick={handlePlayOnSpotify}
-            className="button button-primary"
-            style={{
-              textTransform: "none",
-              fontSize: "0.8rem",
-              padding: "6px 12px",
-              borderRadius: "20px",
-            }}
-          >
-            {current.item_type === "artist" ? "Open on Spotify" : "Play on Spotify"}
-          </button>
-          <button
-            type="button"
-            onClick={handleDismiss}
-            aria-label="Dismiss recommendation"
-            title="Dismiss"
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--color-meta, #777)",
-              cursor: "pointer",
-              fontSize: "1.2rem",
-              padding: "4px 8px",
-              lineHeight: 1,
-              textTransform: "none",
-            }}
-          >
-            &times;
-          </button>
-        </div>
-      </div>
+      )}
     </section>
   );
 }
