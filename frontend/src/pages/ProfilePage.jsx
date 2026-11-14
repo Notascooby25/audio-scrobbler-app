@@ -136,9 +136,16 @@ export default function ProfilePage() {
       {!token && (
         <div className="profile-connect">
           <p className="notice">
+            <span className="connect-source-status disconnected" style={{ marginRight: "0.5rem" }}>
+              Not connected
+            </span>
             Connect Spotify from the <Link to="/connect">Connect page</Link> to create your profile.
           </p>
-          <button type="button" onClick={connectSpotify} disabled={Boolean(spotifyRetryAfter)}>
+          <button
+            type="button"
+            onClick={() => connectSpotify(false)}
+            disabled={Boolean(spotifyRetryAfter)}
+          >
             Connect Spotify
           </button>
           {spotifyRetryAfter && (
@@ -198,14 +205,7 @@ export default function ProfilePage() {
 
           {profile.is_self && (
             <div className="profile-button-row">
-              <button
-                type="button"
-                className="profile-connect-button"
-                onClick={() => connectSpotify(true)}
-                disabled={Boolean(spotifyRetryAfter)}
-              >
-                Connect Spotify
-              </button>
+              <span className="connect-source-status connected">Connected to Spotify</span>
               <Link className="profile-settings-button" to="/settings">
                 Settings
               </Link>
@@ -219,12 +219,6 @@ export default function ProfilePage() {
               >
                 Sign out
               </button>
-              {spotifyRetryAfter && (
-                <p className="notice" style={{ width: "100%", margin: "0.5rem 0 0" }}>
-                  Spotify is rate-limiting this app. Try again after{" "}
-                  {new Date(spotifyRetryAfter).toLocaleTimeString()}.
-                </p>
-              )}
             </div>
           )}
 

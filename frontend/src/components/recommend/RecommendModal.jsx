@@ -34,17 +34,23 @@ export default function RecommendModal({ token, item, onClose }) {
     setSubmitting(true);
     setError(null);
     try {
+      const itemType = item.itemType || "track";
+      const trackId =
+        itemType === "track" && item.spotifyTrackId ? String(item.spotifyTrackId).trim() : "";
+      const spotifyUri = item.spotifyUri || (trackId ? `spotify:track:${trackId}` : null);
+      const spotifyUrl =
+        item.spotifyUrl || (trackId ? `https://open.spotify.com/track/${trackId}` : null);
       await sendRecommendation({
         token,
         payload: {
           receiver_id: Number(selectedUserId),
-          item_type: item.itemType || "track",
+          item_type: itemType,
           title: String(item.title || "").slice(0, 255),
           artist_name: String(item.artist || item.title || "").slice(0, 255),
           album_name: item.album ? String(item.album).slice(0, 255) : null,
           image_url: item.imageUrl || null,
-          spotify_uri: item.spotifyUri || null,
-          spotify_url: item.spotifyUrl || null,
+          spotify_uri: spotifyUri,
+          spotify_url: spotifyUrl,
           note: note.trim() ? note.trim().slice(0, 280) : null,
         },
       });
