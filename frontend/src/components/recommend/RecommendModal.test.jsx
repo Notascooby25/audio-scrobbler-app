@@ -90,4 +90,41 @@ describe("RecommendModal", () => {
     });
     expect(onClose).not.toHaveBeenCalled();
   });
+
+  it("derives spotify_uri and spotify_url from spotifyTrackId when sharing a track", async () => {
+    vi.spyOn(api, "fetchFollowing").mockResolvedValue({
+      results: [{ id: 2, display_name: "Bob", username: "bob" }],
+    });
+    const sendSpy = vi.spyOn(api, "sendRecommendation").mockResolvedValue({ id: 11 });
+    const onClose = vi.fn();
+
+    render(
+      <RecommendModal
+        token="test-token"
+        item={{
+          itemType: "track",
+          title: "Slow Show",
+          artist: "The National",
+          album: "Boxer",
+          spotifyTrackId: "0XnhTgURxJoXS2SYsc74V7",
+        }}
+        onClose={onClose}
+      />
+    );
+
+    await waitFor(() => expect(screen.getByText("Bob")).toBeInTheDocument());
+    fireEvent.click(screen.getByText("Bob"));
+    fireEvent.click(screen.getByRole("button", { name: /Send Recommendation/i }));
+
+    await waitFor(() => {
+      expect(sendSpy).toHaveBeenCalledWith({
+        token: "test-token",
+        payload: expect.objectContaining({
+          item_type: "track",
+          spotify_uri: "spotify:track:0XnhTgURxJoXS2SYsc74V7",
+          spotify_url: "https://open.spotify.com/track/0XnhTgURxJoXS2SYsc74V7",
+        }),
+      });
+    });
+  });
 });

@@ -39,8 +39,9 @@ describe("ProfilePage", () => {
     vi.clearAllMocks();
   });
 
-  it("shows a connect prompt when there is no saved session", () => {
+  it("shows a connect prompt and Not connected badge when there is no saved session", () => {
     renderProfile();
+    expect(screen.getByText("Not connected")).toBeInTheDocument();
     expect(screen.getByText(/Connect Spotify from the/i)).toBeInTheDocument();
   });
 
@@ -203,6 +204,8 @@ describe("ProfilePage", () => {
       expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("href", "/settings")
     );
     expect(screen.getByRole("link", { name: "Following" })).toHaveAttribute("href", "/following");
+    expect(screen.getByText("Connected to Spotify")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Connect Spotify" })).not.toBeInTheDocument();
   });
 
   it("renders a Sign out button when viewing own profile and clears session on click", async () => {

@@ -83,6 +83,7 @@ export default function LibraryScrobbleList({
                           album: scrobble.album_name,
                           imageUrl: scrobble.artwork_url,
                           spotifyUri: scrobble.spotify_uri,
+                          spotifyTrackId: scrobble.spotify_track_id,
                         }}
                       />
                     )}

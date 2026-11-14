@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.49.1",
+    date: "2026-11-14",
+    changes: [
+      "Clearer Spotify Status on Profile: Your own Profile page now shows a 'Connected to Spotify' badge when signed in instead of a 'Connect Spotify' button, and clearly shows 'Not connected' when signed out.",
+      "Direct Spotify Links for Shared Songs: Recommending a song you have listened to on Spotify now links straight to the track in Spotify instead of opening a search.",
+    ],
+  },
+  {
     version: "0.49.0",
     date: "2026-11-13",
     changes: [

@@ -123,6 +123,7 @@ export default function LibraryRankList({
                                 album: kind === "tracks" ? entry.album_name : entry.label,
                                 imageUrl: entry.artwork_url,
                                 spotifyUri: entry.spotify_uri,
+                                spotifyTrackId: kind === "tracks" ? entry.spotify_track_id : null,
                                 spotifyUrl:
                                   kind === "artists"
                                     ? `https://open.spotify.com/search/${encodeURIComponent(entry.label)}`
@@ -258,6 +259,7 @@ export default function LibraryRankList({
                             album: kind === "tracks" ? entry.album_name : entry.label,
                             imageUrl: entry.artwork_url,
                             spotifyUri: entry.spotify_uri,
+                            spotifyTrackId: kind === "tracks" ? entry.spotify_track_id : null,
                             spotifyUrl:
                               kind === "artists"
                                 ? `https://open.spotify.com/search/${encodeURIComponent(entry.label)}`

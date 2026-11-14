@@ -160,6 +160,7 @@ export default function TimelineRail({
                         album: track.album_name,
                         imageUrl: track.artwork_url,
                         spotifyUri: track.spotify_uri,
+                        spotifyTrackId: track.spotify_track_id,
                       }}
                     />
                   )}
