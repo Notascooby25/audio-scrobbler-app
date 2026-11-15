@@ -191,12 +191,27 @@ def normalize_record(entry: dict[str, Any], source: str) -> dict[str, Any] | Non
         if entry.get("audiobook_uri") or entry.get("audiobook_title"):
             return None
 
-        song_name = entry.get("master_metadata_track_name") or entry.get("trackName")
-        artist_name = entry.get("master_metadata_album_artist_name") or entry.get("artistName")
-        album_name = entry.get("master_metadata_album_album_name") or entry.get("albumName")
-        time_str = entry.get("ts") or entry.get("endTime")
+        song_name = (
+            entry.get("master_metadata_track_name")
+            or entry.get("trackName")
+            or entry.get("song")
+            or entry.get("title")
+        )
+        artist_name = (
+            entry.get("master_metadata_album_artist_name")
+            or entry.get("artistName")
+            or entry.get("artist")
+        )
+        album_name = (
+            entry.get("master_metadata_album_album_name")
+            or entry.get("albumName")
+            or entry.get("release")
+            or entry.get("album")
+        )
+        time_str = entry.get("ts") or entry.get("endTime") or entry.get("time")
         track_uri = entry.get("spotify_track_uri") or entry.get("trackUri")
         ms_played = entry.get("ms_played") if isinstance(entry.get("ms_played"), int) else entry.get("msPlayed")
+        artwork_url = entry.get("artwork") or entry.get("artwork_url")
 
         if not isinstance(song_name, str) or not isinstance(artist_name, str) or not isinstance(time_str, str):
             return None
@@ -214,11 +229,15 @@ def normalize_record(entry: dict[str, Any], source: str) -> dict[str, Any] | Non
         track_id = generate_track_id("spotify", artist_name, song_name, track_uri)
         play_id = f"{track_uri}:{time_str}"
 
+        cleaned_art = None
+        if isinstance(artwork_url, str) and artwork_url.strip() and artwork_url.lower() not in ("no artwork", "none", "null"):
+            cleaned_art = artwork_url.strip()
+
         return {
             "artist_name": artist_name.strip(),
             "song_name": song_name.strip(),
             "album_name": album_name.strip() if isinstance(album_name, str) and album_name.strip() else None,
-            "artwork_url": None,
+            "artwork_url": cleaned_art,
             "played_at": played_at,
             "played_at_iso": played_at.isoformat() + "Z",
             "track_id": track_id,
@@ -235,11 +254,22 @@ def normalize_record(entry: dict[str, Any], source: str) -> dict[str, Any] | Non
         time_str = entry.get("time")
         artwork_url = entry.get("artwork") or entry.get("artwork_url")
 
-        if entry.get("header") == "YouTube Music" or entry.get("title", "").startswith("Watched "):
+        is_raw_takeout = (
+            "header" in entry
+            or "subtitles" in entry
+            or "titleUrl" in entry
+            or (isinstance(entry.get("title"), str) and entry["title"].startswith("Watched "))
+        )
+        if is_raw_takeout:
+            if entry.get("header") != "YouTube Music":
+                return None
             subtitles = entry.get("subtitles", [])
-            if subtitles and isinstance(subtitles, list) and isinstance(subtitles[0], dict):
-                channel = subtitles[0].get("name", "")
-                artist_name = channel.replace(" - Topic", "").strip()
+            if not subtitles or not isinstance(subtitles, list) or not isinstance(subtitles[0], dict):
+                return None
+            channel = subtitles[0].get("name", "")
+            if not isinstance(channel, str) or not channel.endswith("- Topic"):
+                return None
+            artist_name = channel.replace(" - Topic", "").strip()
             raw_title = entry.get("title", "")
             if raw_title.startswith("Watched "):
                 song_name = raw_title.replace("Watched ", "", 1).strip()

@@ -173,6 +173,88 @@ def test_normalize_record_apple_extracts_correct_fields():
     assert norm["play_id"].startswith(f"apple-{norm['track_id']}-")
 
 
+def test_detect_source_prefers_explicit_spotify_over_song_key():
+    prepped_spotify = [
+        {
+            "source": "Spotify",
+            "artist": "Foals",
+            "song": "Spanish Sahara",
+            "release": "Total Life Forever",
+            "artwork": "https://cdn.example/art.jpg",
+            "time": "2012-11-24T15:31:53Z",
+        }
+    ]
+    assert detect_source(prepped_spotify) == "spotify"
+
+
+def test_normalize_spotify_accepts_prepped_script_format():
+    prepped = {
+        "source": "Spotify",
+        "artist": "Foals",
+        "song": "Spanish Sahara",
+        "release": "Total Life Forever",
+        "artwork": "https://cdn.example/art.jpg",
+        "time": "2012-11-24T15:31:53Z",
+    }
+    norm = normalize_record(prepped, "spotify")
+    assert norm is not None
+    assert norm["artist_name"] == "Foals"
+    assert norm["song_name"] == "Spanish Sahara"
+    assert norm["album_name"] == "Total Life Forever"
+    assert norm["artwork_url"] == "https://cdn.example/art.jpg"
+    assert norm["source"] == "spotify"
+
+
+def test_normalize_spotify_extended_streaming_history_skips_non_music():
+    null_track = {
+        "ts": "2012-04-27T18:59:45Z",
+        "master_metadata_track_name": None,
+        "master_metadata_album_artist_name": None,
+        "spotify_track_uri": None,
+    }
+    podcast = {
+        "ts": "2024-01-01T10:00:00Z",
+        "master_metadata_track_name": None,
+        "episode_name": "Ep 1",
+        "spotify_episode_uri": "spotify:episode:123",
+    }
+    audiobook = {
+        "ts": "2024-01-01T10:00:00Z",
+        "audiobook_title": "Chapter 1",
+        "audiobook_uri": "spotify:audiobook:123",
+    }
+    assert normalize_record(null_track, "spotify") is None
+    assert normalize_record(podcast, "spotify") is None
+    assert normalize_record(audiobook, "spotify") is None
+
+
+def test_normalize_youtube_raw_takeout_requires_youtube_music_and_topic_channel():
+    non_music_video = {
+        "header": "YouTube",
+        "title": "Watched Funny Cats",
+        "subtitles": [{"name": "Cat Channel"}],
+        "time": "2026-02-14T20:15:00Z",
+    }
+    non_topic_ytm = {
+        "header": "YouTube Music",
+        "title": "Watched Podcast Clip",
+        "subtitles": [{"name": "Some Creator"}],
+        "time": "2026-02-14T20:15:00Z",
+    }
+    valid_ytm = {
+        "header": "YouTube Music",
+        "title": "Watched Spanish Sahara",
+        "subtitles": [{"name": "Foals - Topic"}],
+        "time": "2026-02-14T20:15:00Z",
+    }
+    assert normalize_record(non_music_video, "youtube") is None
+    assert normalize_record(non_topic_ytm, "youtube") is None
+    norm = normalize_record(valid_ytm, "youtube")
+    assert norm is not None
+    assert norm["artist_name"] == "Foals"
+    assert norm["song_name"] == "Spanish Sahara"
+
+
 # ─── Integration Tests: Artwork Cache & Endpoints ─────────────────────────────
 
 def test_process_unified_import_persists_and_reuses_artwork_cache(db_session):
