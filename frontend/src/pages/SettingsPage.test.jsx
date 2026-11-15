@@ -11,6 +11,7 @@ import {
   fetchScrobbleSettings,
   fetchUserSettings,
   removeBlock,
+  submitUnifiedImport,
   updateScrobbleSettings,
   updateUserSettings,
   downloadScrobblesExport,
@@ -28,6 +29,7 @@ vi.mock("../api", () => ({
   fetchImportBatches: vi.fn(),
   advancedDeleteImports: vi.fn(),
   startArtworkBackfill: vi.fn(),
+  submitUnifiedImport: vi.fn(),
   downloadScrobblesExport: vi.fn(),
 }));
 
@@ -558,5 +560,49 @@ describe("SettingsPage", () => {
       { timeout: 1000 }
     );
     expect(localStorage.getItem("audio-scrobbler-match-sleeve")).toBe("false");
+  });
+
+  it("renders Import Listening History in the Data tab and imports a prepped Spotify JSON", async () => {
+    submitUnifiedImport.mockResolvedValue({
+      status: "ok",
+      source: "spotify",
+      summary: { inserted: 1, skipped: 0, duplicate: 0 },
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/settings?tab=data"]}>
+        <SkinProvider>
+          <SettingsPage />
+        </SkinProvider>
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText("Import Listening History")).toBeInTheDocument();
+    const input = screen.getByLabelText("Import history JSON");
+    const entries = [
+      {
+        source: "Spotify",
+        artist: "Foals",
+        song: "Spanish Sahara",
+        time: "2012-11-24T15:31:53Z",
+      },
+    ];
+    const file = new File([JSON.stringify(entries)], "spotify_processed.json", {
+      type: "application/json",
+    });
+    file.text = async () => JSON.stringify(entries);
+
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() =>
+      expect(submitUnifiedImport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          token: "token",
+          source: "spotify",
+          entries,
+        })
+      )
+    );
+    expect(await screen.findByRole("status", { name: "Import Summary" })).toBeInTheDocument();
   });
 });

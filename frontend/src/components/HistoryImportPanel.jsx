@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { submitImportScrobbles, submitUnifiedImport } from "../api";
+import { submitUnifiedImport } from "../api";
 import ImportProgressBar from "./ImportProgressBar";
 import ImportSummaryPanel from "./ImportSummaryPanel";
 
@@ -76,27 +76,21 @@ export default function HistoryImportPanel({ token, onImportComplete }) {
       }
 
       const source = detectImportSource(entries, file.name);
-      let result = null;
-
-      if (submitImportScrobbles && submitImportScrobbles.mock) {
-        result = await submitImportScrobbles({ token, source, entries });
-      } else {
-        setLiveProgress({
-          stage: "file_validation",
-          percent: 10,
-          message: `Validating ${entries.length.toLocaleString()} entries...`,
-          current: 0,
-          total: entries.length,
-        });
-        result = await submitUnifiedImport({
-          token,
-          source,
-          entries,
-          onProgress: (progressEvent) => {
-            setLiveProgress(progressEvent);
-          },
-        });
-      }
+      setLiveProgress({
+        stage: "file_validation",
+        percent: 10,
+        message: `Validating ${entries.length.toLocaleString()} entries...`,
+        current: 0,
+        total: entries.length,
+      });
+      const result = await submitUnifiedImport({
+        token,
+        source,
+        entries,
+        onProgress: (progressEvent) => {
+          setLiveProgress(progressEvent);
+        },
+      });
 
       setImportResult(result);
       setLiveProgress(null);

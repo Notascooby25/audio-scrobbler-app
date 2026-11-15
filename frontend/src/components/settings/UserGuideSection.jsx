@@ -123,8 +123,9 @@ export default function UserGuideSection() {
           <li>
             <strong>Import Past History:</strong> Have years of Spotify or YouTube listening before
             joining this app? You can upload your official history files. Go to{" "}
-            <strong>Connect → History File Import</strong> and drag in your Spotify{" "}
-            <code>endsong.json</code> files or YouTube <code>watch-history.json</code>.
+            <strong>Settings → Data → Import Listening History</strong> and upload your Spotify{" "}
+            <code>Streaming_History_Audio_*.json</code> / <code>endsong*.json</code>, YouTube{" "}
+            <code>watch-history.json</code>, or prep-script <code>*_processed.json</code> files.
           </li>
           <li>
             <strong>Source Badges:</strong> Every track in your library displays a small badge

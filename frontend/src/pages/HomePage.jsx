@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   fetchMonthlySummary,
@@ -8,14 +8,10 @@ import {
   redirectToAuthorization,
   requestDevelopmentToken,
   requestSpotifyAuthorization,
-  submitImportScrobbles,
-  submitUnifiedImport,
   unlikeTrack,
 } from "../api";
 import EmptyState, { HeadphonesIcon, AlertIcon, GhostIcon } from "../components/EmptyState";
 import CustomDateField from "../components/CustomDateField";
-import ImportProgressBar from "../components/ImportProgressBar";
-import ImportSummaryPanel from "../components/ImportSummaryPanel";
 import ScrobbleList from "../components/ScrobbleList";
 import { clearSession as purgeAuthSession } from "../session";
 
@@ -80,14 +76,9 @@ export default function HomePage() {
   const [status, setStatus] = useState(
     callbackError ? "error" : savedSession?.accessToken ? "loading" : "idle"
   );
-  const [importResult, setImportResult] = useState(null);
-  const [importError, setImportError] = useState("");
-  const [importProgress, setImportProgress] = useState("");
-  const [liveProgress, setLiveProgress] = useState(null);
   const [spotifyRetryAfter, setSpotifyRetryAfter] = useState(null);
   const [likingScrobbleIds, setLikingScrobbleIds] = useState(() => new Set());
   const [actionNotice, setActionNotice] = useState("");
-  const importInputRef = useRef(null);
 
   const archiveTotals = useMemo(() => {
     if (!summary?.summary?.length) return { plays: 0, minutes: 0, hours: 0 };
@@ -285,74 +276,6 @@ export default function HomePage() {
     }
   };
 
-  const handleImport = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setImportResult(null);
-    setImportError("");
-    setImportProgress("");
-    setLiveProgress(null);
-    try {
-      const text = await file.text();
-      const parsed = JSON.parse(text);
-      const entries = Array.isArray(parsed) ? parsed : parsed.history || parsed.entries || [];
-      if (!entries.length) throw new Error("No history entries found in this JSON file.");
-      const firstEntry = entries[0] || {};
-      const explicitSource = (firstEntry.source || "").toString().toLowerCase();
-      const looksLikeApple =
-        explicitSource.includes("apple") ||
-        explicitSource.includes("itunes") ||
-        file.name.toLowerCase().includes("apple");
-      const looksLikeYoutube =
-        "song" in firstEntry ||
-        "subtitles" in firstEntry ||
-        "titleUrl" in firstEntry ||
-        explicitSource.includes("youtube");
-
-      let source = "spotify";
-      if (looksLikeApple) {
-        source = "apple";
-      } else if (
-        looksLikeYoutube ||
-        file.name.toLowerCase().includes("youtube") ||
-        file.name.toLowerCase().includes("watch-history")
-      ) {
-        source = "youtube";
-      }
-
-      let result = null;
-      if (submitImportScrobbles && submitImportScrobbles.mock) {
-        result = await submitImportScrobbles({ token, source, entries });
-      } else {
-        setLiveProgress({
-          stage: "file_validation",
-          percent: 10,
-          message: `Validating ${entries.length.toLocaleString()} entries...`,
-          current: 0,
-          total: entries.length,
-        });
-        result = await submitUnifiedImport({
-          token,
-          source,
-          entries,
-          onProgress: (progressEvent) => {
-            setLiveProgress(progressEvent);
-          },
-        });
-      }
-
-      setImportResult(result);
-      setLiveProgress(null);
-      await loadSummary(null, token);
-    } catch (requestError) {
-      setLiveProgress(null);
-      setImportError(requestError.message || "Import failed.");
-    } finally {
-      event.target.value = "";
-    }
-  };
-
   useEffect(() => {
     if (!savedSession?.accessToken) return;
     if (savedSession.expiresAt && savedSession.expiresAt <= Date.now()) {
@@ -459,31 +382,13 @@ export default function HomePage() {
           </p>
           <div className="connect-source-actions">
             {token ? (
-              <div className="import-panel" style={{ width: "100%", margin: 0 }}>
-                <label className="import-picker">
-                  Import history JSON
-                  <input
-                    ref={importInputRef}
-                    type="file"
-                    accept="application/json,.json"
-                    onChange={handleImport}
-                  />
-                </label>
-                {liveProgress && <ImportProgressBar progress={liveProgress} />}
-                {importProgress && !liveProgress && (
-                  <p className="notice" role="status">
-                    {importProgress}
-                  </p>
-                )}
-                <ImportSummaryPanel
-                  result={importResult}
-                  error={importError}
-                  onDismiss={() => {
-                    setImportResult(null);
-                    setImportError("");
-                  }}
-                />
-              </div>
+              <Link
+                to="/settings?tab=data"
+                className="btn-secondary"
+                style={{ display: "inline-flex", alignItems: "center", textDecoration: "none" }}
+              >
+                Open Import in Settings →
+              </Link>
             ) : (
               <span style={{ fontSize: "0.85rem", color: "var(--color-muted)" }}>
                 Connect Spotify or sign in to import history files.

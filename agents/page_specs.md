@@ -180,7 +180,7 @@ Sections in page order:
 Organized into a 3-card Data Sources Hub with an accessible `<h1>` heading ("Connect & Data Sources"):
 
 1. **Spotify Streaming Card:** Active connection status, connect button, and rate-limit notice.
-2. **History File Import Card:** File picker for Spotify and YouTube JSON exports with upload progress bar and summary breakdown.
+2. **History File Import Card:** Direct shortcut to `/settings?tab=data` for uploading Spotify, YouTube Music, and prep-script JSON exports.
 3. **Radio & Liked Songs Tools Card:** Direct shortcut to `/settings?tab=scrobble`.
 4. **Monthly Archive Ledger:** High-density scannable archive table with total active months/plays/time stat cards, instant Year filter chips, and relative volume bars.
 5. **Analytics Handoff Card:** Direct links to `/overview` and `/reports` (charts pruned from `/connect` to eliminate redundancy).
@@ -189,7 +189,6 @@ Organized into a 3-card Data Sources Hub with an accessible `<h1>` heading ("Con
 | Section                                                                     | Endpoint                                                                                   |
 | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | Spotify connection status and connect button                                | `GET /auth/spotify/status`, `GET /auth/spotify/authorize`                                  |
-| Import listening-history files (Spotify, YouTube) with progress and summary | `POST /import/unified`, `POST /import/scrobbles`; see `docs/import_flow.md`                |
 | Monthly archive ledger                                                      | `GET /analytics/monthly-summary`                                                           |
 | Recent ingestion feed                                                       | `GET /analytics/recent-scrobbles` (interactive like heart saves/unlikes tracks on Spotify) |
 | Developer bypass tools                                                      | Development only (`import.meta.env.DEV`), stripped from production builds                  |

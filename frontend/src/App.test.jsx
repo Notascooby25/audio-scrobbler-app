@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 
@@ -36,7 +36,6 @@ import {
   fetchUserSettings,
   requestDevelopmentToken,
   requestSpotifyAuthorization,
-  submitImportScrobbles,
 } from "./api";
 
 describe("App", () => {
@@ -217,71 +216,17 @@ describe("App", () => {
     expect(screen.getByText("youtube")).toBeInTheDocument();
   });
 
-  it("shows an import summary breakdown after a successful import", async () => {
+  it("links to Settings -> Data from the Connect page History File Import card", async () => {
     fetchMonthlySummary.mockResolvedValue({ user_id: 1, summary: [], total_months: 0 });
     fetchRecentScrobbles.mockResolvedValue({ user_id: 1, scrobbles: [], limit: 50, offset: 0 });
-    submitImportScrobbles.mockResolvedValue({
-      source: "spotify",
-      status: "ok",
-      summary: { inserted: 2, skipped: 1, duplicate: 0 },
-    });
     renderConnectPage();
 
     fireEvent.change(screen.getByLabelText("Development user ID"), { target: { value: "1" } });
     fireEvent.submit(screen.getByRole("button", { name: "Sign in" }).closest("form"));
     await waitFor(() => expect(screen.getByText("It's quiet in here")).toBeInTheDocument());
 
-    const file = new File([JSON.stringify([{ trackName: "Slow Show" }])], "spotify-history.json", {
-      type: "application/json",
-    });
-    file.text = async () => JSON.stringify([{ trackName: "Slow Show" }]);
-    fireEvent.change(screen.getByLabelText("Import history JSON"), { target: { files: [file] } });
-
-    await waitFor(() =>
-      expect(
-        within(screen.getByRole("status", { name: "Import Summary" })).getByText("spotify", {
-          exact: false,
-        })
-      ).toBeInTheDocument()
-    );
-    expect(screen.getByText("2")).toBeInTheDocument();
-  });
-
-  it("detects a youtube import from file content when the filename gives no hint", async () => {
-    fetchMonthlySummary.mockResolvedValue({ user_id: 1, summary: [], total_months: 0 });
-    fetchRecentScrobbles.mockResolvedValue({ user_id: 1, scrobbles: [], limit: 50, offset: 0 });
-    submitImportScrobbles.mockResolvedValue({
-      source: "youtube",
-      status: "ok",
-      summary: { inserted: 1, skipped: 0, duplicate: 0 },
-    });
-    renderConnectPage();
-
-    fireEvent.change(screen.getByLabelText("Development user ID"), { target: { value: "1" } });
-    fireEvent.submit(screen.getByRole("button", { name: "Sign in" }).closest("form"));
-    await waitFor(() => expect(screen.getByText("It's quiet in here")).toBeInTheDocument());
-
-    const entries = [
-      {
-        artist: "The Sherlocks",
-        song: "Everything Must Make Sense",
-        album: "Everything Must Make Sense!",
-        time: "2025-10-20T12:33:20.422Z",
-      },
-    ];
-    const file = new File([JSON.stringify(entries)], "watch-history.json", {
-      type: "application/json",
-    });
-    file.text = async () => JSON.stringify(entries);
-    fireEvent.change(screen.getByLabelText("Import history JSON"), { target: { files: [file] } });
-
-    await waitFor(() =>
-      expect(submitImportScrobbles).toHaveBeenCalledWith({
-        token: "demo-token",
-        source: "youtube",
-        entries,
-      })
-    );
+    const importLink = screen.getByRole("link", { name: "Open Import in Settings →" });
+    expect(importLink).toHaveAttribute("href", "/settings?tab=data");
   });
 });
 
