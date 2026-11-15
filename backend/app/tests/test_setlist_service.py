@@ -214,6 +214,19 @@ def test_extract_setlist_id():
     assert (
         extract_setlist_id("https://www.setlist.fm/setlist/artist/year/venue-334a28f1.html?foo=bar#top") == "334a28f1"
     )
+    assert (
+        extract_setlist_id(
+            "https://www.setlist.fm/show/2026-11-26/o2-institute-birmingham-england-23b7f433.html?setlist=3749137"
+        )
+        == "3749137"
+    )
+    assert (
+        extract_setlist_id("https://www.setlist.fm/show/2026-11-26/venue-23b7f433.html?foo=bar&setlist=3B70E014#top")
+        == "3b70e014"
+    )
+    assert (
+        extract_setlist_id("https://www.setlist.fm/show/2026-11-26/venue-334a28f1.html?setlist=invalid") == "334a28f1"
+    )
     assert extract_setlist_id("Not a setlist") is None
     assert extract_setlist_id("") is None
 

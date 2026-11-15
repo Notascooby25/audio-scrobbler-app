@@ -85,6 +85,7 @@ def extract_setlist_id(raw: str | None) -> str | None:
     Examples:
     - https://www.setlist.fm/setlist/artist/2026/venue-334a28f1.html -> 334a28f1
     - https://www.setlist.fm/show/2026-11-14/venue-334a28f1.html -> 334a28f1
+    - https://www.setlist.fm/show/2026-11-26/venue-23b7f433.html?setlist=3749137 -> 3749137
     - 334a28f1 -> 334a28f1
     """
     if not raw:
@@ -92,6 +93,10 @@ def extract_setlist_id(raw: str | None) -> str | None:
     val = raw.strip()
     if not val:
         return None
+    # On /show/...-<showId>.html?setlist=<setlistId> URLs, ?setlist= holds the specific band's setlist ID.
+    query_match = re.search(r"[?&]setlist=([0-9a-fA-F]{7,10})(?:[&#]|$)", val)
+    if query_match:
+        return query_match.group(1).lower()
     match = re.search(r"([0-9a-fA-F]{7,8})(?:\.html)?(?:$|[?#])", val)
     if match:
         return match.group(1).lower()

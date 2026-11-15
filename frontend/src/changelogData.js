@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.49.2",
+    date: "2026-11-15",
+    changes: [
+      "Direct Setlist.fm Show Links Fixed: Pasting a Setlist.fm /show/... link with ?setlist=... now loads the exact band's setlist from the ?setlist= parameter instead of picking up the show ID and matching an unrelated gig.",
+    ],
+  },
+  {
     version: "0.49.1",
     date: "2026-11-14",
     changes: [
