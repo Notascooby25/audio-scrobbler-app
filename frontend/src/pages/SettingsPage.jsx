@@ -22,6 +22,7 @@ import {
 } from "../api";
 import { readSession } from "../session";
 import ImportProgressBar from "../components/ImportProgressBar";
+import HistoryImportPanel from "../components/HistoryImportPanel";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 import ScopeCreepTools from "../components/ScopeCreepTools";
 import YouTubeScrobblerTools from "../components/YouTubeScrobblerTools";
@@ -865,6 +866,21 @@ export default function SettingsPage() {
               </>
             )}
           </div>
+          <div
+            style={{
+              marginBottom: "1.5rem",
+              paddingBottom: "1.5rem",
+              borderBottom: "0.5px solid var(--color-border)",
+            }}
+          >
+            <h3 style={{ fontSize: "1rem", marginBottom: "0.5rem" }}>Import Listening History</h3>
+            <p className="notice" style={{ marginBottom: "1rem" }}>
+              Upload Spotify JSON exports (<code>Streaming_History_Audio_*.json</code>,{" "}
+              <code>endsong*.json</code>), YouTube Music <code>watch-history.json</code>, or
+              prep-script <code>*_processed.json</code> files.
+            </p>
+            <HistoryImportPanel token={session.accessToken} />
+          </div>
           <div style={{ marginBottom: "1rem" }}>
             <h3 style={{ fontSize: "1rem", marginBottom: "0.5rem" }}>Backfill Missing Artwork</h3>
             <p className="notice" style={{ marginBottom: "1rem" }}>
@@ -982,8 +998,17 @@ export default function SettingsPage() {
               borderBottom: "0.5px solid var(--color-border)",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-              <span className="panel-meta" style={{ margin: 0 }}>Recent Activity</span>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "0.75rem",
+              }}
+            >
+              <span className="panel-meta" style={{ margin: 0 }}>
+                Recent Activity
+              </span>
               {notifications.length > 0 && (
                 <button
                   type="button"
@@ -1067,7 +1092,10 @@ export default function SettingsPage() {
                       onClick={async () => {
                         if (!session?.accessToken) return;
                         try {
-                          await deleteNotification({ token: session.accessToken, notificationId: n.id });
+                          await deleteNotification({
+                            token: session.accessToken,
+                            notificationId: n.id,
+                          });
                           setNotifications((prev) => prev.filter((item) => item.id !== n.id));
                         } catch (err) {
                           console.error("Failed to delete notification", err);

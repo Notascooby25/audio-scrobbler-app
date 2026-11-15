@@ -100,7 +100,7 @@ def itunes_artwork(artist: str, title: str, timeout: float = 3.0) -> str | None:
     """Fallback search using the iTunes API for missing artwork."""
     query = urllib.parse.quote(f"{artist} {clean_title(title)}")
     url = f"https://itunes.apple.com/search?term={query}&entity=song&limit=3"
-    
+
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "music-parser-app/1.0"})
         with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -118,6 +118,7 @@ def itunes_artwork(artist: str, title: str, timeout: float = 3.0) -> str | None:
 
 
 # ─── Schema Normalization Helpers ─────────────────────────────────────────────
+
 
 def parse_iso_timestamp(raw_value: Any) -> datetime | None:
     if isinstance(raw_value, datetime):
@@ -153,7 +154,7 @@ def detect_source(entries: list[dict[str, Any]], hint_source: str | None = None)
     for entry in entries[:20]:
         if not isinstance(entry, dict):
             continue
-            
+
         explicit_source = str(entry.get("source", "")).lower()
         if "apple" in explicit_source or "itunes" in explicit_source:
             return "apple"
@@ -161,7 +162,7 @@ def detect_source(entries: list[dict[str, Any]], hint_source: str | None = None)
             return "youtube"
         if "spotify" in explicit_source:
             return "spotify"
-            
+
         if entry.get("header") == "YouTube Music" or entry.get("subtitles") or "titleUrl" in entry:
             return "youtube"
         if "song" in entry and ("artist" in entry or "release" in entry):
@@ -178,6 +179,18 @@ def detect_source(entries: list[dict[str, Any]], hint_source: str | None = None)
     return "spotify"
 
 
+def _clean_artwork_url(raw_url: Any) -> str | None:
+    """Validates and normalizes an optional artwork URL from an import entry."""
+    if not isinstance(raw_url, str):
+        return None
+    cleaned = raw_url.strip()
+    if not cleaned or cleaned.lower() in ("no artwork", "none", "null"):
+        return None
+    if not cleaned.startswith(("https://", "http://")):
+        return None
+    return cleaned
+
+
 def normalize_record(entry: dict[str, Any], source: str) -> dict[str, Any] | None:
     """Parses and normalizes a single raw export row into the Unified Import Record format."""
     if not isinstance(entry, dict):
@@ -191,12 +204,20 @@ def normalize_record(entry: dict[str, Any], source: str) -> dict[str, Any] | Non
         if entry.get("audiobook_uri") or entry.get("audiobook_title"):
             return None
 
-        song_name = entry.get("master_metadata_track_name") or entry.get("trackName")
-        artist_name = entry.get("master_metadata_album_artist_name") or entry.get("artistName")
-        album_name = entry.get("master_metadata_album_album_name") or entry.get("albumName")
-        time_str = entry.get("ts") or entry.get("endTime")
+        song_name = (
+            entry.get("master_metadata_track_name") or entry.get("trackName") or entry.get("song") or entry.get("title")
+        )
+        artist_name = entry.get("master_metadata_album_artist_name") or entry.get("artistName") or entry.get("artist")
+        album_name = (
+            entry.get("master_metadata_album_album_name")
+            or entry.get("albumName")
+            or entry.get("release")
+            or entry.get("album")
+        )
+        time_str = entry.get("ts") or entry.get("endTime") or entry.get("time")
         track_uri = entry.get("spotify_track_uri") or entry.get("trackUri")
         ms_played = entry.get("ms_played") if isinstance(entry.get("ms_played"), int) else entry.get("msPlayed")
+        artwork_url = entry.get("artwork") or entry.get("artwork_url")
 
         if not isinstance(song_name, str) or not isinstance(artist_name, str) or not isinstance(time_str, str):
             return None
@@ -208,17 +229,21 @@ def normalize_record(entry: dict[str, Any], source: str) -> dict[str, Any] | Non
             return None
 
         if not track_uri or not str(track_uri).strip():
-            synth_id = hashlib.sha1(f"{artist_name.strip().lower()}:{song_name.strip().lower()}".encode("utf-8")).hexdigest()[:16]
+            synth_id = hashlib.sha1(
+                f"{artist_name.strip().lower()}:{song_name.strip().lower()}".encode("utf-8")
+            ).hexdigest()[:16]
             track_uri = f"spotify:track:local-{synth_id}"
 
         track_id = generate_track_id("spotify", artist_name, song_name, track_uri)
         play_id = f"{track_uri}:{time_str}"
 
+        cleaned_art = _clean_artwork_url(artwork_url)
+
         return {
             "artist_name": artist_name.strip(),
             "song_name": song_name.strip(),
             "album_name": album_name.strip() if isinstance(album_name, str) and album_name.strip() else None,
-            "artwork_url": None,
+            "artwork_url": cleaned_art,
             "played_at": played_at,
             "played_at_iso": played_at.isoformat() + "Z",
             "track_id": track_id,
@@ -235,11 +260,22 @@ def normalize_record(entry: dict[str, Any], source: str) -> dict[str, Any] | Non
         time_str = entry.get("time")
         artwork_url = entry.get("artwork") or entry.get("artwork_url")
 
-        if entry.get("header") == "YouTube Music" or entry.get("title", "").startswith("Watched "):
+        is_raw_takeout = (
+            "header" in entry
+            or "subtitles" in entry
+            or "titleUrl" in entry
+            or (isinstance(entry.get("title"), str) and entry["title"].startswith("Watched "))
+        )
+        if is_raw_takeout:
+            if entry.get("header") != "YouTube Music":
+                return None
             subtitles = entry.get("subtitles", [])
-            if subtitles and isinstance(subtitles, list) and isinstance(subtitles[0], dict):
-                channel = subtitles[0].get("name", "")
-                artist_name = channel.replace(" - Topic", "").strip()
+            if not subtitles or not isinstance(subtitles, list) or not isinstance(subtitles[0], dict):
+                return None
+            channel = subtitles[0].get("name", "")
+            if not isinstance(channel, str) or not channel.endswith("- Topic"):
+                return None
+            artist_name = channel.replace(" - Topic", "").strip()
             raw_title = entry.get("title", "")
             if raw_title.startswith("Watched "):
                 song_name = raw_title.replace("Watched ", "", 1).strip()
@@ -261,9 +297,7 @@ def normalize_record(entry: dict[str, Any], source: str) -> dict[str, Any] | Non
         track_id = generate_track_id("youtube", artist_name, song_name)
         play_id = f"youtube-{song_name.lower().replace(' ', '-')}-{time_str}"
 
-        cleaned_art = None
-        if isinstance(artwork_url, str) and artwork_url.strip() and artwork_url.lower() not in ("no artwork", "none", "null"):
-            cleaned_art = artwork_url.strip()
+        cleaned_art = _clean_artwork_url(artwork_url)
 
         return {
             "artist_name": artist_name.strip(),
@@ -298,9 +332,7 @@ def normalize_record(entry: dict[str, Any], source: str) -> dict[str, Any] | Non
         track_id = generate_track_id("apple", artist_name, song_name)
         play_id = f"apple-{track_id}-{played_at.timestamp()}"
 
-        cleaned_art = None
-        if isinstance(artwork_url, str) and artwork_url.strip() and artwork_url.lower() not in ("no artwork", "none", "null"):
-            cleaned_art = artwork_url.strip()
+        cleaned_art = _clean_artwork_url(artwork_url)
 
         return {
             "artist_name": artist_name.strip(),
@@ -320,6 +352,7 @@ def normalize_record(entry: dict[str, Any], source: str) -> dict[str, Any] | Non
 
 
 # ─── Unified Import Pipeline & Stream ─────────────────────────────────────────
+
 
 def process_unified_import_stream(
     db: Session,
@@ -396,7 +429,9 @@ def process_unified_import_stream(
     total_norm = len(normalized_records)
 
     all_track_ids = {r["track_id"] for r in normalized_records}
-    cached_db_items = db.query(ArtworkCache).filter(ArtworkCache.track_id.in_(all_track_ids)).all() if all_track_ids else []
+    cached_db_items = (
+        db.query(ArtworkCache).filter(ArtworkCache.track_id.in_(all_track_ids)).all() if all_track_ids else []
+    )
     for item in cached_db_items:
         batch_art_cache[item.track_id] = item.artwork_url
 
@@ -421,7 +456,7 @@ def process_unified_import_stream(
                         resolved_art = deezer_artwork(dz_track)
                         if not rec.get("album_name") and dz_track.get("album", {}).get("title"):
                             rec["album_name"] = dz_track["album"]["title"]
-                    
+
                     if not resolved_art:
                         # Fallback to iTunes API
                         resolved_art = itunes_artwork(rec["artist_name"], rec["song_name"])
@@ -434,7 +469,9 @@ def process_unified_import_stream(
                     else:
                         batch_art_cache[art_key] = ""
                 except Exception as exc:
-                    logger.debug("Deezer/iTunes lookup exception for %s - %s: %s", rec["artist_name"], rec["song_name"], exc)
+                    logger.debug(
+                        "Deezer/iTunes lookup exception for %s - %s: %s", rec["artist_name"], rec["song_name"], exc
+                    )
                     batch_art_cache[art_key] = ""
 
         if (idx + 1) % max(1, total_norm // 5) == 0 or idx + 1 == total_norm:
@@ -473,12 +510,15 @@ def process_unified_import_stream(
 
     for idx, rec in enumerate(normalized_records):
         # 1) Check in-memory duplicates
-        ident = (rec["track_id"], rec["played_at"].isoformat() if isinstance(rec["played_at"], datetime) else rec["played_at"])
+        ident = (
+            rec["track_id"],
+            rec["played_at"].isoformat() if isinstance(rec["played_at"], datetime) else rec["played_at"],
+        )
         play_ident = rec["play_id"]
         if ident in seen_identities or play_ident in seen_identities:
             duplicate_count += 1
             continue
-        
+
         # 2) Check database
         existing = (
             db.query(ListeningEvent)
@@ -567,7 +607,11 @@ def process_unified_import(
     for event in process_unified_import_stream(db, user_id, entries, source_hint):
         last_event = event
 
-    summary_data = last_event.summary if last_event and last_event.summary else ImportScrobbleSummary(inserted=0, skipped=0, duplicate=0)
+    summary_data = (
+        last_event.summary
+        if last_event and last_event.summary
+        else ImportScrobbleSummary(inserted=0, skipped=0, duplicate=0)
+    )
     return {
         "status": "ok",
         "source": detected,
@@ -581,7 +625,7 @@ def backfill_artwork_stream(
     user_id: int,
 ) -> Iterator[UnifiedImportProgressEvent]:
     """Scans the user's library for missing artwork and attempts to backfill from Deezer."""
-    
+
     yield UnifiedImportProgressEvent(
         stage="validation",
         percent=10,
@@ -592,10 +636,14 @@ def backfill_artwork_stream(
 
     # Find unique track names without artwork
     missing_records = (
-        db.query(ListeningEvent.track_id, ListeningEvent.artist_name, ListeningEvent.track_name, ListeningEvent.album_name)
+        db.query(
+            ListeningEvent.track_id, ListeningEvent.artist_name, ListeningEvent.track_name, ListeningEvent.album_name
+        )
         .filter(ListeningEvent.user_id == user_id)
         .filter((ListeningEvent.artwork_url == None) | (ListeningEvent.artwork_url == ""))
-        .group_by(ListeningEvent.track_id, ListeningEvent.artist_name, ListeningEvent.track_name, ListeningEvent.album_name)
+        .group_by(
+            ListeningEvent.track_id, ListeningEvent.artist_name, ListeningEvent.track_name, ListeningEvent.album_name
+        )
         .limit(100)
         .all()
     )
@@ -607,12 +655,12 @@ def backfill_artwork_stream(
             message="No missing artwork found.",
             current=0,
             total=0,
-            summary=ImportScrobbleSummary(inserted=0, skipped=0, duplicate=0)
+            summary=ImportScrobbleSummary(inserted=0, skipped=0, duplicate=0),
         )
         return
 
     total_missing = len(missing_records)
-    
+
     yield UnifiedImportProgressEvent(
         stage="artwork_caching",
         percent=20,
@@ -637,7 +685,7 @@ def backfill_artwork_stream(
             try:
                 dz_track = deezer_search(rec.artist_name, rec.track_name, timeout=3.0)
                 resolved_art = deezer_artwork(dz_track) if dz_track else None
-                
+
                 if not resolved_art:
                     resolved_art = itunes_artwork(rec.artist_name, rec.track_name)
 
@@ -646,10 +694,9 @@ def backfill_artwork_stream(
                     db.merge(ArtworkCache(track_id=rec.track_id, artwork_url=resolved_art))
                     # Update ListeningEvents
                     db.query(ListeningEvent).filter(
-                        ListeningEvent.user_id == user_id,
-                        ListeningEvent.track_id == rec.track_id
+                        ListeningEvent.user_id == user_id, ListeningEvent.track_id == rec.track_id
                     ).update({"artwork_url": resolved_art}, synchronize_session=False)
-                    
+
                     updated_count += 1
                     updated_track_names.append(f"{rec.artist_name} - {rec.track_name}")
                 else:
@@ -661,7 +708,7 @@ def backfill_artwork_stream(
                 skipped_track_names.append(f"{rec.artist_name} - {rec.track_name}")
 
         processed_count += 1
-        
+
         if processed_count % 5 == 0 or processed_count == total_missing:
             db.commit()
             pct = 20 + int((processed_count / total_missing) * 75)
@@ -671,7 +718,7 @@ def backfill_artwork_stream(
                 message=f"Checking artwork ({processed_count}/{total_missing})...",
                 current=processed_count,
                 total=total_missing,
-                errors=list(skipped_track_names)
+                errors=list(skipped_track_names),
             )
 
     db.commit()
@@ -682,8 +729,7 @@ def backfill_artwork_stream(
         message=f"Backfill complete! Updated {updated_count} tracks.",
         current=processed_count,
         total=total_missing,
-        summary=ImportScrobbleSummary(inserted=updated_count, skipped=total_missing-updated_count, duplicate=0),
+        summary=ImportScrobbleSummary(inserted=updated_count, skipped=total_missing - updated_count, duplicate=0),
         updated_tracks=updated_track_names,
-        errors=skipped_track_names
+        errors=skipped_track_names,
     )
-
