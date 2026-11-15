@@ -18,6 +18,12 @@ export async function fetchLatestBuildId() {
 // localStorage and are untouched) so the next load fetches the new version.
 export async function clearAppCaches() {
   try {
+    if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg?.waiting) {
+        reg.waiting.postMessage({ type: "SKIP_WAITING" });
+      }
+    }
     if (typeof caches === "undefined") return;
     const keys = await caches.keys();
     await Promise.all(keys.map((key) => caches.delete(key)));
