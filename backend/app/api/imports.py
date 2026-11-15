@@ -60,9 +60,12 @@ def _format_sse(event_name: str, data: dict[str, object]) -> str:
 def _generate_sse_stream(
     db: Session, user_id: int, entries: list[dict[str, object]], source: str | None = None
 ) -> Iterator[str]:
-    for event in process_unified_import_stream(db, user_id, entries, source_hint=source):
-        event_type = "complete" if event.stage == "completion" else "progress"
-        yield _format_sse(event_type, event.model_dump())
+    try:
+        for event in process_unified_import_stream(db, user_id, entries, source_hint=source):
+            event_type = "complete" if event.stage == "completion" else "progress"
+            yield _format_sse(event_type, event.model_dump())
+    finally:
+        db.close()
 
 
 # ─── Unified Import Endpoints ──────────────────────────────────────────────────
