@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.49.3",
+    date: "2026-11-15",
+    changes: [
+      "Security Headers & Hardening: Added browser security headers (Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy) and moved theme initialization to an external script.",
+      "Offline Notice & Update Polish: Added a clear banner when you're offline, fixed a missing push notification badge icon, and let app updates wait until you click Update now.",
+    ],
+  },
+  {
     version: "0.49.2",
     date: "2026-11-15",
     changes: [

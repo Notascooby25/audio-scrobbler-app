@@ -36,6 +36,8 @@ app = FastAPI(title=settings.app_name, version=settings.app_version)
 logger = logging.getLogger("audio-scrobbler-api")
 
 settings.validate()
+if settings.environment.lower() == "production" and not settings.allowed_spotify_ids():
+    logger.warning("ALLOWED_SPOTIFY_USER_IDS is empty in production; any Spotify account can sign up.")
 
 app.include_router(analytics_router)
 app.include_router(stats_router)

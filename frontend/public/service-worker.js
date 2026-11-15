@@ -1,5 +1,5 @@
-const CACHE_NAME = "audio-scrobbler-shell-v13";
-const APP_SHELL_URLS = ["/", "/index.html", "/manifest.json"];
+const CACHE_NAME = "audio-scrobbler-shell-v14";
+const APP_SHELL_URLS = ["/", "/index.html", "/manifest.json", "/theme-init.js"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -8,7 +8,12 @@ self.addEventListener("install", (event) => {
       .then((cache) => cache.addAll(APP_SHELL_URLS))
       .catch(() => null)
   );
-  self.skipWaiting();
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("activate", (event) => {
@@ -18,7 +23,6 @@ self.addEventListener("activate", (event) => {
       .then((keys) =>
         Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
       )
-      .then(() => self.clients.claim())
   );
 });
 
@@ -34,6 +38,7 @@ self.addEventListener("fetch", (event) => {
     url.pathname === "/" ||
     url.pathname === "/index.html" ||
     url.pathname === "/manifest.json" ||
+    url.pathname === "/theme-init.js" ||
     url.pathname === "/favicon.ico" ||
     url.pathname === "/logo.png" ||
     url.pathname.startsWith("/assets/") ||
@@ -74,7 +79,7 @@ self.addEventListener("push", function (event) {
   const options = {
     body: data.body,
     icon: "/logo.png",
-    badge: "/icons/badge-72x72.png", // Assuming there's a badge icon or it falls back
+    badge: "/icons/icon-192.png",
     data: {
       url: data.url || "/",
     },

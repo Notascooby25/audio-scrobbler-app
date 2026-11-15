@@ -43,16 +43,11 @@ class Settings:
     # Contact address sent to push services, e.g. "mailto:you@example.com".
     # Apple in particular can reject placeholder addresses.
     vapid_subject: str = os.getenv("VAPID_SUBJECT", "").strip() or "mailto:admin@example.com"
-    vapid_claims: dict[str, str] = None  # Setup dynamically
     setlist_fm_api_key: str = os.getenv("SETLIST_FM_API_KEY", "").strip("'\" \r\n")
     cors_origins: str = os.getenv(
         "CORS_ORIGINS",
         "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000",
     )
-
-    def __post_init__(self):
-        if self.vapid_public_key and self.vapid_private_key:
-            object.__setattr__(self, "vapid_claims", {"sub": "mailto:admin@localhost"})
 
     def allowed_cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
