@@ -124,4 +124,86 @@ describe("HistoryImportPanel", () => {
       expect(screen.getByText("No history entries found in this JSON file.")).toBeInTheDocument()
     );
   });
+
+  it("supports bulk uploading multiple JSON files sequentially and aggregates counts", async () => {
+    const onImportComplete = vi.fn();
+    submitUnifiedImport
+      .mockResolvedValueOnce({
+        status: "ok",
+        source: "spotify",
+        summary: { inserted: 4, skipped: 1, duplicate: 2 },
+      })
+      .mockResolvedValueOnce({
+        status: "ok",
+        source: "spotify",
+        summary: { inserted: 6, skipped: 0, duplicate: 1 },
+      });
+
+    render(<HistoryImportPanel token="test-token" onImportComplete={onImportComplete} />);
+
+    const input = screen.getByLabelText("Import history JSON");
+    expect(input).toHaveAttribute("multiple");
+
+    const entries1 = [
+      {
+        ts: "2012-04-27T18:59:45Z",
+        master_metadata_track_name: "Track 1",
+        master_metadata_album_artist_name: "Artist 1",
+      },
+    ];
+    const entries2 = [
+      {
+        ts: "2013-05-01T10:00:00Z",
+        master_metadata_track_name: "Track 2",
+        master_metadata_album_artist_name: "Artist 2",
+      },
+    ];
+    const file1 = new File([JSON.stringify(entries1)], "Streaming_History_Audio_2012_0.json", {
+      type: "application/json",
+    });
+    file1.text = async () => JSON.stringify(entries1);
+    const file2 = new File([JSON.stringify(entries2)], "Streaming_History_Audio_2013_1.json", {
+      type: "application/json",
+    });
+    file2.text = async () => JSON.stringify(entries2);
+
+    fireEvent.change(input, { target: { files: [file1, file2] } });
+
+    await waitFor(() => expect(submitUnifiedImport).toHaveBeenCalledTimes(2));
+
+    const summary = await screen.findByRole("status", { name: "Import Summary" });
+    expect(within(summary).getByText("spotify (2 files)", { exact: false })).toBeInTheDocument();
+    expect(within(summary).getByText("10")).toBeInTheDocument();
+    expect(within(summary).getByText("3")).toBeInTheDocument();
+    expect(within(summary).getByText("1")).toBeInTheDocument();
+    expect(onImportComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it("continues bulk upload if one file is empty and reports the failed file", async () => {
+    submitUnifiedImport.mockResolvedValueOnce({
+      status: "ok",
+      source: "youtube",
+      summary: { inserted: 5, skipped: 0, duplicate: 0 },
+    });
+
+    render(<HistoryImportPanel token="test-token" />);
+
+    const badFile = new File(["[]"], "empty.json", { type: "application/json" });
+    badFile.text = async () => "[]";
+    const goodEntries = [
+      { source: "YouTube Music", artist: "Foals", song: "Miami", time: "2025-01-01T12:00:00Z" },
+    ];
+    const goodFile = new File([JSON.stringify(goodEntries)], "yt_processed.json", {
+      type: "application/json",
+    });
+    goodFile.text = async () => JSON.stringify(goodEntries);
+
+    fireEvent.change(screen.getByLabelText("Import history JSON"), {
+      target: { files: [badFile, goodFile] },
+    });
+
+    const summary = await screen.findByRole("status", { name: "Import Summary" });
+    expect(within(summary).getByText("5")).toBeInTheDocument();
+    expect(within(summary).getByText(/empty\.json/i)).toBeInTheDocument();
+  });
 });
