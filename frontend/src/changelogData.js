@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.50.2",
+    date: "2026-11-15",
+    changes: [
+      "Faster, Reliable Bulk History Imports: Fixed timeouts and server errors when uploading large or multi-year Spotify/YouTube history files by skipping slow live artwork lookups during upload, batching duplicate checks, and keeping SSE progress streams unbuffered.",
+    ],
+  },
+  {
     version: "0.50.1",
     date: "2026-11-15",
     changes: [

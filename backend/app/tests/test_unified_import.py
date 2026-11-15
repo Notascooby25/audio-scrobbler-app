@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 import json
 
 import pytest
@@ -355,3 +356,115 @@ def test_get_artwork_cache_lookup_endpoint(client, db_session):
 
     missing = client.get("/artwork/cache/non-existent-track")
     assert missing.status_code == 404
+
+
+def test_process_unified_import_does_not_call_external_artwork_apis(db_session, monkeypatch):
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("External artwork lookup should not run during upload")
+
+    monkeypatch.setattr(processed_import_service, "deezer_search", fail_if_called)
+    monkeypatch.setattr(processed_import_service, "itunes_artwork", fail_if_called)
+
+    entries = [
+        {
+            "master_metadata_track_name": "Unseen Track",
+            "master_metadata_album_artist_name": "Unseen Artist",
+            "master_metadata_album_album_name": "Unseen Album",
+            "ts": "2026-03-06T12:00:00Z",
+            "spotify_track_uri": "spotify:track:unseen-123",
+        }
+    ]
+
+    result = process_unified_import(db_session, user_id=1, entries=entries)
+    assert result["status"] == "ok"
+    assert result["summary"]["inserted"] == 1
+
+
+def test_process_unified_import_sanitizes_long_and_null_byte_fields(db_session):
+    long_title = ("A" * 300) + "\x00"
+    long_artist = ("B" * 300) + "\x00"
+    long_album = ("C" * 300) + "\x00"
+    entries = [
+        {
+            "master_metadata_track_name": long_title,
+            "master_metadata_album_artist_name": long_artist,
+            "master_metadata_album_album_name": long_album,
+            "ts": "2026-03-07T12:00:00Z",
+            "spotify_track_uri": "spotify:track:" + ("x" * 300) + "\x00",
+        }
+    ]
+
+    result = process_unified_import(db_session, user_id=1, entries=entries)
+    assert result["summary"]["inserted"] == 1
+
+    event = db_session.query(ListeningEvent).filter(ListeningEvent.user_id == 1).first()
+    assert event is not None
+    assert len(event.track_name) <= 255
+    assert len(event.artist_name) <= 255
+    assert len(event.album_name or "") <= 255
+    assert len(event.track_id) <= 255
+    assert len(event.play_id) <= 255
+    assert "\x00" not in event.track_name
+    assert "\x00" not in event.artist_name
+
+
+def test_process_unified_import_chunked_dedup_across_batches(db_session):
+    # Pre-insert two existing events: one matched by (track_id, played_at), one by (source, play_id)
+    db_session.add(
+        ListeningEvent(
+            user_id=1,
+            track_id=generate_track_id("spotify", "Artist 0", "Song 0", "spotify:track:existing-0"),
+            track_name="Song 0",
+            artist_name="Artist 0",
+            album_name="Album",
+            played_at=datetime(2026, 1, 1, 0, 0, 0),
+            source="spotify",
+            play_id="different-play-id",
+            payload="",
+        )
+    )
+    db_session.add(
+        ListeningEvent(
+            user_id=1,
+            track_id="other",
+            track_name="Song 1",
+            artist_name="Artist 1",
+            album_name="Album",
+            played_at=datetime(2026, 1, 1, 0, 1, 0),
+            source="spotify",
+            play_id="spotify:track:existing-1:2026-01-01T00:02:00Z",
+            payload="",
+        )
+    )
+    db_session.commit()
+
+    entries = [
+        {
+            "master_metadata_track_name": "Song 0",
+            "master_metadata_album_artist_name": "Artist 0",
+            "ts": "2026-01-01T00:00:00Z",
+            "spotify_track_uri": "spotify:track:existing-0",
+        },
+        {
+            "master_metadata_track_name": "Song 1",
+            "master_metadata_album_artist_name": "Artist 1",
+            "ts": "2026-01-01T00:02:00Z",
+            "spotify_track_uri": "spotify:track:existing-1",
+        },
+    ]
+    # Add 550 new unique tracks + 1 intra-batch duplicate
+    for i in range(550):
+        entries.append(
+            {
+                "master_metadata_track_name": f"Track {i}",
+                "master_metadata_album_artist_name": "Batch Artist",
+                "ts": f"2026-02-{(i // 24) + 1:02d}T{i % 24:02d}:00:00Z",
+                "spotify_track_uri": f"spotify:track:batch-{i}",
+            }
+        )
+    entries.append(entries[-1])  # intra-batch duplicate
+
+    result = process_unified_import(db_session, user_id=1, entries=entries)
+    assert result["summary"]["inserted"] == 550
+    assert result["summary"]["duplicate"] == 3
+

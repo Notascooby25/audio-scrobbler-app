@@ -12,6 +12,7 @@ import urllib.parse
 import urllib.request
 import uuid
 
+from sqlalchemy import tuple_
 from sqlalchemy.orm import Session
 
 from ..config import settings
@@ -354,6 +355,27 @@ def normalize_record(entry: dict[str, Any], source: str) -> dict[str, Any] | Non
 # ─── Unified Import Pipeline & Stream ─────────────────────────────────────────
 
 
+IMPORT_DB_CHUNK_SIZE = 500
+
+
+def _sanitize_db_str(value: str | None, max_len: int = 255) -> str | None:
+    """Strips NUL bytes and truncates strings to fit PostgreSQL VARCHAR(255) columns."""
+    if value is None:
+        return None
+    cleaned = value.replace("\x00", "")
+    return cleaned[:max_len]
+
+
+def _sanitize_normalized_record(rec: dict[str, Any]) -> dict[str, Any]:
+    """Sanitizes string fields on a normalized record prior to DB lookup and insertion."""
+    rec["artist_name"] = _sanitize_db_str(rec.get("artist_name")) or "Unknown Artist"
+    rec["song_name"] = _sanitize_db_str(rec.get("song_name")) or "Unknown Track"
+    rec["album_name"] = _sanitize_db_str(rec.get("album_name"))
+    rec["track_id"] = _sanitize_db_str(rec.get("track_id")) or ""
+    rec["play_id"] = _sanitize_db_str(rec.get("play_id")) or ""
+    return rec
+
+
 def process_unified_import_stream(
     db: Session,
     user_id: int,
@@ -403,7 +425,7 @@ def process_unified_import_stream(
                 raw_snippet = str(raw.get("trackName") or raw.get("title") or raw.get("song") or f"row #{idx + 1}")
                 errors.append(f"Row {idx + 1} skipped (invalid or non-music entry): {raw_snippet}")
         else:
-            normalized_records.append(norm)
+            normalized_records.append(_sanitize_normalized_record(norm))
 
         if (idx + 1) % max(1, total_raw // 5) == 0 or idx + 1 == total_raw:
             pct = 20 + int(((idx + 1) / max(1, total_raw)) * 25)
@@ -416,7 +438,7 @@ def process_unified_import_stream(
                 errors=list(errors),
             )
 
-    # 3. Stage: Artwork Caching
+    # 3. Stage: Artwork Caching (local DB cache only — never block uploads on external HTTP calls)
     yield UnifiedImportProgressEvent(
         stage="artwork_caching",
         percent=45,
@@ -428,61 +450,23 @@ def process_unified_import_stream(
     batch_art_cache: dict[str, str] = {}
     total_norm = len(normalized_records)
 
-    all_track_ids = {r["track_id"] for r in normalized_records}
-    cached_db_items = (
-        db.query(ArtworkCache).filter(ArtworkCache.track_id.in_(all_track_ids)).all() if all_track_ids else []
-    )
-    for item in cached_db_items:
-        batch_art_cache[item.track_id] = item.artwork_url
+    all_track_ids = list({r["track_id"] for r in normalized_records if r["track_id"]})
+    for offset in range(0, len(all_track_ids), 1000):
+        chunk_ids = all_track_ids[offset : offset + 1000]
+        for item in db.query(ArtworkCache).filter(ArtworkCache.track_id.in_(chunk_ids)).all():
+            batch_art_cache[item.track_id] = item.artwork_url
 
     new_cached_entries: list[ArtworkCache] = []
+    seen_new_cache_ids: set[str] = set()
 
-    for idx, rec in enumerate(normalized_records):
+    for rec in normalized_records:
         t_id = rec["track_id"]
         if t_id in batch_art_cache and batch_art_cache[t_id]:
             rec["artwork_url"] = batch_art_cache[t_id]
-        elif rec.get("artwork_url"):
+        elif rec.get("artwork_url") and t_id not in seen_new_cache_ids:
             batch_art_cache[t_id] = rec["artwork_url"]
+            seen_new_cache_ids.add(t_id)
             new_cached_entries.append(ArtworkCache(track_id=t_id, artwork_url=rec["artwork_url"]))
-        elif settings.enable_deezer_artwork_lookup:
-            art_key = f"{rec['artist_name'].lower()}|||{clean_title(rec['song_name']).lower()}"
-            if art_key in batch_art_cache:
-                rec["artwork_url"] = batch_art_cache[art_key]
-            else:
-                try:
-                    dz_track = deezer_search(rec["artist_name"], rec["song_name"], timeout=3.0)
-                    resolved_art = None
-                    if dz_track:
-                        resolved_art = deezer_artwork(dz_track)
-                        if not rec.get("album_name") and dz_track.get("album", {}).get("title"):
-                            rec["album_name"] = dz_track["album"]["title"]
-
-                    if not resolved_art:
-                        # Fallback to iTunes API
-                        resolved_art = itunes_artwork(rec["artist_name"], rec["song_name"])
-
-                    if resolved_art:
-                        rec["artwork_url"] = resolved_art
-                        batch_art_cache[t_id] = resolved_art
-                        batch_art_cache[art_key] = resolved_art
-                        new_cached_entries.append(ArtworkCache(track_id=t_id, artwork_url=resolved_art))
-                    else:
-                        batch_art_cache[art_key] = ""
-                except Exception as exc:
-                    logger.debug(
-                        "Deezer/iTunes lookup exception for %s - %s: %s", rec["artist_name"], rec["song_name"], exc
-                    )
-                    batch_art_cache[art_key] = ""
-
-        if (idx + 1) % max(1, total_norm // 5) == 0 or idx + 1 == total_norm:
-            pct = 45 + int(((idx + 1) / max(1, total_norm)) * 30)
-            yield UnifiedImportProgressEvent(
-                stage="artwork_caching",
-                percent=min(75, pct),
-                message=f"Cached artwork for {idx + 1}/{total_norm} tracks...",
-                current=idx + 1,
-                total=total_norm,
-            )
 
     if new_cached_entries:
         try:
@@ -493,7 +477,15 @@ def process_unified_import_stream(
             db.rollback()
             logger.warning("Failed to commit artwork_cache items: %s", e)
 
-    # 4. Stage: Database Insertion & Deduplication
+    yield UnifiedImportProgressEvent(
+        stage="artwork_caching",
+        percent=75,
+        message=f"Matched cached artwork for {total_norm} tracks.",
+        current=total_norm,
+        total=total_norm,
+    )
+
+    # 4. Stage: Database Insertion & Chunked Deduplication
     yield UnifiedImportProgressEvent(
         stage="database_insertion",
         percent=75,
@@ -504,78 +496,89 @@ def process_unified_import_stream(
 
     inserted_count = 0
     duplicate_count = 0
-    skipped_count = 0
 
-    seen_identities = set()
+    seen_track_times: set[tuple[str, datetime]] = set()
+    seen_play_ids: set[str] = set()
 
-    for idx, rec in enumerate(normalized_records):
-        # 1) Check in-memory duplicates
-        ident = (
-            rec["track_id"],
-            rec["played_at"].isoformat() if isinstance(rec["played_at"], datetime) else rec["played_at"],
-        )
-        play_ident = rec["play_id"]
-        if ident in seen_identities or play_ident in seen_identities:
-            duplicate_count += 1
-            continue
+    for chunk_start in range(0, total_norm, IMPORT_DB_CHUNK_SIZE):
+        chunk = normalized_records[chunk_start : chunk_start + IMPORT_DB_CHUNK_SIZE]
 
-        # 2) Check database
-        existing = (
-            db.query(ListeningEvent)
-            .filter(
-                ListeningEvent.user_id == user_id,
-                ListeningEvent.track_id == rec["track_id"],
-                ListeningEvent.played_at == rec["played_at"],
-            )
-            .first()
-        )
-        if existing is None:
-            existing = (
-                db.query(ListeningEvent)
-                .filter(
-                    ListeningEvent.user_id == user_id,
-                    ListeningEvent.source == detected_source,
-                    ListeningEvent.play_id == rec["play_id"],
+        # Pre-filter intra-file duplicates first
+        candidates: list[dict[str, Any]] = []
+        for rec in chunk:
+            track_time_key = (rec["track_id"], rec["played_at"])
+            play_id = rec["play_id"]
+            if track_time_key in seen_track_times or (play_id and play_id in seen_play_ids):
+                duplicate_count += 1
+            else:
+                seen_track_times.add(track_time_key)
+                if play_id:
+                    seen_play_ids.add(play_id)
+                candidates.append(rec)
+
+        if candidates:
+            track_time_keys = list({(r["track_id"], r["played_at"]) for r in candidates})
+            play_id_keys = list({r["play_id"] for r in candidates if r["play_id"]})
+
+            existing_track_times: set[tuple[str, datetime]] = set()
+            if track_time_keys:
+                existing_rows = (
+                    db.query(ListeningEvent.track_id, ListeningEvent.played_at)
+                    .filter(
+                        ListeningEvent.user_id == user_id,
+                        tuple_(ListeningEvent.track_id, ListeningEvent.played_at).in_(track_time_keys),
+                    )
+                    .all()
                 )
-                .first()
-            )
+                existing_track_times = {(row[0], row[1]) for row in existing_rows}
 
-        if existing is not None:
-            duplicate_count += 1
-        else:
-            seen_identities.add(ident)
-            seen_identities.add(play_ident)
-            new_event = ListeningEvent(
-                user_id=user_id,
-                track_id=rec["track_id"],
-                track_name=rec["song_name"],
-                artist_name=rec["artist_name"],
-                album_name=rec["album_name"],
-                artwork_url=rec["artwork_url"],
-                played_at=rec["played_at"],
-                duration_ms=rec["duration_ms"],
-                source=detected_source,
-                play_id=rec["play_id"],
-                payload="",
-                raw_metadata=rec["raw_entry"],
-            )
-            db.add(new_event)
-            inserted_count += 1
+            existing_play_ids: set[str] = set()
+            if play_id_keys:
+                existing_play_rows = (
+                    db.query(ListeningEvent.play_id)
+                    .filter(
+                        ListeningEvent.user_id == user_id,
+                        ListeningEvent.source == detected_source,
+                        ListeningEvent.play_id.in_(play_id_keys),
+                    )
+                    .all()
+                )
+                existing_play_ids = {row[0] for row in existing_play_rows}
 
-        if (idx + 1) % 100 == 0:
+            for rec in candidates:
+                if (rec["track_id"], rec["played_at"]) in existing_track_times or (
+                    rec["play_id"] and rec["play_id"] in existing_play_ids
+                ):
+                    duplicate_count += 1
+                else:
+                    new_event = ListeningEvent(
+                        user_id=user_id,
+                        track_id=rec["track_id"],
+                        track_name=rec["song_name"],
+                        artist_name=rec["artist_name"],
+                        album_name=rec["album_name"],
+                        artwork_url=rec["artwork_url"],
+                        played_at=rec["played_at"],
+                        duration_ms=rec["duration_ms"],
+                        source=detected_source,
+                        play_id=rec["play_id"],
+                        payload="",
+                        raw_metadata=rec["raw_entry"],
+                    )
+                    db.add(new_event)
+                    inserted_count += 1
+
             db.commit()
 
-        if (idx + 1) % max(1, total_norm // 5) == 0 or idx + 1 == total_norm:
-            pct = 75 + int(((idx + 1) / max(1, total_norm)) * 20)
-            yield UnifiedImportProgressEvent(
-                stage="database_insertion",
-                percent=min(95, pct),
-                message=f"Processed {idx + 1}/{total_norm} records ({inserted_count} new, {duplicate_count} dupes)...",
-                current=idx + 1,
-                total=total_norm,
-            )
-
-    db.commit()
+        processed = min(chunk_start + len(chunk), total_norm)
+        pct = 75 + int((processed / max(1, total_norm)) * 20)
+        yield UnifiedImportProgressEvent(
+            stage="database_insertion",
+            percent=min(95, pct),
+            message=f"Processed {processed}/{total_norm} records ({inserted_count} new, {duplicate_count} dupes)...",
+            current=processed,
+            total=total_norm,
+        )
 
     # 5. Stage: Completion
     summary = ImportScrobbleSummary(
