@@ -875,7 +875,7 @@ export default function SettingsPage() {
           >
             <h3 style={{ fontSize: "1rem", marginBottom: "0.5rem" }}>Import Listening History</h3>
             <p className="notice" style={{ marginBottom: "1rem" }}>
-              Upload Spotify JSON exports (<code>Streaming_History_Audio_*.json</code>,{" "}
+              Select one or more Spotify JSON exports (<code>Streaming_History_Audio_*.json</code>,{" "}
               <code>endsong*.json</code>), YouTube Music <code>watch-history.json</code>, or
               prep-script <code>*_processed.json</code> files.
             </p>

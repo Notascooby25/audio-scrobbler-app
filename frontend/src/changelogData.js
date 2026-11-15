@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.50.1",
+    date: "2026-11-15",
+    changes: [
+      "Bulk History Upload: Select multiple Spotify, YouTube Music, or prep-script JSON files at once in Settings → Data to import them sequentially with combined totals.",
+    ],
+  },
+  {
     version: "0.50.0",
     date: "2026-11-15",
     changes: [
