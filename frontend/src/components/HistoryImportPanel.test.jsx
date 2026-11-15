@@ -1,0 +1,127 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import HistoryImportPanel, { detectImportSource } from "./HistoryImportPanel";
+import { submitUnifiedImport } from "../api";
+
+vi.mock("../api", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    submitUnifiedImport: vi.fn(),
+  };
+});
+
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
+
+describe("detectImportSource", () => {
+  it('detects explicit "Spotify" source from prep-script JSON even when "song" key is present', () => {
+    const entries = [
+      {
+        source: "Spotify",
+        artist: "Foals",
+        song: "Spanish Sahara",
+        release: "Total Life Forever",
+        artwork: "https://cdn.example/art.jpg",
+        time: "2012-11-24T15:31:53Z",
+      },
+    ];
+    expect(detectImportSource(entries, "Streaming_History_Audio_2012_processed.json")).toBe(
+      "spotify"
+    );
+  });
+
+  it('detects "youtube" from explicit "YouTube Music" source or raw Takeout fields', () => {
+    const preppedYt = [
+      {
+        source: "YouTube Music",
+        artist: "Foals",
+        song: "Spanish Sahara",
+        time: "2025-10-20T12:33:20.422Z",
+      },
+    ];
+    const rawYt = [
+      {
+        header: "YouTube Music",
+        title: "Watched Spanish Sahara",
+        subtitles: [{ name: "Foals - Topic" }],
+        time: "2025-10-20T12:33:20.422Z",
+      },
+    ];
+    expect(detectImportSource(preppedYt, "history_processed.json")).toBe("youtube");
+    expect(detectImportSource(rawYt, "watch-history.json")).toBe("youtube");
+  });
+
+  it('detects "spotify" from raw Extended Streaming History fields', () => {
+    const rawSpotify = [
+      {
+        ts: "2012-04-27T18:59:45Z",
+        master_metadata_track_name: "I Don't Love You No More",
+        master_metadata_album_artist_name: "Jimmy Norman",
+      },
+    ];
+    expect(detectImportSource(rawSpotify, "Streaming_History_Audio_2012_0.json")).toBe("spotify");
+  });
+});
+
+describe("HistoryImportPanel", () => {
+  it("submits detected source and renders ImportSummaryPanel on completion", async () => {
+    const onImportComplete = vi.fn();
+    submitUnifiedImport.mockResolvedValue({
+      status: "ok",
+      source: "spotify",
+      summary: { inserted: 3, skipped: 1, duplicate: 0 },
+    });
+
+    render(<HistoryImportPanel token="test-token" onImportComplete={onImportComplete} />);
+
+    const entries = [
+      {
+        source: "Spotify",
+        artist: "Foals",
+        song: "Spanish Sahara",
+        time: "2012-11-24T15:31:53Z",
+      },
+    ];
+    const file = new File([JSON.stringify(entries)], "spotify_processed.json", {
+      type: "application/json",
+    });
+    file.text = async () => JSON.stringify(entries);
+
+    const input = screen.getByLabelText("Import history JSON");
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() =>
+      expect(submitUnifiedImport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          token: "test-token",
+          source: "spotify",
+          entries,
+        })
+      )
+    );
+
+    const summary = await screen.findByRole("status", { name: "Import Summary" });
+    expect(within(summary).getByText("spotify", { exact: false })).toBeInTheDocument();
+    expect(within(summary).getByText("3")).toBeInTheDocument();
+    expect(onImportComplete).toHaveBeenCalledTimes(1);
+    expect(input.value).toBe("");
+  });
+
+  it("shows an error when the uploaded JSON has no entries", async () => {
+    render(<HistoryImportPanel token="test-token" />);
+
+    const file = new File(["[]"], "empty.json", { type: "application/json" });
+    file.text = async () => "[]";
+
+    fireEvent.change(screen.getByLabelText("Import history JSON"), {
+      target: { files: [file] },
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText("No history entries found in this JSON file.")).toBeInTheDocument()
+    );
+  });
+});
