@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.50.0",
+    date: "2026-11-15",
+    changes: [
+      "Import Listening History in Settings → Data: Moved the file importer into Settings → Data so it is easy to find in every skin, with a shortcut link on the Connect page.",
+      "Spotify & YouTube Import Support: Supports both raw Spotify Extended Streaming History / YouTube Music watch-history exports and prep-script *_processed.json files (fixing Spotify prep-script files being misread as YouTube).",
+    ],
+  },
+  {
     version: "0.49.3",
     date: "2026-11-15",
     changes: [
