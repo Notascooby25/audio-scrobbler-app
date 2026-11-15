@@ -7395,6 +7395,13 @@ button.sfm-row-remove:hover:not(:disabled) {
   font-size: 0.9rem;
 }
 
+.offline-banner {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  font-weight: 600;
+}
+
 .update-banner__actions {
   display: flex;
   gap: 0.5rem;

@@ -11,9 +11,29 @@ export default function OfflineBanner() {
 
     window.addEventListener("offline", handleOffline);
     window.addEventListener("online", handleOnline);
+
+    const originalFetch = typeof window.fetch === "function" ? window.fetch.bind(window) : null;
+    if (originalFetch) {
+      window.fetch = async (...args) => {
+        try {
+          const response = await originalFetch(...args);
+          setOffline(false);
+          return response;
+        } catch (err) {
+          if (err instanceof TypeError) {
+            setOffline(true);
+          }
+          throw err;
+        }
+      };
+    }
+
     return () => {
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener("online", handleOnline);
+      if (originalFetch) {
+        window.fetch = originalFetch;
+      }
     };
   }, []);
 
