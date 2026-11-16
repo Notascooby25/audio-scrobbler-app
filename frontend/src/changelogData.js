@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.51.0",
+    date: "2026-11-18",
+    changes: [
+      "Gig Discovery & Local Radar: Added a Discover tab under Gigs to spot upcoming and newly announced shows for your regularly listened or seen-live artists, or browse all live music within your own mile radius around your saved home city.",
+      "Tailored Filters, Criteria Cog & Shortlist: Filter by This Weekend, Next 7/30 Days, Newly Announced, or Interested; customise what counts as your artists (Top N or played at least X times in the last Y months); save your default filters; and toggle 'I'm interested' or '+ I'm going' in one click.",
+    ],
+  },
+  {
     version: "0.50.7",
     date: "2026-11-18",
     changes: [

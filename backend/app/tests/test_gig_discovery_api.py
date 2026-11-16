@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -14,7 +14,6 @@ from backend.app.datetime_utils import utc_now
 from backend.app.db import Base, get_db
 from backend.app.main import app
 from backend.app.models import (
-    AttendedConcert,
     BlockedItem,
     DiscoveredGig,
     ListeningEvent,
