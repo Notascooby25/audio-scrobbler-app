@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.50.3",
+    date: "2026-11-16",
+    changes: [
+      "Phone Layout Fixes: The Gigs page no longer wobbles sideways on phones, and Settings dropdowns now fit inside their boxes on small screens.",
+    ],
+  },
+  {
     version: "0.50.2",
     date: "2026-11-15",
     changes: [
