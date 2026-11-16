@@ -59,6 +59,15 @@ function GigRoute() {
   );
 }
 
+// A show a year from today in setlist.fm's dd-mm-yyyy format, so "upcoming" never expires.
+function futureEventDate() {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() + 1);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}-${mm}-${d.getFullYear()}`;
+}
+
 describe("SetlistsPage", () => {
   afterEach(() => {
     cleanup();
@@ -292,7 +301,7 @@ describe("SetlistsPage", () => {
           id: "psb_future_1",
           artist: { name: "Public Service Broadcasting" },
           venue: { name: "Alexandra Palace", city: { name: "London" } },
-          eventDate: "15-11-2026",
+          eventDate: futureEventDate(),
           sets: { set: [] },
         },
         {
