@@ -16,13 +16,16 @@ from ..schemas.setlists import (
     BadgeItem,
     DayOfWeekCadenceItem,
     DeleteConcertResponse,
+    DiscoveredGigsResponse,
     FileImportRequest,
     FileImportResponse,
+    GigAttendDiscoveryResponse,
     GigBillResponse,
     GigCadenceMatrixResponse,
     FurthestGigsResponse,
     GigBumpResponse,
     GigCompanionsResponse,
+    GigInterestResponse,
     GigInviteItem,
     GigMapPinItem,
     GigsByPeriodResponse,
@@ -42,6 +45,12 @@ from ..schemas.setlists import (
     UpdateConcertRequest,
     VenueLeaderboardItem,
 )
+from ..services.gig_discovery_service import (
+    attend_discovered_gig,
+    query_discovered_gigs,
+    set_gig_interest,
+)
+from ..services.gig_discovery_sync_service import sync_discovered_gigs
 from ..services.gig_distance_service import furthest_gigs, geocode_pending_venues
 from ..services.gig_badges_service import GigBadgesService
 from ..services.gig_reports_service import GigReportsService
@@ -791,6 +800,70 @@ def preview_user_setlists(
     )
 
 
+@router.get("/discover", response_model=DiscoveredGigsResponse)
+def get_discovered_gigs(
+    scope: str | None = Query(default=None),
+    only_my_artists: bool | None = Query(default=None),
+    radius_miles: int | None = Query(default=None, ge=1, le=100),
+    date_window: str | None = Query(default=None),
+    country: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    return query_discovered_gigs(
+        db,
+        current_user.id,
+        scope=scope,
+        only_my_artists=only_my_artists,
+        radius_miles=radius_miles,
+        date_window=date_window,
+        country=country,
+    )
+
+
+@router.post("/discover/{gig_id}/interest", response_model=GigInterestResponse)
+def mark_discovered_gig_interested(
+    gig_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    try:
+        interested = set_gig_interest(db, current_user.id, gig_id, True)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return {"gig_id": gig_id, "is_interested": interested}
+
+
+@router.delete("/discover/{gig_id}/interest", response_model=GigInterestResponse)
+def unmark_discovered_gig_interested(
+    gig_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    try:
+        interested = set_gig_interest(db, current_user.id, gig_id, False)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return {"gig_id": gig_id, "is_interested": interested}
+
+
+@router.post("/discover/{gig_id}/attend", response_model=GigAttendDiscoveryResponse)
+def attend_from_discovered_gig(
+    gig_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    try:
+        concert = attend_discovered_gig(db, current_user.id, gig_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return {
+        "concert_id": concert.id,
+        "artist_name": concert.artist_name,
+        "event_date": concert.event_date.date().isoformat(),
+    }
+
+
 @router.get("/{setlist_id}")
 def get_setlist_details(
     setlist_id: str,
@@ -884,6 +957,16 @@ def backfill_gig_artwork(
 ) -> dict[str, int]:
     """Called by the worker: looks up artwork for gig scrobbles that have none."""
     return backfill_live_artwork(db)
+
+
+@router.post("/internal/discover-sync")
+def sync_gig_discovery(
+    user_id: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+    _: None = Depends(require_worker_token),
+) -> dict[str, int]:
+    """Called by the worker: refreshes Ticketmaster upcoming and local gig cache."""
+    return sync_discovered_gigs(db, user_id=user_id)
 
 
 @router.post("/import")

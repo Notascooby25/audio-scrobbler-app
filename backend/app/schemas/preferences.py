@@ -50,8 +50,15 @@ class UserPreferencesResponse(BaseModel):
     notify_milestones: bool = True
     notify_system: bool = False
     recap_frequency: str = "weekly"
+    local_gig_radius_miles: int = 10
+    gig_discovery_filters: dict | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class GigDiscoverySettingsUpdate(BaseModel):
+    local_gig_radius_miles: int | None = Field(default=None, ge=1, le=100)
+    gig_discovery_filters: dict | None = None
 
 
 class UserPreferencesUpdate(BaseModel):
