@@ -462,7 +462,10 @@ def trigger_gig_discovery(
     if not x_worker_token or not secrets.compare_digest(x_worker_token, worker_token):
         raise HTTPException(status_code=401, detail="Invalid worker token")
     uid = payload.get("user_id") if isinstance(payload, dict) else None
-    key = int(uid) if uid is not None else 0
+    try:
+        key = int(uid) if uid is not None else 0
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="Invalid user_id") from exc
     now = datetime.now(timezone.utc)
     last = _last_discovery_trigger_by_user.get(key)
     if last is not None and (now - last) < timedelta(seconds=30):

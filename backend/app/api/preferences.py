@@ -77,7 +77,7 @@ def patch_gig_discovery_settings(
         prefs.local_gig_radius_miles = payload.local_gig_radius_miles
     if payload.gig_discovery_filters is not None:
         merged = merge_discovery_filters(prefs.gig_discovery_filters)
-        for key, value in payload.gig_discovery_filters.items():
+        for key, value in payload.gig_discovery_filters.model_dump(exclude_unset=True).items():
             if key in merged:
                 merged[key] = value
         prefs.gig_discovery_filters = merged

@@ -54,13 +54,26 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
         setData(res);
         if (!isInit && res) {
           const sf = res.saved_filters || {};
+          const nextScope = sf.scope || "my_artists";
+          const nextOnlyMyArtists = Boolean(sf.local_only_my_artists);
+          const nextRadius = res.saved_radius_miles || 10;
+          const nextDateWindow = sf.date_window || "all";
+          const nextCountry = sf.country_code || "";
           initializedFromPrefsRef.current = true;
-          skipNextFetchRef.current = true;
-          setScope(sf.scope || "my_artists");
-          setOnlyMyArtists(Boolean(sf.local_only_my_artists));
-          setRadiusMiles(res.saved_radius_miles || 10);
-          setDateWindow(sf.date_window || "all");
-          setCountry(sf.country_code || "");
+          if (
+            nextScope !== scope ||
+            nextOnlyMyArtists !== onlyMyArtists ||
+            nextRadius !== radiusMiles ||
+            nextDateWindow !== dateWindow ||
+            nextCountry !== country
+          ) {
+            skipNextFetchRef.current = true;
+            setScope(nextScope);
+            setOnlyMyArtists(nextOnlyMyArtists);
+            setRadiusMiles(nextRadius);
+            setDateWindow(nextDateWindow);
+            setCountry(nextCountry);
+          }
         }
       } catch (err) {
         setError(err.message || "Could not load discovered gigs.");

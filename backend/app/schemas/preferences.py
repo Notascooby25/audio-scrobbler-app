@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -56,9 +58,21 @@ class UserPreferencesResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class GigDiscoveryFiltersUpdate(BaseModel):
+    scope: Literal["my_artists", "local"] | None = None
+    local_only_my_artists: bool | None = None
+    date_window: Literal["all", "weekend", "7d", "30d", "newly_announced", "interested"] | None = None
+    country_code: str | None = Field(default=None, max_length=8)
+    my_artists_mode: Literal["top_n", "min_plays"] | None = None
+    my_artists_limit: int | None = Field(default=None, ge=1, le=500)
+    my_artists_min_plays: int | None = Field(default=None, ge=1, le=500)
+    my_artists_months: int | None = Field(default=None, ge=0, le=120)
+    include_seen_live: bool | None = None
+
+
 class GigDiscoverySettingsUpdate(BaseModel):
     local_gig_radius_miles: int | None = Field(default=None, ge=1, le=100)
-    gig_discovery_filters: dict | None = None
+    gig_discovery_filters: GigDiscoveryFiltersUpdate | None = None
 
 
 class UserPreferencesUpdate(BaseModel):

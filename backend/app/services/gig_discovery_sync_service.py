@@ -121,7 +121,7 @@ def get_user_discovery_artists(
     cfg = merge_discovery_filters(filters)
     blocked = get_blocked_artist_keys(db, user_id)
 
-    months = int(cfg.get("my_artists_months") or 0)
+    months = max(0, min(120, int(cfg.get("my_artists_months") or 0)))
     mode = str(cfg.get("my_artists_mode") or "top_n")
     limit = max(1, min(500, int(cfg.get("my_artists_limit") or 100)))
     min_plays = max(1, min(500, int(cfg.get("my_artists_min_plays") or 5)))
@@ -168,6 +168,7 @@ class TicketmasterClient:
     def __init__(self, api_key: str | None = None) -> None:
         self.api_key = (api_key if api_key is not None else os.getenv("TICKETMASTER_API_KEY", "")).strip("'\" \r\n")
         self._last_request_at = 0.0
+        self.rate_limited = False
 
     def _throttle(self) -> None:
         elapsed = time.monotonic() - self._last_request_at
@@ -176,7 +177,7 @@ class TicketmasterClient:
         self._last_request_at = time.monotonic()
 
     def search_events(self, params: dict[str, Any]) -> list[dict[str, Any]]:
-        if not self.api_key:
+        if not self.api_key or self.rate_limited:
             return []
         query = {
             "apikey": self.api_key,
@@ -191,11 +192,16 @@ class TicketmasterClient:
                 with httpx.Client(timeout=15.0) as client:
                     resp = client.get(f"{TICKETMASTER_BASE_URL}/events.json", params=query)
                 if resp.status_code == 429:
-                    retry_after = float(resp.headers.get("Retry-After", "2") or 2)
+                    raw_retry = resp.headers.get("Retry-After", "2")
+                    try:
+                        retry_after = float(raw_retry)
+                    except (TypeError, ValueError):
+                        retry_after = 2.0
                     if attempt == 0:
-                        time.sleep(min(retry_after, 10.0))
+                        time.sleep(max(0.5, min(retry_after, 10.0)))
                         continue
-                    logger.warning("Ticketmaster API rate limited (429)")
+                    self.rate_limited = True
+                    logger.warning("Ticketmaster API rate limited (429); stopping sync sweep")
                     return []
                 if resp.status_code in (401, 403):
                     logger.warning("Ticketmaster API auth error (%s)", resp.status_code)
@@ -203,8 +209,12 @@ class TicketmasterClient:
                 resp.raise_for_status()
                 data = resp.json()
                 return list((data.get("_embedded") or {}).get("events") or [])
+            except httpx.HTTPStatusError as exc:
+                logger.warning("Ticketmaster HTTP error (%s)", exc.response.status_code)
+                return []
             except httpx.HTTPError as exc:
-                logger.warning("Ticketmaster request failed: %s", exc)
+                # Never log exc directly — httpx exceptions can include the ?apikey= query param
+                logger.warning("Ticketmaster request failed (%s)", type(exc).__name__)
                 return []
         return []
 
@@ -373,12 +383,16 @@ def sync_discovered_gigs(db: Session, user_id: int | None = None) -> dict[str, i
     local_queries = 0
 
     for artist_key in sorted(artist_display_names)[:MAX_ARTISTS_PER_SYNC]:
+        if getattr(client, "rate_limited", False):
+            break
         events = client.search_events({"keyword": artist_key, "startDateTime": start_iso})
         upserted += _upsert_events(db, events, now)
         artist_queries += 1
 
     seen_geohashes: set[tuple[str, int]] = set()
     for lat, lng, radius in local_targets:
+        if getattr(client, "rate_limited", False):
+            break
         gh = encode_geohash(lat, lng, precision=6)
         if (gh, radius) in seen_geohashes:
             continue
