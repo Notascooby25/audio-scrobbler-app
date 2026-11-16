@@ -1445,12 +1445,14 @@ button:disabled {
   border-radius: var(--radius-md);
   box-shadow: none;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   max-width: 38rem;
   padding: 16px;
 }
 
 .settings-form label {
+  min-width: 0;
   color: var(--color-ink);
   display: flex;
   flex-direction: column;
@@ -1469,6 +1471,8 @@ button:disabled {
   border-radius: 8px;
   box-shadow: none;
   box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
   color: var(--color-ink);
   font:
     14px/20px inherit,
@@ -6933,8 +6937,9 @@ button.sfm-row-remove:hover:not(:disabled) {
     border-left: 0;
     border-right: 0;
     border-radius: 0;
-    margin: 0 calc(-1 * clamp(1rem, 4vw, 2rem));
-    padding: 12px clamp(1rem, 4vw, 2rem) 20px;
+    /* Must equal the shell's side padding (1rem at <= 760px), or the page scrolls sideways. */
+    margin: 0 -1rem;
+    padding: 12px 1rem 20px;
   }
 
   .sfm-tab-long {

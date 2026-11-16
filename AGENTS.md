@@ -13,6 +13,18 @@
 - If the user explicitly says to skip planning for a small fix, skip the plan and the questions, but still follow the branch, preview, testing, security review and safety rules below.
 - For manual steps in the browser or UI, provide the exact text in a plain chat code block, NOT buried in an `AskUserQuestion` option, so the user can easily copy it.
 
+## Page check
+Run when a change touches screens, styles or front-end code. It checks each page at phone, small-phone and PC sizes on the local preview and reports measurements only (no page text or screenshots).
+- **Preview address:** `http://localhost:15173` (start it with `scripts/preview.sh up`).
+- **Sign-in page:** `/preview-login.html`
+- **Pages:** `/play /library /gigs /reports /profile /following /settings /connect /changelog`
+- **Skipped:** `/gigs/:concertId` (needs a real gig id; open one by hand on the preview), `/profile/:userId` (needs a real user id)
+- **Command:**
+  ```bash
+  node "$HOME/.gemini/config/safe-change/bin/page_check.mjs" http://localhost:15173 /play /library /gigs /reports /profile /following /settings /connect /changelog --sign-in /preview-login.html
+  ```
+  Run it from `frontend/` so `playwright` resolves.
+
 # Coding Standards & Style
 - **Python (`backend/` and `worker/`, Python 3.12):** Follow **PEP 8** and **PEP 484** type hints (`from __future__ import annotations`), using SQLAlchemy 2.0 typed models (`Mapped`, `mapped_column`) and Pydantic v2 schemas. Always place imports at the top of the module (never inside functions, which causes `UnboundLocalError` scoping bugs).
 - **JavaScript / React (`frontend/`, Node 20 + Vite):** Follow **Standard ES Modules (ES2022+)** and **React 18** functional components and Hooks conventions (`PascalCase` for components, `camelCase` for variables/functions). Strictly follow `DESIGN.md` ("Flat-By-Default" and "One Voice Rule": zero gradients, zero `box-shadow`, and only approved color tokens).
