@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.50.7",
+    date: "2026-11-18",
+    changes: [
+      "Tidier Colours: Report badges and User Guide callouts are now plain and follow your theme and accent colour, instead of using fixed coloured stripes and labels.",
+    ],
+  },
+  {
     version: "0.50.6",
     date: "2026-11-18",
     changes: [
