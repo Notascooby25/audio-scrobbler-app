@@ -7801,8 +7801,11 @@ button.sfm-row-remove:hover:not(:disabled) {
   cursor: pointer;
 }
 
-.info-hint .info-hint-btn:hover,
-.info-hint .info-hint-btn[aria-expanded="true"] {
+/* Out-rank the global button:hover:not(:disabled) accent fill. */
+.info-hint .info-hint-btn:hover:not(:disabled),
+.info-hint .info-hint-btn:active:not(:disabled),
+.info-hint .info-hint-btn[aria-expanded="true"]:not(:disabled) {
+  background: transparent;
   color: var(--color-ink);
 }
 
