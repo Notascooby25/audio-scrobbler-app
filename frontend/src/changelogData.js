@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.50.4",
+    date: "2026-11-18",
+    changes: [
+      "Cleaner Report Milestones: The four milestone cards on Reports are now plain cards that follow your accent colour and theme, instead of using fixed coloured side stripes.",
+    ],
+  },
+  {
     version: "0.50.3",
     date: "2026-11-16",
     changes: [

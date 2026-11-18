@@ -7054,22 +7054,6 @@ button.sfm-row-remove:hover:not(:disabled) {
   gap: 4px;
 }
 
-.milestone-streak {
-  border-left: 3px solid #ff7b72;
-}
-
-.milestone-peak {
-  border-left: 3px solid #e3b341;
-}
-
-.milestone-rotation {
-  border-left: 3px solid #a371f7;
-}
-
-.milestone-persona {
-  border-left: 3px solid #3fb950;
-}
-
 .milestone-label {
   color: var(--color-muted);
   font-size: 0.72rem;
