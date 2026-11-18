@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -13,6 +14,7 @@ from backend.app.config import settings
 from backend.app.datetime_utils import utc_now
 from backend.app.db import Base, get_db
 from backend.app.main import app
+from backend.app.services import gig_discovery_service
 from backend.app.models import (
     BlockedItem,
     DiscoveredGig,
@@ -270,3 +272,19 @@ def test_patch_gig_discovery_preferences_and_internal_sync_auth():
     unauth = client.post("/setlists/internal/discover-sync", headers={"X-Worker-Token": "wrong"})
     assert unauth.status_code in (401, 403)
     assert settings.worker_ingestion_token  # sanity check
+
+
+def test_save_trigger_finds_the_worker_without_any_environment_variable(monkeypatch):
+    """On the live host INGESTION_WORKER_URL is not set; the trigger must use the app's default."""
+    monkeypatch.delenv("INGESTION_WORKER_URL", raising=False)
+    monkeypatch.setenv("SKIDDLE_API_KEY", "k")
+    fake_http = MagicMock()
+    fake_http.return_value.__enter__.return_value = fake_http
+    monkeypatch.setattr(gig_discovery_service.httpx, "Client", fake_http)
+
+    gig_discovery_service.trigger_worker_discovery_sync(5)
+
+    fake_http.post.assert_called_once()
+    assert fake_http.post.call_args.args[0] == f"{settings.ingestion_worker_url}/internal/trigger-gig-discovery"
+    assert fake_http.post.call_args.kwargs["json"] == {"user_id": 5}
+    assert fake_http.post.call_args.kwargs["headers"] == {"X-Worker-Token": settings.worker_ingestion_token}

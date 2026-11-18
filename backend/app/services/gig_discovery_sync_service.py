@@ -333,26 +333,35 @@ def _parse_ticketmaster_event(event: dict[str, Any]) -> dict[str, Any] | None:
 
 def _upsert_parsed(db: Session, parsed_events: list[dict[str, Any]], now: datetime) -> int:
     upserted = 0
+    # The app's database session does not autoflush (db.py), so a row added a moment ago is invisible
+    # to the lookup below. Without this memory, a gig returned twice in one batch crashed the sync
+    # with a unique-constraint error, and the whole run was lost.
+    added_in_batch: dict[tuple[str, str], DiscoveredGig] = {}
     for parsed in parsed_events:
-        existing = db.scalar(
-            select(DiscoveredGig).where(
-                DiscoveredGig.source == parsed["source"],
-                DiscoveredGig.external_id == parsed["external_id"],
-            )
-        )
+        key = (parsed["source"], parsed["external_id"])
+        existing = added_in_batch.get(key)
         if existing is None:
-            db.add(
-                DiscoveredGig(
-                    **parsed,
-                    first_seen_at=now,
-                    last_synced_at=now,
+            existing = db.scalar(
+                select(DiscoveredGig).where(
+                    DiscoveredGig.source == parsed["source"],
+                    DiscoveredGig.external_id == parsed["external_id"],
                 )
             )
+        if existing is None:
+            existing = DiscoveredGig(
+                **parsed,
+                first_seen_at=now,
+                last_synced_at=now,
+            )
+            db.add(existing)
         else:
-            for key, value in parsed.items():
-                setattr(existing, key, value)
+            for field, value in parsed.items():
+                setattr(existing, field, value)
             existing.last_synced_at = now
+        added_in_batch[key] = existing
         upserted += 1
+    # Write this batch out now so the next search in the same run finds these rows.
+    db.flush()
     return upserted
 
 
