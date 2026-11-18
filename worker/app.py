@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import secrets
+import threading
 from datetime import datetime, timedelta, timezone
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -78,6 +79,8 @@ venue_geocode_interval_minutes = int(os.getenv("WORKER_VENUE_GEOCODE_INTERVAL_MI
 venue_geocode_batch_size = int(os.getenv("WORKER_VENUE_GEOCODE_BATCH_SIZE", "60"))
 gig_discovery_interval_minutes = int(os.getenv("WORKER_GIG_DISCOVERY_INTERVAL_MINUTES", "360"))
 _last_discovery_trigger_by_user: dict[int, datetime] = {}
+_gig_discovery_lock = threading.Lock()
+GIG_DISCOVERY_TRIGGER_COOLDOWN_SECONDS = 120
 max_attempts = 3
 last_spotify_sync_at: str | None = None
 last_spotify_sync_users = 0
@@ -434,12 +437,15 @@ def run_venue_geocoding() -> None:
 def run_gig_discovery_sync(user_id: int | None = None) -> None:
     params = {"user_id": user_id} if user_id is not None else {}
     try:
-        response = requests.post(
-            f"{backend_url}/setlists/internal/discover-sync",
-            params=params,
-            headers={"X-Worker-Token": worker_token},
-            timeout=600,
-        )
+        # One sync at a time: Skiddle's terms ask for sequential requests, so a user-triggered
+        # refresh waits for a scheduled run (and vice versa) instead of running alongside it.
+        with _gig_discovery_lock:
+            response = requests.post(
+                f"{backend_url}/setlists/internal/discover-sync",
+                params=params,
+                headers={"X-Worker-Token": worker_token},
+                timeout=600,
+            )
         response.raise_for_status()
         counts = response.json()
     except requests.RequestException as exc:
@@ -470,7 +476,7 @@ def trigger_gig_discovery(
         raise HTTPException(status_code=400, detail="Invalid user_id") from exc
     now = datetime.now(timezone.utc)
     last = _last_discovery_trigger_by_user.get(key)
-    if last is not None and (now - last) < timedelta(seconds=30):
+    if last is not None and (now - last) < timedelta(seconds=GIG_DISCOVERY_TRIGGER_COOLDOWN_SECONDS):
         return {"scheduled": False}
     _last_discovery_trigger_by_user[key] = now
     background_tasks.add_task(run_gig_discovery_sync, uid)
