@@ -99,12 +99,15 @@ export default function FollowingPage() {
   };
 
   const renderFollower = (follower) => (
-    <li key={follower.id}>
+    <li
+      key={follower.id}
+      className={confirmingFollowerId === follower.id ? "follower-confirming" : ""}
+    >
       <span className="blocked-copy">
         <strong>{follower.display_name}</strong>
         <small>@{follower.username}</small>
         {confirmingFollowerId === follower.id && (
-          <small style={{ marginTop: "0.25rem" }}>
+          <small className="follower-confirm-text" style={{ marginTop: "0.25rem" }}>
             Remove {follower.display_name}? They can follow you again.
           </small>
         )}
