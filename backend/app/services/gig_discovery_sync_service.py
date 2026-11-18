@@ -44,6 +44,8 @@ DEFAULT_DISCOVERY_FILTERS: dict[str, Any] = {
     "scope": "my_artists",
     "local_only_my_artists": False,
     "date_window": "all",
+    "only_new": False,
+    "only_interested": False,
     "country_code": "",
     "my_artists_mode": "top_n",
     "my_artists_limit": 100,

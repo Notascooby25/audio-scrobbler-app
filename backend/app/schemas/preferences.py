@@ -62,6 +62,8 @@ class GigDiscoveryFiltersUpdate(BaseModel):
     scope: Literal["my_artists", "local"] | None = None
     local_only_my_artists: bool | None = None
     date_window: Literal["all", "weekend", "7d", "30d", "newly_announced", "interested"] | None = None
+    only_new: bool | None = None
+    only_interested: bool | None = None
     country_code: str | None = Field(default=None, max_length=8)
     my_artists_mode: Literal["top_n", "min_plays"] | None = None
     my_artists_limit: int | None = Field(default=None, ge=1, le=500)

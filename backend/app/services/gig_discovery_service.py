@@ -6,7 +6,7 @@ from datetime import date, datetime, timedelta
 from typing import Any
 
 import httpx
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from ..config import settings
@@ -94,12 +94,20 @@ def _weekend_bounds(today: date) -> tuple[date, date]:
     return friday, friday + timedelta(days=2)
 
 
-def _is_newly_announced(gig: DiscoveredGig, now: datetime) -> bool:
+# Everything a source returns on its very first sync is "first seen" at that moment, which says
+# nothing about when the gig was announced. Gigs first seen within this window of a source's
+# earliest sighting are treated as the initial import, not as new announcements.
+_INITIAL_IMPORT_WINDOW = timedelta(hours=6)
+
+
+def _is_newly_announced(gig: DiscoveredGig, now: datetime, first_import_by_source: dict[str, datetime]) -> bool:
     if gig.onsale_start_at is not None:
         if now - timedelta(days=14) <= gig.onsale_start_at <= now + timedelta(days=7):
             return True
     if gig.first_seen_at is not None and gig.first_seen_at >= now - timedelta(days=7):
-        return True
+        first_import = first_import_by_source.get(gig.source)
+        if first_import is None or gig.first_seen_at > first_import + _INITIAL_IMPORT_WINDOW:
+            return True
     return False
 
 
@@ -133,6 +141,8 @@ def query_discovered_gigs(
     radius_miles: int | None = None,
     date_window: str | None = None,
     country: str | None = None,
+    only_new: bool | None = None,
+    only_interested: bool | None = None,
 ) -> dict[str, Any]:
     prefs = db.scalar(select(UserPreferences).where(UserPreferences.user_id == user_id))
     saved_radius = int(prefs.local_gig_radius_miles if prefs and prefs.local_gig_radius_miles else 10)
@@ -148,6 +158,15 @@ def query_discovered_gigs(
     )
     effective_radius = max(1, min(100, int(radius_miles if radius_miles is not None else saved_radius)))
     effective_window = date_window or str(saved_filters.get("date_window") or "all")
+    effective_only_new = bool(only_new) if only_new is not None else bool(saved_filters.get("only_new", False))
+    effective_only_interested = (
+        bool(only_interested) if only_interested is not None else bool(saved_filters.get("only_interested", False))
+    )
+    # Older saved settings and clients used date_window for these two; keep them working.
+    if effective_window == "newly_announced":
+        effective_window, effective_only_new = "all", True
+    elif effective_window == "interested":
+        effective_window, effective_only_interested = "all", True
     effective_country = (
         country.strip().upper() if country is not None else str(saved_filters.get("country_code") or "").strip().upper()
     )
@@ -201,6 +220,13 @@ def query_discovered_gigs(
     )
     all_upcoming = db.scalars(stmt).all()
 
+    first_import_by_source = {
+        source: first_seen
+        for source, first_seen in db.execute(
+            select(DiscoveredGig.source, func.min(DiscoveredGig.first_seen_at)).group_by(DiscoveredGig.source)
+        ).all()
+        if first_seen is not None
+    }
     available_countries = sorted({g.country_code for g in all_upcoming if g.country_code})
     weekend_start, weekend_end = _weekend_bounds(today)
 
@@ -219,41 +245,40 @@ def query_discovered_gigs(
         is_my_artist = exact_match or possible_match
         is_seen_live = any(k in seen_live_keys for k in gig_keys)
         is_interested = gig.id in interested_ids
-        is_newly = _is_newly_announced(gig, now)
+        is_newly = _is_newly_announced(gig, now, first_import_by_source)
 
         distance_miles: float | None = None
         if home_point is not None and gig.lat is not None and gig.lng is not None:
             distance_miles = round(haversine_miles(home_point, (gig.lat, gig.lng)), 1)
 
-        if effective_window == "interested":
+        if effective_only_interested:
+            # Your shortlist is shown wherever the gigs are.
             if not is_interested:
                 continue
+        elif effective_scope == "local":
+            if not has_home_city:
+                continue
+            if distance_miles is None or distance_miles > effective_radius:
+                continue
+            if effective_only_my_artists and not is_my_artist:
+                continue
         else:
-            if effective_scope == "local":
-                if not has_home_city:
-                    continue
-                if distance_miles is None or distance_miles > effective_radius:
-                    continue
-                if effective_only_my_artists and not is_my_artist:
-                    continue
-            else:
-                if not is_my_artist:
-                    continue
-                if effective_country and gig.country_code.upper() != effective_country:
-                    continue
+            if not is_my_artist:
+                continue
+            if effective_country and gig.country_code.upper() != effective_country:
+                continue
 
-            if effective_window == "weekend":
-                if not (weekend_start <= gig.event_date <= weekend_end):
-                    continue
-            elif effective_window == "7d":
-                if gig.event_date > today + timedelta(days=7):
-                    continue
-            elif effective_window == "30d":
-                if gig.event_date > today + timedelta(days=30):
-                    continue
-            elif effective_window == "newly_announced":
-                if not is_newly:
-                    continue
+        if effective_window == "weekend":
+            if not (weekend_start <= gig.event_date <= weekend_end):
+                continue
+        elif effective_window == "7d":
+            if gig.event_date > today + timedelta(days=7):
+                continue
+        elif effective_window == "30d":
+            if gig.event_date > today + timedelta(days=30):
+                continue
+        if effective_only_new and not is_newly:
+            continue
 
         already_concert_id = None
         title = _loose(gig.event_name)
