@@ -30,7 +30,10 @@ logger = logging.getLogger(__name__)
 SKIDDLE_LOCAL_MIN_RADIUS_MILES = 25
 SKIDDLE_LOCAL_MAX_PAGES = 3
 SKIDDLE_UK_WINDOW_DAYS = ((0, 30), (30, 90), (90, 180), (180, 365))
-SKIDDLE_UK_MAX_PAGES_PER_WINDOW = 5
+SKIDDLE_UK_MAX_PAGES_PER_WINDOW = 2
+# Plus one name search per favourite artist (their gigs anywhere, which the capped UK pages can miss).
+SKIDDLE_ARTISTS_PER_USER = 30
+SKIDDLE_ARTIST_SEARCH_CAP = 60
 
 TICKETMASTER_BASE_URL = "https://app.ticketmaster.com/discovery/v2"
 MIN_INTERVAL_SECONDS = 0.35  # <= ~3 req/sec (under Ticketmaster's 5 req/sec limit)
@@ -114,12 +117,12 @@ def get_blocked_artist_keys(db: Session, user_id: int) -> set[str]:
     return {normalize_artist_key(name) for name in rows if normalize_artist_key(name)}
 
 
-def get_user_discovery_artists(
+def get_user_ranked_artist_keys(
     db: Session,
     user_id: int,
     filters: dict[str, Any] | None = None,
-) -> set[str]:
-    """Return normalized artist keys matching the user's configured 'My Artists' criteria."""
+) -> list[str]:
+    """Artist keys matching the user's 'My Artists' criteria: most played first, then seen-live."""
     cfg = merge_discovery_filters(filters)
     blocked = get_blocked_artist_keys(db, user_id)
 
@@ -143,23 +146,33 @@ def get_user_discovery_artists(
     stmt = stmt.group_by(func.lower(func.trim(ListeningEvent.artist_name)))
     if mode == "min_plays":
         stmt = stmt.having(func.count(ListeningEvent.id) >= min_plays)
+        stmt = stmt.order_by(func.count(ListeningEvent.id).desc())
     else:
         stmt = stmt.order_by(func.count(ListeningEvent.id).desc()).limit(limit)
 
-    artists: set[str] = set()
+    artists: list[str] = []
     for row in db.execute(stmt).all():
         key = normalize_artist_key(row.artist_key)
-        if key and key not in blocked:
-            artists.add(key)
+        if key and key not in blocked and key not in artists:
+            artists.append(key)
 
     if include_seen_live:
         seen_rows = db.scalars(select(AttendedConcert.artist_name).where(AttendedConcert.user_id == user_id)).all()
         for name in seen_rows:
             key = normalize_artist_key(name)
-            if key and key not in blocked:
-                artists.add(key)
+            if key and key not in blocked and key not in artists:
+                artists.append(key)
 
     return artists
+
+
+def get_user_discovery_artists(
+    db: Session,
+    user_id: int,
+    filters: dict[str, Any] | None = None,
+) -> set[str]:
+    """Return normalized artist keys matching the user's configured 'My Artists' criteria."""
+    return set(get_user_ranked_artist_keys(db, user_id, filters))
 
 
 class TicketmasterClient:
@@ -355,10 +368,24 @@ def _upsert_skiddle_events(db: Session, raw_events: list[dict[str, Any]], now: d
     return _upsert_parsed(db, parsed, now)
 
 
+def _merge_ranked_artists(ranked_lists: list[list[str]], cap: int) -> list[str]:
+    """Interleave each user's favourites (best first), dropping repeats, up to cap names."""
+    merged: list[str] = []
+    longest = max((len(r) for r in ranked_lists), default=0)
+    for position in range(longest):
+        for ranked in ranked_lists:
+            if position < len(ranked) and ranked[position] not in merged:
+                merged.append(ranked[position])
+                if len(merged) >= cap:
+                    return merged
+    return merged
+
+
 def _sweep_skiddle(
     db: Session,
     client: SkiddleClient,
     local_targets: list[tuple[float, float, int]],
+    artist_keys: list[str],
     include_uk: bool,
     today: date,
     now: datetime,
@@ -386,6 +413,21 @@ def _sweep_skiddle(
                 "order": "distance",
             },
             max_pages=SKIDDLE_LOCAL_MAX_PAGES,
+        )
+        searches += 1
+        upserted += _upsert_skiddle_events(db, events, now)
+
+    for artist_key in artist_keys:
+        if client.blocked:
+            return searches, upserted
+        events = client.search_all(
+            {
+                "keyword": artist_key,
+                "eventcode": "LIVE",
+                "minDate": today.isoformat(),
+                "description": 1,
+            },
+            max_pages=1,
         )
         searches += 1
         upserted += _upsert_skiddle_events(db, events, now)
@@ -438,13 +480,15 @@ def sync_discovered_gigs(db: Session, user_id: int | None = None) -> dict[str, i
     users = db.scalars(user_stmt).all()
 
     artist_display_names: dict[str, str] = {}
+    ranked_by_user: list[list[str]] = []
     local_targets: list[tuple[float, float, int]] = []
 
     for user in users:
         prefs = db.scalar(select(UserPreferences).where(UserPreferences.user_id == user.id))
         filters = merge_discovery_filters(prefs.gig_discovery_filters if prefs else None)
-        artist_keys = get_user_discovery_artists(db, user.id, filters)
-        for key in artist_keys:
+        ranked = get_user_ranked_artist_keys(db, user.id, filters)
+        ranked_by_user.append(ranked[:SKIDDLE_ARTISTS_PER_USER])
+        for key in ranked:
             if key not in artist_display_names:
                 artist_display_names[key] = key
 
@@ -490,7 +534,10 @@ def sync_discovered_gigs(db: Session, user_id: int | None = None) -> dict[str, i
     if skiddle.api_key:
         # The UK-wide list only makes sense for a full sweep, not a single user's refresh.
         include_uk = user_id is None and bool(artist_display_names)
-        skiddle_queries, skiddle_upserted = _sweep_skiddle(db, skiddle, local_targets, include_uk, today, now)
+        skiddle_artists = _merge_ranked_artists(ranked_by_user, SKIDDLE_ARTIST_SEARCH_CAP)
+        skiddle_queries, skiddle_upserted = _sweep_skiddle(
+            db, skiddle, local_targets, skiddle_artists, include_uk, today, now
+        )
 
     db.commit()
     stats.update(

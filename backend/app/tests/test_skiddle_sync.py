@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from backend.app.datetime_utils import utc_now
 from backend.app.db import Base
 from backend.app.models import (
+    AttendedConcert,
     BlockedItem,
     DiscoveredGig,
     ListeningEvent,
@@ -157,7 +158,107 @@ def test_uk_sweep_is_skipped_for_a_single_user_refresh(db_session: Session, monk
     fake = _fake_client(monkeypatch, [])
     sync_discovered_gigs(db_session, user_id=user.id)
     assert all(c.args[0].get("country") != "GB" for c in fake.search_all.call_args_list)
-    assert len(fake.search_all.call_args_list) == 1  # just their local search
+    params = [c.args[0] for c in fake.search_all.call_args_list]
+    assert len(params) == 2  # their local search and their one artist search
+    assert [p["keyword"] for p in params if "keyword" in p] == ["the feeling"]
+
+
+def _artist_searches(fake: MagicMock) -> list[dict[str, Any]]:
+    return [c.args[0] for c in fake.search_all.call_args_list if "keyword" in c.args[0]]
+
+
+def test_your_top_artists_are_searched_by_name_most_played_first(db_session: Session, monkeypatch: pytest.MonkeyPatch):
+    user = _user(db_session, home=None)
+    _listen(db_session, user, "Quiet Band", plays=2)
+    _listen(db_session, user, "Loud Band", plays=9)
+    _listen(db_session, user, "Middle Band", plays=5)
+    fake = _fake_client(monkeypatch, [])
+    sync_discovered_gigs(db_session)
+
+    searches = _artist_searches(fake)
+    assert [p["keyword"] for p in searches] == ["loud band", "middle band", "quiet band"]
+    first = searches[0]
+    assert first["eventcode"] == "LIVE" and first["minDate"] == date.today().isoformat()
+    assert "country" not in first  # their tours abroad are still worth knowing about
+    one_page = [c.kwargs["max_pages"] for c in fake.search_all.call_args_list if "keyword" in c.args[0]]
+    assert one_page == [1, 1, 1]
+
+
+def test_artist_searches_are_capped_per_user(db_session: Session, monkeypatch: pytest.MonkeyPatch):
+    user = _user(db_session, home=None)
+    cap = sync_module.SKIDDLE_ARTISTS_PER_USER
+    for i in range(cap + 10):
+        _listen(db_session, user, f"Band {i:02d}", plays=cap + 10 - i)  # Band 00 is the most played
+    fake = _fake_client(monkeypatch, [])
+    sync_discovered_gigs(db_session)
+
+    names = [p["keyword"] for p in _artist_searches(fake)]
+    assert len(names) == cap
+    assert names[0] == "band 00" and f"band {cap + 5:02d}" not in names
+
+
+def test_artists_shared_between_users_are_searched_once(db_session: Session, monkeypatch: pytest.MonkeyPatch):
+    for n in (1, 2):
+        user = _user(db_session, n, home=None)
+        _listen(db_session, user, "Shared Band")
+    fake = _fake_client(monkeypatch, [])
+    sync_discovered_gigs(db_session)
+    assert [p["keyword"] for p in _artist_searches(fake)] == ["shared band"]
+
+
+def test_blocked_artists_are_never_searched(db_session: Session, monkeypatch: pytest.MonkeyPatch):
+    user = _user(db_session, home=None)
+    _listen(db_session, user, "Blocked Band")
+    _listen(db_session, user, "Fine Band")
+    db_session.add(BlockedItem(user_id=user.id, entity_type="artist", name="Blocked Band"))
+    db_session.commit()
+    fake = _fake_client(monkeypatch, [])
+    sync_discovered_gigs(db_session)
+    assert [p["keyword"] for p in _artist_searches(fake)] == ["fine band"]
+
+
+def test_seen_live_artists_are_searched_after_the_most_played(db_session: Session, monkeypatch: pytest.MonkeyPatch):
+    user = _user(db_session, home=None)
+    _listen(db_session, user, "Played Band")
+    db_session.add(
+        AttendedConcert(
+            user_id=user.id,
+            setlist_id="s1",
+            artist_name="Seen Band",
+            venue_name="V",
+            city="C",
+            country="GB",
+            event_date=utc_now() - timedelta(days=100),
+        )
+    )
+    db_session.commit()
+    fake = _fake_client(monkeypatch, [])
+    sync_discovered_gigs(db_session)
+    assert [p["keyword"] for p in _artist_searches(fake)] == ["played band", "seen band"]
+
+
+def test_artist_searches_stop_when_skiddle_blocks_us(db_session: Session, monkeypatch: pytest.MonkeyPatch):
+    user = _user(db_session, home=None)
+    for name in ("A Band", "B Band", "C Band"):
+        _listen(db_session, user, name)
+    fake = _fake_client(monkeypatch, [])
+
+    def block(*args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+        fake.blocked = True
+        return []
+
+    fake.search_all.side_effect = block
+    sync_discovered_gigs(db_session)
+    assert fake.search_all.call_count == 1
+
+
+def test_uk_windows_read_only_a_couple_of_pages_each(db_session: Session, monkeypatch: pytest.MonkeyPatch):
+    user = _user(db_session, home=None)
+    _listen(db_session, user, "Some Band")
+    fake = _fake_client(monkeypatch, [])
+    sync_discovered_gigs(db_session)
+    uk_pages = [c.kwargs["max_pages"] for c in fake.search_all.call_args_list if c.args[0].get("country") == "GB"]
+    assert uk_pages == [2, 2, 2, 2]
 
 
 def test_users_with_no_artists_and_no_home_cause_no_requests(db_session: Session, monkeypatch: pytest.MonkeyPatch):
