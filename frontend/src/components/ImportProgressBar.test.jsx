@@ -18,7 +18,7 @@ describe('ImportProgressBar', () => {
     }
     render(<ImportProgressBar progress={progress} />)
 
-    expect(screen.getByText('Normalizing Records')).toBeInTheDocument()
+    expect(screen.getByText('Normalising Records')).toBeInTheDocument()
     expect(screen.getByText('42%')).toBeInTheDocument()
     expect(screen.getByText('Normalizing 150 tracks...')).toBeInTheDocument()
     expect(screen.getByText('42 / 100')).toBeInTheDocument()

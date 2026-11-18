@@ -355,12 +355,12 @@ describe("GigReportsSection", () => {
 
     // Venue royalty should be rendered immediately without waiting for bump
     expect(await screen.findByText("The Fleece")).toBeInTheDocument();
-    expect(screen.getByText(/Analyzing post-gig listening patterns/i)).toBeInTheDocument();
+    expect(screen.getByText(/Analysing post-gig listening patterns/i)).toBeInTheDocument();
 
     // Now resolve bump
     resolveBump(bump);
     await waitFor(() => {
-      expect(screen.queryByText(/Analyzing post-gig listening patterns/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Analysing post-gig listening patterns/i)).not.toBeInTheDocument();
       expect(screen.getByText("+50% Surge")).toBeInTheDocument();
     });
   });

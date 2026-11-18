@@ -12,7 +12,7 @@ export default function ReportMilestones({ summary }) {
     "Night Owl": "🦉",
     "Weekend Warrior": "⚡",
     "Discovery Voyager": "🧭",
-    "Catalog Loyalist": "📚",
+    "Catalogue Loyalist": "📚",
     "Deep Diver": "🌊",
   };
   const icon = personaIcons[persona] || "🎵";

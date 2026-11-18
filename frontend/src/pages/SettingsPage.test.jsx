@@ -139,7 +139,7 @@ describe("SettingsPage", () => {
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
   });
 
-  it("renders 8 song-title accent color options in a dropdown and updates the setting on selection", async () => {
+  it("renders 8 song-title accent colour options in a dropdown and updates the setting on selection", async () => {
     fetchUserSettings.mockResolvedValue(settings);
     updateUserSettings.mockResolvedValue({ ...settings, accent_color: "purple_rain" });
     render(
@@ -149,8 +149,8 @@ describe("SettingsPage", () => {
     );
 
     // Verify dropdown is rendered with current value and options
-    await waitFor(() => expect(screen.getByLabelText("Accent color")).toHaveValue("blue_monday"));
-    const options = screen.getByLabelText("Accent color").querySelectorAll("option");
+    await waitFor(() => expect(screen.getByLabelText("Accent colour")).toHaveValue("blue_monday"));
+    const options = screen.getByLabelText("Accent colour").querySelectorAll("option");
     expect(options).toHaveLength(8);
     expect(screen.getByRole("option", { name: "Blue Monday" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Green Eyes" })).toBeInTheDocument();
@@ -162,7 +162,7 @@ describe("SettingsPage", () => {
     expect(screen.getByRole("option", { name: "Orange Crush" })).toBeInTheDocument();
 
     // Select Purple Rain
-    fireEvent.change(screen.getByLabelText("Accent color"), { target: { value: "purple_rain" } });
+    fireEvent.change(screen.getByLabelText("Accent colour"), { target: { value: "purple_rain" } });
 
     await waitFor(
       () =>

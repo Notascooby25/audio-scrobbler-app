@@ -38,7 +38,7 @@ class PushSubscriptionCreate(BaseModel):
             "push.opera.com",
         )
         if not any(hostname == s or hostname.endswith("." + s) for s in allowed_suffixes):
-            raise ValueError("Push endpoint domain not recognized as an approved web push service")
+            raise ValueError("Push endpoint domain not recognised as an approved web push service")
         return v
 
 

@@ -238,7 +238,7 @@ export default function SettingsPage() {
       const { authorization_url: authUrl } = await requestSpotifyAuthorization(true);
       redirectToAuthorization(authUrl);
     } catch (err) {
-      setReconnectError(err.message || "Failed to start Spotify authorization");
+      setReconnectError(err.message || "Failed to start Spotify authorisation");
       setReconnectingSpotify(false);
     }
   };
@@ -467,7 +467,7 @@ export default function SettingsPage() {
               </label>
             )}
             <label>
-              Accent color
+              Accent colour
               <div className="settings-accent-select-wrapper">
                 <span
                   className="settings-accent-select-dot"
@@ -480,7 +480,7 @@ export default function SettingsPage() {
                   aria-hidden="true"
                 />
                 <select
-                  aria-label="Accent color"
+                  aria-label="Accent colour"
                   value={settings.accent_color || "blue_monday"}
                   onChange={(event) => changeSetting("accent_color", event.target.value)}
                 >
@@ -550,11 +550,11 @@ export default function SettingsPage() {
           <section className="settings-form" aria-labelledby="jukebox-settings-heading">
             <h2 id="jukebox-settings-heading">Album Jukebox</h2>
             <p>
-              Choose where the Album Jukebox draws its catalog from when spinning for whole-album
+              Choose where the Album Jukebox draws its catalogue from when spinning for whole-album
               listening sessions.
             </p>
             <label>
-              Album catalog source
+              Album catalogue source
               <select
                 value={settings.jukebox_source || "spotify_saved"}
                 onChange={(event) => changeSetting("jukebox_source", event.target.value)}
@@ -756,7 +756,7 @@ export default function SettingsPage() {
                         color: "var(--color-muted)",
                       }}
                     >
-                      Update Spotify authorization to ensure liking, playlists, and scrobbling
+                      Update Spotify authorisation to ensure liking, playlists, and scrobbling
                       permissions are up-to-date.
                     </p>
                   </div>

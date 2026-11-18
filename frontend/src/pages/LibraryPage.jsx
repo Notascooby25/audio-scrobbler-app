@@ -543,7 +543,7 @@ export default function LibraryPage() {
                 const { authorization_url: authUrl } = await requestSpotifyAuthorization(true);
                 redirectToAuthorization(authUrl);
               } catch (reconnectErr) {
-                setActionNotice(reconnectErr.message || "Failed to start Spotify authorization");
+                setActionNotice(reconnectErr.message || "Failed to start Spotify authorisation");
               }
             }}
           >

@@ -67,7 +67,7 @@ def extract_dominant_color(image_bytes: bytes) -> str | None:
 
             return f"#{r:02x}{g:02x}{b:02x}"
     except Exception as exc:
-        logger.debug("Failed to extract dominant color from image bytes: %s", exc)
+        logger.debug("Failed to extract dominant colour from image bytes: %s", exc)
         return None
 
 
@@ -85,5 +85,5 @@ def fetch_and_extract_color(image_url: str, timeout: float = 2.5) -> str | None:
             data = response.read()
             return extract_dominant_color(data)
     except Exception as exc:
-        logger.debug("Failed to fetch or extract color for %s: %s", image_url, exc)
+        logger.debug("Failed to fetch or extract colour for %s: %s", image_url, exc)
         return None

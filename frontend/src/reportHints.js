@@ -19,7 +19,7 @@ export const REPORT_HINTS = {
   "milestones.peak": "The single day in this period with the most scrobbles.",
   "milestones.rotation": "The track you played most often in this period.",
   "milestones.persona":
-    "A badge from your habits: Night Owl (lots of late-night plays), Weekend Warrior (mostly weekends), Discovery Voyager (lots of new artists), Catalog Loyalist (replaying favourites), otherwise Deep Diver.",
+    "A badge from your habits: Night Owl (lots of late-night plays), Weekend Warrior (mostly weekends), Discovery Voyager (lots of new artists), Catalogue Loyalist (replaying favourites), otherwise Deep Diver.",
   "milestones.1001":
     "Albums from the 1001 Albums You Must Hear Before You Die list that you completed in this period.",
   "live.connection":

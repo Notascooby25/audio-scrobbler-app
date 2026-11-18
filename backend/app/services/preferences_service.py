@@ -52,7 +52,7 @@ def update(db: Session, user_id: int, changes: dict[str, object]) -> UserPrefere
         if key == "match_album_sleeve" and not isinstance(value, bool):
             raise ValueError("match_album_sleeve must be a boolean")
         if key == "accent_color" and value not in ACCENT_COLORS:
-            raise ValueError("Unsupported accent color")
+            raise ValueError("Unsupported accent colour")
         if key.endswith("_page_size") and value is not None and value not in PAGE_SIZES:
             raise ValueError("Unsupported page size")
         if key == "default_page_size" and value not in PAGE_SIZES:

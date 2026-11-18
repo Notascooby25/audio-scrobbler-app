@@ -174,7 +174,7 @@ export default function ScopeCreepTools() {
       const { authorization_url: authUrl } = await requestSpotifyAuthorization(true)
       redirectToAuthorization(authUrl)
     } catch (err) {
-      setError(err.message || 'Failed to start Spotify authorization')
+      setError(err.message || 'Failed to start Spotify authorisation')
     }
   }
 

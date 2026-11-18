@@ -23,7 +23,7 @@ def parse_entries(raw_text: str) -> list[dict[str, object]]:
         entries = parsed.get("history", parsed.get("entries"))
         if isinstance(entries, list):
             return entries
-    raise ValueError("Import file does not contain a recognizable entries list")
+    raise ValueError("Import file does not contain a recognisable entries list")
 
 
 def detect_source_from_entries(entries: list[dict[str, Any]]) -> str:

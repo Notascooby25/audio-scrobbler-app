@@ -409,7 +409,7 @@ def process_unified_import_stream(
     yield UnifiedImportProgressEvent(
         stage="record_normalization",
         percent=20,
-        message="Normalizing metadata fields...",
+        message="Normalising metadata fields...",
         current=0,
         total=total_raw,
     )
@@ -432,7 +432,7 @@ def process_unified_import_stream(
             yield UnifiedImportProgressEvent(
                 stage="record_normalization",
                 percent=min(45, pct),
-                message=f"Normalized {len(normalized_records)} tracks ({skipped_count} skipped)...",
+                message=f"Normalised {len(normalized_records)} tracks ({skipped_count} skipped)...",
                 current=idx + 1,
                 total=total_raw,
                 errors=list(errors),

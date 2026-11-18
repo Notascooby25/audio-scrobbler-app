@@ -108,7 +108,7 @@ describe("App", () => {
 
   it("shows an error after Spotify authorization is cancelled", () => {
     renderConnectPage("#auth_error=spotify_authorization_denied");
-    expect(screen.getByText("Spotify authorization was cancelled.")).toBeInTheDocument();
+    expect(screen.getByText("Spotify authorisation was cancelled.")).toBeInTheDocument();
     window.history.replaceState({}, document.title, window.location.pathname);
   });
 

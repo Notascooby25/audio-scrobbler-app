@@ -1,6 +1,6 @@
 ---
 name: Audio Scrobbler App
-description: A self-hosted, full-stack application for tracking, analyzing, and sharing your music listening history.
+description: A self-hosted, full-stack application for tracking, analysing, and sharing your music listening history.
 colors:
   primary: "#0066FF"
   neutral-bg: "#F7F7F7"
@@ -44,14 +44,14 @@ components:
 
 **Creative North Star: "The Focused Utility"**
 
-A highly functional, data-dense interface inspired by productivity tools like Linear, Notion, and iOS Settings. The aesthetic is strictly flat and utilitarian, prioritizing clarity, information density, and speed over decoration.
+A highly functional, data-dense interface inspired by productivity tools like Linear, Notion, and iOS Settings. The aesthetic is strictly flat and utilitarian, prioritising clarity, information density, and speed over decoration.
 
 ## Colors
 
-A reductive, monochromatic palette anchored by a customizable signature accent color.
+A reductive, monochromatic palette anchored by a customisable signature accent colour.
 
 ### Primary & Accent Palette
-Users can personalize their signature accent color in *Settings → General*. The palette consists of 8 curated song-title presets that dynamically customize the primary color token (`--color-primary`, `--color-accent`) and all derived shades via modern CSS `color-mix()`:
+Users can personalise their signature accent colour in *Settings → General*. The palette consists of 8 curated song-title presets that dynamically customise the primary colour token (`--color-primary`, `--color-accent`) and all derived shades via modern CSS `color-mix()`:
 - **Blue Monday** (`#0066FF`, New Order - Default)
 - **Green Eyes** (`#169C46`, Coldplay - tuned for WCAG AA contrast)
 - **Red Red Wine** (`#E11D48`, UB40)
@@ -66,7 +66,7 @@ Users can personalize their signature accent color in *Settings → General*. Th
 - **White Surface** (#FFFFFF): Used for cards and content containers.
 - **Hairline Border** (#E5E5E5): Used for the 0.5px borders separating elements.
 - **Primary Text** (#111111): High contrast text for readability.
-- **Secondary Text** (#888888): Muted gray for metadata, timestamps, and secondary lists.
+- **Secondary Text** (#888888): Muted grey for metadata, timestamps, and secondary lists.
 
 ### Named Rules
 **The One Voice Rule.** The blue accent is used sparingly (≤5% of any screen). Its rarity is the point, signalling only actionable elements or primary data points.
@@ -86,7 +86,7 @@ Users can personalize their signature accent color in *Settings → General*. Th
 
 ## Layout
 
-Compact and structured. Uses a strict grid to maintain alignment across dense data views, maximizing vertical space for lists.
+Compact and structured. Uses a strict grid to maintain alignment across dense data views, maximising vertical space for lists.
 
 ## Elevation & Depth
 
@@ -115,7 +115,7 @@ Utilitarian geometric forms.
 - **Internal Padding:** 16px.
 
 ### Lists
-- **Style:** Compact rows with minimal padding to maximize data density. Muted gray secondary text for metadata.
+- **Style:** Compact rows with minimal padding to maximise data density. Muted grey secondary text for metadata.
 
 ### Navigation
 - **Style:** Segmented tabs instead of dropdown menus for faster spatial memory and less interaction overhead.
@@ -140,7 +140,7 @@ Utilitarian geometric forms.
 The application architecture supports selectable visual skins built on a unified skins framework:
 
 - **Classic (Default):** The focused, utilitarian default described in this document. Always remains pixel-identical across releases. Unscoped styles in `frontend/src/styles.css`.
-- **Sleeve (Idea B):** An album-led, immersive dark aesthetic dynamically derived from artwork dominant colors. Detailed in [`docs/design/sleeve-skin.md`](docs/design/sleeve-skin.md). Scoped under `[data-skin="sleeve"]`.
+- **Sleeve (Idea B):** An album-led, immersive dark aesthetic dynamically derived from artwork dominant colours. Detailed in [`docs/design/sleeve-skin.md`](docs/design/sleeve-skin.md). Scoped under `[data-skin="sleeve"]`.
 - **Timeline (Idea A):** A calm, data-first vertical rail of plays with quiet gaps and hourly charts. Detailed in [`docs/design/timeline-skin.md`](docs/design/timeline-skin.md). Scoped under `[data-skin="timeline"]`.
 
 All skins adhere to the core design system rules:
