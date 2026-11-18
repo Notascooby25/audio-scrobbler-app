@@ -212,6 +212,23 @@ describe("DiscoverGigsTab", () => {
     });
   });
 
+  it("shows a gig you already logged as Going, without the interested or going buttons", async () => {
+    const onOpenGig = vi.fn();
+    setlistApi.fetchDiscoveredGigs.mockResolvedValue({
+      ...SAMPLE_RESPONSE,
+      items: [{ ...SAMPLE_RESPONSE.items[0], already_going: true, concert_id: 77 }],
+    });
+    render(
+      <MemoryRouter>
+        <DiscoverGigsTab token="tok" onOpenGig={onOpenGig} onGigAdded={vi.fn()} />
+      </MemoryRouter>
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "✓ Going" }));
+    expect(onOpenGig).toHaveBeenCalledWith(77);
+    expect(screen.queryByRole("button", { name: "+ I'm going" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "I'm interested" })).not.toBeInTheDocument();
+  });
+
   it("mentions both providers in the setup notice", async () => {
     setlistApi.fetchDiscoveredGigs.mockResolvedValue({
       ...SAMPLE_RESPONSE,

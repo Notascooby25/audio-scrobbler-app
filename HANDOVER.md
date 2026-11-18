@@ -478,6 +478,11 @@ the NAS listing.** The live setup has drifted from the repos before.
   variables must be added to it by hand (verify with `exec <service> sh -c
   'test -n "$VAR"'`); and the sync trigger uses `settings.ingestion_worker_url`
   rather than a raw environment variable that production never sets.
+  Already-logged gigs are matched on date plus `match_key()` (case, accents,
+  apostrophes, full stops, `&`/`and` and a leading "The" ignored), not on exact
+  strings, for Going, Seen live, Your artist and blocked artists; the match also
+  looks inside title-only Skiddle listings. `attend_discovered_gig` reuses an
+  existing same-day attendance instead of adding a second copy.
 - **Dependency updates (2026-11-18, no version bump):** PyJWT 2.15.1 (backend),
   requests 2.34.2 and python-dotenv 1.2.4 (backend and worker). Sign-in tokens
   are unchanged: `backend/app/tests/test_jwt_compat.py` decodes a token minted by

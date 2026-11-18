@@ -406,7 +406,8 @@ export default function UserGuideSection() {
             <strong>+ I&apos;m going</strong>. A <em>Possible match</em> label means one of your
             artists is named in the event title but not in the listed line-up, so check it before
             you plan around it. The list refreshes a few times a day, so a brand new gig may take a
-            few hours to appear.
+            few hours to appear. Gigs you have already logged show <strong>✓ Going</strong>, which
+            opens that gig.
           </li>
           <li>
             <strong>Find &amp; Log a Gig:</strong> Head to the <em>Gigs</em> tab and tap{" "}
