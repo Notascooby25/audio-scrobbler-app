@@ -380,12 +380,12 @@ p {
 
 .nav-link-active {
   background: var(--color-accent);
-  color: #ffffff !important;
+  color: var(--color-on-accent) !important;
 }
 
 .nav-link-active:hover {
   background: var(--color-accent);
-  color: #ffffff !important;
+  color: var(--color-on-accent) !important;
 }
 
 .nav-link:focus-visible {
@@ -894,7 +894,7 @@ h3 {
 .calendar-day-start,
 .calendar-day-end {
   background: var(--color-accent) !important;
-  color: #ffffff !important;
+  color: var(--color-on-accent) !important;
   font-weight: 600;
 }
 
@@ -5538,8 +5538,8 @@ dd {
 
 .guide-callout {
   background: var(--color-canvas);
-  border-left: 3px solid var(--color-primary);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
   padding: 1rem 1.25rem;
   margin: 1rem 0;
   font-size: 0.875rem;
@@ -7105,18 +7105,11 @@ button.sfm-row-remove:hover:not(:disabled) {
 }
 
 .crossover-badge {
+  color: var(--color-muted);
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-}
-
-.badge-1001 {
-  color: #e3b341;
-}
-
-.badge-live {
-  color: #3fb950;
 }
 
 .crossover-meta {
