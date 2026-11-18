@@ -52,12 +52,15 @@ def follow(
 def _notify_new_follower(db: Session, follower: User, followee_id: int) -> None:
     name = getattr(follower, "display_name", None) or getattr(follower, "username", None) or "Someone"
     message = f"{name} started following you"
+    # The link carries the follower's id, so the cooldown is per person: two followers who
+    # share a display name both alert, and renaming yourself cannot dodge the cooldown.
+    link = f"/following?from={follower.id}"
     recently_alerted = (
         db.query(Notification)
         .filter(
             Notification.user_id == followee_id,
             Notification.type == "follow",
-            Notification.message == message,
+            Notification.link == link,
             Notification.created_at >= utc_now() - FOLLOW_NOTIFICATION_COOLDOWN,
         )
         .first()
@@ -70,11 +73,11 @@ def _notify_new_follower(db: Session, follower: User, followee_id: int) -> None:
             title="New follower",
             message=message,
             type="follow",
-            link="/following",
+            link=link,
         )
     )
     db.commit()
-    queue_push(followee_id, "New follower", message, "/following")
+    queue_push(followee_id, "New follower", message, link)
 
 
 @router.delete("/{user_id}/follow", response_model=FollowActionResponse, status_code=status.HTTP_200_OK)

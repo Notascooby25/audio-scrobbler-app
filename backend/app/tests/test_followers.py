@@ -25,7 +25,11 @@ client = TestClient(app)
 AUTH = {"Authorization": "Bearer test"}
 
 
-NAMES = {1: ("viewer", "Viewer"), 2: ("music-fan", "Music Fan")}
+NAMES = {
+    1: ("viewer", "Viewer"),
+    2: ("music-fan", "Music Fan"),
+    4: ("viewer-two", "Viewer"),  # same display name as user 1
+}
 
 
 class FakeUser:
@@ -101,8 +105,41 @@ def test_new_follow_creates_notification_and_push(db):
     assert len(notes) == 1
     assert notes[0].title == "New follower"
     assert notes[0].message == "Viewer started following you"
-    assert notes[0].link == "/following"
-    assert db.pushes == [(2, "New follower", "Viewer started following you", "/following")]
+    assert notes[0].link == "/following?from=1"
+    assert db.pushes == [(2, "New follower", "Viewer started following you", "/following?from=1")]
+
+
+def test_two_followers_with_the_same_display_name_both_notify(db):
+    db.add(
+        User(
+            id=4,
+            spotify_user_id="u4",
+            username="viewer-two",
+            display_name="Viewer",
+            refresh_token_cipher="c",
+            is_active=True,
+        )
+    )
+    db.commit()
+    _as(1)
+    client.post("/users/2/follow", headers=AUTH)
+    _as(4)
+    client.post("/users/2/follow", headers=AUTH)
+    assert len(_follow_notifications(db, 2)) == 2
+
+
+def test_renaming_does_not_bypass_the_cooldown(db):
+    _as(1)
+    client.post("/users/2/follow", headers=AUTH)
+    client.delete("/users/2/follow", headers=AUTH)
+    db.query(User).filter(User.id == 1).update({"display_name": "Totally New Name"})
+    db.commit()
+    NAMES[1] = ("viewer", "Totally New Name")
+    try:
+        client.post("/users/2/follow", headers=AUTH)
+    finally:
+        NAMES[1] = ("viewer", "Viewer")
+    assert len(_follow_notifications(db, 2)) == 1
 
 
 def test_repeat_follow_does_not_notify_again(db):
