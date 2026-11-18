@@ -70,7 +70,7 @@ def get_rediscover(
     mode: str = Query(
         default="forgotten",
         pattern="^(forgotten|anniversary)$",
-        description="Mode: 'forgotten' (unplayed favorites) or 'anniversary' (on this day in past years)",
+        description="Mode: 'forgotten' (unplayed favourites) or 'anniversary' (on this day in past years)",
     ),
     limit: int = Query(default=15, ge=1, le=50),
     db: Session = Depends(get_db),
@@ -120,12 +120,12 @@ def export_rediscover_playlist(
     elif body.mode == "anniversary":
         title = f"On This Day — {now.strftime('%b %d')}"
     else:
-        title = f"Forgotten Favorites — {now.strftime('%b %Y')}"
+        title = f"Forgotten Favourites — {now.strftime('%b %Y')}"
 
     desc = (
         "Tracks from past years around this time, saved from Audio Scrobbler App."
         if body.mode == "anniversary"
-        else "Forgotten favorites rediscovery playlist, saved from Audio Scrobbler App."
+        else "Forgotten favourites rediscovery playlist, saved from Audio Scrobbler App."
     )
 
     try:

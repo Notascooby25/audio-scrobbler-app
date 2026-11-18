@@ -60,15 +60,15 @@ def spotify_callback(
     if error:
         if settings.frontend_auth_callback_url:
             return RedirectResponse(f"{settings.frontend_auth_callback_url}#auth_error=spotify_authorization_denied")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Spotify authorization was not completed")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Spotify authorisation was not completed")
     if not code:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Spotify authorization code is missing")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Spotify authorisation code is missing")
     try:
         access_token, user_id = complete_spotify_callback(db, code, state)
     except SpotifyAccessDeniedError as exc:
         if settings.frontend_auth_callback_url:
             return RedirectResponse(f"{settings.frontend_auth_callback_url}#auth_error=account_not_allowed")
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This Spotify account is not authorized to use this app") from exc
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This Spotify account is not authorised to use this app") from exc
     except (ValueError, jwt.InvalidTokenError) as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OAuth state") from exc
     except SpotifyRateLimitedError as exc:

@@ -495,7 +495,7 @@ export default function GigReportsSection({ token, userId }) {
 
                 {surgeLoading && !bump && (
                   <p className="notice" style={{ margin: "16px 0", fontSize: "13px" }}>
-                    Analyzing post-gig listening patterns...
+                    Analysing post-gig listening patterns...
                   </p>
                 )}
 

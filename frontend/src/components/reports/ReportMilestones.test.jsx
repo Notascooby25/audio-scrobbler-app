@@ -25,6 +25,11 @@ describe("ReportMilestones component", () => {
     expect(screen.getByText(/Night Owl/i)).toBeInTheDocument();
   });
 
+  it("shows the Catalogue Loyalist persona with its own icon", () => {
+    render(<ReportMilestones summary={{ persona: "Catalogue Loyalist" }} />);
+    expect(screen.getByText(/📚\s*Catalogue Loyalist/)).toBeInTheDocument();
+  });
+
   it("renders fallback placeholders gracefully when data is empty", () => {
     render(<ReportMilestones summary={{}} />);
     expect(screen.getByText(/🔥 0 Days/i)).toBeInTheDocument();

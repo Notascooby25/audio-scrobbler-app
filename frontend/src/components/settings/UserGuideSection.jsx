@@ -254,8 +254,8 @@ export default function UserGuideSection() {
           <li>
             <strong>Play:</strong> Your active listening and discovery hub. Features the{" "}
             <strong>Album Jukebox</strong> at the top followed by the{" "}
-            <strong>Time Capsule &amp; Rediscover</strong> section (rediscover "Forgotten Favorites"
-            and "On This Day" moments, with one-click export to Spotify).
+            <strong>Time Capsule &amp; Rediscover</strong> section (rediscover "Forgotten
+            Favourites" and "On This Day" moments, with one-click export to Spotify).
           </li>
           <li>
             <strong>Library:</strong> Browse every play you've ever logged. Filter by entity, toggle
@@ -285,7 +285,7 @@ export default function UserGuideSection() {
             Use <em>Clear read notifications</em> to tidy your notification list.
           </li>
           <li>
-            <strong>Theme & Accent Color Personalization:</strong> Make the site feel like yours by
+            <strong>Theme & Accent Colour Personalization:</strong> Make the site feel like yours by
             picking your favorite accent color in <em>Settings → General</em>. Choose from 8 curated
             music presets based on iconic song titles (Blue Monday, Green Eyes, Red Red Wine, Purple
             Rain, Fool's Gold, Paint It Black, Pretty in Pink, Orange Crush). Your choice updates
@@ -306,10 +306,10 @@ export default function UserGuideSection() {
             pick in Spotify.
           </li>
           <li>
-            <strong>Customizable Visible Amounts & Pagination:</strong> In the Library, you can
+            <strong>Customisable Visible Amounts & Pagination:</strong> In the Library, you can
             select how many items appear on each page (5, 10, 20, 50, 100, or 250) using the
             segmented buttons at the bottom. In <em>Settings → Views</em>, you can also set your
-            global default visible amount per page, or customize default visible amounts
+            global default visible amount per page, or customise default visible amounts
             individually for Scrobbles, Artists, Albums, and Tracks so each tab opens at your
             preferred density.
           </li>
@@ -332,7 +332,7 @@ export default function UserGuideSection() {
           <li>
             <strong>Streaks, Personas & Milestones:</strong> The Reports dashboard now celebrates
             your listening habits with active streaks, peak listening days, heavy rotation tracks,
-            and earned persona archetypes (Night Owl, Weekend Warrior, Discovery Voyager, Catalog
+            and earned persona archetypes (Night Owl, Weekend Warrior, Discovery Voyager, Catalogue
             Loyalist, and Deep Diver).
           </li>
           <li>
@@ -536,7 +536,7 @@ export default function UserGuideSection() {
                 <em>Profile Import:</em> Enter your Setlist.fm username or profile URL (e.g.{" "}
                 <code>https://www.setlist.fm/user/crispylettuce</code>) under{" "}
                 <em>Import / Export</em>. You can preview all shows, tick specific gigs, and import
-                them in bulk. Imports are optimized to use ~1 request per 20 gigs. If an import hits
+                them in bulk. Imports are optimised to use ~1 request per 20 gigs. If an import hits
                 Setlist.fm&apos;s daily rate limit, it pauses gracefully and resumes automatically
                 after midnight UTC; you can track progress, cancel anytime, and receive a
                 notification when finished.

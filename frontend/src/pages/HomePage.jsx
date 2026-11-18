@@ -57,10 +57,10 @@ export default function HomePage() {
   const callbackError = callbackSession?.authError;
   const callbackErrorMessage =
     callbackError === "account_not_allowed"
-      ? "This Spotify account is not authorized to use this app."
+      ? "This Spotify account is not authorised to use this app."
       : callbackError === "spotify_rate_limited"
         ? "Spotify is temporarily rate-limiting this app. Try connecting again later."
-        : "Spotify authorization was cancelled.";
+        : "Spotify authorisation was cancelled.";
   if (callbackError) localStorage.removeItem("audio-scrobbler-session");
   if (callbackSession)
     localStorage.setItem("audio-scrobbler-session", JSON.stringify(callbackSession));
@@ -599,7 +599,7 @@ export default function HomePage() {
                     redirectToAuthorization(authUrl);
                   } catch (reconnectErr) {
                     setActionNotice(
-                      reconnectErr.message || "Failed to start Spotify authorization"
+                      reconnectErr.message || "Failed to start Spotify authorisation"
                     );
                   }
                 }}

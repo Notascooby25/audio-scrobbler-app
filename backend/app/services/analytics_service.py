@@ -244,7 +244,7 @@ def _calculate_persona(
     if discovery_pct >= 40.0:
         return "Discovery Voyager"
     if (current_count / max(unique_artists, 1)) >= 8.0:
-        return "Catalog Loyalist"
+        return "Catalogue Loyalist"
     return "Deep Diver"
 
 

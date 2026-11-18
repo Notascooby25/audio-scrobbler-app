@@ -70,7 +70,7 @@ export const CHANGELOG = [
     version: "0.49.3",
     date: "2026-11-15",
     changes: [
-      "Security Headers & Hardening: Added browser security headers (Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy) and moved theme initialization to an external script.",
+      "Security Headers & Hardening: Added browser security headers (Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy) and moved theme initialisation to an external script.",
       "Offline Notice & Update Polish: Added a clear banner when you're offline, fixed a missing push notification badge icon, and let app updates wait until you click Update now.",
     ],
   },
@@ -174,7 +174,7 @@ export const CHANGELOG = [
     version: "0.45.0",
     date: "2026-11-11",
     changes: [
-      "Rough Trade Top 100 Albums: Added a new third catalog source to the Album Jukebox featuring all 700 canonical records across 7 annual editions (2020 to 2026) of Rough Trade Records' prestigious Albums of the Year.",
+      "Rough Trade Top 100 Albums: Added a new third catalogue source to the Album Jukebox featuring all 700 canonical records across 7 annual editions (2020 to 2026) of Rough Trade Records' prestigious Albums of the Year.",
       "Year-by-Year Filtering & Discovery: Explore Rough Trade picks across the entire multi-year collection or focus down to individual years (2020 through 2026), complete with parent genre filters and lucky dip spins.",
       "Played Tracking & Checklist Modal: Track your Rough Trade listening progress with an interactive progress pill, an 'Exclude previously played albums' toggle, post-listen confirmation prompts when opening in Spotify, and a full-featured checklist modal with per-year tabs and search.",
       "Dual View Support: Fully integrated across both the clean modern Flat View and the retro skeuomorphic arcade cabinet.",
@@ -194,12 +194,12 @@ export const CHANGELOG = [
     date: "2026-11-10",
     changes: [
       "Listening Streaks & Personal Milestones: Added active scrobble streaks (with a 1-day grace period), best streak in selected range, peak listening day, and your most played on-repeat track.",
-      "Period Persona Archetypes: Earn fun listening persona badges for the period based on your habits (Night Owl, Weekend Warrior, Discovery Voyager, Catalog Loyalist, and Deep Diver).",
+      "Period Persona Archetypes: Earn fun listening persona badges for the period based on your habits (Night Owl, Weekend Warrior, Discovery Voyager, Catalogue Loyalist, and Deep Diver).",
       "1001 Albums Challenge Milestone: Integrated canonical 1001 albums completed in the selected time window, overall challenge progress (e.g. 72 / 1001), and clickable album chips linking straight to the Jukebox.",
       "Live Concert Cross-Over: Linked your attended concert history with current listening habits, highlighting scrobbles for bands you've experienced in concert.",
       "Discovery Velocity & Music Ratios: Added a first-time artist discovery percentage to track exploration velocity alongside Explorer vs Repeater and Singles vs Albums.",
       "Customisable Widgets Dashboard: Introduced an interactive 'Customise Widgets' modal allowing you to toggle any section on or off and switch Top Leaderboards between Top 5 and Top 10 items, persisted to your device.",
-      "Timeline Skin Aesthetic: Polished reports dashboard cards, pill badges, and customizer styling under the deep slate Timeline Skin theme.",
+      "Timeline Skin Aesthetic: Polished reports dashboard cards, pill badges, and customiser styling under the deep slate Timeline Skin theme.",
     ],
   },
   {
@@ -207,7 +207,7 @@ export const CHANGELOG = [
     date: "2026-11-10",
     changes: [
       "Instant Gig Reports Tab Switching: Split data loading into staged progressive queries and introduced in-session memory caching, allowing the Gigs tab in Reports to render core widgets, maps, and cadence immediately without blocking on heavier calculations.",
-      "Optimized Post-Gig Surge & Bump Queries: Replaced sequential per-gig database queries in the backend with batched time-window queries, dramatically speeding up listening surge analysis.",
+      "Optimised Post-Gig Surge & Bump Queries: Replaced sequential per-gig database queries in the backend with batched time-window queries, dramatically speeding up listening surge analysis.",
       "Festival Venue Filtering: Added a 'Festivals on/off' filter button to the Gig Odyssey Map to seamlessly toggle between festival grounds and traditional music venues, alongside an active UK regional zoom focus.",
     ],
   },
@@ -216,11 +216,11 @@ export const CHANGELOG = [
     date: "2026-11-10",
     changes: [
       "Venue Stomping Grounds Date Deduplication: Fixed venue visit counts so that visiting a venue once for a main act and multiple support acts (or a multi-act festival lineup) on the same date counts as 1 visit rather than inflating per act.",
-      "Instant Gig Reports Loading: Optimized post-gig queries and eliminated full unindexed scrobble scans so the Gigs tab in Reports loads immediately.",
+      "Instant Gig Reports Loading: Optimised post-gig queries and eliminated full unindexed scrobble scans so the Gigs tab in Reports loads immediately.",
       "Live Artist Rankings: Added a live hall of fame ranking the artists you return to see the most often in concert, complete with show counts and relative volume indicators.",
       "Annual Gig Cadence Activity Grid: Added a seasonal live concert activity matrix mapping gig frequency by month and day across every year.",
       "Setlist Replay Tracker: Added a dedicated showcase of songs you've experienced performed live in concert across attended setlists.",
-      "Flexible Widget Customizer: Added individual on/off toggles in the widget customizer for all new live showcases, remembering your preferred dashboard configuration.",
+      "Flexible Widget Customizer: Added individual on/off toggles in the widget customiser for all new live showcases, remembering your preferred dashboard configuration.",
     ],
   },
   {
@@ -232,7 +232,7 @@ export const CHANGELOG = [
       "Live Milestones & Gamification Badges: Introduced milestone achievement badges (Solo Explorer, Road Warrior, Century Club, Live First, Mud Survivor, and active monthly gig streak trackers) with live progress tracking and unlock dates.",
       "Live-First Discoveries & Venue Royalty: Added a dedicated discovery showcase highlighting artists seen live in concert before ever recording a scrobble, plus a Venue Stomping Grounds leaderboard ranking your top musical homes by distinct acts and visits.",
       "Post-Gig Surge Leaderboard & Day-of-Week Rhythm: Added top post-gig listening surges tracking streaming spikes (+% listening volume) after concerts alongside a day-of-week concert cadence distribution chart.",
-      "Modular Sub-Tabs & Customizer Drawer: Grouped reports into focused sub-tabs (All Intelligence, Travel & Map, Badges & Streaks, Discoveries & Bump) and added a toggleable widget customizer that saves your preferred report view locally.",
+      "Modular Sub-Tabs & Customiser Drawer: Grouped reports into focused sub-tabs (All Intelligence, Travel & Map, Badges & Streaks, Discoveries & Bump) and added a toggleable widget customiser that saves your preferred report view locally.",
     ],
   },
   {
@@ -256,7 +256,7 @@ export const CHANGELOG = [
     version: "0.38.5",
     date: "2026-11-08",
     changes: [
-      "Consistent Source Badges Across Themes: Updated source keys in Timeline and Sleeve themes to use official brand colors (Spotify green, Apple blue, BBC orange, YouTube red) and authentic mini source badges matching the Library page.",
+      "Consistent Source Badges Across Themes: Updated source keys in Timeline and Sleeve themes to use official brand colours (Spotify green, Apple blue, BBC orange, YouTube red) and authentic mini source badges matching the Library page.",
       "Live Gig Concert Scrobbles Badge: Added a dedicated live gig source badge (purple with concert microphone icon) for scrobbles logged from Setlist.fm concert setlists.",
       "Geometric Fallback Marker: Added a geometric teal diamond fallback badge for scrobbles from any future or untyped data source, ensuring complete visual clarity.",
     ],
@@ -292,7 +292,7 @@ export const CHANGELOG = [
       "Proportional Progress in Separator Lines: Replaced the fixed horizontal volume column on mobile ranked lists with a sleek 2px accent underline along each row's separator border, paired with clean tabular play counts.",
       "Responsive Time Capsule Rows: Redesigned Time Capsule & Rediscover cards on mobile screens so stats badges wrap cleanly to a secondary line, allowing song titles to use the full width of the card.",
       "Clean Mobile Scrobble Grid: Arranged mobile scrobble feeds into a responsive 2-row layout with artwork, title, time, artist, source badge, and liked heart, ensuring long titles have ample horizontal space.",
-      "Suppressed Redundant Rank Source Badges: Hid repeated source icons on ranked artist, track, and album lists to prioritize essential entity titles and artist names.",
+      "Suppressed Redundant Rank Source Badges: Hid repeated source icons on ranked artist, track, and album lists to prioritise essential entity titles and artist names.",
     ],
   },
   {
@@ -313,9 +313,9 @@ export const CHANGELOG = [
     changes: [
       "Sleeve Editorial Skin: Complete release of the vinyl-inspired Sleeve visual theme across the entire application, featuring warm Young Serif display typography, editorial card layouts, and dedicated mobile and desktop navigation.",
       "Dedicated Sleeve Today Page: Added a rich, immersive Today experience with vinyl record disc visuals, live-playing status, and an Earlier Today horizontal listening carousel.",
-      "Dynamic Ambient Artwork Tinting: Introduced automatic dominant color extraction from album artwork using Pillow on the backend, dynamically tinting background surfaces (--sl-ground and --sl-card) with a smooth 300ms ambient transition.",
-      "Automatic High-Contrast Overlay Calculation: Dynamically calculates high-contrast text and overlay colors (--sl-on-sleeve) against extracted album colors using WCAG relative luminance standards.",
-      "Match Album Sleeve Preference: Added an Appearance toggle in Settings allowing users to customize whether the background ambiently tints to the current album sleeve or stays locked to their chosen accent palette.",
+      "Dynamic Ambient Artwork Tinting: Introduced automatic dominant colour extraction from album artwork using Pillow on the backend, dynamically tinting background surfaces (--sl-ground and --sl-card) with a smooth 300ms ambient transition.",
+      "Automatic High-Contrast Overlay Calculation: Dynamically calculates high-contrast text and overlay colours (--sl-on-sleeve) against extracted album colours using WCAG relative luminance standards.",
+      "Match Album Sleeve Preference: Added an Appearance toggle in Settings allowing users to customise whether the background ambiently tints to the current album sleeve or stays locked to their chosen accent palette.",
       "Site-Wide Multi-Page Sleeve Styling: Restyled Library, Gigs & Setlists, Reports & Stats, Profile, Following, Connect, and Settings into cohesive Sleeve editorial layouts while leaving Classic skin 100% untouched.",
     ],
   },
@@ -324,7 +324,7 @@ export const CHANGELOG = [
     date: "2026-11-07",
     changes: [
       "Skins Architecture Foundation: Introduced a unified skins framework supporting multiple visual themes (Classic, Sleeve, and Timeline) sharing the same data and routing with zero visual drift.",
-      "Skin Selection & Preference Sync: Added skin preferences to the database and user settings, synchronized with local storage and instant inline document initialization to eliminate theme flashing.",
+      "Skin Selection & Preference Sync: Added skin preferences to the database and user settings, synchronised with local storage and instant inline document initialisation to eliminate theme flashing.",
       "Token Contract & Slot System: Established a shared design token contract and extensible component slot pattern (<Slot name='...' />) enabling isolated skin styles and components without modifying Classic markup.",
       "Automated Multi-Skin Testing: Added comprehensive automated test suites enforcing token contract compliance, flat-by-default rules (zero gradients/shadows), strict CSS selector scoping, and Retro Jukebox immutability.",
     ],
@@ -388,7 +388,7 @@ export const CHANGELOG = [
     version: "0.31.2",
     date: "2026-11-05",
     changes: [
-      "BBC Sounds Repeat Scrobble & Duplicate Fix: Resolved an HTTP 500 error when scrobbling BBC Sounds radio shows. Show scrobbles now embed the session timestamp (matching the YouTube scrobbler) so legitimate repeat listens over time are fully supported, and duplicate uniqueness conflicts are gracefully recognized and skipped rather than crashing.",
+      "BBC Sounds Repeat Scrobble & Duplicate Fix: Resolved an HTTP 500 error when scrobbling BBC Sounds radio shows. Show scrobbles now embed the session timestamp (matching the YouTube scrobbler) so legitimate repeat listens over time are fully supported, and duplicate uniqueness conflicts are gracefully recognised and skipped rather than crashing.",
     ],
   },
   {
@@ -397,7 +397,7 @@ export const CHANGELOG = [
     changes: [
       "Jukebox Mobile Text Wrapping & Legibility: Ensured album titles, artist names, and release years wrap naturally onto multiple lines across mobile screen sizes instead of cutting off or squashing against adjacent controls, allowing long titles like 'After The Gold Rush' to remain fully readable.",
       "1001 Checklist Artwork Dimensions & Overflow Protection: Constrained album artwork in the 1001 Albums decade checklist modal to strict 40×40px dimensions with clipped boundaries, preventing large cover images from expanding across adjacent list items.",
-      "Exclude Completed Filter Alignment: Fixed an inherited CSS styling collision that caused the 'Exclude previously played albums' filter checkbox to render centered above its text label, restoring clean inline horizontal alignment.",
+      "Exclude Completed Filter Alignment: Fixed an inherited CSS styling collision that caused the 'Exclude previously played albums' filter checkbox to render centred above its text label, restoring clean inline horizontal alignment.",
       "1001 Albums Dataset Character Encoding Cleanup: Repaired 13 double-encoded UTF-8 records in the canonical 1001 Albums dataset (such as Björk, Motörhead, and Déjà Vu) so accented artist names, album titles, and Spotify search URLs display correctly without mojibake.",
       "Retro Jukebox Long-Title Support & Action Parity: Added responsive text wrapping and 1001 completion toggle controls to the Retro Arcade Jukebox view while strictly preserving its original retro cabinet styling.",
     ],
@@ -435,7 +435,7 @@ export const CHANGELOG = [
     version: "0.30.6",
     date: "2026-10-31",
     changes: [
-      "Setlist-Style Proportional Play Count Bars: Artists, Albums, and Tracks in Library (list view) and Reports now display clean, proportional frequency bars filled with your active accent color tint, exactly matching the Setlist leaderboard style.",
+      "Setlist-Style Proportional Play Count Bars: Artists, Albums, and Tracks in Library (list view) and Reports now display clean, proportional frequency bars filled with your active accent colour tint, exactly matching the Setlist leaderboard style.",
       "Clear Number-Inside Bar Presentation: The play count is rendered cleanly inside the proportional bar in bold tabular numbers, with consistent track alignment across all rows and tooltips for complete play counts.",
     ],
   },
@@ -443,7 +443,7 @@ export const CHANGELOG = [
     version: "0.30.5",
     date: "2026-10-31",
     changes: [
-      "Customizable Visible Amounts Per Category: In Settings → Views, you can now set your preferred visible items per page individually for Scrobbles, Artists, Albums, and Tracks, or have them inherit a global default.",
+      "Customisable Visible Amounts Per Category: In Settings → Views, you can now set your preferred visible items per page individually for Scrobbles, Artists, Albums, and Tracks, or have them inherit a global default.",
       "Expanded Page Size Options: Library pagination controls now offer 5, 10, 20, 50, 100, and 250 visible items per page, with instant on-the-fly switching at the bottom of the page and automatic page size adjustment when switching tabs.",
     ],
   },
@@ -476,7 +476,7 @@ export const CHANGELOG = [
     version: "0.30.1",
     date: "2026-10-31",
     changes: [
-      "Spotify Scope Alignment: Aligned default Spotify authorization scopes across Docker Compose configuration to reliably grant library modify permissions.",
+      "Spotify Scope Alignment: Aligned default Spotify authorisation scopes across Docker Compose configuration to reliably grant library modify permissions.",
       "1-Click Reconnect: Added a direct 'Reconnect Spotify' button in Settings → Scrobble and inside error banners to effortlessly refresh Spotify permissions for track and album liking.",
       "Enhanced Spotify API Diagnostics: Updated track and album liking endpoints with resilient JSON payload delivery and detailed response logging.",
     ],
@@ -500,7 +500,7 @@ export const CHANGELOG = [
     version: "0.29.1",
     date: "2026-10-31",
     changes: [
-      "Album Jukebox Archive Depth: When choosing your Library Archive (scrobbled history) as the Jukebox catalog source, you can now select your archive depth (top 100, 150, 200, 250, or 300 albums) in Settings → General.",
+      "Album Jukebox Archive Depth: When choosing your Library Archive (scrobbled history) as the Jukebox catalogue source, you can now select your archive depth (top 100, 150, 200, 250, or 300 albums) in Settings → General.",
     ],
   },
   {
@@ -514,7 +514,7 @@ export const CHANGELOG = [
     version: "0.28.9",
     date: "2026-10-30",
     changes: [
-      "Song-Title Accent Themes: Personalize your app theme across the whole site with 8 curated music presets inspired by classic songs (Blue Monday, Green Eyes, Red Red Wine, Purple Rain, Fool's Gold, Paint It Black, Pretty in Pink, Orange Crush). Switch presets instantly in Settings → General.",
+      "Song-Title Accent Themes: Personalise your app theme across the whole site with 8 curated music presets inspired by classic songs (Blue Monday, Green Eyes, Red Red Wine, Purple Rain, Fool's Gold, Paint It Black, Pretty in Pink, Orange Crush). Switch presets instantly in Settings → General.",
     ],
   },
   {
@@ -720,7 +720,7 @@ export const CHANGELOG = [
     changes: [
       "Added Setlist Song Detail Modal: click any concert title or 'View Songs' to see the full setlist broken down into main sets and encores with continuous song numbering, guest features, cover artist notes, and tape intro tags.",
       "Added Setlist Copy to Clipboard: copy nicely formatted concert tracklists with one click.",
-      "Added Personal Gig Notes & Diary: record memories (standing spots, ticket info, favorite encore moments) directly on your gigs with inline editing and timeline display.",
+      "Added Personal Gig Notes & Diary: record memories (standing spots, ticket info, favourite encore moments) directly on your gigs with inline editing and timeline display.",
       "Added Future Gig & 'I'M GOING' support: concerts occurring in the future automatically display '+ I'M GOING' and an 'Upcoming' badge, with timeline sub-filter tabs ('All Gigs', 'Attended', 'Upcoming').",
       "Redesigned Set Lists visual styling inspired by Setlist.fm: stacked calendar date badges (Month, Day, Year) and proportional count bars on Artists Seen, Songs Heard, and Venues leaderboards adhering strictly to Flat-By-Default design rules.",
     ],
@@ -741,7 +741,7 @@ export const CHANGELOG = [
     changes: [
       "Added Setlist.fm server diagnostics endpoint and warning banner if SETLIST_FM_API_KEY is missing or unconfigured in the production environment.",
       "Added URL parsing and username sanitization to accept full Setlist.fm user profile links (e.g. setlist.fm/user/username) as well as raw usernames.",
-      "Fixed silent empty response handling from Setlist.fm API, returning explicit error feedback for missing keys, 401/403 authorization failures, and 404 users.",
+      "Fixed silent empty response handling from Setlist.fm API, returning explicit error feedback for missing keys, 401/403 authorisation failures, and 404 users.",
       "Added explicit empty-state feedback when concert search queries return 0 results with guidance to check spelling or broaden filters.",
     ],
   },
@@ -758,7 +758,7 @@ export const CHANGELOG = [
     date: "2026-10-29",
     changes: [
       "Added selective Setlist.fm concert import: preview attended gigs from any username with interactive checkboxes, 'Select All' / 'Deselect All' toggles, and total selection counters.",
-      "Optimized desktop top navigation by placing 'Set Lists' directly into the primary menu and moving 'Following' alongside 'Settings' in the Profile section.",
+      "Optimised desktop top navigation by placing 'Set Lists' directly into the primary menu and moving 'Following' alongside 'Settings' in the Profile section.",
       "Wired SETLIST_FM_API_KEY into Docker Compose and production compose files with documented .env.example guidelines.",
       "Fixed Docker container startup packaging in CI smoke tests by aligning service import paths.",
     ],
@@ -780,7 +780,7 @@ export const CHANGELOG = [
     version: "0.14.1",
     date: "2026-10-28",
     changes: [
-      "Optimized YouTube Music & Concert Scrobbler for mobile viewports, completely eliminating horizontal scrolling with fluid track row stacking and responsive input layouts.",
+      "Optimised YouTube Music & Concert Scrobbler for mobile viewports, completely eliminating horizontal scrolling with fluid track row stacking and responsive input layouts.",
       "Expanded touch targets on channel unfollow buttons and track selection checkboxes to meet the >= 44pt mobile accessibility standard.",
       "Added accessible names (aria-labels) to inline editable track title and artist inputs.",
       "Refined dark mode contrast in feedback alerts and channel selector chips using system theme tokens.",
@@ -811,9 +811,9 @@ export const CHANGELOG = [
     date: "2026-10-18",
     changes: [
       "Added full listening history data export (CSV and JSON) in Settings > Data with high-performance chunked streaming downloads.",
-      "Introduced Time Capsule & Rediscover on the Overview page featuring Forgotten Favorites (unplayed tracks with 3+ past plays) and On This Day anniversary tracks.",
+      "Introduced Time Capsule & Rediscover on the Overview page featuring Forgotten Favourites (unplayed tracks with 3+ past plays) and On This Day anniversary tracks.",
       "Added 1-click Spotify playlist creation from rediscovered tracks directly into the connected Spotify account.",
-      "Expanded Spotify track URI normalizer to seamlessly support raw 22-character track IDs for playlist creation.",
+      "Expanded Spotify track URI normaliser to seamlessly support raw 22-character track IDs for playlist creation.",
     ],
   },
   {
@@ -833,7 +833,7 @@ export const CHANGELOG = [
       "Corrected top-level heading hierarchy on the Connect page (WCAG 1.3.1).",
       "Added standard Escape key dismissal to the Copy Scrobbles modal.",
       "Improved Changelog version badge text contrast to satisfy WCAG AA (>= 4.5:1).",
-      "Normalized BBC Scope Creep tools styling to use standard design tokens and 0.5px hairline borders.",
+      "Normalised BBC Scope Creep tools styling to use standard design tokens and 0.5px hairline borders.",
       "Refined loading spinner for reduced-motion preferences, using a gentle opacity pulse instead of an abrupt freeze.",
       "Elevated mobile touch targets across menus, compare toggles, calendar chips, and segmented tabs to the >= 44pt accessibility standard.",
     ],
@@ -854,7 +854,7 @@ export const CHANGELOG = [
     version: "0.11.8",
     date: "2026-10-18",
     changes: [
-      "Added green (positive) and red (negative) color indicators for percentage differences on the Reports summary cards when comparing previous periods.",
+      "Added green (positive) and red (negative) colour indicators for percentage differences on the Reports summary cards when comparing previous periods.",
       "Introduced WCAG AA accessible theme tokens (--color-success and dark-mode --color-danger) for clear high-contrast stat comparisons across both light and dark themes.",
     ],
   },
@@ -863,7 +863,7 @@ export const CHANGELOG = [
     date: "2026-10-18",
     changes: [
       "Added previous period percentage comparisons to Listening minutes and Average per day on the Reports page, giving a complete comparison breakdown across all 3 summary metrics.",
-      'Normalized toolbar button text casing so "Compare with Friends" matches the clean title/sentence case of the period comparison toggle.',
+      'Normalised toolbar button text casing so "Compare with Friends" matches the clean title/sentence case of the period comparison toggle.',
     ],
   },
   {
@@ -940,7 +940,7 @@ export const CHANGELOG = [
     changes: [
       "Design system & accessibility overhaul: refactored Copy Scrobbles modal to native design tokens and standard modal primitives.",
       "Improved text contrast to meet WCAG AA standards (≥ 4.5:1) for secondary metadata and timestamps.",
-      "Eradicated hard-coded light colors across cards, badges, and calendar controls, ensuring clean dark theme rendering.",
+      "Eradicated hard-coded light colours across cards, badges, and calendar controls, ensuring clean dark theme rendering.",
       "Expanded mobile touch targets (≥ 44px) for calendar buttons, date presets, and track controls on touchscreen devices.",
       "Made listening heatmap responsive with horizontal scrolling to prevent layout clipping on small viewports.",
       "Enhanced motion performance: removed layout reflows on progress bars and refined like heart animations with clean deceleration.",
@@ -968,7 +968,7 @@ export const CHANGELOG = [
     version: "0.9.5",
     date: "2026-09-27",
     changes: [
-      "Automated playlist loading: added 1-click Spotify authorization in Scope Creep to automatically pull your playlist library without manual links.",
+      "Automated playlist loading: added 1-click Spotify authorisation in Scope Creep to automatically pull your playlist library without manual links.",
       "Added playlist search filter to quickly find and select any existing playlist from your library.",
       "Expanded playlist fetching to paginate and load up to 200 of your Spotify playlists.",
     ],
@@ -989,7 +989,7 @@ export const CHANGELOG = [
       "Added automatic album artwork resolution for BBC Sounds tracks, displaying official album covers in the tracklist preview and scrobble history.",
       "Fixed Spotify playlist creation error by migrating to Spotify's latest API specifications.",
       "Fixed scrobble timestamps to accurately display your local listening time (e.g. BST) instead of UTC.",
-      "Organized Settings: moved the Scope Creep BBC Sounds tool directly into the Scrobble settings tab.",
+      "Organised Settings: moved the Scope Creep BBC Sounds tool directly into the Scrobble settings tab.",
     ],
   },
   {
@@ -1044,7 +1044,7 @@ export const CHANGELOG = [
     version: "0.8.0",
     date: "2026-09-17",
     changes: [
-      "Fixed Spotify rate-limiting issues by optimizing background polling.",
+      "Fixed Spotify rate-limiting issues by optimising background polling.",
       "Removed automatic Liked Tracks sync to prevent Spotify connection drops.",
     ],
   },

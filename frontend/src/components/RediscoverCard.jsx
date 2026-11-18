@@ -59,7 +59,7 @@ export default function RediscoverCard({ token }) {
           <h2 id="rediscover-heading">Time Capsule & Rediscover</h2>
           <p className="rediscover-subtitle">
             {mode === 'forgotten'
-              ? "Past favorites with multiple plays you haven't listened to in 90+ days."
+              ? "Past favourites with multiple plays you haven't listened to in 90+ days."
               : 'Tracks you were listening to around this week in previous years.'}
           </p>
         </div>
@@ -72,7 +72,7 @@ export default function RediscoverCard({ token }) {
               className={`rediscover-tab-btn ${mode === 'forgotten' ? 'active' : ''}`}
               onClick={() => handleModeChange('forgotten')}
             >
-              Forgotten Favorites
+              Forgotten Favourites
             </button>
             <button
               type="button"
@@ -135,7 +135,7 @@ export default function RediscoverCard({ token }) {
       {status === 'ready' && tracks.length === 0 && (
         <p className="notice">
           {mode === 'forgotten'
-            ? "No forgotten favorites yet — keep listening and they'll appear here as your archive grows!"
+            ? "No forgotten favourites yet — keep listening and they'll appear here as your archive grows!"
             : 'No scrobbles found for this calendar week in previous years.'}
         </p>
       )}

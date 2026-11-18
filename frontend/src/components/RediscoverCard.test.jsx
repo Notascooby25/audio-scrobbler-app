@@ -101,7 +101,7 @@ describe('RediscoverCard', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/No forgotten favorites yet — keep listening and they'll appear here/)
+        screen.getByText(/No forgotten favourites yet — keep listening and they'll appear here/)
       ).toBeInTheDocument()
     })
 

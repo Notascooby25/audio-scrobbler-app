@@ -5,7 +5,7 @@ export default function ImportProgressBar({ progress }) {
 
   const stageLabels = {
     file_validation: 'Validating File',
-    record_normalization: 'Normalizing Records',
+    record_normalization: 'Normalising Records',
     artwork_caching: 'Caching Artwork',
     database_insertion: 'Inserting Scrobbles',
     completion: 'Import Complete',

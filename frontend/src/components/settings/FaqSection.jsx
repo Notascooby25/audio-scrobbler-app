@@ -255,11 +255,11 @@ const FAQ_DATA = [
   {
     id: "theme-accent-color",
     category: "General & Appearance",
-    question: "Can I customize the site theme and accent color?",
+    question: "Can I customise the site theme and accent colour?",
     answer: (
       <p>
         <strong>Yes!</strong> In <strong>Settings → General</strong>, you can switch between Light,
-        Dark, or System theme modes. You can also customize the site's accent color across buttons,
+        Dark, or System theme modes. You can also customise the site's accent colour across buttons,
         active nav tabs, charts, and activity heatmaps using 8 curated song-title presets:{" "}
         <em>Blue Monday</em>, <em>Green Eyes</em>, <em>Red Red Wine</em>, <em>Purple Rain</em>,{" "}
         <em>Fool's Gold</em>, <em>Paint It Black</em>, <em>Pretty in Pink</em>, or{" "}
@@ -283,7 +283,7 @@ const FAQ_DATA = [
         </p>
         <p>
           When using the Sleeve skin, you can turn on <strong>Match the album sleeve</strong> to let
-          the background atmosphere dynamically tint to match the dominant colors of whatever album
+          the background atmosphere dynamically tint to match the dominant colours of whatever album
           is currently playing.
         </p>
       </>
@@ -503,7 +503,7 @@ const FAQ_DATA = [
   {
     id: "visible-amounts-per-page",
     category: "Library & Data Maintenance",
-    question: "Can I customize how many items appear on each page in the Library?",
+    question: "Can I customise how many items appear on each page in the Library?",
     answer: (
       <p>
         <strong>Yes.</strong> At the bottom of any Library tab, you can quickly toggle between{" "}
@@ -517,14 +517,14 @@ const FAQ_DATA = [
   {
     id: "proportional-play-bars",
     category: "Library & Data Maintenance",
-    question: "What do the colored horizontal bars next to play counts mean?",
+    question: "What do the coloured horizontal bars next to play counts mean?",
     answer: (
       <p>
         In both your <strong>Library</strong> (artists, albums, and tracks) and{" "}
         <strong>Reports</strong> top categories, play counts are styled with proportional horizontal
         bars tinted with your active theme accent color. The width reflects each item&apos;s
         relative play frequency compared to the top item on the current page or report, making it
-        effortless to visualize relative popularity at a glance.
+        effortless to visualise relative popularity at a glance.
       </p>
     ),
   },
@@ -836,7 +836,7 @@ const FAQ_DATA = [
       <p>
         <strong>Yes.</strong> Every attended gig supports personal diary notes. Open the gig from My
         Gigs and use the <em>My notes</em> box to write any personal memories (e.g. standing spots,
-        who you attended with, favorite encore track). Your notes are securely saved in your
+        who you attended with, favourite encore track). Your notes are securely saved in your
         database and displayed alongside the concert.
       </p>
     ),
