@@ -19,7 +19,8 @@ def can_view_details(db: Session, viewer_id: int, target_user_id: int) -> bool:
     return viewer_id == target_user_id or is_following(db, viewer_id, target_user_id)
 
 
-def follow_user(db: Session, follower_id: int, followee_id: int) -> None:
+def follow_user(db: Session, follower_id: int, followee_id: int) -> bool:
+    """Creates the follow. Returns True only when a new follow was created."""
     if follower_id == followee_id:
         raise ValueError("Users cannot follow themselves")
     existing = (
@@ -28,9 +29,36 @@ def follow_user(db: Session, follower_id: int, followee_id: int) -> None:
         .first()
     )
     if existing is not None:
-        return
+        return False
     db.add(Follow(follower_id=follower_id, followee_id=followee_id))
     db.commit()
+    return True
+
+
+def remove_follower(db: Session, owner_id: int, follower_id: int) -> None:
+    """Removes someone who follows owner_id. Safe to repeat; never touches owner's own follows."""
+    db.query(Follow).filter(
+        Follow.follower_id == follower_id, Follow.followee_id == owner_id
+    ).delete()
+    db.commit()
+
+
+def get_followers(db: Session, user_id: int, limit: int = 50, offset: int = 0) -> list[dict]:
+    """Active users who follow user_id. Names only: a follower's listening is private to
+    the people who follow them, so no last_scrobble is attached here."""
+    users = (
+        db.query(User)
+        .join(Follow, Follow.follower_id == User.id)
+        .filter(Follow.followee_id == user_id, User.is_active.is_(True))
+        .order_by(User.username)
+        .limit(limit)
+        .offset(offset)
+        .all()
+    )
+    return [
+        {"id": user.id, "username": user.username, "display_name": user.display_name}
+        for user in users
+    ]
 
 
 def unfollow_user(db: Session, follower_id: int, followee_id: int) -> None:

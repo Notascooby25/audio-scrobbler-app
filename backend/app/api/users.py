@@ -1,21 +1,29 @@
 from __future__ import annotations
 
+from datetime import timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from ..api.deps import get_current_user
+from ..datetime_utils import utc_now
 from ..db import get_db
-from ..models import ArtworkCache, RealtimePlaybackState, User
+from ..models import ArtworkCache, Notification, RealtimePlaybackState, User
 from ..queries.analytics_queries import DATE_RANGE_PRESETS, resolve_date_range
 from ..schemas.users import (
-    FollowActionResponse, FollowingListResponse, UserProfileResponse, 
+    FollowActionResponse, FollowersListResponse, FollowingListResponse, UserProfileResponse,
     UserSearchResponse, NowPlayingResponse, LeaderboardResponse,
-    CopyScrobblesRequest, CopyScrobblesResponse
+    CopyScrobblesRequest, CopyScrobblesResponse, RemoveFollowerResponse
 )
 from ..services import social_service
 from ..services.color_service import fetch_and_extract_color
+from ..services.push_service import queue_push
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+# A person who follows, unfollows and follows again must not be able to flood the
+# notification list, so the same follower alerts the same user at most once a day.
+FOLLOW_NOTIFICATION_COOLDOWN = timedelta(hours=24)
 
 
 def _get_active_user_or_404(db: Session, user_id: int) -> User:
@@ -33,10 +41,40 @@ def follow(
 ) -> FollowActionResponse:
     _get_active_user_or_404(db, user_id)
     try:
-        social_service.follow_user(db, current_user.id, user_id)
+        is_new_follow = social_service.follow_user(db, current_user.id, user_id)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    if is_new_follow:
+        _notify_new_follower(db, current_user, user_id)
     return FollowActionResponse(following=True, follower_count=social_service.follower_count(db, user_id))
+
+
+def _notify_new_follower(db: Session, follower: User, followee_id: int) -> None:
+    name = getattr(follower, "display_name", None) or getattr(follower, "username", None) or "Someone"
+    message = f"{name} started following you"
+    recently_alerted = (
+        db.query(Notification)
+        .filter(
+            Notification.user_id == followee_id,
+            Notification.type == "follow",
+            Notification.message == message,
+            Notification.created_at >= utc_now() - FOLLOW_NOTIFICATION_COOLDOWN,
+        )
+        .first()
+    )
+    if recently_alerted is not None:
+        return
+    db.add(
+        Notification(
+            user_id=followee_id,
+            title="New follower",
+            message=message,
+            type="follow",
+            link="/following",
+        )
+    )
+    db.commit()
+    queue_push(followee_id, "New follower", message, "/following")
 
 
 @router.delete("/{user_id}/follow", response_model=FollowActionResponse, status_code=status.HTTP_200_OK)
@@ -58,6 +96,28 @@ def following(
     current_user: User = Depends(get_current_user),
 ) -> FollowingListResponse:
     return FollowingListResponse(results=social_service.get_following(db, current_user.id, limit, offset))
+
+
+@router.get("/me/followers", response_model=FollowersListResponse, status_code=status.HTTP_200_OK)
+def followers(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> FollowersListResponse:
+    return FollowersListResponse(results=social_service.get_followers(db, current_user.id, limit, offset))
+
+
+@router.delete(
+    "/me/followers/{follower_id}", response_model=RemoveFollowerResponse, status_code=status.HTTP_200_OK
+)
+def remove_follower(
+    follower_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> RemoveFollowerResponse:
+    social_service.remove_follower(db, current_user.id, follower_id)
+    return RemoveFollowerResponse(follower_count=social_service.follower_count(db, current_user.id))
 
 
 @router.get("/me/leaderboard", response_model=LeaderboardResponse, status_code=status.HTTP_200_OK)
