@@ -3,7 +3,8 @@ export const CHANGELOG = [
     version: "0.51.0",
     date: "2026-11-18",
     changes: [
-      "Gig Discovery & Local Radar: Added a Discover tab under Gigs to spot upcoming and newly announced shows for your regularly listened or seen-live artists, or browse all live music within your own mile radius around your saved home city.",
+      "Gig Discovery & Local Radar: A new Discover tab under Gigs shows upcoming UK shows from Skiddle. See gigs for the artists you listen to or have seen live, or switch to Local Radar for everything on within your own mile radius of your saved home city.",
+      "Possible Matches: When one of your artists is only named in an event title (not the line-up), the gig is marked Possible match so you can check it. Tribute nights are never matched.",
       "Tailored Filters, Criteria Cog & Shortlist: Filter by This Weekend, Next 7/30 Days, Newly Announced, or Interested; customise what counts as your artists (Top N or played at least X times in the last Y months); save your default filters; and toggle 'I'm interested' or '+ I'm going' in one click.",
     ],
   },

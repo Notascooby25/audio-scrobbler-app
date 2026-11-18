@@ -1,7 +1,7 @@
 # Gig Discovery & Local Radar Design Document
 
 **Date:** 2026-11-16
-**Status:** Draft (pending builder check & owner approval)
+**Status:** Built. Update 2026-11-18: Skiddle is now the first live source (owner holds a Skiddle API key); Ticketmaster stays built but dormant until its key arrives. See section 7.
 
 ---
 
@@ -30,7 +30,7 @@ The owner wants two practical ways to discover gigs without leaving the app:
 
 ### Non-Goals
 - Integrating **Songkick** or **Bandsintown** (neither offers free personal/hobbyist API keys).
-- Integrating **Skiddle** in this release (explicitly deferred to a future phase).
+- ~~Integrating Skiddle in this release.~~ Reversed on 2026-11-18: Skiddle shipped first (section 7).
 - Automatic push notifications for every new gig announcement (can be layered later on top of `discovered_gigs`).
 - Showing the Discover tab when viewing a followed friend's gigs (`?userId=...`); Discover is strictly for the signed-in user.
 
@@ -63,8 +63,8 @@ The owner wants two practical ways to discover gigs without leaving the app:
 
 1. **Ticketmaster Discovery API + Background Worker Sync + Saved Filter Tab *(Selected)***
    - Free self-service API key (5,000 calls/day). Background worker caches artist + local events in Postgres (`discovered_gigs`). Instant filtering, supports "Newly Announced" tracking, and stores a `source` column for future Skiddle support.
-2. **Dual-Source: Ticketmaster + Skiddle**
-   - Adds UK grassroots coverage immediately, but requires manual Skiddle API key approval and cross-source event deduplication. Deferred to a future phase.
+2. **Dual-Source: Ticketmaster + Skiddle** *(adopted 2026-11-18, order reversed: Skiddle first)*
+   - Adds UK grassroots coverage. Skiddle's key arrived before Ticketmaster's, so Skiddle went live first. Cross-source event deduplication is still deferred (the overlap is small because Skiddle is mostly UK grassroots shows).
 3. **Live On-Demand Search Only (No Worker)**
    - Simpler, but slow on every filter change, risks rate-limit errors, and cannot track newly announced gigs proactively. Rejected.
 
@@ -145,3 +145,26 @@ The owner wants two practical ways to discover gigs without leaving the app:
 - Exact batch size, artist cap per sync, and rate-limit sleep intervals in the worker job to stay comfortably within 5,000 calls/day.
 - Exact `sfm-*` CSS classes and mobile responsive breakpoints (`@media (max-width: 720px)`).
 - Updating `agents/page_specs.md`, `.env.example`, and `UserGuideSection.jsx` / `FaqSection.jsx` + `changelogData.js` during implementation.
+
+---
+
+## 7. Skiddle source (added 2026-11-18)
+
+**Why:** the owner's Skiddle API key was approved before the Ticketmaster key. The `source` + `external_id` columns already allowed a second source, so there is **no migration**.
+
+**Client (`backend/app/services/skiddle_service.py`)** follows Skiddle's client guidelines: a User-Agent naming the app, version and URL on every request (`SKIDDLE_USER_AGENT_URL` overrides the default public repo URL); one request at a time with a 1 second pause; 8 second timeout; up to 3 attempts with exponential back-off plus jitter on 429 / 5xx / timeouts, honouring `Retry-After`; never retrying other 4xx; a 401/403 or repeated failure stops the whole sweep; the key is sent from the server only, in the query string, so logs record status codes and error types only, never URLs or exception text.
+
+**Sweeps (`gig_discovery_sync_service.py`)**, in priority order, about 41 requests per full run:
+1. **Local:** one geo search (`latitude`, `longitude`, `radius` of at least 25 miles, `eventcode=LIVE`, `minDate=today`, nearest first), up to 3 pages of 100, once per distinct home location.
+2. **Your artists:** one keyword search per favourite artist (top 30 per user by plays in the user's criteria, then artists seen live; 60 overall, shared artists searched once; blocked artists never).
+3. **UK-wide:** four date windows (next 30 days, then to 3, 6 and 12 months), up to 2 pages each, only on a full sweep when someone has artists. A single-user refresh (home city or criteria changed) does only 1 and 2.
+
+Listings whose start date is already past (courses, exhibitions) are ignored. The job runs every `WORKER_GIG_DISCOVERY_INTERVAL_MINUTES` with up to 15 minutes of random jitter, so it never fires on the hour.
+
+**Matching:** artist keys are compared in a canonical form (lower case, `&` = `and`). Skiddle often lists no artists; then the event title is the only name held. If one of the user's artists appears in such a title as whole words (artist name at least 4 characters, title not a tribute night, source is Skiddle, artist not blocked) the gig is returned with `is_my_artist` and `is_possible_match` both true and the UI shows **Possible match** instead of **Your artist**.
+
+**Display and terms:** the Discover tab shows "Event listings from" with the official unaltered Skiddle logo (light and dark versions in `frontend/public/skiddle/`), a link to skiddle.com and a line saying the app is not affiliated with or endorsed by Skiddle. Each Skiddle event links with **View on Skiddle** using the link Skiddle returned, unmodified. Event data is stored as received and is for personal, non-commercial use. Event images are linked, not copied (Skiddle's terms are silent on images; the owner is asking them).
+
+**Unknowns:** Skiddle publishes no daily or hourly limits and may change them at any time; watch worker logs for 429s. The per-artist and UK-window caps are the knobs (`SKIDDLE_ARTISTS_PER_USER`, `SKIDDLE_ARTIST_SEARCH_CAP`, `SKIDDLE_UK_*`).
+
+**Configuration:** `SKIDDLE_API_KEY` (and optional `SKIDDLE_USER_AGENT_URL`) in `.env` / `.env.production`, passed through both compose files. With no key the source does nothing; the Discover tab works when either key is set. The preview uses a placeholder key and has no internet, so Skiddle is never called from it.

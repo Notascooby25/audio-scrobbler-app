@@ -355,7 +355,7 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
                     rel="noopener noreferrer"
                     className="sfm-action sfm-btn-mixed"
                   >
-                    Tickets ↗
+                    {gig.source === "skiddle" ? "View on Skiddle ↗" : "Tickets ↗"}
                   </a>
                 )}
                 <button

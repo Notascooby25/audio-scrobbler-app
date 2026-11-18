@@ -617,6 +617,36 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "discover-gigs-sources",
+    category: "Set Lists & Gigs",
+    question: "Where do the gigs on the Discover tab come from, and how fresh are they?",
+    answer: (
+      <p>
+        Discover shows upcoming events from <strong>Skiddle</strong>, which lists mostly UK shows,
+        from small venues to big ones. The app fetches them in the background a few times a day and
+        keeps a copy, so the tab opens instantly and a gig that was announced this morning may take
+        a few hours to appear. It is only as complete as Skiddle&apos;s own listings: shows that are
+        not listed there will not appear, and the details come from promoters, so check the date and
+        venue with the ticket seller before you buy. Use <em>View on Skiddle</em> to open the event
+        page. This app is not affiliated with or endorsed by Skiddle.
+      </p>
+    ),
+  },
+  {
+    id: "discover-possible-match",
+    category: "Set Lists & Gigs",
+    question: "What does 'Possible match' mean on a Discover gig?",
+    answer: (
+      <p>
+        Some listings do not name their bands in a proper line-up, only in the event title (for
+        example a local night with three bands). When one of your artists appears in that title, the
+        gig is labelled <strong>Possible match</strong> instead of <em>Your artist</em>, because the
+        app cannot be sure it is the same act. Tribute nights are never matched, and very short
+        artist names are ignored to avoid false matches. Open the event to check the line-up.
+      </p>
+    ),
+  },
+  {
     id: "setlists-festival-name",
     category: "Set Lists & Gigs",
     question: "Can I say which festival a gig was at?",

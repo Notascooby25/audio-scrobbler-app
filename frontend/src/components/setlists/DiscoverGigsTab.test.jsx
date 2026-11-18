@@ -163,7 +163,7 @@ describe("DiscoverGigsTab", () => {
         expect(screen.getByText(/Fang Night/)).toBeInTheDocument();
       });
 
-      const credit = screen.getByRole("link", { name: /Skiddle/i });
+      const credit = screen.getByRole("link", { name: "Skiddle" });
       expect(credit).toHaveAttribute("href", "https://www.skiddle.com/");
       expect(credit).toHaveAttribute("target", "_blank");
       expect(credit.getAttribute("rel")).toContain("noopener");
@@ -199,8 +199,16 @@ describe("DiscoverGigsTab", () => {
         items: [skiddleItem],
       });
       renderTab();
-      const tickets = await screen.findByRole("link", { name: /Tickets/i });
-      expect(tickets).toHaveAttribute("href", skiddleItem.ticket_url);
+      const link = await screen.findByRole("link", { name: /View on Skiddle/i });
+      expect(link).toHaveAttribute("href", skiddleItem.ticket_url);
+      expect(screen.queryByRole("link", { name: /^Tickets/i })).not.toBeInTheDocument();
+    });
+
+    it("keeps the Tickets label for other sources", async () => {
+      renderTab();
+      const tickets = await screen.findByRole("link", { name: /^Tickets/i });
+      expect(tickets).toHaveAttribute("href", SAMPLE_RESPONSE.items[0].ticket_url);
+      expect(screen.queryByRole("link", { name: /View on Skiddle/i })).not.toBeInTheDocument();
     });
   });
 

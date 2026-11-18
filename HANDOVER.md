@@ -460,6 +460,16 @@ the NAS listing.** The live setup has drifted from the repos before.
   `/setlists`; standardized page category eyebrows across all primary sections
   and promoted Profile heading to a semantic `<h1>`; and unified secondary button,
   retry button, and badge styling in `styles.css`.
+- **v0.51.0 (2026-11-18):** Gig Discovery (Discover tab under Gigs), Skiddle as
+  the first live source (Ticketmaster built, dormant until its key arrives).
+  Tables `discovered_gigs`, `discovered_gig_interests`, two `user_preferences`
+  columns (migration 0037). Worker job `gig-discovery-sync` (6 hourly, 15 minute
+  jitter) calls `POST /setlists/internal/discover-sync`; backend code in
+  `services/skiddle_service.py` and `services/gig_discovery_*`. Needs
+  `SKIDDLE_API_KEY` in `.env.production` (restart backend and worker after
+  setting it). Skiddle's terms require its name and logo wherever its data is
+  shown and an unmodified event link. Design and unknowns: spec section 7 in
+  `docs/superpowers/specs/2026-11-16-gig-discovery-design.md`.
 - **Also 2026-09-22/23:** listening heatmap, frontend redesign, nginx
   `client_max_body_size` raised for large imports, listening clock restored,
   friends-average removed from the UI, Library share-image feature,
