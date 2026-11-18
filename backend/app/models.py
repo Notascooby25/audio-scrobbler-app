@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import (
     JSON,
     BigInteger,
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -102,6 +103,8 @@ class UserPreferences(Base):
     home_city: Mapped[str | None] = mapped_column(String(128), nullable=True)
     home_lat: Mapped[float | None] = mapped_column(Float, nullable=True)
     home_lng: Mapped[float | None] = mapped_column(Float, nullable=True)
+    local_gig_radius_miles: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
+    gig_discovery_filters: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     notify_system: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     recap_frequency: Mapped[str] = mapped_column(String(16), nullable=False, default="weekly")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
@@ -498,4 +501,50 @@ class UserRoughTradePendingConfirmation(Base):
     album_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
     opened_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     dismissed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+
+class DiscoveredGig(Base):
+    __tablename__ = "discovered_gigs"
+    __table_args__ = (
+        UniqueConstraint("source", "external_id", name="uq_discovered_gigs_source_external_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    source: Mapped[str] = mapped_column(String(32), index=True, nullable=False, default="ticketmaster")
+    external_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    artist_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    artist_key: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
+    attraction_names: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    attraction_keys: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    event_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    venue_name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    city: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+    country_code: Mapped[str] = mapped_column(String(8), index=True, nullable=False, default="")
+    lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    lng: Mapped[float | None] = mapped_column(Float, nullable=True)
+    event_date: Mapped[date] = mapped_column(Date, index=True, nullable=False)
+    event_time: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    onsale_start_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    first_seen_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    last_synced_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    ticket_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    is_cancelled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+
+class DiscoveredGigInterest(Base):
+    __tablename__ = "discovered_gig_interests"
+    __table_args__ = (
+        UniqueConstraint("user_id", "discovered_gig_id", name="uq_discovered_gig_interest_user_gig"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    discovered_gig_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("discovered_gigs.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+
 

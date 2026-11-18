@@ -395,6 +395,20 @@ export default function UserGuideSection() {
         </p>
         <ul>
           <li>
+            <strong>Discover Upcoming &amp; Local Gigs:</strong> Open the <em>Discover</em> tab
+            under <em>Gigs</em> to see upcoming and newly announced shows (UK events come from
+            Skiddle) for your regularly played or seen-live artists (<em>My Artists</em>), or switch
+            to <em>Local Radar</em> to browse shows within your chosen mile radius around your saved{" "}
+            <em>Home city</em> (with a toggle for <em>My artists only</em> vs <em>All local</em>).
+            Use the <em>Criteria</em> cog to pick between Top N artists or playing an artist at
+            least X times in the last Y months, click <em>Save as default</em> to remember your
+            filters, and mark gigs with <strong>I&apos;m interested</strong> or{" "}
+            <strong>+ I&apos;m going</strong>. A <em>Possible match</em> label means one of your
+            artists is named in the event title but not in the listed line-up, so check it before
+            you plan around it. The list refreshes a few times a day, so a brand new gig may take a
+            few hours to appear.
+          </li>
+          <li>
             <strong>Find &amp; Log a Gig:</strong> Head to the <em>Gigs</em> tab and tap{" "}
             <em>+ Log a Gig</em>. Search by artist name with optional filters for country, venue,
             month, or year. You can also paste direct Setlist.fm show/setlist links (e.g.{" "}

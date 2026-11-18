@@ -44,6 +44,8 @@ class Settings:
     # Apple in particular can reject placeholder addresses.
     vapid_subject: str = os.getenv("VAPID_SUBJECT", "").strip() or "mailto:admin@example.com"
     setlist_fm_api_key: str = os.getenv("SETLIST_FM_API_KEY", "").strip("'\" \r\n")
+    ticketmaster_api_key: str = os.getenv("TICKETMASTER_API_KEY", "").strip("'\" \r\n")
+    skiddle_api_key: str = os.getenv("SKIDDLE_API_KEY", "").strip("'\" \r\n")
     cors_origins: str = os.getenv(
         "CORS_ORIGINS",
         "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000",

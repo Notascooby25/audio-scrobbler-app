@@ -338,6 +338,51 @@ class LiveFirstDiscoveryItem(BaseModel):
     lifetime_plays: int
 
 
+class DiscoveredGigItem(BaseModel):
+    id: int
+    source: str
+    external_id: str
+    artist_name: str
+    attraction_names: list[str] = Field(default_factory=list)
+    event_name: str
+    venue_name: str
+    city: str
+    country_code: str
+    event_date: str
+    event_time: str | None = None
+    ticket_url: str | None = None
+    image_url: str | None = None
+    distance_miles: float | None = None
+    is_my_artist: bool
+    is_possible_match: bool = False
+    is_seen_live: bool
+    is_newly_announced: bool
+    is_interested: bool
+    already_going: bool
+    concert_id: int | None = None
+
+
+class DiscoveredGigsResponse(BaseModel):
+    configured: bool
+    has_home_city: bool
+    home_city: str | None = None
+    saved_radius_miles: int
+    saved_filters: dict[str, Any] = Field(default_factory=dict)
+    countries: list[str] = Field(default_factory=list)
+    items: list[DiscoveredGigItem] = Field(default_factory=list)
+
+
+class GigInterestResponse(BaseModel):
+    gig_id: int
+    is_interested: bool
+
+
+class GigAttendDiscoveryResponse(BaseModel):
+    concert_id: int
+    artist_name: str
+    event_date: str
+
+
 class GigSurgeItem(BaseModel):
     artist_name: str
     venue_name: str

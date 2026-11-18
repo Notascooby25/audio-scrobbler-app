@@ -33,6 +33,9 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       REFRESH_TOKEN_KEY: ${REFRESH_TOKEN_KEY}
       WORKER_INGESTION_TOKEN: ${WORKER_INGESTION_TOKEN}
+      # Placeholder only: it makes the Discover tab show as set up. The preview network has no
+      # internet and no worker runs here, so Skiddle is never contacted from the preview.
+      SKIDDLE_API_KEY: preview-offline-placeholder
       SPOTIFY_CLIENT_ID: preview-disabled
       SPOTIFY_CLIENT_SECRET: preview-disabled
       CORS_ORIGINS: ${CORS_ORIGINS}

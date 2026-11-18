@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import logging
 import os
+import secrets
+import threading
 from datetime import datetime, timedelta, timezone
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from fastapi import FastAPI
+from fastapi import BackgroundTasks, Body, FastAPI, Header, HTTPException
 from fastapi.responses import JSONResponse, PlainTextResponse
 import requests
 from sqlalchemy import create_engine
@@ -75,6 +77,10 @@ setlist_artwork_interval_minutes = int(os.getenv("WORKER_SETLIST_ARTWORK_INTERVA
 # Map lookups are limited to one a second, so 60 a run keeps each run within about a minute
 venue_geocode_interval_minutes = int(os.getenv("WORKER_VENUE_GEOCODE_INTERVAL_MINUTES", "2"))
 venue_geocode_batch_size = int(os.getenv("WORKER_VENUE_GEOCODE_BATCH_SIZE", "60"))
+gig_discovery_interval_minutes = int(os.getenv("WORKER_GIG_DISCOVERY_INTERVAL_MINUTES", "360"))
+_last_discovery_trigger_by_user: dict[int, datetime] = {}
+_gig_discovery_lock = threading.Lock()
+GIG_DISCOVERY_TRIGGER_COOLDOWN_SECONDS = 120
 max_attempts = 3
 last_spotify_sync_at: str | None = None
 last_spotify_sync_users = 0
@@ -428,6 +434,55 @@ def run_venue_geocoding() -> None:
         )
 
 
+def run_gig_discovery_sync(user_id: int | None = None) -> None:
+    params = {"user_id": user_id} if user_id is not None else {}
+    try:
+        # One sync at a time: Skiddle's terms ask for sequential requests, so a user-triggered
+        # refresh waits for a scheduled run (and vice versa) instead of running alongside it.
+        with _gig_discovery_lock:
+            response = requests.post(
+                f"{backend_url}/setlists/internal/discover-sync",
+                params=params,
+                headers={"X-Worker-Token": worker_token},
+                timeout=600,
+            )
+        response.raise_for_status()
+        counts = response.json()
+    except requests.RequestException as exc:
+        logger.warning("Gig discovery sync failed: %s", exc)
+        return
+    if counts.get("configured"):
+        logger.info(
+            "Gig discovery sync: %s upserted, %s pruned, %s Skiddle searches, %s Skiddle gigs stored",
+            counts.get("upserted", 0),
+            counts.get("pruned", 0),
+            counts.get("skiddle_queries", 0),
+            counts.get("skiddle_upserted", 0),
+        )
+
+
+@app.post("/internal/trigger-gig-discovery")
+def trigger_gig_discovery(
+    background_tasks: BackgroundTasks,
+    payload: dict | None = Body(default=None),
+    x_worker_token: str | None = Header(default=None, alias="X-Worker-Token"),
+) -> dict[str, bool]:
+    if not x_worker_token or not secrets.compare_digest(x_worker_token, worker_token):
+        raise HTTPException(status_code=401, detail="Invalid worker token")
+    uid = payload.get("user_id") if isinstance(payload, dict) else None
+    try:
+        key = int(uid) if uid is not None else 0
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="Invalid user_id") from exc
+    now = datetime.now(timezone.utc)
+    last = _last_discovery_trigger_by_user.get(key)
+    if last is not None and (now - last) < timedelta(seconds=GIG_DISCOVERY_TRIGGER_COOLDOWN_SECONDS):
+        return {"scheduled": False}
+    _last_discovery_trigger_by_user[key] = now
+    background_tasks.add_task(run_gig_discovery_sync, uid)
+    return {"scheduled": True}
+
+
 @app.get("/health")
 def health_check() -> dict[str, str]:
     blocked_until = spotify_rate_limit_blocked_until()
@@ -593,6 +648,15 @@ def start_scheduler() -> None:
         "interval",
         minutes=venue_geocode_interval_minutes,
         id="venue-geocoding",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        run_gig_discovery_sync,
+        "interval",
+        minutes=gig_discovery_interval_minutes,
+        # Skiddle asks scheduled jobs not to fire on the hour: spread each run by up to 15 minutes.
+        jitter=900,
+        id="gig-discovery-sync",
         replace_existing=True,
     )
 

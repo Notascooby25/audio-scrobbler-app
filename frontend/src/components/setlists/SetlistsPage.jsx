@@ -22,6 +22,7 @@ import GigCard from "./GigCard";
 import SupportActsPromptModal from "./SupportActsPromptModal";
 import GigInvites from "./GigInvites";
 import MyGigsTimeline from "./MyGigsTimeline";
+import DiscoverGigsTab from "./DiscoverGigsTab";
 import ArtistsSeenLeaderboard from "./ArtistsSeenLeaderboard";
 import SongsHeardLeaderboard from "./SongsHeardLeaderboard";
 import VenuesLeaderboard from "./VenuesLeaderboard";
@@ -32,6 +33,7 @@ import { isFutureDate } from "./SetlistDateBadge";
 
 const TABS = [
   { id: "gigs", label: "My Gigs", short: "Gigs" },
+  { id: "discover", label: "Discover", short: "Discover", ownOnly: true },
   { id: "artists", label: "Artists Seen", short: "Artists" },
   { id: "songs", label: "Songs Heard", short: "Songs" },
   { id: "venues", label: "Venues", short: "Venues" },
@@ -52,8 +54,12 @@ export default function SetlistsPage() {
   const [viewedProfile, setViewedProfile] = useState(null);
   const [viewError, setViewError] = useState("");
   const tabParam = searchParams.get("tab");
+  const visibleTabs = TABS.filter((t) => !(isViewing && t.ownOnly));
   const activeTab =
-    TAB_IDS.includes(tabParam) && !(isViewing && tabParam === "log") ? tabParam : "gigs";
+    TAB_IDS.includes(tabParam) &&
+    !(isViewing && (tabParam === "log" || tabParam === "discover"))
+      ? tabParam
+      : "gigs";
   const setActiveTab = (tab) =>
     setSearchParams({
       ...(isViewing ? { userId: String(viewUserId) } : {}),
@@ -414,7 +420,7 @@ export default function SetlistsPage() {
       <section className="sfm-panel">
         <div className="sfm-tabbar">
           <div className="sfm-tabs" role="tablist" aria-label="Set Lists sections">
-            {TABS.map((tab) => (
+            {visibleTabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
@@ -577,6 +583,14 @@ export default function SetlistsPage() {
               />
             )}
           </div>
+        )}
+
+        {activeTab === "discover" && !isViewing && (
+          <DiscoverGigsTab
+            token={token}
+            onOpenGig={openGig}
+            onGigAdded={() => loadData()}
+          />
         )}
 
         {activeTab === "artists" && (

@@ -512,3 +512,63 @@ export async function fetchGigCadenceMatrix({ token, userId = null }) {
   });
   return parseResponse(response);
 }
+
+export async function fetchDiscoveredGigs({
+  token,
+  scope,
+  onlyMyArtists,
+  radiusMiles,
+  dateWindow,
+  country,
+}) {
+  const params = new URLSearchParams();
+  if (scope) params.set("scope", scope);
+  if (onlyMyArtists !== undefined && onlyMyArtists !== null) {
+    params.set("only_my_artists", String(onlyMyArtists));
+  }
+  if (radiusMiles !== undefined && radiusMiles !== null) {
+    params.set("radius_miles", String(radiusMiles));
+  }
+  if (dateWindow) params.set("date_window", dateWindow);
+  if (country !== undefined && country !== null) params.set("country", country);
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  const response = await fetch(`${API_BASE_URL}/setlists/discover${qs}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function toggleDiscoveredGigInterest({ token, gigId, interested }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/discover/${gigId}/interest`, {
+    method: interested ? "POST" : "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function attendDiscoveredGig({ token, gigId }) {
+  const response = await fetch(`${API_BASE_URL}/setlists/discover/${gigId}/attend`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
+export async function saveGigDiscoverySettings({
+  token,
+  localGigRadiusMiles,
+  gigDiscoveryFilters,
+}) {
+  const body = {};
+  if (localGigRadiusMiles !== undefined) body.local_gig_radius_miles = localGigRadiusMiles;
+  if (gigDiscoveryFilters !== undefined) body.gig_discovery_filters = gigDiscoveryFilters;
+  const response = await fetch(`${API_BASE_URL}/users/me/settings/gig-discovery`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+  return parseResponse(response);
+}

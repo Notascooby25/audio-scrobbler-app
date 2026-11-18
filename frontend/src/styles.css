@@ -7846,3 +7846,291 @@ button.sfm-row-remove:hover:not(:disabled) {
   text-transform: none;
   letter-spacing: normal;
 }
+
+/* ─── Gig Discovery Tab ─────────────────────────────────────────────────── */
+.sfm-btn-mixed {
+  text-transform: none;
+}
+
+.sfm-discover {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sfm-discover-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+}
+
+.sfm-discover-top-row,
+.sfm-discover-sub-row,
+.sfm-discover-actions-right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.sfm-discover-top-row {
+  justify-content: space-between;
+}
+
+.sfm-discover-home-label {
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+
+.sfm-discover-radius,
+.sfm-discover-country,
+.sfm-discover-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.sfm-discover-radius input {
+  width: 72px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+
+.sfm-discover-country select {
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+
+.sfm-discover-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sfm-discover-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+}
+
+.sfm-discover-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sfm-discover-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.sfm-discover-event {
+  font-size: 1rem;
+  color: var(--color-ink);
+}
+
+.sfm-discover-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.sfm-discover-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sfm-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+}
+
+.sfm-badge-new {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.sfm-badge-artist {
+  border-color: var(--color-ink);
+  color: var(--color-ink);
+}
+
+.sfm-badge-possible {
+  border-style: dashed;
+  border-color: var(--color-muted);
+  color: var(--color-muted);
+}
+
+/* Discover filter pills: flat outlined chips, the chosen one filled with the accent. These had no
+   styles of their own, so they fell back to the global red button look and none looked chosen. */
+.sfm-discover .sfm-pill {
+  background: var(--color-surface);
+  border: 0.5px solid var(--color-border);
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  min-height: 32px;
+  padding: 4px 12px;
+}
+
+.sfm-discover .sfm-pill:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+}
+
+.sfm-discover .sfm-pill.is-active,
+.sfm-discover .sfm-pill.is-active:hover:not(:disabled) {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+/* The event link is an <a>, so it needs the same look as the button actions beside it. */
+.sfm-discover-card-actions a.sfm-action {
+  align-items: center;
+  background: var(--color-surface);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 32px;
+  padding: 4px 12px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.sfm-discover-card-actions a.sfm-action:hover {
+  background: var(--color-surface-hover);
+}
+
+/* Skiddle credit (their terms: name + unaltered logo, ~5mm clear space around it) */
+.sfm-skiddle-credit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 16px;
+  padding: 19px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.sfm-skiddle-link {
+  display: inline-flex;
+  align-items: center;
+}
+
+.sfm-skiddle-logo {
+  height: 28px;
+  width: auto;
+}
+
+.sfm-skiddle-logo-on-dark {
+  display: none;
+}
+
+:root[data-theme="dark"] .sfm-skiddle-logo-on-light {
+  display: none;
+}
+
+:root[data-theme="dark"] .sfm-skiddle-logo-on-dark {
+  display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sfm-skiddle-logo-on-light {
+    display: none;
+  }
+
+  :root:not([data-theme="light"]) .sfm-skiddle-logo-on-dark {
+    display: block;
+  }
+}
+
+.sfm-skiddle-note {
+  flex-basis: 100%;
+}
+
+.sfm-action.is-interested {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.sfm-discover-criteria-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sfm-discover-fieldset {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sfm-discover-radio,
+.sfm-discover-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92rem;
+}
+
+.sfm-discover-field-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sfm-discover-field-row select,
+.sfm-discover-field-row input {
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+
+@media (max-width: 720px) {
+  .sfm-discover-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .sfm-discover-card-actions {
+    grid-column: 1 / -1;
+  }
+}

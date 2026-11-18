@@ -33,6 +33,14 @@ describe("FaqSection", () => {
     expect(screen.queryByText(/how do i fix missing album artwork/i)).not.toBeInTheDocument();
   });
 
+  it("explains where Discover gigs come from and what a possible match is", () => {
+    render(<FaqSection />);
+    expect(
+      screen.getByText(/where do the gigs on the discover tab come from/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/what does 'possible match' mean/i)).toBeInTheDocument();
+  });
+
   it("shows empty search state when no questions match", () => {
     render(<FaqSection />);
     const searchInput = screen.getByPlaceholderText(/search questions/i);
