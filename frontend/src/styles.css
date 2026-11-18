@@ -7773,3 +7773,58 @@ button.sfm-row-remove:hover:not(:disabled) {
   }
 }
 /* End friend recommendations */
+
+/* Info hints: small (i) button beside a widget title that opens a short note. Flat by design. */
+.info-hint {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  margin-left: 4px;
+  text-transform: none;
+  font-weight: 400;
+  letter-spacing: normal;
+}
+
+.info-hint .info-hint-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin: -14px -12px -14px -12px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--color-muted);
+  text-transform: none;
+  cursor: pointer;
+}
+
+/* Out-rank the global button:hover:not(:disabled) accent fill. */
+.info-hint .info-hint-btn:hover:not(:disabled),
+.info-hint .info-hint-btn:active:not(:disabled),
+.info-hint .info-hint-btn[aria-expanded="true"]:not(:disabled) {
+  background: transparent;
+  color: var(--color-ink);
+}
+
+.info-hint .info-hint-note {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: -8px;
+  z-index: 5;
+  width: max-content;
+  max-width: min(18rem, calc(100vw - 2rem));
+  padding: 0.6rem 0.75rem;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  text-align: left;
+  text-transform: none;
+  white-space: normal;
+}
+/* End info hints */

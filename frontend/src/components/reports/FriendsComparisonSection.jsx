@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Link } from 'react-router-dom'
 import { fetchFriendsComparison } from '../../api'
+import InfoHint from '../InfoHint'
 
 export default function FriendsComparisonSection({ token, dateRange }) {
   const [data, setData] = useState(null)
@@ -27,7 +28,10 @@ export default function FriendsComparisonSection({ token, dateRange }) {
   return (
     <div className="friends-comparison-container">
       <div className="friends-comparison-header">
-        <h2 className="friends-comparison-title">With Friends</h2>
+        <h2 className="friends-comparison-title">
+          With Friends
+          <InfoHint hintId="friends" label="With Friends" />
+        </h2>
         <span className="friends-comparison-subtitle">Shared music and circle activity</span>
       </div>
 

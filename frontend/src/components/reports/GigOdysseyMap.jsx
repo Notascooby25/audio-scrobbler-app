@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { UK_MAP_PATH, WORLD_MAP_PATH, projectUkCoords, projectWorldCoords } from "./ukMapData";
+import InfoHint from "../InfoHint";
 
 // UK and Ireland default geographic framing
 const UK_BOUNDS = {
@@ -48,7 +49,10 @@ export default function GigOdysseyMap({
     return (
       <div className="chart-panel gig-odyssey-panel" data-testid="gig-odyssey-map">
         <div className="panel-header">
-          <h2>Gig Odyssey Map</h2>
+          <h2>
+            Gig Odyssey Map
+            <InfoHint hintId="gig.odyssey" label="Gig Odyssey Map" />
+          </h2>
         </div>
         <p className="notice" style={{ marginTop: "12px" }}>
           Set your home city in <Link to="/settings">Settings</Link> to view your interactive gig
@@ -139,7 +143,10 @@ export default function GigOdysseyMap({
         }}
       >
         <div style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
-          <h2 style={{ margin: 0 }}>Gig Odyssey Map</h2>
+          <h2 style={{ margin: 0 }}>
+            Gig Odyssey Map
+            <InfoHint hintId="gig.odyssey" label="Gig Odyssey Map" />
+          </h2>
           <span style={{ fontSize: "12px", color: "var(--color-primary)", fontWeight: 600 }}>
             Home: {homeCity || "Configured"}
           </span>

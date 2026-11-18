@@ -24,6 +24,7 @@ import GigOdysseyMap from "./GigOdysseyMap";
 import LiveArtistsSeenList from "./LiveArtistsSeenList";
 import SetlistReplayHighlights from "./SetlistReplayHighlights";
 import VenueRoyaltyList from "./VenueRoyaltyList";
+import InfoHint from "../InfoHint";
 
 const YEARS_SHOWN = 5;
 const LIVE_GAP_SHOWN = 5;
@@ -390,7 +391,10 @@ export default function GigReportsSection({ token, userId }) {
                     alignItems: "baseline",
                   }}
                 >
-                  <h2>Furthest gigs</h2>
+                  <h2>
+                    Furthest gigs
+                    <InfoHint hintId="gig.furthest" label="Furthest gigs" />
+                  </h2>
                   <span style={{ fontSize: "12px", color: "var(--color-muted)" }}>
                     As the crow flies
                   </span>
@@ -475,7 +479,10 @@ export default function GigReportsSection({ token, userId }) {
                     alignItems: "baseline",
                   }}
                 >
-                  <h2>Post-Gig Listening Surge</h2>
+                  <h2>
+                    Post-Gig Listening Surge
+                    <InfoHint hintId="gig.surge" label="Post-Gig Listening Surge" />
+                  </h2>
                   {bump && (
                     <span style={{ fontSize: "12px", color: "#16a34a", fontWeight: 700 }}>
                       {formatChange(bump.change_percent)} Surge
@@ -564,7 +571,10 @@ export default function GigReportsSection({ token, userId }) {
                     alignItems: "baseline",
                   }}
                 >
-                  <h2>Live gap</h2>
+                  <h2>
+                    Live gap
+                    <InfoHint hintId="gig.live-gap" label="Live gap" />
+                  </h2>
                   <span style={{ fontSize: "12px", color: "var(--color-muted)" }}>
                     Spotify vs Gigs
                   </span>

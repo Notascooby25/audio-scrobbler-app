@@ -1,9 +1,10 @@
-export default function BarTrendChart({ title, points = [], emptyMessage = 'No data available for this period.', unit = 'scrobbles' }) {
+import InfoHint from '../InfoHint'
+export default function BarTrendChart({ title, points = [], emptyMessage = 'No data available for this period.', unit = 'scrobbles', hint }) {
   if (points.length === 0) {
     return (
       <section className="chart-panel">
         <p className="section-kicker">Live data</p>
-        <h2>{title}</h2>
+        <h2>{title}{hint && <InfoHint hintId={hint} label={title} />}</h2>
         <p className="notice">{emptyMessage}</p>
       </section>
     )
@@ -15,7 +16,7 @@ export default function BarTrendChart({ title, points = [], emptyMessage = 'No d
   return (
     <section className="chart-panel" aria-label={`${title} chart`}>
       <p className="section-kicker">Live data</p>
-      <h2>{title}</h2>
+      <h2>{title}{hint && <InfoHint hintId={hint} label={title} />}</h2>
       <svg className="bar-trend-chart" viewBox="0 0 100 46" preserveAspectRatio="none" role="img" aria-label={`${title}: ${points.length} data points`}>
         {points.map((point, index) => {
           const height = Math.max((point.count / maximum) * 40, point.count > 0 ? 1.5 : 0.5)

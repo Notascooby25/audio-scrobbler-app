@@ -50,4 +50,10 @@ describe("UserGuideSection", () => {
       "#guide-radio"
     );
   });
+
+  it("explains recommending music and the Reports info hints", () => {
+    render(<UserGuideSection />);
+    expect(screen.getByText(/recommend music to friends/i)).toBeInTheDocument();
+    expect(screen.getByText(/tap the ⓘ next to a chart or card title/i)).toBeInTheDocument();
+  });
 });

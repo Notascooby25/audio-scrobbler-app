@@ -1,3 +1,4 @@
+import InfoHint from "../InfoHint";
 export default function GigDayOfWeekChart({ cadence = [] }) {
   if (!cadence || cadence.length === 0) {
     return null;
@@ -21,7 +22,10 @@ export default function GigDayOfWeekChart({ cadence = [] }) {
           marginBottom: "8px",
         }}
       >
-        <h2>Gig Rhythm & Cadence</h2>
+        <h2>
+          Gig Rhythm & Cadence
+          <InfoHint hintId="gig.rhythm" label="Gig Rhythm & Cadence" />
+        </h2>
         <span style={{ fontSize: "12px", color: "var(--color-primary)", fontWeight: 700 }}>
           {weekendPercent}% Weekend Shows
         </span>

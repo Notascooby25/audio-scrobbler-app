@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.50.5",
+    date: "2026-11-18",
+    changes: [
+      "Clearer Reports: Tap the new ⓘ next to a chart or card title on Reports to see a short plain-English note on what it shows.",
+      "More Help Answers: The FAQ now covers importing history, what the Reports numbers mean, recommending music to friends, Rough Trade, getting started, per-track options, the page map, sharing cards and installing the app. The privacy answer now correctly says anyone who follows you can see your listening.",
+    ],
+  },
+  {
     version: "0.50.4",
     date: "2026-11-18",
     changes: [

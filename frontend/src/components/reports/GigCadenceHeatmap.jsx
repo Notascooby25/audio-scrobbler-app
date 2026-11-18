@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import InfoHint from "../InfoHint";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -57,7 +58,10 @@ export default function GigCadenceHeatmap({ matrix = null }) {
     return (
       <div className="chart-panel">
         <div className="panel-header">
-          <h2>Annual Gig Cadence</h2>
+          <h2>
+            Annual Gig Cadence
+            <InfoHint hintId="gig.cadence" label="Annual Gig Cadence" />
+          </h2>
         </div>
         <p className="notice" style={{ marginTop: "10px" }}>
           Log concerts to see your seasonal live music attendance rhythm.
@@ -87,7 +91,10 @@ export default function GigCadenceHeatmap({ matrix = null }) {
         }}
       >
         <div>
-          <h2 style={{ margin: 0 }}>Annual Gig Cadence</h2>
+          <h2 style={{ margin: 0 }}>
+            Annual Gig Cadence
+            <InfoHint hintId="gig.cadence" label="Annual Gig Cadence" />
+          </h2>
           <span style={{ fontSize: "12px", color: "var(--color-muted)" }}>
             Seasonal live concert rhythm
           </span>

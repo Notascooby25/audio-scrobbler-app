@@ -1,6 +1,188 @@
 import React, { useState } from "react";
+import { REPORT_HINTS } from "../../reportHints";
+
+const REPORT_MEANINGS = [
+  ["Explorer vs. Repeater", "ratios.explorer"],
+  ["Singles vs. Albums", "ratios.singles"],
+  ["New vs. Familiar", "ratios.new"],
+  ["Current Streak", "milestones.streak"],
+  ["Peak Listening Day", "milestones.peak"],
+  ["Heavy Rotation", "milestones.rotation"],
+  ["Period Persona", "milestones.persona"],
+  ["Listening routines", "routines"],
+  ["Listening clock", "clock"],
+];
 
 const FAQ_DATA = [
+  {
+    id: "getting-started-spotify",
+    category: "Getting Started",
+    question: "How do I get started and connect my Spotify account?",
+    answer: (
+      <>
+        <p>
+          Open the <strong>Profile icon</strong> menu in the top right and choose{" "}
+          <strong>Connect</strong>, then click <em>Connect Spotify</em> and sign in with Spotify.
+          From then on, the app logs your listening in the background, so you don&apos;t need to
+          keep the website open.
+        </p>
+        <p>
+          You can disconnect or reconnect at any time. If the app asks you to reconnect, it needs a
+          new Spotify permission, for example to save songs you like. Click{" "}
+          <em>Reconnect Spotify</em> in <strong>Settings → Connections</strong> and approve it.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "import-history",
+    category: "Getting Started",
+    question: "How do I import my past Spotify or YouTube listening history?",
+    answer: (
+      <>
+        <p>
+          Go to <strong>Settings → Data → Import Listening History</strong> and upload your history
+          files. The app accepts Spotify&apos;s Extended Streaming History (
+          <code>Streaming_History_Audio_*.json</code> or <code>endsong*.json</code>), YouTube
+          Music&apos;s <code>watch-history.json</code>, and prep-script{" "}
+          <code>*_processed.json</code> files.
+        </p>
+        <p>
+          You can pick several files at once. They are imported one after another, and you see
+          combined totals at the end. Plays you already have are detected and skipped, so
+          overlapping files are safe.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "page-map",
+    category: "Getting Started",
+    question: "What does each page in the app do?",
+    answer: (
+      <ul>
+        <li>
+          <strong>Play:</strong> your listening and discovery hub, with the Album Jukebox, the Time
+          Capsule, and any music friends have recommended.
+        </li>
+        <li>
+          <strong>Library:</strong> every play you have logged, by scrobble, artist, album or track.
+        </li>
+        <li>
+          <strong>Reports:</strong> stats and trends for a date range you choose, plus a Gigs tab.
+        </li>
+        <li>
+          <strong>Gigs:</strong> log concerts, see setlists, and track your live history.
+        </li>
+        <li>
+          <strong>Profile icon menu:</strong> your Profile, Friends, Settings, Connect, and Sign
+          out.
+        </li>
+      </ul>
+    ),
+  },
+  {
+    id: "offline-install",
+    category: "Getting Started",
+    question: "Can I install the app, and does it work offline?",
+    answer: (
+      <>
+        <p>
+          <strong>Yes, you can install it.</strong> On iPhone or iPad, open the site in Safari, tap{" "}
+          <strong>Share</strong>, then <strong>Add to Home Screen</strong>. On Android and desktop,
+          use your browser&apos;s <em>Install app</em> option.
+        </p>
+        <p>
+          Offline, the app itself still opens and shows a banner saying you are offline. Your
+          listening data is private and is not stored on the device, so lists and reports need a
+          connection to load.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "reports-overview",
+    category: "Reports & Stats",
+    question: "What do the numbers and charts on the Reports page mean?",
+    answer: (
+      <>
+        <p>
+          Reports summarises the date range you pick at the top. Tap the small <strong>ⓘ</strong>{" "}
+          next to a chart or card title to see a short explanation. The main ones:
+        </p>
+        <ul>
+          {REPORT_MEANINGS.map(([name, hintId]) => (
+            <li key={hintId}>
+              <strong>{name}:</strong> {REPORT_HINTS[hintId]}
+            </li>
+          ))}
+        </ul>
+        <p>
+          <em>Compare previous period</em> shows how this range compares with the one before it, and{" "}
+          <em>Compare with Friends</em> adds the people you follow. Use <em>Customise Widgets</em>{" "}
+          to turn any card on or off.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "recommend-music",
+    category: "Friends & Social",
+    question: "How do I recommend a song or album to a friend?",
+    answer: (
+      <>
+        <p>
+          Tap the <strong>share icon</strong> next to the heart on a track or album, choose a friend
+          you follow, optionally add a short note, and press <em>Send Recommendation</em>.
+        </p>
+        <p>
+          Your friend sees it at the top of their <strong>Play</strong> page under{" "}
+          <em>Recommendations</em>, with a button to play it, and gets a phone alert if they have
+          notifications on. Use <em>Clear read notifications</em> to tidy your own notification
+          list.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "jukebox-rough-trade",
+    category: "General & Appearance",
+    question: "What is the Rough Trade Top 100 in the Album Jukebox?",
+    answer: (
+      <p>
+        On the Play page, the Album Jukebox can draw from <strong>My Library</strong>,{" "}
+        <strong>1001 Albums</strong>, or <strong>Rough Trade Top 100</strong>: 700 records from
+        seven yearly editions, 2020 to 2026. Filter by year and genre, exclude albums you have
+        already played, and use the progress button to see your checklist and tick records off by
+        hand.
+      </p>
+    ),
+  },
+  {
+    id: "entry-menu",
+    category: "Library & Data Maintenance",
+    question: "How do I delete, block or clear artwork for a single track, album or artist?",
+    answer: (
+      <p>
+        In the <strong>Library</strong>, open the options menu on a row. In list view, tap{" "}
+        <strong>Select</strong> first if you don&apos;t see it. Choose <em>Delete…</em> (asks you to
+        confirm), <em>Block</em>, or <em>Clear Artwork</em>. The Blocking vs Deleting entry in this
+        section explains which to pick.
+      </p>
+    ),
+  },
+  {
+    id: "share-card",
+    category: "Friends & Social",
+    question: "How do I share an image card of my top music?",
+    answer: (
+      <p>
+        In the <strong>Library</strong>, click <strong>Share</strong> to make an image card of your
+        top items, ready to download or send. Choose a 2×2, 2×3, 3×2 or 3×3 layout, and optionally
+        stamp stats such as total listening time onto the card.
+      </p>
+    ),
+  },
   {
     id: "sync-delay",
     category: "Sync & Scrobbles",
@@ -139,8 +321,9 @@ const FAQ_DATA = [
     answer: (
       <p>
         You can sign out anytime using the <strong>Sign out</strong> button on your Profile page or
-        from the Spotify connection card on the Home page. Signing out removes your local session
-        tokens and automatically purges all offline application cache storage from your browser.
+        from the Spotify connection card on the <strong>Connect</strong> page. Signing out removes
+        your local session tokens and automatically purges all offline application cache storage
+        from your browser.
       </p>
     ),
   },
@@ -229,8 +412,9 @@ const FAQ_DATA = [
     question: "Can other people see my listening history?",
     answer: (
       <p>
-        Only users who you follow (and who follow you back) can view your profile and listening
-        reports. Furthermore, any artist, album, or track you have added to your{" "}
+        Anyone who follows you can view your profile and listening reports, and following does not
+        need your approval first. People who don&apos;t follow you can&apos;t see your listening.
+        Furthermore, any artist, album, or track you have added to your{" "}
         <strong>Blocked Items</strong> is automatically hidden from everyone, including yourself,
         across all public reports and rankings.
       </p>

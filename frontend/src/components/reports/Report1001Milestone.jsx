@@ -1,5 +1,6 @@
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
+import InfoHint from "../InfoHint";
 
 export default function Report1001Milestone({ challenge1001 }) {
   const completedInPeriod = challenge1001?.completed_in_period || 0;
@@ -18,7 +19,10 @@ export default function Report1001Milestone({ challenge1001 }) {
           {totalCompleted} / 1001 ({pct}%)
         </span>
       </div>
-      <div className="crossover-title">{completedInPeriod} Completed This Period</div>
+      <div className="crossover-title">
+        {completedInPeriod} Completed This Period
+        <InfoHint hintId="milestones.1001" label="1001 Albums Challenge" />
+      </div>
       <p className="crossover-desc">
         {completedInPeriod > 0
           ? `${completedInPeriod} albums from 1001 Albums You Must Hear Before You Die tackled:`

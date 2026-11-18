@@ -1,4 +1,5 @@
 import PropTypes from "prop-types";
+import InfoHint from "../InfoHint";
 
 export default function ReportLiveConnection({ liveArtists }) {
   const attendedCount = liveArtists?.attended_artists_played || 0;
@@ -14,7 +15,10 @@ export default function ReportLiveConnection({ liveArtists }) {
         <span className="crossover-badge badge-live">Live Artist Connection</span>
         <span className="crossover-meta">Concert History Sync</span>
       </div>
-      <div className="crossover-title">{attendedCount} Seen-Live Artists Played</div>
+      <div className="crossover-title">
+        {attendedCount} Seen-Live Artists Played
+        <InfoHint hintId="live.connection" label="Live Artist Connection" />
+      </div>
       <p className="crossover-desc">
         {attendedCount > 0
           ? `${totalScrobbles} scrobbles for bands you've experienced in concert:`
