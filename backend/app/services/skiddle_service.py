@@ -23,6 +23,11 @@ from .gig_discovery_text import canonical_artist_key, sanitize_external_url
 
 logger = logging.getLogger(__name__)
 
+# httpx logs every request URL at INFO, and our API key travels in the URL. Keep its loggers at
+# WARNING (which carries no URLs) so a future logging.basicConfig(level=INFO) can't write the key out.
+for _noisy_logger in ("httpx", "httpcore"):
+    logging.getLogger(_noisy_logger).setLevel(logging.WARNING)
+
 SKIDDLE_BASE_URL = "https://www.skiddle.com/api/v1"
 SKIDDLE_SOURCE = "skiddle"
 PAGE_SIZE = 100  # the API maximum

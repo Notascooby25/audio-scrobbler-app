@@ -183,6 +183,34 @@ def test_discover_my_artists_matches_festival_bill_and_excludes_blocked():
     assert fest["is_newly_announced"] is True
 
 
+def test_discover_api_returns_the_possible_match_flag():
+    """The response schema once dropped is_possible_match, so the UI never saw it."""
+    name = "Fang Night - Fontaines D.C., Another Band, Third Band"
+    with TestingSession() as db:
+        db.add(
+            DiscoveredGig(
+                source="skiddle",
+                external_id="sk-title-only",
+                artist_name=name,
+                artist_key=name.lower(),
+                attraction_names=[name],
+                attraction_keys=[name.lower()],
+                event_name=name,
+                venue_name="Small Venue",
+                city="Coventry",
+                country_code="GB",
+                event_date=date.today() + timedelta(days=9),
+                first_seen_at=utc_now() - timedelta(days=30),
+                ticket_url="https://www.skiddle.com/whats-on/x/1/",
+            )
+        )
+        db.commit()
+    items = client.get("/setlists/discover?scope=my_artists").json()["items"]
+    by_id = {i["external_id"]: i for i in items}
+    assert by_id["sk-title-only"]["is_possible_match"] is True
+    assert by_id["tm-fest"]["is_possible_match"] is False
+
+
 def test_discover_local_radius_and_weekend_filter():
     res_all = client.get("/setlists/discover?scope=local&radius_miles=6&date_window=weekend&only_my_artists=false")
     assert res_all.status_code == 200

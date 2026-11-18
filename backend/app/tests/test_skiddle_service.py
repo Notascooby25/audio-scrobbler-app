@@ -293,3 +293,20 @@ def test_logs_never_contain_the_api_key(monkeypatch: pytest.MonkeyPatch, caplog:
     with caplog.at_level(logging.DEBUG):
         client.search_events({})
     assert SECRET not in caplog.text
+
+
+def test_httpx_own_request_logging_never_contains_the_api_key(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """httpx logs every request URL at INFO, and our key travels in the URL.
+
+    The other tests swap httpx out entirely, so this one uses the real httpx client
+    (with a fake network) while the root logger is turned up to INFO.
+    """
+    transport = httpx.MockTransport(lambda request: httpx.Response(200, json={"error": 0, "results": []}))
+    real_client = httpx.Client
+    monkeypatch.setattr(skiddle_service.httpx, "Client", lambda **kwargs: real_client(transport=transport, **kwargs))
+    client = SkiddleClient(api_key=SECRET, sleep=lambda _s: None)
+    with caplog.at_level(logging.INFO):
+        client.search_events({})
+    assert SECRET not in caplog.text

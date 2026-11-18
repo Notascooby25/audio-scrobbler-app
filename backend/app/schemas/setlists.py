@@ -354,6 +354,7 @@ class DiscoveredGigItem(BaseModel):
     image_url: str | None = None
     distance_miles: float | None = None
     is_my_artist: bool
+    is_possible_match: bool = False
     is_seen_live: bool
     is_newly_announced: bool
     is_interested: bool
