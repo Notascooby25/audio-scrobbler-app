@@ -171,6 +171,15 @@ export default function UserGuideSection() {
           part of that time, don't worry. The app automatically checks your library and skips any
           duplicate songs you had already scrobbled during that window.
         </p>
+
+        <h4>Who Follows You</h4>
+        <p>
+          You get a notification whenever someone starts following you. Open the{" "}
+          <strong>Friends</strong> page from the Profile menu to see who follows you under{" "}
+          <em>Followers</em>. Press <strong>Remove</strong> next to anyone you don't want following
+          you. They aren't told, they lose access to your listening straight away, and they can
+          follow you again if they choose.
+        </p>
       </article>
 
       {/* Chapter 4 */}

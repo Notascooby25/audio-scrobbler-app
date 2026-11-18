@@ -459,6 +459,7 @@ describe("Sleeve Skin Components", () => {
           },
         ],
       });
+      vi.spyOn(api, "fetchFollowers").mockResolvedValue({ results: [] });
       vi.spyOn(api, "searchUsers").mockResolvedValue({ results: [] });
 
       render(

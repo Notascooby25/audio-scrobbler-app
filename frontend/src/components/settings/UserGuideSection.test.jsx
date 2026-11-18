@@ -56,4 +56,9 @@ describe("UserGuideSection", () => {
     expect(screen.getByText(/recommend music to friends/i)).toBeInTheDocument();
     expect(screen.getByText(/tap the ⓘ next to a chart or card title/i)).toBeInTheDocument();
   });
+
+  it("explains follower alerts and removing a follower", () => {
+    render(<UserGuideSection />);
+    expect(screen.getByText(/see who follows you/i)).toBeInTheDocument();
+  });
 });

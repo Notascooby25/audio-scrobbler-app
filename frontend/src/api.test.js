@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  fetchFollowers,
   fetchMonthlySummary,
   fetchRecentScrobbles,
   fetchUserCharts,
   fetchUserProfile,
   followUser,
+  removeFollower,
   requestDevelopmentToken,
   searchUsers,
   unfollowUser,
@@ -114,6 +116,34 @@ describe("unfollowUser", () => {
     await unfollowUser({ token: "demo token", userId: 2 });
 
     expect(fetch).toHaveBeenCalledWith("/users/2/follow", {
+      method: "DELETE",
+      headers: { Authorization: "Bearer demo token" },
+    });
+  });
+});
+
+describe("fetchFollowers", () => {
+  it("requests the followers list with the bearer token", async () => {
+    const response = { ok: true, json: vi.fn().mockResolvedValue({ results: [] }) };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
+
+    await fetchFollowers({ token: "demo token" });
+
+    expect(fetch).toHaveBeenCalledWith("/users/me/followers", {
+      method: "GET",
+      headers: { Authorization: "Bearer demo token" },
+    });
+  });
+});
+
+describe("removeFollower", () => {
+  it("sends a delete request for that follower", async () => {
+    const response = { ok: true, json: vi.fn().mockResolvedValue({ follower_count: 0 }) };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
+
+    await removeFollower({ token: "demo token", userId: 7 });
+
+    expect(fetch).toHaveBeenCalledWith("/users/me/followers/7", {
       method: "DELETE",
       headers: { Authorization: "Bearer demo token" },
     });

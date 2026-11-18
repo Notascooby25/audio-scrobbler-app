@@ -7828,3 +7828,28 @@ button.sfm-row-remove:hover:not(:disabled) {
   white-space: normal;
 }
 /* End info hints */
+
+/* Followers list on the Friends page: Confirm / Cancel sit side by side. */
+.blocked-list li .follower-actions {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+}
+
+/* While confirming, the message gets a full line and the buttons sit beneath it. */
+.blocked-list li.follower-confirming {
+  flex-wrap: wrap;
+}
+
+.blocked-list li.follower-confirming .blocked-copy {
+  flex: 1 1 100%;
+}
+
+.blocked-list li.follower-confirming .follower-actions {
+  margin-left: auto;
+}
+
+.blocked-list .follower-confirm-text {
+  text-transform: none;
+  letter-spacing: normal;
+}

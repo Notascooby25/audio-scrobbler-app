@@ -485,6 +485,18 @@ export function fetchFollowing({ token }) {
   return fetchAnalyticsResource("/users/me/following", { token });
 }
 
+export function fetchFollowers({ token }) {
+  return fetchAnalyticsResource("/users/me/followers", { token });
+}
+
+export async function removeFollower({ token, userId }) {
+  const response = await fetch(`${API_BASE_URL}/users/me/followers/${userId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return parseResponse(response);
+}
+
 export function fetchLeaderboard({ token, dateRange }) {
   const params = dateRange ? toQueryParams(dateRange) : {};
   return fetchAnalyticsResource("/users/me/leaderboard", { token, params });

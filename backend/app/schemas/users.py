@@ -48,6 +48,24 @@ class FollowingListResponse(BaseModel):
     results: list[UserSearchResult]
 
 
+class FollowerSummary(BaseModel):
+    """A follower as seen by the person they follow. Deliberately has no listening data."""
+
+    id: int
+    username: str
+    display_name: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FollowersListResponse(BaseModel):
+    results: list[FollowerSummary]
+
+
+class RemoveFollowerResponse(BaseModel):
+    follower_count: int
+
+
 class UserProfileResponse(BaseModel):
     id: int
     username: str
