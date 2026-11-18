@@ -24,6 +24,7 @@ import {
 } from "../api";
 import { createDefaultDateRange, DATE_RANGE_PRESETS, isValidDateRange } from "../dateRange";
 import { readSession } from "../session";
+import InfoHint from "../components/InfoHint";
 
 const WIDGET_STORAGE_KEY = "audio_scrobbler_reports_widgets_v1";
 
@@ -352,7 +353,11 @@ export default function ReportsPage() {
           {/* 4. Scrobbles over time */}
           {report && widgetPreferences.showScrobblesOverTime && (
             <div className="report-data-grid">
-              <BarTrendChart title="Scrobbles over time" points={report.charts.weekly_scrobbles} />
+              <BarTrendChart
+                title="Scrobbles over time"
+                hint="scrobbles.over-time"
+                points={report.charts.weekly_scrobbles}
+              />
             </div>
           )}
 
@@ -362,7 +367,10 @@ export default function ReportsPage() {
               <div className="report-time-grid">
                 {widgetPreferences.showListeningRoutines && (
                   <div className="chart-panel">
-                    <h2>Listening routines</h2>
+                    <h2>
+                      Listening routines
+                      <InfoHint hintId="routines" label="Listening routines" />
+                    </h2>
                     <div style={{ overflowX: "auto", paddingBottom: "8px" }}>
                       <ListeningHeatmap points={report.charts.listening_heatmap} />
                     </div>
@@ -382,7 +390,10 @@ export default function ReportsPage() {
             <div className="report-character-grid">
               {widgetPreferences.showDecades && (
                 <div className="chart-panel">
-                  <h2>Music by decade</h2>
+                  <h2>
+                    Music by decade
+                    <InfoHint hintId="decade" label="Music by decade" />
+                  </h2>
                   <BarTrendChart
                     title="Releases by decade"
                     points={report.charts.music_by_decade}
@@ -391,7 +402,10 @@ export default function ReportsPage() {
               )}
               {widgetPreferences.showGenres && (
                 <div className="chart-panel">
-                  <h2>Top genres</h2>
+                  <h2>
+                    Top genres
+                    <InfoHint hintId="genres" label="Top genres" />
+                  </h2>
                   <GenreBarList
                     genres={
                       report.genres?.entries?.map((e) => ({

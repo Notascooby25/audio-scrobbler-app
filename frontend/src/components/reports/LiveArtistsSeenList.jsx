@@ -1,4 +1,5 @@
 import { useState } from "react";
+import InfoHint from "../InfoHint";
 
 const INITIAL_LIMIT = 5;
 
@@ -9,7 +10,10 @@ export default function LiveArtistsSeenList({ artists = [] }) {
     return (
       <div className="chart-panel">
         <div className="panel-header">
-          <h2>Live Artist Rankings</h2>
+          <h2>
+            Live Artist Rankings
+            <InfoHint hintId="gig.rankings" label="Live Artist Rankings" />
+          </h2>
         </div>
         <p className="notice" style={{ marginTop: "10px" }}>
           Log more gigs to rank the artists you&apos;ve experienced the most in person.
@@ -33,7 +37,10 @@ export default function LiveArtistsSeenList({ artists = [] }) {
           marginBottom: "8px",
         }}
       >
-        <h2>Live Artist Rankings</h2>
+        <h2>
+          Live Artist Rankings
+          <InfoHint hintId="gig.rankings" label="Live Artist Rankings" />
+        </h2>
         <span style={{ fontSize: "12px", color: "var(--color-muted)" }}>
           {artists.length} artists seen live
         </span>

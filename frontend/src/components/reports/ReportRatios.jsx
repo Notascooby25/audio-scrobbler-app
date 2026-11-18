@@ -1,4 +1,5 @@
 import PropTypes from "prop-types";
+import InfoHint from "../InfoHint";
 
 export default function ReportRatios({ summary }) {
   const periodScrobbles = summary?.period_scrobbles || 0;
@@ -17,7 +18,10 @@ export default function ReportRatios({ summary }) {
     <div className="report-ratios-grid" aria-label="Listening Ratios and Discovery">
       <div className="report-ratio-card">
         <span className="ratio-kicker">Music Ratio</span>
-        <h3>Explorer vs. Repeater</h3>
+        <h3>
+          Explorer vs. Repeater
+          <InfoHint hintId="ratios.explorer" label="Explorer vs. Repeater" />
+        </h3>
         <div className="ratio-stat">
           <span className="ratio-value">{scrobblesPerArtist}</span>
           <span className="ratio-sub">Scrobbles per artist</span>
@@ -29,7 +33,10 @@ export default function ReportRatios({ summary }) {
 
       <div className="report-ratio-card">
         <span className="ratio-kicker">Music Ratio</span>
-        <h3>Singles vs. Albums</h3>
+        <h3>
+          Singles vs. Albums
+          <InfoHint hintId="ratios.singles" label="Singles vs. Albums" />
+        </h3>
         <div className="ratio-stat">
           <span className="ratio-value">{tracksPerAlbum}</span>
           <span className="ratio-sub">Tracks per album</span>
@@ -41,7 +48,10 @@ export default function ReportRatios({ summary }) {
 
       <div className="report-ratio-card">
         <span className="ratio-kicker">Discovery Velocity</span>
-        <h3>New vs. Familiar</h3>
+        <h3>
+          New vs. Familiar
+          <InfoHint hintId="ratios.new" label="New vs. Familiar" />
+        </h3>
         <div className="ratio-stat">
           <span className="ratio-value ratio-value-accent">{newPct}%</span>
           <span className="ratio-sub">First-time artists</span>

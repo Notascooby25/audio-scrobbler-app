@@ -1,3 +1,4 @@
+import InfoHint from "../InfoHint";
 export default function GigBadgesCatalog({ badges = [] }) {
   if (!badges || badges.length === 0) {
     return <p className="sfm-empty">No milestone badges available.</p>;
@@ -16,7 +17,10 @@ export default function GigBadgesCatalog({ badges = [] }) {
           marginBottom: "12px",
         }}
       >
-        <h2>Live Music Milestones & Badges</h2>
+        <h2>
+          Live Music Milestones & Badges
+          <InfoHint hintId="gig.badges" label="Live Music Milestones & Badges" />
+        </h2>
         <span style={{ fontSize: "12px", color: "var(--color-primary)", fontWeight: 700 }}>
           {unlockedCount} / {badges.length} Unlocked
         </span>

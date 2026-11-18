@@ -1,9 +1,13 @@
+import InfoHint from "../InfoHint";
 export default function VenueRoyaltyList({ venues = [] }) {
   if (!venues || venues.length === 0) {
     return (
       <div className="chart-panel">
         <div className="panel-header">
-          <h2>Venue Stomping Grounds</h2>
+          <h2>
+            Venue Stomping Grounds
+            <InfoHint hintId="gig.venues" label="Venue Stomping Grounds" />
+          </h2>
         </div>
         <p className="notice" style={{ marginTop: "10px" }}>
           Log more gigs to see your most frequented rooms and halls.
@@ -23,7 +27,10 @@ export default function VenueRoyaltyList({ venues = [] }) {
           marginBottom: "8px",
         }}
       >
-        <h2>Venue Stomping Grounds</h2>
+        <h2>
+          Venue Stomping Grounds
+          <InfoHint hintId="gig.venues" label="Venue Stomping Grounds" />
+        </h2>
         <span style={{ fontSize: "12px", color: "var(--color-muted)" }}>Most visited rooms</span>
       </div>
       <p className="chart-caption" style={{ marginBottom: "14px" }}>

@@ -1,4 +1,5 @@
 import PropTypes from "prop-types";
+import InfoHint from "../InfoHint";
 
 export default function ReportMilestones({ summary }) {
   const currentStreak = summary?.current_streak_days || 0;
@@ -20,13 +21,19 @@ export default function ReportMilestones({ summary }) {
     <section className="report-milestones-section" aria-label="Streaks and Milestones">
       <div className="report-milestones-grid">
         <div className="report-milestone-card milestone-streak">
-          <span className="milestone-label">Current Streak</span>
+          <span className="milestone-label">
+            Current Streak
+            <InfoHint hintId="milestones.streak" label="Current Streak" />
+          </span>
           <strong className="milestone-value">🔥 {currentStreak} Days</strong>
           <span className="milestone-subtext">Best in period: {periodBestStreak} days</span>
         </div>
 
         <div className="report-milestone-card milestone-peak">
-          <span className="milestone-label">Peak Listening Day</span>
+          <span className="milestone-label">
+            Peak Listening Day
+            <InfoHint hintId="milestones.peak" label="Peak Listening Day" />
+          </span>
           <strong className="milestone-value">
             {peakDay ? `${Number(peakDay.count).toLocaleString()} Scrobbles` : "No activity"}
           </strong>
@@ -34,7 +41,10 @@ export default function ReportMilestones({ summary }) {
         </div>
 
         <div className="report-milestone-card milestone-rotation">
-          <span className="milestone-label">Heavy Rotation</span>
+          <span className="milestone-label">
+            Heavy Rotation
+            <InfoHint hintId="milestones.rotation" label="Heavy Rotation" />
+          </span>
           <strong
             className="milestone-value milestone-truncate"
             title={rotation ? rotation.track_name : "None"}
@@ -47,7 +57,10 @@ export default function ReportMilestones({ summary }) {
         </div>
 
         <div className="report-milestone-card milestone-persona">
-          <span className="milestone-label">Period Persona</span>
+          <span className="milestone-label">
+            Period Persona
+            <InfoHint hintId="milestones.persona" label="Period Persona" />
+          </span>
           <strong className="milestone-value">
             {icon} {persona}
           </strong>

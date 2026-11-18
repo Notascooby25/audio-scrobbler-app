@@ -1,4 +1,5 @@
 import { useState } from "react";
+import InfoHint from "../InfoHint";
 
 const INITIAL_LIMIT = 5;
 
@@ -9,7 +10,10 @@ export default function SetlistReplayHighlights({ songs = [] }) {
     return (
       <div className="chart-panel">
         <div className="panel-header">
-          <h2>Setlist Replay Tracker</h2>
+          <h2>
+            Setlist Replay Tracker
+            <InfoHint hintId="gig.replay" label="Setlist Replay Tracker" />
+          </h2>
         </div>
         <p className="notice" style={{ marginTop: "10px" }}>
           Log concerts with setlists to see your most-heard live songs and your scrobbles for them.
@@ -32,7 +36,10 @@ export default function SetlistReplayHighlights({ songs = [] }) {
           marginBottom: "8px",
         }}
       >
-        <h2>Setlist Replay Tracker</h2>
+        <h2>
+          Setlist Replay Tracker
+          <InfoHint hintId="gig.replay" label="Setlist Replay Tracker" />
+        </h2>
         <span style={{ fontSize: "12px", color: "var(--color-muted)" }}>
           {songs.length} songs heard live
         </span>
