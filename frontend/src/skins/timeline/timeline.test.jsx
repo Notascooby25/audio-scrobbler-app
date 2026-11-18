@@ -896,6 +896,7 @@ describe("Timeline Skin: Token Contract, Rules & Contrast Matrix", () => {
           },
         ],
       });
+      vi.spyOn(api, "fetchFollowers").mockResolvedValue({ results: [] });
       vi.spyOn(api, "searchUsers").mockResolvedValue({ results: [] });
 
       render(

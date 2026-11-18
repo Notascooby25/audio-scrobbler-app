@@ -7828,3 +7828,10 @@ button.sfm-row-remove:hover:not(:disabled) {
   white-space: normal;
 }
 /* End info hints */
+
+/* Followers list on the Friends page: Confirm / Cancel sit side by side. */
+.blocked-list li .follower-actions {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+}

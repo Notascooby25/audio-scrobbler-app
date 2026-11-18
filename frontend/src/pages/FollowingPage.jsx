@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AnalyticsPage from "../components/AnalyticsPage";
-import { fetchFollowing, searchUsers, fetchLeaderboard } from "../api";
+import {
+  fetchFollowing,
+  fetchFollowers,
+  removeFollower,
+  searchUsers,
+  fetchLeaderboard,
+} from "../api";
 import { readSession } from "../session";
 import DateRangeSelector from "../components/DateRangeSelector";
 
@@ -9,6 +15,10 @@ export default function FollowingPage() {
   const session = readSession();
   const [activeTab, setActiveTab] = useState("following");
   const [following, setFollowing] = useState([]);
+  const [followers, setFollowers] = useState([]);
+  const [confirmingFollowerId, setConfirmingFollowerId] = useState(null);
+  const [removingFollowerId, setRemovingFollowerId] = useState(null);
+  const [removeError, setRemoveError] = useState("");
   const [discover, setDiscover] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [status, setStatus] = useState(session?.accessToken ? "loading" : "idle");
@@ -28,9 +38,11 @@ export default function FollowingPage() {
       Promise.all([
         fetchFollowing({ token: session.accessToken }),
         searchUsers({ token: session.accessToken, query: "" }),
+        fetchFollowers({ token: session.accessToken }),
       ])
-        .then(([followingData, discoverData]) => {
+        .then(([followingData, discoverData, followersData]) => {
           setFollowing(followingData.results);
+          setFollowers(followersData.results);
           const followingIds = new Set(followingData.results.map((u) => u.id));
           setDiscover(
             discoverData.results.filter((u) => !followingIds.has(u.id) && u.id !== session?.userId)
@@ -69,6 +81,68 @@ export default function FollowingPage() {
       <Link className="settings-link" to={`/profile/${user.id}`}>
         View profile
       </Link>
+    </li>
+  );
+
+  const handleRemoveFollower = async (follower) => {
+    setRemovingFollowerId(follower.id);
+    setRemoveError("");
+    try {
+      await removeFollower({ token: session.accessToken, userId: follower.id });
+      setFollowers((current) => current.filter((item) => item.id !== follower.id));
+      setConfirmingFollowerId(null);
+    } catch (requestError) {
+      setRemoveError(requestError.message);
+    } finally {
+      setRemovingFollowerId(null);
+    }
+  };
+
+  const renderFollower = (follower) => (
+    <li key={follower.id}>
+      <span className="blocked-copy">
+        <strong>{follower.display_name}</strong>
+        <small>@{follower.username}</small>
+        {confirmingFollowerId === follower.id && (
+          <small style={{ marginTop: "0.25rem" }}>
+            Remove {follower.display_name}? They can follow you again.
+          </small>
+        )}
+      </span>
+      {confirmingFollowerId === follower.id ? (
+        <span className="follower-actions">
+          <button
+            type="button"
+            className="button-secondary"
+            aria-label={`Confirm remove ${follower.username}`}
+            disabled={removingFollowerId === follower.id}
+            onClick={() => handleRemoveFollower(follower)}
+          >
+            Confirm
+          </button>
+          <button
+            type="button"
+            className="button-secondary"
+            aria-label={`Cancel removing ${follower.username}`}
+            disabled={removingFollowerId === follower.id}
+            onClick={() => setConfirmingFollowerId(null)}
+          >
+            Cancel
+          </button>
+        </span>
+      ) : (
+        <button
+          type="button"
+          className="button-secondary"
+          aria-label={`Remove ${follower.username}`}
+          onClick={() => {
+            setRemoveError("");
+            setConfirmingFollowerId(follower.id);
+          }}
+        >
+          Remove
+        </button>
+      )}
     </li>
   );
 
@@ -119,6 +193,24 @@ export default function FollowingPage() {
           ) : (
             <ul className="blocked-list">{following.map(renderUser)}</ul>
           )}
+
+          <div style={{ marginTop: "3rem" }}>
+            <div className="section-heading">
+              <h3 style={{ fontSize: "1.2rem", marginBottom: "1rem" }}>
+                Followers ({followers.length})
+              </h3>
+            </div>
+            {removeError && (
+              <p className="notice notice-error" role="alert">
+                {removeError}
+              </p>
+            )}
+            {followers.length === 0 ? (
+              <p className="notice">Nobody follows you yet.</p>
+            ) : (
+              <ul className="blocked-list">{followers.map(renderFollower)}</ul>
+            )}
+          </div>
 
           {discover.length > 0 && (
             <div style={{ marginTop: "3rem" }}>
