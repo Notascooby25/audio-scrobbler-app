@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import math
 import os
+import re
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -18,11 +19,12 @@ from ..models import (
     UserPreferences,
 )
 from .gig_discovery_sync_service import (
+    configured_sources,
     get_blocked_artist_keys,
     get_user_discovery_artists,
     merge_discovery_filters,
-    normalize_artist_key,
 )
+from .gig_discovery_text import canonical_artist_key
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +40,36 @@ def haversine_miles(a: tuple[float, float], b: tuple[float, float]) -> float:
     return 2 * _EARTH_RADIUS_MILES * math.asin(min(1.0, math.sqrt(h)))
 
 
-def _is_ticketmaster_configured() -> bool:
-    return bool(os.getenv("TICKETMASTER_API_KEY", "").strip("'\" \r\n"))
+def _is_discovery_configured() -> bool:
+    return bool(configured_sources())
+
+
+_NON_WORD = re.compile(r"[^\w]+")
+_MIN_TITLE_MATCH_LENGTH = 4
+
+
+def _loose(text: str | None) -> str:
+    """Canonical key with punctuation turned into single spaces ('fontaines d.c.' -> 'fontaines d c')."""
+    return _NON_WORD.sub(" ", canonical_artist_key(text)).strip()
+
+
+def _is_title_only_listing(gig: DiscoveredGig) -> bool:
+    """Skiddle listings with no artist list: the only 'artist' we hold is the event title itself."""
+    if gig.source != "skiddle":
+        return False
+    keys = gig.attraction_keys or []
+    return len(keys) <= 1 and canonical_artist_key(gig.artist_name) == canonical_artist_key(gig.event_name)
+
+
+def _possible_title_match(gig: DiscoveredGig, my_artists_loose: set[str]) -> bool:
+    """True when one of your artists appears, as whole words, in a title-only listing."""
+    if not my_artists_loose or not _is_title_only_listing(gig):
+        return False
+    title = _loose(gig.event_name)
+    if "tribute" in title.split():
+        return False
+    padded = f" {title} "
+    return any(f" {artist} " in padded for artist in my_artists_loose)
 
 
 def _weekend_bounds(today: date) -> tuple[date, date]:
@@ -67,7 +97,7 @@ def trigger_worker_discovery_sync(user_id: int | None = None) -> None:
     """Fire-and-forget trigger to the worker so location/radius changes populate promptly."""
     worker_url = os.getenv("INGESTION_WORKER_URL", "").strip().rstrip("/")
     token = os.getenv("WORKER_INGESTION_TOKEN", "").strip()
-    if not worker_url or not token or not _is_ticketmaster_configured():
+    if not worker_url or not token or not _is_discovery_configured():
         return
     try:
         payload = {"user_id": user_id} if user_id is not None else {}
@@ -106,12 +136,10 @@ def query_discovered_gigs(
     effective_radius = max(1, min(100, int(radius_miles if radius_miles is not None else saved_radius)))
     effective_window = date_window or str(saved_filters.get("date_window") or "all")
     effective_country = (
-        country.strip().upper()
-        if country is not None
-        else str(saved_filters.get("country_code") or "").strip().upper()
+        country.strip().upper() if country is not None else str(saved_filters.get("country_code") or "").strip().upper()
     )
 
-    configured = _is_ticketmaster_configured()
+    configured = _is_discovery_configured()
     if not configured:
         return {
             "configured": False,
@@ -125,14 +153,17 @@ def query_discovered_gigs(
 
     today = date.today()
     now = utc_now()
-    my_artists = get_user_discovery_artists(db, user_id, saved_filters)
-    blocked = get_blocked_artist_keys(db, user_id)
+    my_artists = {
+        k for k in (canonical_artist_key(a) for a in get_user_discovery_artists(db, user_id, saved_filters)) if k
+    }
+    blocked = {k for k in (canonical_artist_key(b) for b in get_blocked_artist_keys(db, user_id)) if k}
+    my_artists_loose = {
+        loose for loose in (_loose(a) for a in my_artists if a not in blocked) if len(loose) >= _MIN_TITLE_MATCH_LENGTH
+    }
 
     interested_ids = set(
         db.scalars(
-            select(DiscoveredGigInterest.discovered_gig_id).where(
-                DiscoveredGigInterest.user_id == user_id
-            )
+            select(DiscoveredGigInterest.discovered_gig_id).where(DiscoveredGigInterest.user_id == user_id)
         ).all()
     )
 
@@ -146,7 +177,7 @@ def query_discovered_gigs(
     attended_by_key_date: dict[tuple[str, date], int] = {}
     seen_live_keys: set[str] = set()
     for row in attended_rows:
-        akey = normalize_artist_key(row.artist_name)
+        akey = canonical_artist_key(row.artist_name)
         if akey:
             seen_live_keys.add(akey)
             if row.event_date:
@@ -164,16 +195,17 @@ def query_discovered_gigs(
 
     items: list[dict[str, Any]] = []
     for gig in all_upcoming:
-        gig_keys = [normalize_artist_key(k) for k in (gig.attraction_keys or []) if k]
-        if gig.artist_key and gig.artist_key not in gig_keys:
-            gig_keys.insert(0, gig.artist_key)
+        gig_keys = [canonical_artist_key(k) for k in (gig.attraction_keys or []) if k]
+        artist_key = canonical_artist_key(gig.artist_key)
+        if artist_key and artist_key not in gig_keys:
+            gig_keys.insert(0, artist_key)
 
-        if any(k in blocked for k in gig_keys) and not any(
-            k in my_artists for k in gig_keys if k not in blocked
-        ):
+        if any(k in blocked for k in gig_keys) and not any(k in my_artists for k in gig_keys if k not in blocked):
             continue
 
-        is_my_artist = any(k in my_artists and k not in blocked for k in gig_keys)
+        exact_match = any(k in my_artists and k not in blocked for k in gig_keys)
+        possible_match = not exact_match and _possible_title_match(gig, my_artists_loose)
+        is_my_artist = exact_match or possible_match
         is_seen_live = any(k in seen_live_keys for k in gig_keys)
         is_interested = gig.id in interested_ids
         is_newly = _is_newly_announced(gig, now)
@@ -235,6 +267,7 @@ def query_discovered_gigs(
                 "image_url": gig.image_url,
                 "distance_miles": distance_miles,
                 "is_my_artist": is_my_artist,
+                "is_possible_match": possible_match,
                 "is_seen_live": is_seen_live,
                 "is_newly_announced": is_newly,
                 "is_interested": is_interested,

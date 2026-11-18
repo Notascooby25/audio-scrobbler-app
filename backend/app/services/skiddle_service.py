@@ -11,7 +11,6 @@ from __future__ import annotations
 import logging
 import os
 import random
-import re
 import time
 from collections.abc import Callable
 from datetime import date
@@ -20,7 +19,7 @@ from typing import Any
 import httpx
 
 from ..config import settings
-from .gig_discovery_sync_service import normalize_artist_key, sanitize_external_url
+from .gig_discovery_text import canonical_artist_key, sanitize_external_url
 
 logger = logging.getLogger(__name__)
 
@@ -33,15 +32,6 @@ MAX_ATTEMPTS = 3
 BACKOFF_BASE_SECONDS = 2.0
 MAX_RETRY_AFTER_SECONDS = 60.0
 DEFAULT_USER_AGENT_URL = "https://github.com/Notascooby25/audio-scrobbler-app"
-
-_WHITESPACE = re.compile(r"\s+")
-_AMPERSAND = re.compile(r"\s*&\s*")
-
-
-def canonical_artist_key(name: str | None) -> str:
-    """Lower-case, collapse spaces and treat '&' and 'and' alike, so spellings compare equal."""
-    text = _AMPERSAND.sub(" and ", normalize_artist_key(name))
-    return _WHITESPACE.sub(" ", text).strip()
 
 
 def build_user_agent() -> str:
@@ -58,7 +48,7 @@ class SkiddleClient:
         sleep: Callable[[float], None] = time.sleep,
         jitter: Callable[[], float] = lambda: random.uniform(0.0, 1.0),
     ) -> None:
-        raw = api_key if api_key is not None else getattr(settings, "skiddle_api_key", "")
+        raw = api_key if api_key is not None else os.getenv("SKIDDLE_API_KEY", "")
         self.api_key = (raw or "").strip("'\" \r\n")
         self.blocked = False  # set once Skiddle refuses us or keeps failing; ends the sweep
         self.backoff_waits: list[float] = []

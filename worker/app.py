@@ -447,9 +447,11 @@ def run_gig_discovery_sync(user_id: int | None = None) -> None:
         return
     if counts.get("configured"):
         logger.info(
-            "Gig discovery sync: %s upserted, %s pruned",
+            "Gig discovery sync: %s upserted, %s pruned, %s Skiddle searches, %s Skiddle gigs stored",
             counts.get("upserted", 0),
             counts.get("pruned", 0),
+            counts.get("skiddle_queries", 0),
+            counts.get("skiddle_upserted", 0),
         )
 
 
@@ -646,6 +648,8 @@ def start_scheduler() -> None:
         run_gig_discovery_sync,
         "interval",
         minutes=gig_discovery_interval_minutes,
+        # Skiddle asks scheduled jobs not to fire on the hour: spread each run by up to 15 minutes.
+        jitter=900,
         id="gig-discovery-sync",
         replace_existing=True,
     )

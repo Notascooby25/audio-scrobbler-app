@@ -5,7 +5,6 @@ import os
 import time
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
-from urllib.parse import urlparse
 
 import httpx
 from sqlalchemy import delete, func, select
@@ -21,7 +20,17 @@ from ..models import (
     UserPreferences,
 )
 
+from .gig_discovery_text import normalize_artist_key, sanitize_external_url
+from .skiddle_service import SkiddleClient, parse_skiddle_event
+
 logger = logging.getLogger(__name__)
+
+# Skiddle sweeps. Fewer, wider requests: one geo search per home location, and the UK-wide
+# list is read in date windows so far-off gigs are covered too (days from today: start, end).
+SKIDDLE_LOCAL_MIN_RADIUS_MILES = 25
+SKIDDLE_LOCAL_MAX_PAGES = 3
+SKIDDLE_UK_WINDOW_DAYS = ((0, 30), (30, 90), (90, 180), (180, 365))
+SKIDDLE_UK_MAX_PAGES_PER_WINDOW = 5
 
 TICKETMASTER_BASE_URL = "https://app.ticketmaster.com/discovery/v2"
 MIN_INTERVAL_SECONDS = 0.35  # <= ~3 req/sec (under Ticketmaster's 5 req/sec limit)
@@ -76,21 +85,14 @@ def encode_geohash(lat: float, lng: float, precision: int = 7) -> str:
     return "".join(geohash)
 
 
-def sanitize_external_url(url: str | None) -> str | None:
-    """Allow only http/https external URLs; drop javascript:, data:, or malformed strings."""
-    if not url or not isinstance(url, str):
-        return None
-    cleaned = url.strip()
-    if not cleaned:
-        return None
-    parsed = urlparse(cleaned)
-    if parsed.scheme.lower() not in ("http", "https") or not parsed.netloc:
-        return None
-    return cleaned[:512]
-
-
-def normalize_artist_key(name: str | None) -> str:
-    return (name or "").strip().lower()
+def configured_sources() -> list[str]:
+    """Names of the discovery sources that currently have an API key."""
+    sources: list[str] = []
+    if os.getenv("TICKETMASTER_API_KEY", "").strip("'\" \r\n"):
+        sources.append("ticketmaster")
+    if os.getenv("SKIDDLE_API_KEY", "").strip("'\" \r\n"):
+        sources.append("skiddle")
+    return sources
 
 
 def merge_discovery_filters(raw: dict[str, Any] | None) -> dict[str, Any]:
@@ -151,9 +153,7 @@ def get_user_discovery_artists(
             artists.add(key)
 
     if include_seen_live:
-        seen_rows = db.scalars(
-            select(AttendedConcert.artist_name).where(AttendedConcert.user_id == user_id)
-        ).all()
+        seen_rows = db.scalars(select(AttendedConcert.artist_name).where(AttendedConcert.user_id == user_id)).all()
         for name in seen_rows:
             key = normalize_artist_key(name)
             if key and key not in blocked:
@@ -318,12 +318,9 @@ def _parse_ticketmaster_event(event: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
-def _upsert_events(db: Session, raw_events: list[dict[str, Any]], now: datetime) -> int:
+def _upsert_parsed(db: Session, parsed_events: list[dict[str, Any]], now: datetime) -> int:
     upserted = 0
-    for raw in raw_events:
-        parsed = _parse_ticketmaster_event(raw)
-        if not parsed:
-            continue
+    for parsed in parsed_events:
         existing = db.scalar(
             select(DiscoveredGig).where(
                 DiscoveredGig.source == parsed["source"],
@@ -346,14 +343,90 @@ def _upsert_events(db: Session, raw_events: list[dict[str, Any]], now: datetime)
     return upserted
 
 
+def _upsert_events(db: Session, raw_events: list[dict[str, Any]], now: datetime) -> int:
+    parsed = [p for p in (_parse_ticketmaster_event(raw) for raw in raw_events) if p]
+    return _upsert_parsed(db, parsed, now)
+
+
+def _upsert_skiddle_events(db: Session, raw_events: list[dict[str, Any]], now: datetime) -> int:
+    parsed = [p for p in (parse_skiddle_event(raw) for raw in raw_events) if p]
+    return _upsert_parsed(db, parsed, now)
+
+
+def _sweep_skiddle(
+    db: Session,
+    client: SkiddleClient,
+    local_targets: list[tuple[float, float, int]],
+    include_uk: bool,
+    today: date,
+    now: datetime,
+) -> tuple[int, int]:
+    """Run the Skiddle searches. Returns (searches made, events stored)."""
+    searches = 0
+    upserted = 0
+
+    seen_targets: set[tuple[float, float, int]] = set()
+    for lat, lng, radius in local_targets:
+        if client.blocked:
+            return searches, upserted
+        target = (round(lat, 2), round(lng, 2), radius)
+        if target in seen_targets:
+            continue
+        seen_targets.add(target)
+        events = client.search_all(
+            {
+                "latitude": lat,
+                "longitude": lng,
+                "radius": radius,
+                "eventcode": "LIVE",
+                "minDate": today.isoformat(),
+                "description": 1,
+                "order": "distance",
+            },
+            max_pages=SKIDDLE_LOCAL_MAX_PAGES,
+        )
+        searches += 1
+        upserted += _upsert_skiddle_events(db, events, now)
+
+    if include_uk:
+        for start_days, end_days in SKIDDLE_UK_WINDOW_DAYS:
+            if client.blocked:
+                break
+            events = client.search_all(
+                {
+                    "country": "GB",
+                    "eventcode": "LIVE",
+                    "minDate": (today + timedelta(days=start_days)).isoformat(),
+                    "maxDate": (today + timedelta(days=end_days)).isoformat(),
+                    "description": 1,
+                },
+                max_pages=SKIDDLE_UK_MAX_PAGES_PER_WINDOW,
+            )
+            searches += 1
+            upserted += _upsert_skiddle_events(db, events, now)
+
+    return searches, upserted
+
+
 def sync_discovered_gigs(db: Session, user_id: int | None = None) -> dict[str, int]:
-    """Sweep Ticketmaster for active users' artists and home locations, caching results in DB."""
+    """Sweep the configured sources (Ticketmaster, Skiddle) and cache results in the database."""
     client = TicketmasterClient()
-    if not client.api_key:
-        return {"configured": 0, "upserted": 0, "pruned": 0, "artist_queries": 0, "local_queries": 0}
+    skiddle = SkiddleClient()
+    stats = {
+        "configured": 0,
+        "upserted": 0,
+        "pruned": 0,
+        "artist_queries": 0,
+        "local_queries": 0,
+        "skiddle_queries": 0,
+        "skiddle_upserted": 0,
+    }
+    if not client.api_key and not skiddle.api_key:
+        return stats
 
     now = utc_now()
-    cutoff_date = date.today() - timedelta(days=1)
+    today = date.today()
+    cutoff_date = today - timedelta(days=1)
     pruned_result = db.execute(delete(DiscoveredGig).where(DiscoveredGig.event_date < cutoff_date))
     pruned = int(pruned_result.rowcount or 0)
 
@@ -382,38 +455,51 @@ def sync_discovered_gigs(db: Session, user_id: int | None = None) -> dict[str, i
     artist_queries = 0
     local_queries = 0
 
-    for artist_key in sorted(artist_display_names)[:MAX_ARTISTS_PER_SYNC]:
-        if getattr(client, "rate_limited", False):
-            break
-        events = client.search_events({"keyword": artist_key, "startDateTime": start_iso})
-        upserted += _upsert_events(db, events, now)
-        artist_queries += 1
+    if client.api_key:
+        for artist_key in sorted(artist_display_names)[:MAX_ARTISTS_PER_SYNC]:
+            if getattr(client, "rate_limited", False):
+                break
+            events = client.search_events({"keyword": artist_key, "startDateTime": start_iso})
+            upserted += _upsert_events(db, events, now)
+            artist_queries += 1
 
-    seen_geohashes: set[tuple[str, int]] = set()
-    for lat, lng, radius in local_targets:
-        if getattr(client, "rate_limited", False):
-            break
-        gh = encode_geohash(lat, lng, precision=6)
-        if (gh, radius) in seen_geohashes:
-            continue
-        seen_geohashes.add((gh, radius))
-        events = client.search_events(
-            {
-                "geoPoint": gh,
-                "radius": radius,
-                "unit": "miles",
-                "startDateTime": start_iso,
-                "size": 100,
-            }
-        )
-        upserted += _upsert_events(db, events, now)
-        local_queries += 1
+        seen_geohashes: set[tuple[str, int]] = set()
+        for lat, lng, radius in local_targets:
+            if getattr(client, "rate_limited", False):
+                break
+            gh = encode_geohash(lat, lng, precision=6)
+            if (gh, radius) in seen_geohashes:
+                continue
+            seen_geohashes.add((gh, radius))
+            events = client.search_events(
+                {
+                    "geoPoint": gh,
+                    "radius": radius,
+                    "unit": "miles",
+                    "startDateTime": start_iso,
+                    "size": 100,
+                }
+            )
+            upserted += _upsert_events(db, events, now)
+            local_queries += 1
+
+    skiddle_queries = 0
+    skiddle_upserted = 0
+    if skiddle.api_key:
+        # The UK-wide list only makes sense for a full sweep, not a single user's refresh.
+        include_uk = user_id is None and bool(artist_display_names)
+        skiddle_queries, skiddle_upserted = _sweep_skiddle(db, skiddle, local_targets, include_uk, today, now)
 
     db.commit()
-    return {
-        "configured": 1,
-        "upserted": upserted,
-        "pruned": pruned,
-        "artist_queries": artist_queries,
-        "local_queries": local_queries,
-    }
+    stats.update(
+        {
+            "configured": 1,
+            "upserted": upserted,
+            "pruned": pruned,
+            "artist_queries": artist_queries,
+            "local_queries": local_queries,
+            "skiddle_queries": skiddle_queries,
+            "skiddle_upserted": skiddle_upserted,
+        }
+    )
+    return stats
