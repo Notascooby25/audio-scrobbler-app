@@ -213,6 +213,17 @@ def test_events_without_a_usable_date_are_skipped(db_session: Session, monkeypat
     assert db_session.query(DiscoveredGig).count() == 0
 
 
+def test_events_that_already_started_in_the_past_are_not_stored(db_session: Session, monkeypatch: pytest.MonkeyPatch):
+    """Skiddle returns long-running listings (courses, exhibitions) whose start date is long gone."""
+    _user(db_session)
+    past = dict(_events()[0], date=(date.today() - timedelta(days=30)).isoformat())
+    future = _future(_events()[1])
+    _fake_client(monkeypatch, [past, future])
+    sync_discovered_gigs(db_session)
+    stored = {g.external_id for g in db_session.query(DiscoveredGig).all()}
+    assert stored == {future["id"]}
+
+
 # ---- matching "My Artists" ---------------------------------------------------------
 
 

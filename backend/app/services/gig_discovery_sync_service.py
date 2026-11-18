@@ -349,7 +349,9 @@ def _upsert_events(db: Session, raw_events: list[dict[str, Any]], now: datetime)
 
 
 def _upsert_skiddle_events(db: Session, raw_events: list[dict[str, Any]], now: datetime) -> int:
-    parsed = [p for p in (parse_skiddle_event(raw) for raw in raw_events) if p]
+    # Skiddle also returns long-running listings (courses, exhibitions) that started in the past.
+    today = date.today()
+    parsed = [p for p in (parse_skiddle_event(raw) for raw in raw_events) if p and p["event_date"] >= today]
     return _upsert_parsed(db, parsed, now)
 
 
