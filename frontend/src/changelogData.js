@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.50.6",
+    date: "2026-11-18",
+    changes: [
+      "Follower Alerts and Remove Follower: You now get a notification when someone starts following you, and you can see your followers and remove any of them from the Friends page.",
+    ],
+  },
+  {
     version: "0.50.5",
     date: "2026-11-18",
     changes: [

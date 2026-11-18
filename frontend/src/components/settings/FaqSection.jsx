@@ -411,13 +411,21 @@ const FAQ_DATA = [
     category: "Friends & Social",
     question: "Can other people see my listening history?",
     answer: (
-      <p>
-        Anyone who follows you can view your profile and listening reports, and following does not
-        need your approval first. People who don&apos;t follow you can&apos;t see your listening.
-        Furthermore, any artist, album, or track you have added to your{" "}
-        <strong>Blocked Items</strong> is automatically hidden from everyone, including yourself,
-        across all public reports and rankings.
-      </p>
+      <>
+        <p>
+          Anyone who follows you can view your profile and listening reports, and following does not
+          need your approval first. People who don&apos;t follow you can&apos;t see your listening.
+          Furthermore, any artist, album, or track you have added to your{" "}
+          <strong>Blocked Items</strong> is automatically hidden from everyone, including yourself,
+          across all public reports and rankings.
+        </p>
+        <p>
+          You get a notification when someone follows you. To see who follows you, open the{" "}
+          <strong>Friends</strong> page from the Profile menu and look under <em>Followers</em>.
+          Press <strong>Remove</strong> next to anyone you don&apos;t want following you. They are
+          not told, they lose access straight away, and they can follow you again if they choose.
+        </p>
+      </>
     ),
   },
   {

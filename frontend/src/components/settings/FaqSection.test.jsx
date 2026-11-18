@@ -88,4 +88,13 @@ describe("FaqSection", () => {
     expect(answer).not.toHaveTextContent(/follow you back/i);
     expect(answer).toHaveTextContent(/anyone who follows you/i);
   });
+
+  it("privacy answer mentions follower alerts and removing followers", () => {
+    render(<FaqSection />);
+    const item = screen.getByText(/can other people see my listening history/i);
+    const answer = item.closest("details");
+    expect(answer).toHaveTextContent(/notification when someone follows you/i);
+    expect(answer).toHaveTextContent(/remove/i);
+    expect(answer).toHaveTextContent(/friends page/i);
+  });
 });
