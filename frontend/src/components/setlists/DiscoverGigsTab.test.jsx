@@ -133,6 +133,93 @@ describe("DiscoverGigsTab", () => {
     });
   });
 
+  describe("Skiddle credit and possible matches", () => {
+    const skiddleItem = {
+      ...SAMPLE_RESPONSE.items[0],
+      id: 21,
+      source: "skiddle",
+      external_id: "sk-21",
+      event_name: "Fang Night - Mesch:, Crackbears, Balloon Tomb",
+      ticket_url: "https://www.skiddle.com/whats-on/Coventry/LTB-Showrooms/Fang-Night/43140187/",
+      is_seen_live: false,
+      is_newly_announced: false,
+      is_possible_match: true,
+    };
+
+    const renderTab = () =>
+      render(
+        <MemoryRouter>
+          <DiscoverGigsTab token="tok" onOpenGig={vi.fn()} onGigAdded={vi.fn()} />
+        </MemoryRouter>
+      );
+
+    it("credits Skiddle with its logo and a link, and says it is unofficial", async () => {
+      setlistApi.fetchDiscoveredGigs.mockResolvedValue({
+        ...SAMPLE_RESPONSE,
+        items: [skiddleItem],
+      });
+      renderTab();
+      await waitFor(() => {
+        expect(screen.getByText(/Fang Night/)).toBeInTheDocument();
+      });
+
+      const credit = screen.getByRole("link", { name: /Skiddle/i });
+      expect(credit).toHaveAttribute("href", "https://www.skiddle.com/");
+      expect(credit).toHaveAttribute("target", "_blank");
+      expect(credit.getAttribute("rel")).toContain("noopener");
+      expect(credit.querySelectorAll("img").length).toBe(2); // dark-on-light and light-on-dark versions
+      expect(screen.getByText(/not affiliated with or endorsed by Skiddle/i)).toBeInTheDocument();
+    });
+
+    it("shows no Skiddle credit when no gig comes from Skiddle", async () => {
+      renderTab();
+      await waitFor(() => {
+        expect(screen.getByText("Fontaines D.C. Live")).toBeInTheDocument();
+      });
+      expect(
+        screen.queryByText(/not affiliated with or endorsed by Skiddle/i)
+      ).not.toBeInTheDocument();
+    });
+
+    it("labels a title-only match as a possible match, not as your artist", async () => {
+      setlistApi.fetchDiscoveredGigs.mockResolvedValue({
+        ...SAMPLE_RESPONSE,
+        items: [skiddleItem],
+      });
+      renderTab();
+      await waitFor(() => {
+        expect(screen.getByText("Possible match")).toBeInTheDocument();
+      });
+      expect(screen.queryByText("Your artist")).not.toBeInTheDocument();
+    });
+
+    it("links to the event exactly as Skiddle gave it", async () => {
+      setlistApi.fetchDiscoveredGigs.mockResolvedValue({
+        ...SAMPLE_RESPONSE,
+        items: [skiddleItem],
+      });
+      renderTab();
+      const tickets = await screen.findByRole("link", { name: /Tickets/i });
+      expect(tickets).toHaveAttribute("href", skiddleItem.ticket_url);
+    });
+  });
+
+  it("mentions both providers in the setup notice", async () => {
+    setlistApi.fetchDiscoveredGigs.mockResolvedValue({
+      ...SAMPLE_RESPONSE,
+      configured: false,
+      items: [],
+    });
+    render(
+      <MemoryRouter>
+        <DiscoverGigsTab token="tok" onOpenGig={vi.fn()} onGigAdded={vi.fn()} />
+      </MemoryRouter>
+    );
+    await waitFor(() => {
+      expect(screen.getByText(/SKIDDLE_API_KEY/i)).toBeInTheDocument();
+    });
+  });
+
   it("renders setup notice when Ticketmaster key is not configured", async () => {
     setlistApi.fetchDiscoveredGigs.mockResolvedValue({
       ...SAMPLE_RESPONSE,

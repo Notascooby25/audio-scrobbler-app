@@ -8,6 +8,7 @@ import {
 } from "../../api/setlists";
 import DiscoverSettingsModal from "./DiscoverSettingsModal";
 import SetlistDateBadge from "./SetlistDateBadge";
+import SkiddleCredit from "./SkiddleCredit";
 
 const DATE_WINDOWS = [
   { id: "all", label: "All upcoming" },
@@ -45,8 +46,7 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
         const res = await fetchDiscoveredGigs({
           token,
           scope: overrides.scope ?? (isInit ? scope : undefined),
-          onlyMyArtists:
-            overrides.onlyMyArtists ?? (isInit ? onlyMyArtists : undefined),
+          onlyMyArtists: overrides.onlyMyArtists ?? (isInit ? onlyMyArtists : undefined),
           radiusMiles: overrides.radiusMiles ?? (isInit ? radiusMiles : undefined),
           dateWindow: overrides.dateWindow ?? (isInit ? dateWindow : undefined),
           country: overrides.country ?? (isInit ? country : undefined),
@@ -190,8 +190,9 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
     return (
       <div className="sfm-empty">
         <p>
-          Gig discovery is not configured yet. Add a free <code>TICKETMASTER_API_KEY</code> in your
-          server environment to see upcoming and local gigs.
+          Gig discovery is not configured yet. Add a free <code>SKIDDLE_API_KEY</code> (UK events)
+          or <code>TICKETMASTER_API_KEY</code> in your server environment to see upcoming and local
+          gigs.
         </p>
       </div>
     );
@@ -252,7 +253,9 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
                   min={1}
                   max={100}
                   value={radiusMiles}
-                  onChange={(e) => setRadiusMiles(Math.max(1, Math.min(100, Number(e.target.value) || 1)))}
+                  onChange={(e) =>
+                    setRadiusMiles(Math.max(1, Math.min(100, Number(e.target.value) || 1)))
+                  }
                 />
               </label>
               <label className="sfm-discover-toggle">
@@ -298,9 +301,8 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
       {scope === "local" && dateWindow !== "interested" && data && !data.has_home_city ? (
         <div className="sfm-empty">
           <p>
-            Set your home city or postcode in{" "}
-            <Link to="/settings">Settings → Home city</Link> to see local gigs within your{" "}
-            {radiusMiles}-mile radius.
+            Set your home city or postcode in <Link to="/settings">Settings → Home city</Link> to
+            see local gigs within your {radiusMiles}-mile radius.
           </p>
         </div>
       ) : loading ? (
@@ -321,8 +323,11 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
                   {gig.is_newly_announced && (
                     <span className="sfm-badge sfm-badge-new">Newly announced</span>
                   )}
-                  {gig.is_my_artist && (
+                  {gig.is_my_artist && !gig.is_possible_match && (
                     <span className="sfm-badge sfm-badge-artist">Your artist</span>
+                  )}
+                  {gig.is_possible_match && (
+                    <span className="sfm-badge sfm-badge-possible">Possible match</span>
                   )}
                   {gig.is_seen_live && <span className="sfm-badge">Seen live</span>}
                 </div>
@@ -384,6 +389,8 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
           ))}
         </div>
       )}
+
+      {data?.items?.some((gig) => gig.source === "skiddle") && <SkiddleCredit />}
 
       <DiscoverSettingsModal
         isOpen={isCriteriaOpen}

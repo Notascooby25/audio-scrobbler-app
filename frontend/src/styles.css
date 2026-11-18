@@ -7981,6 +7981,61 @@ button.sfm-row-remove:hover:not(:disabled) {
   color: var(--color-ink);
 }
 
+.sfm-badge-possible {
+  border-style: dashed;
+  border-color: var(--color-muted);
+  color: var(--color-muted);
+}
+
+/* Skiddle credit (their terms: name + unaltered logo, ~5mm clear space around it) */
+.sfm-skiddle-credit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 16px;
+  padding: 19px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.sfm-skiddle-link {
+  display: inline-flex;
+  align-items: center;
+}
+
+.sfm-skiddle-logo {
+  height: 28px;
+  width: auto;
+}
+
+.sfm-skiddle-logo-on-dark {
+  display: none;
+}
+
+:root[data-theme="dark"] .sfm-skiddle-logo-on-light {
+  display: none;
+}
+
+:root[data-theme="dark"] .sfm-skiddle-logo-on-dark {
+  display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sfm-skiddle-logo-on-light {
+    display: none;
+  }
+
+  :root:not([data-theme="light"]) .sfm-skiddle-logo-on-dark {
+    display: block;
+  }
+}
+
+.sfm-skiddle-note {
+  flex-basis: 100%;
+}
+
 .sfm-action.is-interested {
   border-color: var(--color-accent);
   color: var(--color-accent);
