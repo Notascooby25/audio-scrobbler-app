@@ -806,6 +806,8 @@ def get_discovered_gigs(
     only_my_artists: bool | None = Query(default=None),
     radius_miles: int | None = Query(default=None, ge=1, le=100),
     date_window: str | None = Query(default=None),
+    only_new: bool | None = Query(default=None),
+    only_interested: bool | None = Query(default=None),
     country: str | None = Query(default=None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -817,6 +819,8 @@ def get_discovered_gigs(
         only_my_artists=only_my_artists,
         radius_miles=radius_miles,
         date_window=date_window,
+        only_new=only_new,
+        only_interested=only_interested,
         country=country,
     )
 

@@ -6,27 +6,74 @@ import {
   saveGigDiscoverySettings,
   toggleDiscoveredGigInterest,
 } from "../../api/setlists";
+import DiscoverFilters, { countryName, shortCity } from "./DiscoverFilters";
+import DiscoverKey from "./DiscoverKey";
 import DiscoverSettingsModal from "./DiscoverSettingsModal";
 import SetlistDateBadge from "./SetlistDateBadge";
 import SkiddleCredit from "./SkiddleCredit";
 
-const DATE_WINDOWS = [
-  { id: "all", label: "All upcoming" },
-  { id: "weekend", label: "This weekend" },
-  { id: "7d", label: "Next 7 days" },
-  { id: "30d", label: "Next 30 days" },
-  { id: "newly_announced", label: "Newly announced" },
-  { id: "interested", label: "Interested" },
-];
+const PAGE_SIZE = 20;
+const RADIUS_DEBOUNCE_MS = 500;
+
+const DATE_LABELS = {
+  all: "Any time",
+  weekend: "This weekend",
+  "7d": "Next 7 days",
+  "30d": "Next 30 days",
+};
+
+function clampRadius(value) {
+  return Math.max(1, Math.min(100, Math.round(Number(value)) || 1));
+}
+
+/** Older saved settings kept "newly announced" and "interested" in the date window. */
+function splitLegacyWindow(savedWindow, savedFilters) {
+  let dateWindow = savedWindow || "all";
+  let onlyNew = Boolean(savedFilters.only_new);
+  let onlyInterested = Boolean(savedFilters.only_interested);
+  if (dateWindow === "newly_announced") {
+    dateWindow = "all";
+    onlyNew = true;
+  } else if (dateWindow === "interested") {
+    dateWindow = "all";
+    onlyInterested = true;
+  }
+  return { dateWindow, onlyNew, onlyInterested };
+}
+
+function describeResults({
+  count,
+  scope,
+  homeCity,
+  hasHomeCity,
+  radiusMiles,
+  country,
+  onlyInterested,
+}) {
+  const noun = count === 1 ? "gig" : "gigs";
+  if (onlyInterested) return `${count} ${noun} on your shortlist`;
+  if (scope === "local") {
+    return hasHomeCity
+      ? `${count} ${noun} within ${radiusMiles} miles of ${shortCity(homeCity)}`
+      : `${count} ${noun}`;
+  }
+  return country
+    ? `${count} ${noun} by your artists in ${countryName(country)}`
+    : `${count} ${noun} by your artists`;
+}
 
 export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
   const [scope, setScope] = useState("my_artists");
   const [onlyMyArtists, setOnlyMyArtists] = useState(false);
   const [radiusMiles, setRadiusMiles] = useState(10);
+  const [radiusInput, setRadiusInput] = useState("10");
   const [dateWindow, setDateWindow] = useState("all");
+  const [onlyNew, setOnlyNew] = useState(false);
+  const [onlyInterested, setOnlyInterested] = useState(false);
   const [country, setCountry] = useState("");
   const initializedFromPrefsRef = useRef(false);
   const skipNextFetchRef = useRef(false);
+  const latestRequestRef = useRef(0);
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,11 +81,14 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
   const [savingDefaults, setSavingDefaults] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [isCriteriaOpen, setIsCriteriaOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [busyGigId, setBusyGigId] = useState(null);
 
   const loadGigs = useCallback(
     async (overrides = {}) => {
       if (!token) return;
+      const requestId = ++latestRequestRef.current;
       setLoading(true);
       setError("");
       try {
@@ -50,38 +100,48 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
           radiusMiles: overrides.radiusMiles ?? (isInit ? radiusMiles : undefined),
           dateWindow: overrides.dateWindow ?? (isInit ? dateWindow : undefined),
           country: overrides.country ?? (isInit ? country : undefined),
+          onlyNew: overrides.onlyNew ?? (isInit ? onlyNew : undefined),
+          onlyInterested: overrides.onlyInterested ?? (isInit ? onlyInterested : undefined),
         });
+        // A newer request has started since this one: its answer is the one to show.
+        if (requestId !== latestRequestRef.current) return;
         setData(res);
         if (!isInit && res) {
           const sf = res.saved_filters || {};
+          const legacy = splitLegacyWindow(sf.date_window, sf);
           const nextScope = sf.scope || "my_artists";
           const nextOnlyMyArtists = Boolean(sf.local_only_my_artists);
           const nextRadius = res.saved_radius_miles || 10;
-          const nextDateWindow = sf.date_window || "all";
           const nextCountry = sf.country_code || "";
           initializedFromPrefsRef.current = true;
           if (
             nextScope !== scope ||
             nextOnlyMyArtists !== onlyMyArtists ||
             nextRadius !== radiusMiles ||
-            nextDateWindow !== dateWindow ||
+            legacy.dateWindow !== dateWindow ||
+            legacy.onlyNew !== onlyNew ||
+            legacy.onlyInterested !== onlyInterested ||
             nextCountry !== country
           ) {
             skipNextFetchRef.current = true;
             setScope(nextScope);
             setOnlyMyArtists(nextOnlyMyArtists);
             setRadiusMiles(nextRadius);
-            setDateWindow(nextDateWindow);
+            setRadiusInput(String(nextRadius));
+            setDateWindow(legacy.dateWindow);
+            setOnlyNew(legacy.onlyNew);
+            setOnlyInterested(legacy.onlyInterested);
             setCountry(nextCountry);
           }
         }
       } catch (err) {
+        if (requestId !== latestRequestRef.current) return;
         setError(err.message || "Could not load discovered gigs.");
       } finally {
-        setLoading(false);
+        if (requestId === latestRequestRef.current) setLoading(false);
       }
     },
-    [token, scope, onlyMyArtists, radiusMiles, dateWindow, country]
+    [token, scope, onlyMyArtists, radiusMiles, dateWindow, country, onlyNew, onlyInterested]
   );
 
   useEffect(() => {
@@ -89,26 +149,61 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
       skipNextFetchRef.current = false;
       return;
     }
+    setVisibleCount(PAGE_SIZE);
     loadGigs();
   }, [loadGigs]);
+
+  // Typing in the radius box waits for a pause, so each keystroke is not a new search.
+  useEffect(() => {
+    if (!initializedFromPrefsRef.current || radiusInput === "") return undefined;
+    const next = clampRadius(radiusInput);
+    if (next === radiusMiles) return undefined;
+    const timer = setTimeout(() => setRadiusMiles(next), RADIUS_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [radiusInput, radiusMiles]);
+
+  const commitRadius = () => {
+    const next = clampRadius(radiusInput);
+    setRadiusInput(String(next));
+    setRadiusMiles(next);
+  };
+
+  const saved = data?.saved_filters || {};
+  const savedLegacy = splitLegacyWindow(saved.date_window, saved);
+  const isDirty =
+    Boolean(data) &&
+    initializedFromPrefsRef.current &&
+    (scope !== (saved.scope || "my_artists") ||
+      onlyMyArtists !== Boolean(saved.local_only_my_artists) ||
+      dateWindow !== savedLegacy.dateWindow ||
+      onlyNew !== savedLegacy.onlyNew ||
+      onlyInterested !== savedLegacy.onlyInterested ||
+      country !== (saved.country_code || "") ||
+      radiusMiles !== (data.saved_radius_miles || 10));
 
   const handleSaveDefaults = async () => {
     setSavingDefaults(true);
     setSaveMessage("");
     try {
       const merged = {
-        ...(data?.saved_filters || {}),
+        ...saved,
         scope,
         local_only_my_artists: onlyMyArtists,
         date_window: dateWindow,
+        only_new: onlyNew,
+        only_interested: onlyInterested,
         country_code: country,
       };
+      const radius = clampRadius(radiusMiles);
       await saveGigDiscoverySettings({
         token,
-        localGigRadiusMiles: Math.max(1, Math.min(100, Number(radiusMiles) || 10)),
+        localGigRadiusMiles: radius,
         gigDiscoveryFilters: merged,
       });
-      setSaveMessage("Defaults saved");
+      setData((prev) =>
+        prev ? { ...prev, saved_filters: merged, saved_radius_miles: radius } : prev
+      );
+      setSaveMessage("Saved as your default");
       setTimeout(() => setSaveMessage(""), 2500);
     } catch (err) {
       setError(err.message || "Could not save defaults.");
@@ -121,7 +216,7 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
     setSavingDefaults(true);
     try {
       const merged = {
-        ...(data?.saved_filters || {}),
+        ...saved,
         ...criteria,
       };
       await saveGigDiscoverySettings({
@@ -198,201 +293,197 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
     );
   }
 
+  const items = data?.items || [];
+  const shownItems = items.slice(0, visibleCount);
+  const needsHomeCity = scope === "local" && !onlyInterested && data && !data.has_home_city;
+  const filterSummary = [
+    scope === "local" ? "Local Radar" : "My Artists",
+    scope === "local" ? `${radiusMiles} mi` : country ? countryName(country) : null,
+    DATE_LABELS[dateWindow],
+    onlyNew ? "New" : null,
+    onlyInterested ? "Interested" : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <div className="sfm-discover">
-      <div className="sfm-discover-controls">
-        <div className="sfm-discover-top-row">
-          <div className="sfm-filter-pills" role="group" aria-label="Discovery scope">
-            <button
-              type="button"
-              className={`sfm-pill sfm-btn-mixed ${scope === "my_artists" ? "is-active" : ""}`}
-              onClick={() => setScope("my_artists")}
-            >
-              My Artists
-            </button>
-            <button
-              type="button"
-              className={`sfm-pill sfm-btn-mixed ${scope === "local" ? "is-active" : ""}`}
-              onClick={() => setScope("local")}
-            >
-              Local Radar
-            </button>
-          </div>
+      <DiscoverFilters
+        scope={scope}
+        onScopeChange={setScope}
+        homeCity={data?.home_city}
+        hasHomeCity={Boolean(data?.has_home_city)}
+        radiusInput={radiusInput}
+        onRadiusInputChange={setRadiusInput}
+        onRadiusCommit={commitRadius}
+        onlyMyArtists={onlyMyArtists}
+        onOnlyMyArtistsChange={setOnlyMyArtists}
+        country={country}
+        countries={data?.countries}
+        onCountryChange={setCountry}
+        dateWindow={dateWindow}
+        onDateWindowChange={setDateWindow}
+        onlyNew={onlyNew}
+        onOnlyNewChange={setOnlyNew}
+        onlyInterested={onlyInterested}
+        onOnlyInterestedChange={setOnlyInterested}
+        summary={filterSummary}
+        open={filtersOpen}
+        onToggleOpen={() => setFiltersOpen((value) => !value)}
+        isDirty={isDirty}
+        saving={savingDefaults}
+        saveMessage={saveMessage}
+        onSaveDefaults={handleSaveDefaults}
+        onOpenCriteria={() => setIsCriteriaOpen(true)}
+      />
 
-          <div className="sfm-discover-actions-right">
-            <button
-              type="button"
-              className="sfm-action sfm-btn-mixed"
-              onClick={() => setIsCriteriaOpen(true)}
-              aria-label="Artist criteria settings"
-              title="Customise My Artists criteria"
-            >
-              ⚙ Criteria
-            </button>
-            <button
-              type="button"
-              className="sfm-action sfm-btn-mixed"
-              onClick={handleSaveDefaults}
-              disabled={savingDefaults}
-            >
-              {savingDefaults ? "Saving..." : saveMessage || "Save as default"}
-            </button>
-          </div>
+      {error && (
+        <div className="sfm-error" role="alert">
+          {error}
         </div>
+      )}
 
-        <div className="sfm-discover-sub-row">
-          {scope === "local" ? (
-            <>
-              <span className="sfm-discover-home-label">
-                {data?.has_home_city ? `Near ${data.home_city}` : "No home city set"}
-              </span>
-              <label className="sfm-discover-radius">
-                <span>Radius (mi)</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={radiusMiles}
-                  onChange={(e) =>
-                    setRadiusMiles(Math.max(1, Math.min(100, Number(e.target.value) || 1)))
-                  }
-                />
-              </label>
-              <label className="sfm-discover-toggle">
-                <input
-                  type="checkbox"
-                  checked={onlyMyArtists}
-                  onChange={(e) => setOnlyMyArtists(e.target.checked)}
-                />
-                <span>My artists only</span>
-              </label>
-            </>
-          ) : (
-            <label className="sfm-discover-country">
-              <span>Country</span>
-              <select value={country} onChange={(e) => setCountry(e.target.value)}>
-                <option value="">All countries</option>
-                {(data?.countries || []).map((code) => (
-                  <option key={code} value={code}>
-                    {code}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-        </div>
-
-        <div className="sfm-filter-pills" role="group" aria-label="Date and status filters">
-          {DATE_WINDOWS.map((win) => (
-            <button
-              key={win.id}
-              type="button"
-              className={`sfm-pill sfm-btn-mixed ${dateWindow === win.id ? "is-active" : ""}`}
-              onClick={() => setDateWindow(win.id)}
-            >
-              {win.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {error && <div className="sfm-error">{error}</div>}
-
-      {scope === "local" && dateWindow !== "interested" && data && !data.has_home_city ? (
+      {needsHomeCity ? (
         <div className="sfm-empty">
           <p>
             Set your home city or postcode in <Link to="/settings">Settings → Home city</Link> to
             see local gigs within your {radiusMiles}-mile radius.
           </p>
         </div>
-      ) : loading ? (
-        <div className="sfm-empty">Checking upcoming gigs...</div>
-      ) : !data?.items?.length ? (
-        <div className="sfm-empty">
-          No upcoming gigs match these filters yet. Try widening your radius, switching to{" "}
-          <strong>All upcoming</strong>, or turning off <strong>My artists only</strong>.
+      ) : !data && loading ? (
+        <div className="sfm-empty" role="status">
+          Checking upcoming gigs...
         </div>
-      ) : (
-        <div className="sfm-discover-list">
-          {data.items.map((gig) => (
-            <article key={gig.id} className="sfm-discover-card">
-              <SetlistDateBadge date={gig.event_date} />
-              <div className="sfm-discover-body">
-                <div className="sfm-discover-title-row">
-                  <strong className="sfm-discover-event">{gig.event_name}</strong>
-                  {gig.is_newly_announced && (
-                    <span className="sfm-badge sfm-badge-new">Newly announced</span>
-                  )}
-                  {gig.is_my_artist && !gig.is_possible_match && (
-                    <span className="sfm-badge sfm-badge-artist">Your artist</span>
-                  )}
-                  {gig.is_possible_match && (
-                    <span className="sfm-badge sfm-badge-possible">Possible match</span>
-                  )}
-                  {gig.is_seen_live && <span className="sfm-badge">Seen live</span>}
-                </div>
-                <div className="sfm-discover-meta">
-                  <span>{gig.artist_name}</span>
-                  <span>•</span>
-                  <span>
-                    {gig.venue_name}
-                    {gig.city ? `, ${gig.city}` : ""}
-                    {gig.country_code ? ` (${gig.country_code})` : ""}
-                  </span>
-                  {gig.distance_miles !== null && gig.distance_miles !== undefined && (
-                    <>
-                      <span>•</span>
-                      <span>{gig.distance_miles} mi away</span>
-                    </>
-                  )}
-                </div>
-              </div>
-              <div className="sfm-discover-card-actions">
-                {gig.ticket_url && (
-                  <a
-                    href={gig.ticket_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="sfm-action sfm-btn-mixed"
-                  >
-                    {gig.source === "skiddle" ? "View on Skiddle ↗" : "Tickets ↗"}
-                  </a>
-                )}
-                {!(gig.already_going && gig.concert_id) && (
-                  <button
-                    type="button"
-                    className={`sfm-action sfm-btn-mixed ${gig.is_interested ? "is-interested" : ""}`}
-                    disabled={busyGigId === gig.id}
-                    onClick={() => handleToggleInterest(gig)}
-                  >
-                    {gig.is_interested ? "★ Interested" : "I'm interested"}
-                  </button>
-                )}
-                {gig.already_going && gig.concert_id ? (
-                  <button
-                    type="button"
-                    className="sfm-action sfm-action-primary sfm-btn-mixed"
-                    onClick={() => onOpenGig(gig.concert_id)}
-                  >
-                    ✓ Going
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="sfm-action sfm-action-primary sfm-btn-mixed"
-                    disabled={busyGigId === gig.id}
-                    onClick={() => handleAttend(gig)}
-                  >
-                    + I&apos;m going
-                  </button>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
+      ) : !data ? null : (
+        <>
+          <div className="sfm-discover-list-head">
+            <p className="sfm-discover-count" role="status">
+              {loading
+                ? "Updating..."
+                : describeResults({
+                    count: items.length,
+                    scope,
+                    homeCity: data?.home_city,
+                    hasHomeCity: Boolean(data?.has_home_city),
+                    radiusMiles,
+                    country,
+                    onlyInterested,
+                  })}
+            </p>
+            <DiscoverKey />
+          </div>
+
+          {!items.length ? (
+            <div className="sfm-empty">
+              No upcoming gigs match these filters yet. Try a wider radius, choose{" "}
+              <strong>Any time</strong>, or turn off the <strong>Only</strong> filters.
+            </div>
+          ) : (
+            <div className={`sfm-discover-list ${loading ? "is-loading" : ""}`} aria-busy={loading}>
+              {shownItems.map((gig) => {
+                const showArtist =
+                  gig.artist_name &&
+                  !gig.event_name.toLowerCase().includes(gig.artist_name.toLowerCase());
+                const isGoing = Boolean(gig.already_going && gig.concert_id);
+                return (
+                  <article key={gig.id} className="sfm-discover-card">
+                    <SetlistDateBadge date={gig.event_date} />
+                    <div className="sfm-discover-body">
+                      <div className="sfm-discover-title-row">
+                        <strong className="sfm-discover-event">{gig.event_name}</strong>
+                        {gig.is_newly_announced && (
+                          <span className="sfm-badge sfm-badge-new">Newly announced</span>
+                        )}
+                        {gig.is_my_artist && !gig.is_possible_match && (
+                          <span className="sfm-badge sfm-badge-artist">Your artist</span>
+                        )}
+                        {gig.is_possible_match && (
+                          <span className="sfm-badge sfm-badge-possible">Check line-up</span>
+                        )}
+                        {gig.is_seen_live && <span className="sfm-badge">Seen live</span>}
+                      </div>
+                      <div className="sfm-discover-meta">
+                        {showArtist && (
+                          <>
+                            <span>{gig.artist_name}</span>
+                            <span aria-hidden="true">•</span>
+                          </>
+                        )}
+                        <span>
+                          {gig.venue_name}
+                          {gig.city ? `, ${gig.city}` : ""}
+                          {gig.country_code ? ` (${gig.country_code})` : ""}
+                        </span>
+                        {gig.distance_miles !== null && gig.distance_miles !== undefined && (
+                          <>
+                            <span aria-hidden="true">•</span>
+                            <span>{gig.distance_miles} mi away</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="sfm-discover-card-actions">
+                      {gig.ticket_url && (
+                        <a
+                          href={gig.ticket_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="sfm-action sfm-btn-mixed"
+                        >
+                          {gig.source === "skiddle" ? "View on Skiddle ↗" : "Tickets ↗"}
+                        </a>
+                      )}
+                      {!isGoing && (
+                        <button
+                          type="button"
+                          className={`sfm-action sfm-btn-mixed ${gig.is_interested ? "is-interested" : ""}`}
+                          disabled={busyGigId === gig.id}
+                          onClick={() => handleToggleInterest(gig)}
+                        >
+                          {gig.is_interested ? "★ Interested" : "I'm interested"}
+                        </button>
+                      )}
+                      {isGoing ? (
+                        <button
+                          type="button"
+                          className="sfm-action sfm-action-primary sfm-btn-mixed"
+                          onClick={() => onOpenGig(gig.concert_id)}
+                        >
+                          ✓ Going
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="sfm-action sfm-action-primary sfm-btn-mixed"
+                          disabled={busyGigId === gig.id}
+                          onClick={() => handleAttend(gig)}
+                        >
+                          + I&apos;m going
+                        </button>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+
+          {items.length > shownItems.length && (
+            <div className="sfm-discover-more">
+              <button
+                type="button"
+                className="sfm-action sfm-btn-mixed"
+                onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
+              >
+                Show {Math.min(PAGE_SIZE, items.length - shownItems.length)} more (
+                {items.length - shownItems.length} left)
+              </button>
+            </div>
+          )}
+        </>
       )}
 
-      {data?.items?.some((gig) => gig.source === "skiddle") && <SkiddleCredit />}
+      {items.some((gig) => gig.source === "skiddle") && <SkiddleCredit />}
 
       <DiscoverSettingsModal
         isOpen={isCriteriaOpen}

@@ -161,7 +161,7 @@ The owner wants two practical ways to discover gigs without leaving the app:
 
 Listings whose start date is already past (courses, exhibitions) are ignored. The job runs every `WORKER_GIG_DISCOVERY_INTERVAL_MINUTES` with up to 15 minutes of random jitter, so it never fires on the hour.
 
-**Matching:** artist keys are compared in a canonical form (lower case, `&` = `and`). Skiddle often lists no artists; then the event title is the only name held. If one of the user's artists appears in such a title as whole words (artist name at least 4 characters, title not a tribute night, source is Skiddle, artist not blocked) the gig is returned with `is_my_artist` and `is_possible_match` both true and the UI shows **Possible match** instead of **Your artist**.
+**Matching:** artist keys are compared in a canonical form (lower case, `&` = `and`). Skiddle often lists no artists; then the event title is the only name held. If one of the user's artists appears in such a title as whole words (artist name at least 4 characters, title not a tribute night, source is Skiddle, artist not blocked) the gig is returned with `is_my_artist` and `is_possible_match` both true and the UI shows **Check line-up** instead of **Your artist**.
 
 **Display and terms:** the Discover tab shows "Event listings from" with the official unaltered Skiddle logo (light and dark versions in `frontend/public/skiddle/`), a link to skiddle.com and a line saying the app is not affiliated with or endorsed by Skiddle. Each Skiddle event links with **View on Skiddle** using the link Skiddle returned, unmodified. Event data is stored as received and is for personal, non-commercial use. Event images are linked, not copied (Skiddle's terms are silent on images; the owner is asking them).
 

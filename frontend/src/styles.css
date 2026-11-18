@@ -7858,58 +7858,247 @@ button.sfm-row-remove:hover:not(:disabled) {
   gap: 16px;
 }
 
-.sfm-discover-controls {
+/* ─── Discover filters ──────────────────────────────────────────────────────── */
+.sfm-discover-filters {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   padding: 14px 16px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-md);
   background: var(--color-surface);
 }
 
-.sfm-discover-top-row,
-.sfm-discover-sub-row,
-.sfm-discover-actions-right {
+.sfm-discover-filters-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Where to look: the one big choice, so it is a two-way switch, not another chip. */
+.sfm-segmented {
+  display: inline-flex;
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.sfm-discover .sfm-segment {
+  background: var(--color-surface);
+  border: 0;
+  border-radius: 0;
+  color: var(--color-ink);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  min-height: 36px;
+  padding: 6px 16px;
+}
+
+.sfm-discover .sfm-segment + .sfm-segment {
+  border-left: 0.5px solid var(--color-border);
+}
+
+.sfm-discover .sfm-segment:hover:not(:disabled):not(.is-active) {
+  background: var(--color-surface-hover);
+}
+
+.sfm-discover .sfm-segment.is-active,
+.sfm-discover .sfm-segment.is-active:hover:not(:disabled) {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+/* Phone only: the filters fold away behind a one-line summary. */
+.sfm-discover-filters-toggle {
+  display: none;
+}
+
+.sfm-discover-filters-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sfm-discover-context {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-}
-
-.sfm-discover-top-row {
-  justify-content: space-between;
-}
-
-.sfm-discover-home-label {
-  font-size: 0.9rem;
-  color: var(--color-muted);
+  gap: 8px 14px;
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-ink);
 }
 
 .sfm-discover-radius,
 .sfm-discover-country,
 .sfm-discover-toggle {
   display: inline-flex;
+  flex-direction: row; /* the global label rule stacks its children */
   align-items: center;
   gap: 8px;
-  font-size: 0.9rem;
+  font-size: 14px;
+  font-weight: 400;
 }
 
 .sfm-discover-radius input {
-  width: 72px;
-  padding: 6px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
+  width: 64px;
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
   background: var(--color-bg);
   color: var(--color-ink);
+  font: inherit;
 }
 
 .sfm-discover-country select {
-  padding: 6px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
+  min-height: 36px;
+  padding: 4px 10px;
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
   background: var(--color-bg);
   color: var(--color-ink);
+  font: inherit;
+}
+
+.sfm-discover-toggle input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.sfm-discover-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sfm-discover-filter-label {
+  flex: 0 0 44px;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.sfm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sfm-discover .sfm-chip {
+  background: var(--color-surface);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  min-height: 32px;
+  padding: 4px 14px;
+}
+
+.sfm-discover .sfm-chip:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+}
+
+.sfm-discover .sfm-chip.is-active,
+.sfm-discover .sfm-chip.is-active:hover:not(:disabled) {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+  color: var(--color-ink);
+}
+
+.sfm-discover-settings-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding-top: 12px;
+  border-top: 0.5px solid var(--color-border);
+}
+
+.sfm-discover-save-message {
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.sfm-discover-list-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.sfm-discover-count {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+.sfm-discover-key-toggle {
+  background: transparent;
+  border: 0;
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  min-height: 32px;
+  padding: 4px 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sfm-discover-key-toggle:hover:not(:disabled) {
+  background: transparent;
+  color: var(--color-ink);
+}
+
+.sfm-discover-key {
+  display: contents; /* the toggle sits in the heading row, the list drops to its own row */
+}
+
+.sfm-discover-key-list {
+  display: flex;
+  flex: 1 0 100%;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.sfm-discover-key-row {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 4px 12px;
+  align-items: start;
+}
+
+.sfm-discover-key-row dt,
+.sfm-discover-key-row dd {
+  margin: 0;
+}
+
+.sfm-discover-key-row dd {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-muted);
+}
+
+.sfm-discover-more {
+  display: flex;
+  justify-content: center;
+}
+
+.sfm-discover-list.is-loading {
+  opacity: 0.6;
+  transition: opacity 140ms ease;
 }
 
 .sfm-discover-list {
@@ -7925,7 +8114,7 @@ button.sfm-row-remove:hover:not(:disabled) {
   gap: 14px;
   padding: 12px 14px;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
 }
 
@@ -7981,34 +8170,15 @@ button.sfm-row-remove:hover:not(:disabled) {
   color: var(--color-ink);
 }
 
+.sfm-badge-going {
+  border-color: var(--color-ink);
+  color: var(--color-ink);
+}
+
 .sfm-badge-possible {
   border-style: dashed;
   border-color: var(--color-muted);
   color: var(--color-muted);
-}
-
-/* Discover filter pills: flat outlined chips, the chosen one filled with the accent. These had no
-   styles of their own, so they fell back to the global red button look and none looked chosen. */
-.sfm-discover .sfm-pill {
-  background: var(--color-surface);
-  border: 0.5px solid var(--color-border);
-  color: var(--color-ink);
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0;
-  min-height: 32px;
-  padding: 4px 12px;
-}
-
-.sfm-discover .sfm-pill:hover:not(:disabled) {
-  background: var(--color-surface-hover);
-}
-
-.sfm-discover .sfm-pill.is-active,
-.sfm-discover .sfm-pill.is-active:hover:not(:disabled) {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-on-accent);
 }
 
 /* The event link is an <a>, so it needs the same look as the button actions beside it. */
@@ -8132,5 +8302,86 @@ button.sfm-row-remove:hover:not(:disabled) {
 
   .sfm-discover-card-actions {
     grid-column: 1 / -1;
+  }
+
+  .sfm-discover-filters-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sfm-segmented {
+    display: flex;
+  }
+
+  .sfm-discover .sfm-segment {
+    flex: 1;
+  }
+
+  /* Fingers need 44px targets. */
+  .sfm-discover .sfm-segment,
+  .sfm-discover .sfm-chip,
+  .sfm-discover .sfm-action,
+  .sfm-discover-card-actions a.sfm-action,
+  .sfm-discover-radius input,
+  .sfm-discover-country select,
+  .sfm-discover-key-toggle {
+    min-height: 44px;
+  }
+
+  .sfm-discover-toggle {
+    min-height: 44px;
+  }
+
+  .sfm-discover-toggle input {
+    width: 22px;
+    height: 22px;
+  }
+
+  .sfm-discover-filters-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 44px;
+    padding: 6px 12px;
+    background: var(--color-surface);
+    border: 0.5px solid var(--color-border);
+    color: var(--color-ink);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-align: left;
+  }
+
+  .sfm-discover-filters-toggle:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+  }
+
+  .sfm-discover-filters-summary {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--color-muted);
+  }
+
+  .sfm-discover-filters-body {
+    display: none;
+  }
+
+  .sfm-discover-filters-body.is-open {
+    display: flex;
+  }
+
+  .sfm-discover-filter-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .sfm-discover-key-row {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

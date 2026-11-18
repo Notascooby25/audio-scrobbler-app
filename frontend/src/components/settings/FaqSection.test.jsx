@@ -38,7 +38,7 @@ describe("FaqSection", () => {
     expect(
       screen.getByText(/where do the gigs on the discover tab come from/i)
     ).toBeInTheDocument();
-    expect(screen.getByText(/what does 'possible match' mean/i)).toBeInTheDocument();
+    expect(screen.getByText(/what does 'check line-up' mean/i)).toBeInTheDocument();
   });
 
   it("shows empty search state when no questions match", () => {
