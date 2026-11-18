@@ -8262,8 +8262,8 @@ button.sfm-row-remove:hover:not(:disabled) {
 }
 
 .sfm-discover-fieldset {
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
@@ -8273,9 +8273,19 @@ button.sfm-row-remove:hover:not(:disabled) {
 .sfm-discover-radio,
 .sfm-discover-checkbox {
   display: flex;
+  flex-direction: row; /* the global label rule stacks its children */
   align-items: center;
-  gap: 8px;
-  font-size: 0.92rem;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.sfm-discover-radio input,
+.sfm-discover-checkbox input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 0;
 }
 
 .sfm-discover-field-row {

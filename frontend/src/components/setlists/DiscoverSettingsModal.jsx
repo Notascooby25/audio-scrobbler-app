@@ -47,12 +47,17 @@ export default function DiscoverSettingsModal({
   };
 
   return (
-    <div className="sfm-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="discover-criteria-title">
-      <div className="sfm-modal">
-        <div className="sfm-modal-header">
+    <div className="modal-backdrop">
+      <div
+        className="modal-dialog sfm-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="discover-criteria-title"
+      >
+        <div className="sfm-modal-head">
           <h3 id="discover-criteria-title">My Artists criteria</h3>
-          <button type="button" className="sfm-modal-close" onClick={onClose} aria-label="Close">
-            ×
+          <button type="button" className="sfm-close" onClick={onClose} aria-label="Close">
+            &times;
           </button>
         </div>
         <form onSubmit={handleSubmit} className="sfm-discover-criteria-form">
@@ -110,11 +115,7 @@ export default function DiscoverSettingsModal({
 
           <div className="sfm-discover-field-row">
             <label htmlFor="discover-months">Timeframe</label>
-            <select
-              id="discover-months"
-              value={months}
-              onChange={(e) => setMonths(e.target.value)}
-            >
+            <select id="discover-months" value={months} onChange={(e) => setMonths(e.target.value)}>
               <option value="3">Last 3 months</option>
               <option value="6">Last 6 months</option>
               <option value="12">Last 12 months</option>
@@ -132,15 +133,11 @@ export default function DiscoverSettingsModal({
             <span>Include artists I&apos;ve seen live</span>
           </label>
 
-          <div className="sfm-modal-actions">
-            <button type="button" className="sfm-action sfm-btn-mixed" onClick={onClose}>
+          <div className="modal-actions">
+            <button type="button" className="modal-cancel-button" onClick={onClose}>
               Cancel
             </button>
-            <button
-              type="submit"
-              className="sfm-action sfm-action-primary sfm-btn-mixed"
-              disabled={isSaving}
-            >
+            <button type="submit" className="modal-confirm-button" disabled={isSaving}>
               {isSaving ? "Saving..." : "Save criteria"}
             </button>
           </div>
