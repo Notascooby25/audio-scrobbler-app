@@ -638,12 +638,12 @@ const FAQ_DATA = [
   {
     id: "discover-possible-match",
     category: "Set Lists & Gigs",
-    question: "What does 'Possible match' mean on a Discover gig?",
+    question: "What does 'Check line-up' mean on a Discover gig?",
     answer: (
       <p>
         Some listings do not name their bands in a proper line-up, only in the event title (for
         example a local night with three bands). When one of your artists appears in that title, the
-        gig is labelled <strong>Possible match</strong> instead of <em>Your artist</em>, because the
+        gig is labelled <strong>Check line-up</strong> instead of <em>Your artist</em>, because the
         app cannot be sure it is the same act. Tribute nights are never matched, and very short
         artist names are ignored to avoid false matches. Open the event to check the line-up.
       </p>

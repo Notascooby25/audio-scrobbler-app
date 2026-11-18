@@ -122,7 +122,7 @@ describe("DiscoverGigsTab", () => {
       expect(screen.getByText("Fontaines D.C. Live")).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /Artist criteria settings/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Artist criteria/i }));
     expect(screen.getByText(/Played at least X times/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByLabelText(/Played at least X times/i));
@@ -181,14 +181,14 @@ describe("DiscoverGigsTab", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("labels a title-only match as a possible match, not as your artist", async () => {
+    it("labels a title-only match as Check line-up, not as your artist", async () => {
       setlistApi.fetchDiscoveredGigs.mockResolvedValue({
         ...SAMPLE_RESPONSE,
         items: [skiddleItem],
       });
       renderTab();
       await waitFor(() => {
-        expect(screen.getByText("Possible match")).toBeInTheDocument();
+        expect(screen.getByText("Check line-up")).toBeInTheDocument();
       });
       expect(screen.queryByText("Your artist")).not.toBeInTheDocument();
     });

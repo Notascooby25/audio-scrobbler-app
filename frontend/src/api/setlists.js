@@ -520,6 +520,8 @@ export async function fetchDiscoveredGigs({
   radiusMiles,
   dateWindow,
   country,
+  onlyNew,
+  onlyInterested,
 }) {
   const params = new URLSearchParams();
   if (scope) params.set("scope", scope);
@@ -531,6 +533,10 @@ export async function fetchDiscoveredGigs({
   }
   if (dateWindow) params.set("date_window", dateWindow);
   if (country !== undefined && country !== null) params.set("country", country);
+  if (onlyNew !== undefined && onlyNew !== null) params.set("only_new", String(onlyNew));
+  if (onlyInterested !== undefined && onlyInterested !== null) {
+    params.set("only_interested", String(onlyInterested));
+  }
   const qs = params.toString() ? `?${params.toString()}` : "";
   const response = await fetch(`${API_BASE_URL}/setlists/discover${qs}`, {
     headers: { Authorization: `Bearer ${token}` },

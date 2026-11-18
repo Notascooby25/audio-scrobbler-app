@@ -398,16 +398,19 @@ export default function UserGuideSection() {
             <strong>Discover Upcoming &amp; Local Gigs:</strong> Open the <em>Discover</em> tab
             under <em>Gigs</em> to see upcoming and newly announced shows (UK events come from
             Skiddle) for your regularly played or seen-live artists (<em>My Artists</em>), or switch
-            to <em>Local Radar</em> to browse shows within your chosen mile radius around your saved{" "}
-            <em>Home city</em> (with a toggle for <em>My artists only</em> vs <em>All local</em>).
-            Use the <em>Criteria</em> cog to pick between Top N artists or playing an artist at
-            least X times in the last Y months, click <em>Save as default</em> to remember your
-            filters, and mark gigs with <strong>I&apos;m interested</strong> or{" "}
-            <strong>+ I&apos;m going</strong>. A <em>Possible match</em> label means one of your
-            artists is named in the event title but not in the listed line-up, so check it before
-            you plan around it. The list refreshes a few times a day, so a brand new gig may take a
-            few hours to appear. Gigs you have already logged show <strong>✓ Going</strong>, which
-            opens that gig.
+            to <em>Local Radar</em> to browse shows within a mile radius of your saved{" "}
+            <em>Home city</em> (tick <em>Only gigs by my artists</em> to narrow it). Pick{" "}
+            <em>When</em> (any time, this weekend, next 7 or 30 days) and optionally <em>Only</em>{" "}
+            newly announced or interested gigs. <em>Artist criteria</em> lets you choose between
+            your Top N artists or artists you played at least X times in the last Y months. When you
+            change the filters, <em>Save these as my default</em> appears so they are remembered. On
+            a phone the filters fold behind a <em>Filters</em> button. Mark gigs with{" "}
+            <strong>I&apos;m interested</strong> or <strong>+ I&apos;m going</strong>, and tap{" "}
+            <em>What do the labels mean?</em> for a key to the badges. A <em>Check line-up</em>{" "}
+            label means one of your artists is named in the event title but not in the listed
+            line-up, so check it before you plan around it. The list refreshes a few times a day, so
+            a brand new gig may take a few hours to appear. Gigs you have already logged show{" "}
+            <strong>✓ Going</strong>, which opens that gig.
           </li>
           <li>
             <strong>Find &amp; Log a Gig:</strong> Head to the <em>Gigs</em> tab and tap{" "}

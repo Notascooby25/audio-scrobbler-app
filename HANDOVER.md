@@ -483,6 +483,14 @@ the NAS listing.** The live setup has drifted from the repos before.
   strings, for Going, Seen live, Your artist and blocked artists; the match also
   looks inside title-only Skiddle listings. `attend_discovered_gig` reuses an
   existing same-day attendance instead of adding a second copy.
+  Discover filter redesign (2026-11-18): Where to look is a two-way switch;
+  When (date window) and Only (newly announced, interested) are separate
+  filters (`only_new`, `only_interested` on `GET /setlists/discover` and in saved
+  filters; old `date_window` values `newly_announced`/`interested` still
+  accepted). A source's first 6 hours of sightings count as its initial import
+  and are never "newly announced". The badge for title-only matches is shown as
+  "Check line-up" (API flag still `is_possible_match`). Filters fold behind a
+  button on phones; the list shows 20 at a time.
 - **Dependency updates (2026-11-18, no version bump):** PyJWT 2.15.1 (backend),
   requests 2.34.2 and python-dotenv 1.2.4 (backend and worker). Sign-in tokens
   are unchanged: `backend/app/tests/test_jwt_compat.py` decodes a token minted by
