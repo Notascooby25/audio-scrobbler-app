@@ -656,6 +656,8 @@ def start_scheduler() -> None:
         minutes=gig_discovery_interval_minutes,
         # Skiddle asks scheduled jobs not to fire on the hour: spread each run by up to 15 minutes.
         jitter=900,
+        # First run 2 minutes after start, so a fresh deploy fills Discover without a 6 hour wait.
+        next_run_time=datetime.now(timezone.utc) + timedelta(minutes=2),
         id="gig-discovery-sync",
         replace_existing=True,
     )

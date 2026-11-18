@@ -30,7 +30,8 @@ from backend.app.services.gig_discovery_sync_service import (
 def db_session():
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(bind=engine)
-    with Session(engine) as session:
+    # autoflush=False matches the real app's session (db.py)
+    with Session(engine, autoflush=False) as session:
         yield session
 
 
@@ -204,3 +205,40 @@ def test_sync_discovered_gigs_upserts_multi_attraction_and_prunes_past(db_sessio
     assert gig.country_code == "GB"
     assert gig.onsale_start_at is not None
     assert db_session.query(DiscoveredGig).filter_by(external_id="old-1").first() is None
+
+
+def test_ticketmaster_event_returned_by_two_searches_is_stored_once(db_session: Session, monkeypatch):
+    user = User(spotify_user_id="sp-dup", username="ud", display_name="UD", refresh_token_cipher="c")
+    db_session.add(user)
+    db_session.flush()
+    db_session.add(UserPreferences(user_id=user.id, home_city="London", home_lat=51.5074, home_lng=-0.1278))
+    db_session.add(
+        ListeningEvent(
+            user_id=user.id,
+            track_id="t1",
+            track_name="Song",
+            artist_name="Headliner",
+            played_at=utc_now() - timedelta(days=2),
+            source="spotify",
+        )
+    )
+    db_session.commit()
+
+    day = (date.today() + timedelta(days=10)).isoformat()
+    event = {
+        "id": "tm-dup",
+        "name": "Headliner Live",
+        "url": "https://www.ticketmaster.co.uk/event/tm-dup",
+        "dates": {"start": {"localDate": day}, "status": {"code": "onsale"}},
+        "_embedded": {"attractions": [{"name": "Headliner"}], "venues": [{"name": "V", "city": {"name": "London"}}]},
+    }
+    fake_client = MagicMock(spec=TicketmasterClient)
+    fake_client.api_key = "test-key"
+    fake_client.search_events.return_value = [event, event]  # same gig, artist search and local search
+    monkeypatch.setattr(
+        "backend.app.services.gig_discovery_sync_service.TicketmasterClient",
+        lambda *args, **kwargs: fake_client,
+    )
+    sync_discovered_gigs(db_session)
+    assert fake_client.search_events.call_count >= 2
+    assert db_session.query(DiscoveredGig).filter_by(external_id="tm-dup").count() == 1

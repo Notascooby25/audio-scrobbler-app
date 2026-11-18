@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import math
-import os
 import re
 from datetime import date, datetime, timedelta
 from typing import Any
@@ -11,6 +10,7 @@ import httpx
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
+from ..config import settings
 from ..datetime_utils import utc_now
 from ..models import (
     AttendedConcert,
@@ -95,8 +95,11 @@ def _is_newly_announced(gig: DiscoveredGig, now: datetime) -> bool:
 
 def trigger_worker_discovery_sync(user_id: int | None = None) -> None:
     """Fire-and-forget trigger to the worker so location/radius changes populate promptly."""
-    worker_url = os.getenv("INGESTION_WORKER_URL", "").strip().rstrip("/")
-    token = os.getenv("WORKER_INGESTION_TOKEN", "").strip()
+    # Use the app's settings (which default to the worker's address inside the compose network):
+    # the production compose file does not pass INGESTION_WORKER_URL, so reading the raw
+    # environment variable meant saving settings never triggered a sync there.
+    worker_url = (settings.ingestion_worker_url or "").strip().rstrip("/")
+    token = (settings.worker_ingestion_token or "").strip()
     if not worker_url or not token or not _is_discovery_configured():
         return
     try:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import threading
 import time
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
 from fastapi.testclient import TestClient
@@ -87,3 +87,15 @@ def test_trigger_gig_discovery_is_debounced_for_a_couple_of_minutes(monkeypatch)
     worker_app._last_discovery_trigger_by_user[9] -= timedelta(seconds=60)  # 150 s later: fine
     third = client.post("/internal/trigger-gig-discovery", json={"user_id": 9}, headers=headers)
     assert third.json()["scheduled"] is True
+
+
+def test_gig_discovery_runs_shortly_after_the_worker_starts(monkeypatch):
+    """The interval job alone waits a full interval; a fresh deploy would show no gigs for hours."""
+    fake_scheduler = MagicMock()
+    monkeypatch.setattr(worker_app, "scheduler", fake_scheduler)
+    before = datetime.now(timezone.utc)
+    worker_app.start_scheduler()
+    job = next(c for c in fake_scheduler.add_job.call_args_list if c.kwargs.get("id") == "gig-discovery-sync")
+    first_run = job.kwargs["next_run_time"]
+    assert timedelta(minutes=1) <= first_run - before <= timedelta(minutes=5)
+    assert job.kwargs["jitter"] == 900

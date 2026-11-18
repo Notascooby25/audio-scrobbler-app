@@ -470,6 +470,14 @@ the NAS listing.** The live setup has drifted from the repos before.
   setting it). Skiddle's terms require its name and logo wherever its data is
   shown and an unmodified event link. Design and unknowns: spec section 7 in
   `docs/superpowers/specs/2026-11-16-gig-discovery-design.md`.
+  Follow-up fix (2026-11-18): the app's database session has `autoflush=False`
+  (`db.py`), so any "look up, else insert" loop must remember rows it added in
+  the same run and `flush()` after each batch, or an item seen twice crashes at
+  commit. Gig sync tests now use the same non-autoflush session. Also: the
+  production compose file on the host is hand-managed, so new environment
+  variables must be added to it by hand (verify with `exec <service> sh -c
+  'test -n "$VAR"'`); and the sync trigger uses `settings.ingestion_worker_url`
+  rather than a raw environment variable that production never sets.
 - **Also 2026-09-22/23:** listening heatmap, frontend redesign, nginx
   `client_max_body_size` raised for large imports, listening clock restored,
   friends-average removed from the UI, Library share-image feature,

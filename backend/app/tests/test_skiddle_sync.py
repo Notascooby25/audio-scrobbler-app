@@ -46,7 +46,9 @@ def only_skiddle_configured(monkeypatch: pytest.MonkeyPatch):
 def db_session():
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(bind=engine)
-    with Session(engine) as session:
+    # autoflush=False matches the real app's session (db.py): new rows are not visible to later
+    # queries until flushed, which is exactly what let duplicate gigs crash the live sync.
+    with Session(engine, autoflush=False) as session:
         yield session
 
 
@@ -312,6 +314,26 @@ def test_events_without_a_usable_date_are_skipped(db_session: Session, monkeypat
     _fake_client(monkeypatch, [dict(_future(_events()[0]), date="")])
     sync_discovered_gigs(db_session)
     assert db_session.query(DiscoveredGig).count() == 0
+
+
+def test_a_gig_returned_by_several_searches_is_stored_once(db_session: Session, monkeypatch: pytest.MonkeyPatch):
+    """Local, artist and UK searches overlap; the live sync once died on the resulting duplicate."""
+    user = _user(db_session)
+    _listen(db_session, user, "The Feeling")
+    events = [_future(e) for e in _events()]
+    fake = _fake_client(monkeypatch, events)  # every search returns the same events
+    sync_discovered_gigs(db_session)
+    assert fake.search_all.call_count > 2
+    assert db_session.query(DiscoveredGig).filter_by(source="skiddle").count() == len(events)
+
+
+def test_the_same_gig_twice_in_one_search_is_stored_once(db_session: Session, monkeypatch: pytest.MonkeyPatch):
+    _user(db_session)
+    event = _future(_events()[0])
+    _fake_client(monkeypatch, [event, dict(event, eventname="Renamed")])
+    sync_discovered_gigs(db_session)
+    rows = db_session.query(DiscoveredGig).filter_by(source="skiddle").all()
+    assert [r.event_name for r in rows] == ["Renamed"]  # the later sighting wins
 
 
 def test_events_that_already_started_in_the_past_are_not_stored(db_session: Session, monkeypatch: pytest.MonkeyPatch):
