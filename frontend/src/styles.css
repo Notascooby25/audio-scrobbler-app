@@ -7987,6 +7987,50 @@ button.sfm-row-remove:hover:not(:disabled) {
   color: var(--color-muted);
 }
 
+/* Discover filter pills: flat outlined chips, the chosen one filled with the accent. These had no
+   styles of their own, so they fell back to the global red button look and none looked chosen. */
+.sfm-discover .sfm-pill {
+  background: var(--color-surface);
+  border: 0.5px solid var(--color-border);
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  min-height: 32px;
+  padding: 4px 12px;
+}
+
+.sfm-discover .sfm-pill:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+}
+
+.sfm-discover .sfm-pill.is-active,
+.sfm-discover .sfm-pill.is-active:hover:not(:disabled) {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+/* The event link is an <a>, so it needs the same look as the button actions beside it. */
+.sfm-discover-card-actions a.sfm-action {
+  align-items: center;
+  background: var(--color-surface);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 32px;
+  padding: 4px 12px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.sfm-discover-card-actions a.sfm-action:hover {
+  background: var(--color-surface-hover);
+}
+
 /* Skiddle credit (their terms: name + unaltered logo, ~5mm clear space around it) */
 .sfm-skiddle-credit {
   display: flex;
