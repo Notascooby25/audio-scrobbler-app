@@ -266,6 +266,16 @@ export default function UserGuideSection() {
             your five furthest headline gigs from home.
           </li>
           <li>
+            <strong>Hints on Reports:</strong> Tap the ⓘ next to a chart or card title to see a
+            short plain-English note on what it shows and how to read it.
+          </li>
+          <li>
+            <strong>Recommend Music to Friends:</strong> Tap the share icon next to the heart on a
+            track or album, pick a friend you follow, add an optional note, and send. Your friend
+            sees it at the top of their Play page, and gets a phone alert if notifications are on.
+            Use <em>Clear read notifications</em> to tidy your notification list.
+          </li>
+          <li>
             <strong>Theme & Accent Color Personalization:</strong> Make the site feel like yours by
             picking your favorite accent color in <em>Settings → General</em>. Choose from 8 curated
             music presets based on iconic song titles (Blue Monday, Green Eyes, Red Red Wine, Purple

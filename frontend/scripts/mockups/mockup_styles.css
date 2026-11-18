@@ -1,0 +1,565 @@
+/* Shared CSS for High-Fidelity PDF Design Mockups */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap');
+
+@page {
+  size: A4 landscape;
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #0F172A;
+  color: #1E293B;
+  -webkit-font-smoothing: antialiased;
+}
+
+.pdf-page {
+  width: 297mm;
+  height: 210mm;
+  page-break-after: always;
+  page-break-inside: avoid;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Page Header Banner */
+.page-header {
+  padding: 14px 28px 10px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.page-header.dark-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.page-title-group h1 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.page-title-group.serif h1 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 21px;
+  font-weight: 600;
+}
+
+.page-title-group p {
+  font-size: 10.5px;
+  margin-top: 2px;
+  opacity: 0.75;
+}
+
+.page-badge {
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border-radius: 9999px;
+}
+
+.page-footer {
+  padding: 6px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 9px;
+  opacity: 0.6;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.page-footer.dark-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94A3B8;
+}
+
+/* Page 1: Design System & Spec Layout */
+.spec-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 20px;
+  padding: 16px 28px;
+  overflow: hidden;
+}
+
+.spec-card {
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.spec-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.swatch-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.swatch-circle {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+}
+
+.swatch-label {
+  font-size: 8px;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Phone Mockup Frame */
+.phone-grid-5 {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  padding: 12px 24px;
+  align-items: center;
+  justify-items: center;
+}
+
+.phone-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.phone-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.phone-frame {
+  width: 198px;
+  height: 412px;
+  border-radius: 26px;
+  padding: 6px;
+  position: relative;
+  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.15), 0 6px 12px -4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+.phone-notch {
+  width: 60px;
+  height: 12px;
+  background-color: #000;
+  border-radius: 0 0 8px 8px;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+}
+
+.phone-status-bar {
+  height: 16px;
+  padding: 2px 10px 0 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 7.5px;
+  font-weight: 600;
+  z-index: 40;
+}
+
+.phone-app-header {
+  padding: 4px 10px 6px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.phone-brand-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.phone-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.avatar-badge {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.phone-content {
+  flex: 1;
+  padding: 4px 10px 6px 10px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  gap: 6px;
+}
+
+.phone-bottom-nav {
+  height: 34px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding-bottom: 2px;
+}
+
+.phone-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5px;
+  font-size: 7px;
+  font-weight: 500;
+}
+
+.phone-home-indicator {
+  width: 44px;
+  height: 2.5px;
+  border-radius: 9999px;
+  margin: 1px auto;
+}
+
+/* Desktop Mockup Frame */
+.desktop-container {
+  flex: 1;
+  padding: 12px 28px 14px 28px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.desktop-frame {
+  width: 100%;
+  flex: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.22);
+}
+
+.desktop-browser-bar {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 10px;
+}
+
+.desktop-browser-dots {
+  display: flex;
+  gap: 5px;
+}
+
+.desktop-browser-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.desktop-browser-dot.red { background-color: #EF4444; }
+.desktop-browser-dot.yellow { background-color: #F59E0B; }
+.desktop-browser-dot.green { background-color: #10B981; }
+
+.desktop-url-bar {
+  flex: 1;
+  max-width: 400px;
+  height: 18px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 8.5px;
+}
+
+.desktop-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Desktop App Chrome & Layout */
+.desktop-topbar {
+  height: 42px;
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.desktop-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.desktop-brand-name {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.desktop-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.desktop-nav-link {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+.desktop-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.desktop-grid {
+  flex: 1;
+  display: grid;
+  padding: 14px 20px;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.desktop-grid-2col {
+  grid-template-columns: 1.15fr 0.85fr;
+}
+
+.desktop-grid-3col {
+  grid-template-columns: 1.1fr 1fr 0.9fr;
+}
+
+/* Cards & UI Elements */
+.ui-card {
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pill-group {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pill-btn {
+  font-size: 7.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Vinyl & Sleeve Art Component */
+.vinyl-sleeve-combo {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+}
+
+.album-sleeve-square {
+  aspect-ratio: 1 / 1;
+  border-radius: 6px;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 8px;
+  box-shadow: 2px 4px 12px rgba(0,0,0,0.3);
+}
+
+.vinyl-disc {
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, #2C1810 0%, #15080C 40%, #000000 70%, #1A0D12 100%);
+  position: relative;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1), 0 4px 10px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vinyl-grooves {
+  width: 82%;
+  height: 82%;
+  border-radius: 50%;
+  border: 1px dashed rgba(255,255,255,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vinyl-center-label {
+  width: 32%;
+  height: 32%;
+  border-radius: 50%;
+  background-color: #B91C1C;
+  border: 2px solid #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vinyl-center-hole {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #000;
+}
+
+/* Timeline quiet time separator */
+.quiet-time-marker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 7.5px;
+  opacity: 0.6;
+  font-weight: 500;
+}
+
+.quiet-time-line {
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.2;
+}
+
+/* Heart like button styling */
+.heart-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+}
+
+.heart-icon {
+  width: 9.5px;
+  height: 9.5px;
+  transition: transform 0.15s ease;
+}
+
+.heart-icon.filled-red {
+  color: #E11D48;
+  fill: #E11D48;
+}
+
+.heart-icon.outline-muted {
+  color: #94A3B8;
+  fill: none;
+}
+
+.heart-icon.filled-white {
+  color: #FFFFFF;
+  fill: #FFFFFF;
+}
+
+.heart-icon.outline-sleeve {
+  color: rgba(255, 255, 255, 0.45);
+  fill: none;
+}
+
+/* Bar charts */
+.chart-bars-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 28px;
+  padding-top: 4px;
+}
+
+.chart-bar-col {
+  flex: 1;
+  background-color: #0066FF;
+  border-radius: 2px 2px 0 0;
+}
+
+/* Setlist row */
+.setlist-track-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3.5px 0;
+  font-size: 7.5px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.setlist-track-num {
+  font-weight: 600;
+  opacity: 0.6;
+  width: 14px;
+}
