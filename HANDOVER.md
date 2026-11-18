@@ -478,6 +478,13 @@ the NAS listing.** The live setup has drifted from the repos before.
   variables must be added to it by hand (verify with `exec <service> sh -c
   'test -n "$VAR"'`); and the sync trigger uses `settings.ingestion_worker_url`
   rather than a raw environment variable that production never sets.
+- **Dependency updates (2026-11-18, no version bump):** PyJWT 2.15.1 (backend),
+  requests 2.34.2 and python-dotenv 1.2.4 (backend and worker). Sign-in tokens
+  are unchanged: `backend/app/tests/test_jwt_compat.py` decodes a token minted by
+  the old PyJWT so a future upgrade can't silently sign everyone out. PyJWT 2.11+
+  warns when an HS256 secret is under 32 bytes, so the test suite's short
+  placeholder secret prints warnings (harmless). Still pending as separate
+  changes: starlette via FastAPI, and the npm dev-tool and react-router upgrades.
 - **Also 2026-09-22/23:** listening heatmap, frontend redesign, nginx
   `client_max_body_size` raised for large imports, listening clock restored,
   friends-average removed from the UI, Library share-image feature,
