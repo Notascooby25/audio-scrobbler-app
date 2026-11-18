@@ -358,14 +358,16 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
                     {gig.source === "skiddle" ? "View on Skiddle ↗" : "Tickets ↗"}
                   </a>
                 )}
-                <button
-                  type="button"
-                  className={`sfm-action sfm-btn-mixed ${gig.is_interested ? "is-interested" : ""}`}
-                  disabled={busyGigId === gig.id}
-                  onClick={() => handleToggleInterest(gig)}
-                >
-                  {gig.is_interested ? "★ Interested" : "I'm interested"}
-                </button>
+                {!(gig.already_going && gig.concert_id) && (
+                  <button
+                    type="button"
+                    className={`sfm-action sfm-btn-mixed ${gig.is_interested ? "is-interested" : ""}`}
+                    disabled={busyGigId === gig.id}
+                    onClick={() => handleToggleInterest(gig)}
+                  >
+                    {gig.is_interested ? "★ Interested" : "I'm interested"}
+                  </button>
+                )}
                 {gig.already_going && gig.concert_id ? (
                   <button
                     type="button"

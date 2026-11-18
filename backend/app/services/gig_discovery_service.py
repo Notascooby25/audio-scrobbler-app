@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import math
-import re
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -24,7 +23,7 @@ from .gig_discovery_sync_service import (
     get_user_discovery_artists,
     merge_discovery_filters,
 )
-from .gig_discovery_text import canonical_artist_key
+from .gig_discovery_text import canonical_artist_key, match_key
 
 logger = logging.getLogger(__name__)
 
@@ -44,13 +43,24 @@ def _is_discovery_configured() -> bool:
     return bool(configured_sources())
 
 
-_NON_WORD = re.compile(r"[^\w]+")
 _MIN_TITLE_MATCH_LENGTH = 4
 
 
 def _loose(text: str | None) -> str:
-    """Canonical key with punctuation turned into single spaces ('fontaines d.c.' -> 'fontaines d c')."""
-    return _NON_WORD.sub(" ", canonical_artist_key(text)).strip()
+    """Spelling-insensitive key (see match_key): 'DMA\u2019s', "DMA's" and 'DMAs' are all the same."""
+    return match_key(text)
+
+
+def _attendance_matches(gig_keys: list[str], title: str, title_only: bool, attended_key: str) -> bool:
+    """Is a gig you logged the same show as this discovered one? (Callers already know the date matches.)"""
+    if not attended_key:
+        return False
+    if attended_key in gig_keys:
+        return True
+    # Listings with no artist list name their bands only in the title: look for the artist there.
+    if not title_only or len(attended_key) < _MIN_TITLE_MATCH_LENGTH or "tribute" in title.split():
+        return False
+    return f" {attended_key} " in f" {title} "
 
 
 def _is_title_only_listing(gig: DiscoveredGig) -> bool:
@@ -156,10 +166,8 @@ def query_discovered_gigs(
 
     today = date.today()
     now = utc_now()
-    my_artists = {
-        k for k in (canonical_artist_key(a) for a in get_user_discovery_artists(db, user_id, saved_filters)) if k
-    }
-    blocked = {k for k in (canonical_artist_key(b) for b in get_blocked_artist_keys(db, user_id)) if k}
+    my_artists = {k for k in (match_key(a) for a in get_user_discovery_artists(db, user_id, saved_filters)) if k}
+    blocked = {k for k in (match_key(b) for b in get_blocked_artist_keys(db, user_id)) if k}
     my_artists_loose = {
         loose for loose in (_loose(a) for a in my_artists if a not in blocked) if len(loose) >= _MIN_TITLE_MATCH_LENGTH
     }
@@ -177,14 +185,14 @@ def query_discovered_gigs(
             AttendedConcert.event_date,
         ).where(AttendedConcert.user_id == user_id)
     ).all()
-    attended_by_key_date: dict[tuple[str, date], int] = {}
+    attended_by_date: dict[date, list[tuple[str, int]]] = {}
     seen_live_keys: set[str] = set()
     for row in attended_rows:
-        akey = canonical_artist_key(row.artist_name)
+        akey = match_key(row.artist_name)
         if akey:
             seen_live_keys.add(akey)
             if row.event_date:
-                attended_by_key_date[(akey, row.event_date.date())] = row.id
+                attended_by_date.setdefault(row.event_date.date(), []).append((akey, row.id))
 
     stmt = (
         select(DiscoveredGig)
@@ -198,8 +206,8 @@ def query_discovered_gigs(
 
     items: list[dict[str, Any]] = []
     for gig in all_upcoming:
-        gig_keys = [canonical_artist_key(k) for k in (gig.attraction_keys or []) if k]
-        artist_key = canonical_artist_key(gig.artist_key)
+        gig_keys = [match_key(k) for k in (gig.attraction_keys or []) if k]
+        artist_key = match_key(gig.artist_key)
         if artist_key and artist_key not in gig_keys:
             gig_keys.insert(0, artist_key)
 
@@ -248,9 +256,11 @@ def query_discovered_gigs(
                     continue
 
         already_concert_id = None
-        for k in gig_keys:
-            if (k, gig.event_date) in attended_by_key_date:
-                already_concert_id = attended_by_key_date[(k, gig.event_date)]
+        title = _loose(gig.event_name)
+        title_only = _is_title_only_listing(gig)
+        for attended_key, concert_id in attended_by_date.get(gig.event_date, []):
+            if _attendance_matches(gig_keys, title, title_only, attended_key):
+                already_concert_id = concert_id
                 break
 
         items.append(
@@ -331,6 +341,22 @@ def attend_discovered_gig(db: Session, user_id: int, gig_id: int) -> AttendedCon
     )
     if existing is not None:
         return existing
+
+    # The same show may already be logged (from Setlist.fm or by hand) under a different spelling.
+    day_start = datetime.combine(gig.event_date, datetime.min.time())
+    logged_that_day = db.scalars(
+        select(AttendedConcert).where(
+            AttendedConcert.user_id == user_id,
+            AttendedConcert.event_date >= day_start,
+            AttendedConcert.event_date < day_start + timedelta(days=1),
+        )
+    ).all()
+    gig_keys = [k for k in (match_key(x) for x in [*(gig.attraction_keys or []), gig.artist_key]) if k]
+    title = _loose(gig.event_name)
+    title_only = _is_title_only_listing(gig)
+    for logged in logged_that_day:
+        if _attendance_matches(gig_keys, title, title_only, match_key(logged.artist_name)):
+            return logged
 
     concert = AttendedConcert(
         user_id=user_id,

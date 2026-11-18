@@ -628,7 +628,10 @@ const FAQ_DATA = [
         a few hours to appear. It is only as complete as Skiddle&apos;s own listings: shows that are
         not listed there will not appear, and the details come from promoters, so check the date and
         venue with the ticket seller before you buy. Use <em>View on Skiddle</em> to open the event
-        page. This app is not affiliated with or endorsed by Skiddle.
+        page. If you have already logged a gig (from Setlist.fm or by hand), Discover recognises it
+        by artist name and date, even when the spelling differs slightly, and shows{" "}
+        <strong>✓ Going</strong> instead of the Going button. This app is not affiliated with or
+        endorsed by Skiddle.
       </p>
     ),
   },
