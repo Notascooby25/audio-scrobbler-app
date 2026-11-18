@@ -45,6 +45,8 @@ services:
       VAPID_SUBJECT: ${VAPID_SUBJECT:-}
       SETLIST_FM_API_KEY: ${SETLIST_FM_API_KEY:-}
       TICKETMASTER_API_KEY: ${TICKETMASTER_API_KEY:-}
+      SKIDDLE_API_KEY: ${SKIDDLE_API_KEY:-}
+      SKIDDLE_USER_AGENT_URL: ${SKIDDLE_USER_AGENT_URL:-}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz')"]
       interval: 10s
@@ -84,6 +86,8 @@ services:
       VAPID_SUBJECT: ${VAPID_SUBJECT:-}
       SETLIST_FM_API_KEY: ${SETLIST_FM_API_KEY:-}
       TICKETMASTER_API_KEY: ${TICKETMASTER_API_KEY:-}
+      SKIDDLE_API_KEY: ${SKIDDLE_API_KEY:-}
+      SKIDDLE_USER_AGENT_URL: ${SKIDDLE_USER_AGENT_URL:-}
     # To enable worker file-based import, mount a host directory at /data/imports and set WORKER_FILE_IMPORT_ENABLED=true:
     # volumes:
     #   - ./worker-imports:/data/imports
