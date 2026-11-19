@@ -5,6 +5,7 @@ import hashlib
 import logging
 import time
 from datetime import datetime, timedelta, timezone
+from urllib.parse import quote
 
 import requests
 from cryptography.fernet import Fernet, InvalidToken
@@ -22,6 +23,10 @@ SPOTIFY_SAVED_TRACKS_URL = "https://api.spotify.com/v1/me/tracks"
 SPOTIFY_SAVED_TRACKS_LIMIT = 40
 SPOTIFY_SAVED_ALBUMS_URL = "https://api.spotify.com/v1/me/albums"
 SPOTIFY_SAVED_ALBUMS_LIMIT = 50
+# Genre lookups are one request per artist, so a run is capped and spaced out.
+# A large backlog is spread across many 5-minute runs rather than bursting Spotify.
+MAX_GENRE_LOOKUPS_PER_RUN = 20
+GENRE_LOOKUP_SPACING_SECONDS = 0.3
 Base = declarative_base()
 
 
@@ -334,6 +339,14 @@ class SpotifyClient:
         response = self._request("get", url, headers={"Authorization": f"Bearer {access_token}"}, params=params)
         response.raise_for_status()
         return [artist for artist in response.json().get("artists", []) if artist is not None]
+
+    def artist(self, access_token: str, artist_id: str) -> dict[str, object]:
+        """One artist record. Replaces the batch call, which Development Mode apps no longer have."""
+        url = f"https://api.spotify.com/v1/artists/{quote(artist_id, safe='')}"
+        response = self._request("get", url, headers={"Authorization": f"Bearer {access_token}"})
+        response.raise_for_status()
+        data = response.json()
+        return data if isinstance(data, dict) else {}
 
     def recently_played(self, access_token: str, after: datetime | None = None) -> list[dict[str, object]]:
         params = {"limit": 50}
@@ -743,61 +756,66 @@ def submit_genre_cache_with_retries(backend_url: str, worker_token: str, items: 
 
 
 
+def _clean_genres(raw: object) -> list[str]:
+    """Keeps only non-blank strings from a genre list, without repeats."""
+    if not isinstance(raw, list):
+        return []
+    cleaned: list[str] = []
+    for genre in raw:
+        if isinstance(genre, str) and genre.strip() and genre.strip() not in cleaned:
+            cleaned.append(genre.strip())
+    return cleaned
+
+
 def backfill_artist_genres(
     client: SpotifyClient,
     backend_url: str,
     worker_token: str,
     access_token: str,
-    lastfm_api_key: str = "",
-    max_items: int = 50,
+    max_items: int = MAX_GENRE_LOOKUPS_PER_RUN,
+    sleep=time.sleep,
 ) -> dict[str, int]:
+    """Fills genre_cache one artist at a time from Spotify.
+
+    Spotify's Development Mode removed the batch artist call, so each artist is a
+    separate request. The run is capped and spaced out, and stops at the first
+    rate-limit response, so a large backlog is spread over many runs."""
     stats = {"processed": 0, "resolved": 0, "failures": 0}
     try:
-        pending = fetch_pending_genre_artist_ids(backend_url, worker_token, limit=max_items)
+        pending = fetch_pending_genre_artist_ids(
+            backend_url, worker_token, limit=min(max_items, MAX_GENRE_LOOKUPS_PER_RUN)
+        )
         if not pending:
             return stats
         
-        stats["processed"] = len(pending)
         resolved_items = []
         
-        for item in pending:
+        for index, item in enumerate(pending):
             artist_id = item["artist_spotify_id"]
-            artist_name = item.get("artist_name")
-            genres = []
+            if index:
+                sleep(GENRE_LOOKUP_SPACING_SECONDS)
             
-            if lastfm_api_key and artist_name:
-                try:
-                    response = requests.get(
-                        "http://ws.audioscrobbler.com/2.0/",
-                        params={
-                            "method": "artist.getinfo",
-                            "artist": artist_name,
-                            "api_key": lastfm_api_key,
-                            "format": "json"
-                        },
-                        timeout=5
-                    )
-                    if response.status_code == 200:
-                        data = response.json()
-                        tags = data.get("artist", {}).get("tags", {}).get("tag", [])
-                        if isinstance(tags, list):
-                            genres = [t.get("name") for t in tags if isinstance(t, dict) and t.get("name")]
-                    else:
-                        response.raise_for_status()
-                except Exception:
-                    logger.exception(f"Last.fm genre fetch failed for artist {artist_name}")
+            try:
+                artist = client.artist(access_token, artist_id)
+            except SpotifyRateLimitedError:
+                logger.warning("Genre cache backfill paused: Spotify is rate-limiting this app")
+                break
+            except requests.HTTPError as exc:
+                stats["processed"] += 1
+                if exc.response is not None and exc.response.status_code == 404:
+                    # Spotify no longer has this artist: record "no genres" so it isn't asked again every run.
+                    resolved_items.append({"artist_spotify_id": artist_id, "genres": []})
+                else:
                     stats["failures"] += 1
-                    continue
-            else:
-                # If we don't have a Last.fm key, or no artist name, we cannot get genres from Last.fm.
-                # Just fail so it can be retried later when key is added.
+                continue
+            except requests.RequestException:
+                stats["processed"] += 1
                 stats["failures"] += 1
                 continue
+
+            stats["processed"] += 1
             
-            resolved_items.append({
-                "artist_spotify_id": artist_id,
-                "genres": genres
-            })
+            resolved_items.append({"artist_spotify_id": artist_id, "genres": _clean_genres(artist.get("genres"))})
 
         # Only write artists we successfully resolved — do NOT write a fallback
         # genres=[] for artists where the API call failed.
