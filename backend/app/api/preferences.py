@@ -77,11 +77,19 @@ def patch_gig_discovery_settings(
         prefs.local_gig_radius_miles = payload.local_gig_radius_miles
     if payload.gig_discovery_filters is not None:
         merged = merge_discovery_filters(prefs.gig_discovery_filters)
+        criteria_keys = {
+            "my_artists_mode",
+            "my_artists_limit",
+            "my_artists_min_plays",
+            "my_artists_months",
+            "include_seen_live",
+        }
         for key, value in payload.gig_discovery_filters.model_dump(exclude_unset=True).items():
             if key in merged:
+                if key in criteria_keys and merged[key] != value:
+                    should_sync = True
                 merged[key] = value
         prefs.gig_discovery_filters = merged
-        should_sync = True
     db.commit()
     db.refresh(prefs)
     if should_sync:

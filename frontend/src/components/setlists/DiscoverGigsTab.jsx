@@ -72,12 +72,14 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
   const [onlyInterested, setOnlyInterested] = useState(false);
   const [country, setCountry] = useState("");
   const initializedFromPrefsRef = useRef(false);
+  const userChangedFiltersRef = useRef(false);
   const skipNextFetchRef = useRef(false);
   const latestRequestRef = useRef(0);
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [criteriaError, setCriteriaError] = useState("");
   const [savingDefaults, setSavingDefaults] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [isCriteriaOpen, setIsCriteriaOpen] = useState(false);
@@ -107,31 +109,33 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
         if (requestId !== latestRequestRef.current) return;
         setData(res);
         if (!isInit && res) {
-          const sf = res.saved_filters || {};
-          const legacy = splitLegacyWindow(sf.date_window, sf);
-          const nextScope = sf.scope || "my_artists";
-          const nextOnlyMyArtists = Boolean(sf.local_only_my_artists);
-          const nextRadius = res.saved_radius_miles || 10;
-          const nextCountry = sf.country_code || "";
           initializedFromPrefsRef.current = true;
-          if (
-            nextScope !== scope ||
-            nextOnlyMyArtists !== onlyMyArtists ||
-            nextRadius !== radiusMiles ||
-            legacy.dateWindow !== dateWindow ||
-            legacy.onlyNew !== onlyNew ||
-            legacy.onlyInterested !== onlyInterested ||
-            nextCountry !== country
-          ) {
-            skipNextFetchRef.current = true;
-            setScope(nextScope);
-            setOnlyMyArtists(nextOnlyMyArtists);
-            setRadiusMiles(nextRadius);
-            setRadiusInput(String(nextRadius));
-            setDateWindow(legacy.dateWindow);
-            setOnlyNew(legacy.onlyNew);
-            setOnlyInterested(legacy.onlyInterested);
-            setCountry(nextCountry);
+          if (!userChangedFiltersRef.current) {
+            const sf = res.saved_filters || {};
+            const legacy = splitLegacyWindow(sf.date_window, sf);
+            const nextScope = sf.scope || "my_artists";
+            const nextOnlyMyArtists = Boolean(sf.local_only_my_artists);
+            const nextRadius = res.saved_radius_miles || 10;
+            const nextCountry = sf.country_code || "";
+            if (
+              nextScope !== scope ||
+              nextOnlyMyArtists !== onlyMyArtists ||
+              nextRadius !== radiusMiles ||
+              legacy.dateWindow !== dateWindow ||
+              legacy.onlyNew !== onlyNew ||
+              legacy.onlyInterested !== onlyInterested ||
+              nextCountry !== country
+            ) {
+              skipNextFetchRef.current = true;
+              setScope(nextScope);
+              setOnlyMyArtists(nextOnlyMyArtists);
+              setRadiusMiles(nextRadius);
+              setRadiusInput(String(nextRadius));
+              setDateWindow(legacy.dateWindow);
+              setOnlyNew(legacy.onlyNew);
+              setOnlyInterested(legacy.onlyInterested);
+              setCountry(nextCountry);
+            }
           }
         }
       } catch (err) {
@@ -214,6 +218,7 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
 
   const handleSaveCriteria = async (criteria) => {
     setSavingDefaults(true);
+    setCriteriaError("");
     try {
       const merged = {
         ...saved,
@@ -226,7 +231,7 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
       setIsCriteriaOpen(false);
       await loadGigs();
     } catch (err) {
-      setError(err.message || "Could not save artist criteria.");
+      setCriteriaError(err.message || "Could not save artist criteria.");
     } finally {
       setSavingDefaults(false);
     }
@@ -306,27 +311,35 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
     .filter(Boolean)
     .join(" · ");
 
+  const userSet = (setter) => (value) => {
+    userChangedFiltersRef.current = true;
+    setter(value);
+  };
+
   return (
     <div className="sfm-discover">
       <DiscoverFilters
         scope={scope}
-        onScopeChange={setScope}
+        onScopeChange={userSet(setScope)}
         homeCity={data?.home_city}
         hasHomeCity={Boolean(data?.has_home_city)}
         radiusInput={radiusInput}
         onRadiusInputChange={setRadiusInput}
-        onRadiusCommit={commitRadius}
+        onRadiusCommit={(val) => {
+          userChangedFiltersRef.current = true;
+          commitRadius(val);
+        }}
         onlyMyArtists={onlyMyArtists}
-        onOnlyMyArtistsChange={setOnlyMyArtists}
+        onOnlyMyArtistsChange={userSet(setOnlyMyArtists)}
         country={country}
         countries={data?.countries}
-        onCountryChange={setCountry}
+        onCountryChange={userSet(setCountry)}
         dateWindow={dateWindow}
-        onDateWindowChange={setDateWindow}
+        onDateWindowChange={userSet(setDateWindow)}
         onlyNew={onlyNew}
-        onOnlyNewChange={setOnlyNew}
+        onOnlyNewChange={userSet(setOnlyNew)}
         onlyInterested={onlyInterested}
-        onOnlyInterestedChange={setOnlyInterested}
+        onOnlyInterestedChange={userSet(setOnlyInterested)}
         summary={filterSummary}
         open={filtersOpen}
         onToggleOpen={() => setFiltersOpen((value) => !value)}
@@ -487,10 +500,14 @@ export default function DiscoverGigsTab({ token, onOpenGig, onGigAdded }) {
 
       <DiscoverSettingsModal
         isOpen={isCriteriaOpen}
-        onClose={() => setIsCriteriaOpen(false)}
+        onClose={() => {
+          setCriteriaError("");
+          setIsCriteriaOpen(false);
+        }}
         initialFilters={data?.saved_filters}
         onSave={handleSaveCriteria}
         isSaving={savingDefaults}
+        errorMessage={criteriaError}
       />
     </div>
   );

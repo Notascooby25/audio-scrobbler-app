@@ -230,6 +230,7 @@ def query_discovered_gigs(
     available_countries = sorted({g.country_code for g in all_upcoming if g.country_code})
     weekend_start, weekend_end = _weekend_bounds(today)
 
+    blocked_loose = {_loose(k) for k in blocked if _loose(k)}
     items: list[dict[str, Any]] = []
     for gig in all_upcoming:
         gig_keys = [match_key(k) for k in (gig.attraction_keys or []) if k]
@@ -239,6 +240,10 @@ def query_discovered_gigs(
 
         if any(k in blocked for k in gig_keys) and not any(k in my_artists for k in gig_keys if k not in blocked):
             continue
+        if blocked_loose and _is_title_only_listing(gig):
+            padded_title = f" {_loose(gig.event_name)} "
+            if any(f" {b} " in padded_title for b in blocked_loose):
+                continue
 
         exact_match = any(k in my_artists and k not in blocked for k in gig_keys)
         possible_match = not exact_match and _possible_title_match(gig, my_artists_loose)
