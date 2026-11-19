@@ -427,6 +427,7 @@ def _sweep_skiddle(
         )
         searches += 1
         upserted += _upsert_skiddle_events(db, events, now)
+        db.commit()
 
     for artist_key in artist_keys:
         if client.blocked:
@@ -442,6 +443,7 @@ def _sweep_skiddle(
         )
         searches += 1
         upserted += _upsert_skiddle_events(db, events, now)
+        db.commit()
 
     if include_uk:
         for start_days, end_days in SKIDDLE_UK_WINDOW_DAYS:
@@ -459,6 +461,7 @@ def _sweep_skiddle(
             )
             searches += 1
             upserted += _upsert_skiddle_events(db, events, now)
+            db.commit()
 
     return searches, upserted
 
@@ -484,13 +487,14 @@ def sync_discovered_gigs(db: Session, user_id: int | None = None) -> dict[str, i
     cutoff_date = today - timedelta(days=1)
     pruned_result = db.execute(delete(DiscoveredGig).where(DiscoveredGig.event_date < cutoff_date))
     pruned = int(pruned_result.rowcount or 0)
+    db.commit()
 
     user_stmt = select(User).where(User.is_active.is_(True))
     if user_id is not None:
         user_stmt = user_stmt.where(User.id == user_id)
     users = db.scalars(user_stmt).all()
 
-    artist_display_names: dict[str, str] = {}
+    ranked_by_user_full: list[list[str]] = []
     ranked_by_user: list[list[str]] = []
     local_targets: list[tuple[float, float, int]] = []
 
@@ -498,10 +502,8 @@ def sync_discovered_gigs(db: Session, user_id: int | None = None) -> dict[str, i
         prefs = db.scalar(select(UserPreferences).where(UserPreferences.user_id == user.id))
         filters = merge_discovery_filters(prefs.gig_discovery_filters if prefs else None)
         ranked = get_user_ranked_artist_keys(db, user.id, filters)
+        ranked_by_user_full.append(ranked)
         ranked_by_user.append(ranked[:SKIDDLE_ARTISTS_PER_USER])
-        for key in ranked:
-            if key not in artist_display_names:
-                artist_display_names[key] = key
 
         if prefs and prefs.home_lat is not None and prefs.home_lng is not None:
             radius = max(int(prefs.local_gig_radius_miles or 10), 25)
@@ -513,11 +515,13 @@ def sync_discovered_gigs(db: Session, user_id: int | None = None) -> dict[str, i
     local_queries = 0
 
     if client.api_key:
-        for artist_key in sorted(artist_display_names)[:MAX_ARTISTS_PER_SYNC]:
+        tm_artists = _merge_ranked_artists(ranked_by_user_full, MAX_ARTISTS_PER_SYNC)
+        for artist_key in tm_artists:
             if getattr(client, "rate_limited", False):
                 break
             events = client.search_events({"keyword": artist_key, "startDateTime": start_iso})
             upserted += _upsert_events(db, events, now)
+            db.commit()
             artist_queries += 1
 
         seen_geohashes: set[tuple[str, int]] = set()
@@ -538,13 +542,14 @@ def sync_discovered_gigs(db: Session, user_id: int | None = None) -> dict[str, i
                 }
             )
             upserted += _upsert_events(db, events, now)
+            db.commit()
             local_queries += 1
 
     skiddle_queries = 0
     skiddle_upserted = 0
     if skiddle.api_key:
         # The UK-wide list only makes sense for a full sweep, not a single user's refresh.
-        include_uk = user_id is None and bool(artist_display_names)
+        include_uk = user_id is None and any(ranked_by_user_full)
         skiddle_artists = _merge_ranked_artists(ranked_by_user, SKIDDLE_ARTIST_SEARCH_CAP)
         skiddle_queries, skiddle_upserted = _sweep_skiddle(
             db, skiddle, local_targets, skiddle_artists, include_uk, today, now

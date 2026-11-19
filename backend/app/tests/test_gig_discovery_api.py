@@ -165,6 +165,7 @@ def setup_db(monkeypatch):
 
 def test_discover_unconfigured_returns_200_gracefully(monkeypatch):
     monkeypatch.setenv("TICKETMASTER_API_KEY", "")
+    monkeypatch.setenv("SKIDDLE_API_KEY", "")
     res = client.get("/setlists/discover")
     assert res.status_code == 200
     body = res.json()
@@ -288,3 +289,49 @@ def test_save_trigger_finds_the_worker_without_any_environment_variable(monkeypa
     assert fake_http.post.call_args.args[0] == f"{settings.ingestion_worker_url}/internal/trigger-gig-discovery"
     assert fake_http.post.call_args.kwargs["json"] == {"user_id": 5}
     assert fake_http.post.call_args.kwargs["headers"] == {"X-Worker-Token": settings.worker_ingestion_token}
+
+
+def test_skiddle_title_only_listing_excludes_blocked_artist():
+    with TestingSession() as db:
+        db.add(
+            DiscoveredGig(
+                source="skiddle",
+                external_id="sk-blocked-title",
+                artist_name="Blocked Band at Brixton",
+                artist_key="blocked band at brixton",
+                attraction_names=[],
+                attraction_keys=[],
+                event_name="Blocked Band at Brixton",
+                venue_name="Brixton",
+                city="London",
+                country_code="GB",
+                lat=LONDON[0],
+                lng=LONDON[1],
+                event_date=date.today() + timedelta(days=3),
+            )
+        )
+        db.commit()
+
+    res = client.get("/setlists/discover?scope=local&radius_miles=6&only_my_artists=false")
+    assert res.status_code == 200
+    ids = [item["external_id"] for item in res.json()["items"]]
+    assert "sk-blocked-title" not in ids
+
+
+def test_display_only_filter_save_does_not_trigger_worker_sync(monkeypatch):
+    trigger_mock = MagicMock()
+    monkeypatch.setattr("backend.app.api.preferences.trigger_worker_discovery_sync", trigger_mock)
+
+    res = client.patch(
+        "/users/me/settings/gig-discovery",
+        json={"gig_discovery_filters": {"date_window": "weekend", "country_code": "GB"}},
+    )
+    assert res.status_code == 200
+    trigger_mock.assert_not_called()
+
+    res2 = client.patch(
+        "/users/me/settings/gig-discovery",
+        json={"gig_discovery_filters": {"my_artists_limit": 50}},
+    )
+    assert res2.status_code == 200
+    trigger_mock.assert_called_once_with(101)

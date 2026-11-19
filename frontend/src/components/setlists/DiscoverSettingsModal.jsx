@@ -6,6 +6,7 @@ export default function DiscoverSettingsModal({
   initialFilters,
   onSave,
   isSaving,
+  errorMessage = "",
 }) {
   const [mode, setMode] = useState(initialFilters?.my_artists_mode || "top_n");
   const [limit, setLimit] = useState(String(initialFilters?.my_artists_limit || 100));
@@ -132,6 +133,8 @@ export default function DiscoverSettingsModal({
             />
             <span>Include artists I&apos;ve seen live</span>
           </label>
+
+          {errorMessage && <div className="sfm-error">{errorMessage}</div>}
 
           <div className="modal-actions">
             <button type="button" className="modal-cancel-button" onClick={onClose}>

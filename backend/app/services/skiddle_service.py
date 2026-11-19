@@ -111,7 +111,7 @@ class SkiddleClient:
                     except ValueError:
                         logger.warning("Skiddle API returned a non-JSON body")
                         return None
-                    if not isinstance(body, dict) or str(body.get("error", 0)) not in ("0", ""):
+                    if not isinstance(body, dict) or body.get("error") not in (None, 0, "0", "", False):
                         logger.warning("Skiddle API reported an error in the response; not retrying")
                         return None
                     return body

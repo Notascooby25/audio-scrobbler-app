@@ -8228,11 +8228,13 @@ button.sfm-row-remove:hover:not(:disabled) {
   display: none;
 }
 
-:root[data-theme="dark"] .sfm-skiddle-logo-on-light {
+:root[data-theme="dark"] .sfm-skiddle-logo-on-light,
+:root[data-skin="sleeve"] .sfm-skiddle-logo-on-light {
   display: none;
 }
 
-:root[data-theme="dark"] .sfm-skiddle-logo-on-dark {
+:root[data-theme="dark"] .sfm-skiddle-logo-on-dark,
+:root[data-skin="sleeve"] .sfm-skiddle-logo-on-dark {
   display: block;
 }
 
