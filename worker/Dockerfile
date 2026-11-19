@@ -9,6 +9,7 @@ COPY app.py ./app.py
 COPY spotify_ingestion.py ./spotify_ingestion.py
 COPY file_import.py ./file_import.py
 COPY recaps.py ./recaps.py
+COPY musicbrainz.py ./musicbrainz.py
 
 EXPOSE 8001
 
