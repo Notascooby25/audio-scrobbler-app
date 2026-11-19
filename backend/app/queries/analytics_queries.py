@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta
 
 from ..datetime_utils import utc_now
 
-from sqlalchemy import Select, Text, case, cast, exists, func, or_, select
+from sqlalchemy import Select, Text, and_, case, cast, func, or_, select
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import FunctionElement
@@ -594,27 +594,32 @@ def pg_extract_primary_artist_id(element, compiler, **kw):
     return f"coalesce({arg}->'track'->'artists'->0->>'id', {arg}->'item'->'artists'->0->>'id')"
 
 
-def build_pending_genre_artist_ids_query(limit: int) -> Select:
+# An artist saved with no genres is looked up again after this long, in case Spotify or
+# MusicBrainz has added some. Until then it is left alone, so artists nobody has genres
+# for don't use up every run's lookups (and MusicBrainz's one-request-a-second allowance).
+GENRE_EMPTY_RECHECK_DAYS = 30
+
+
+def build_pending_genre_artist_ids_query(limit: int, now: datetime | None = None) -> Select:
     artist_id_expr = extract_primary_artist_id(ListeningEvent.raw_metadata)
-    # Exclude only artists that have a non-empty genre list cached.
-    # Artists stored with genres=[] (e.g. due to a previous API failure or
-    # genuine Spotify "no genres" response) are included so they are retried
-    # each cycle.  A cached artist that truly has no genres on Spotify will
-    # keep returning [] from the API, so it will never consume a write; the
-    # minor extra Spotify call is the acceptable trade-off for correctness.
-    has_real_genres = exists().where(
-        GenreCache.artist_spotify_id == artist_id_expr,
-        cast(GenreCache.genres, Text) != "[]",
-    )
+    recheck_before = (now if now is not None else utc_now()) - timedelta(days=GENRE_EMPTY_RECHECK_DAYS)
+    # Pending artists are those with no genre_cache row at all, plus those saved with
+    # genres=[] more than GENRE_EMPTY_RECHECK_DAYS ago. Artists with real genres are
+    # never looked up again. Never-checked artists come first, then the longest-waiting.
     statement = (
         select(artist_id_expr.label("artist_id"), func.max(ListeningEvent.artist_name).label("artist_name"))
         .select_from(ListeningEvent)
+        .outerjoin(GenreCache, GenreCache.artist_spotify_id == artist_id_expr)
         .where(
             ListeningEvent.source.in_(["spotify", "spotify_realtime"]),
             artist_id_expr.isnot(None),
-            ~has_real_genres,
+            or_(
+                GenreCache.artist_spotify_id.is_(None),
+                and_(cast(GenreCache.genres, Text) == "[]", GenreCache.cached_at < recheck_before),
+            ),
         )
         .group_by(artist_id_expr)
+        .order_by(func.min(GenreCache.cached_at).asc().nulls_first(), artist_id_expr)
         .limit(limit)
     )
     return statement

@@ -353,7 +353,7 @@ the NAS listing.** The live setup has drifted from the repos before.
     `WORKER_GENRE_CACHE_BATCH_SIZE=50`
   - `368e83e` fix
   - Genre comes from the Spotify **artist** record, via worker enrichment and a
-    cache.
+    cache. Updated in v0.52.0: see the genre entry below.
 - **BBC Sounds Scope Creep & Spotify Playlist Destinations (2026-09-26/27):** BBC Sounds tracklist extraction tool under Settings > Scrobble tab with track selection, broadcast offset timestamping for direct scrobbling, and export to Spotify supporting either creating brand new playlists or appending tracks to existing playlists.
 - **Followed Shows, Apple Music Imports & Push Notifications (2026-10):**
   - BBC Sounds Followed Shows (`followed_shows` table, BBC RMS search & episode browsing, 1-click Spotify playlist scope re-auth).
@@ -491,6 +491,24 @@ the NAS listing.** The live setup has drifted from the repos before.
   and are never "newly announced". The badge for title-only matches is shown as
   "Check line-up" (API flag still `is_possible_match`). Filters fold behind a
   button on phones; the list shows 20 at a time.
+- **v0.52.0 (2026-11-19): genres from Spotify, MusicBrainz as backup, Last.fm
+  removed.** Spotify's Development Mode removed the batch artist call
+  (`GET /artists?ids=`), which is why Last.fm had been added as a fallback. The
+  `genre_cache_backfill` worker job now asks Spotify one artist at a time
+  (`GET /artists/{id}`, max 20 a run, 0.3 s apart, stops at the first 429), then
+  asks MusicBrainz (`worker/musicbrainz.py`: Spotify link, else exact name, then
+  genres; no key, about 1 request a second, max 6 artists a run, User-Agent is the
+  public repo URL) for artists Spotify has no genres for. If Spotify is blocked or
+  has no token, MusicBrainz runs alone. `LASTFM_API_KEY` is no longer read; it can be
+  deleted from `.env.production` (then re-save the password-manager copy). An
+  artist is saved with `genres=[]` only when every source has really answered, and
+  `build_pending_genre_artist_ids_query` now re-checks empty ones only after 30
+  days (`GENRE_EMPTY_RECHECK_DAYS`), never-checked first. Before this, empty artists
+  were re-selected every run and could starve newer ones. No migration. The worker
+  Dockerfile copies files one by one, so a new worker module must be added there.
+  MusicBrainz is credited under Top genres (genre data may be CC BY-NC-SA).
+  Not done: `sync_saved_albums_for_user` still calls the removed batch artist call
+  and logs a warning, so saved-album genres stay empty.
 - **Dependency updates (2026-11-18, no version bump):** PyJWT 2.15.1 (backend),
   requests 2.34.2 and python-dotenv 1.2.4 (backend and worker). Sign-in tokens
   are unchanged: `backend/app/tests/test_jwt_compat.py` decodes a token minted by

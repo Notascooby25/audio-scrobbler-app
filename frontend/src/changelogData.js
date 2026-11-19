@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.52.0",
+    date: "2026-11-19",
+    changes: [
+      "More Top Genres: Genres still come from Spotify first, one artist at a time. Artists Spotify has no genres for are now looked up on MusicBrainz, a free community music database, so more of your listening shows up in Top genres. MusicBrainz is credited under the chart.",
+      "No more Last.fm: The app no longer uses a Last.fm key for genres.",
+      "Fairer genre checks: Artists with no genres anywhere are checked again about once a month, instead of being asked about every few minutes and holding up newer artists.",
+    ],
+  },
+  {
     version: "0.51.0",
     date: "2026-11-18",
     changes: [

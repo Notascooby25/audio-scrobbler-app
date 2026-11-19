@@ -57,7 +57,7 @@ Visual design rules are in `DESIGN.md` and `PRODUCT.md`.
 
 - All listening data comes from `listening_events`. Aggregates group by
   `artist_name`, `album_name` and `track_name`.
-- Genres come from `genre_cache`, per artist, filled by the worker.
+- Genres come from `genre_cache`, per artist, filled by the worker (Spotify first, MusicBrainz as backup). `GenreBarList` shows a credit link to MusicBrainz under the chart.
 - **Blocked items** (`blocked_items`, via `not_blocked_clause`) are excluded
   from every aggregate.
 - Lists use `limit`/`offset` pagination. The user's page size comes from their

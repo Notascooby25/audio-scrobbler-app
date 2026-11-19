@@ -166,7 +166,7 @@ non-PostgreSQL databases.
 | `spotify-ingestion` | ticks every `WORKER_SPOTIFY_INTERVAL_MINUTES` (1) | Each user is polled at their own `poll_interval_minutes` (default 5). |
 | `currently-playing-sync` | every 10 s | Feeds now-playing. |
 | `liked-tracks-ingestion` | every 30 min | **Opt-in per user** (`liked_tracks_sync_enabled`). Skips while rate-limited. |
-| `genre_cache_backfill` | every `WORKER_GENRE_CACHE_INTERVAL_MINUTES` (5 in prod) | Batch `WORKER_GENRE_CACHE_BATCH_SIZE` (50). Genre comes from the Spotify **artist** record, not the play. |
+| `genre_cache_backfill` | every `WORKER_GENRE_CACHE_INTERVAL_MINUTES` (5 in prod) | Spotify single-artist call first (max 20 a run), then MusicBrainz (`worker/musicbrainz.py`, max 6 a run) for artists Spotify has no genres for. Genre comes from the artist, not the play. |
 | `recaps-generation` | daily at 08:00 UTC | Generates daily, weekly (Mondays), or monthly (1st) recap notifications and Web Push alerts (`worker/recaps.py`). |
 | `file-import` | every 10 min | Only when file import is enabled. |
 | `fixture-ingestion` | every 1 min | Dev fixtures only. |

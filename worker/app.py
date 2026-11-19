@@ -15,6 +15,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from file_import import process_import_directory
+from musicbrainz import MusicBrainzClient
 from recaps import generate_recaps
 from spotify_ingestion import (
     CheckpointRecord,
@@ -56,7 +57,6 @@ database_url = os.getenv("DATABASE_URL", "postgresql+psycopg://scrobbler:scrobbl
 spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID", "")
 spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET", "")
 refresh_token_key = os.getenv("REFRESH_TOKEN_KEY", "0123456789abcdef0123456789abcdef")
-lastfm_api_key = os.getenv("LASTFM_API_KEY", "")
 # This now means "how often we check who's due," not "the sync cadence" itself —
 # each user's actual cadence is their own `poll_interval_minutes` setting, checked
 # against ingestion_checkpoints.last_polled_at on every tick.
@@ -64,6 +64,8 @@ spotify_interval_minutes = int(os.getenv("WORKER_SPOTIFY_INTERVAL_MINUTES", "1")
 liked_tracks_interval_minutes = int(os.getenv("WORKER_LIKED_TRACKS_INTERVAL_MINUTES", "30"))
 genre_cache_interval_minutes = int(os.environ.get("WORKER_GENRE_CACHE_INTERVAL_MINUTES", "5"))
 genre_cache_batch_size = int(os.environ.get("WORKER_GENRE_CACHE_BATCH_SIZE", "50"))
+# One shared client, so its one-request-a-second spacing holds across runs.
+musicbrainz_client = MusicBrainzClient()
 # Playlist names are low-priority enrichment, not ingestion, so this defaults to a
 # slow cadence and a small per-tick batch — a large backlog is spread across many
 # ticks rather than bursting Spotify, the same reasoning as the liked-tracks walk.
@@ -303,14 +305,14 @@ def run_genre_cache_backfill() -> None:
     global last_genre_cache_sync_at, last_genre_cache_sync_processed, last_genre_cache_sync_resolved, last_genre_cache_sync_failures
     if not spotify_enabled or not spotify_client_id or not spotify_client_secret:
         return
+    # While Spotify is rate-limiting the app, no Spotify token is requested and genres
+    # come from MusicBrainz alone.
     blocked_until = spotify_rate_limit_blocked_until()
-    if blocked_until:
-        return
     client = SpotifyClient(spotify_client_id, spotify_client_secret, refresh_token_key)
     engine = create_engine(database_url, pool_pre_ping=True)
     session = sessionmaker(bind=engine)()
     try:
-        users = session.query(UserRecord).filter(UserRecord.is_active.is_(True)).all()
+        users = [] if blocked_until else session.query(UserRecord).filter(UserRecord.is_active.is_(True)).all()
         access_token = None
         for user in users:
             try:
@@ -332,17 +334,30 @@ def run_genre_cache_backfill() -> None:
             except Exception:
                 continue
                 
-        if not access_token:
-            logger.warning("Genre cache backfill aborted: no active user token available")
-            return
-            
-        result = backfill_artist_genres(client, backend_url, worker_token, access_token, lastfm_api_key, max_items=genre_cache_batch_size)
+        if not access_token and not blocked_until:
+            logger.warning("Genre cache backfill: no active user token available, using MusicBrainz only")
+
+        result = backfill_artist_genres(
+            client,
+            backend_url,
+            worker_token,
+            access_token,
+            musicbrainz=musicbrainz_client,
+            max_items=genre_cache_batch_size,
+        )
         last_genre_cache_sync_processed = result["processed"]
         last_genre_cache_sync_resolved = result["resolved"]
         last_genre_cache_sync_failures = result["failures"]
         last_genre_cache_sync_at = datetime.now(timezone.utc).isoformat()
         if result["processed"] > 0:
-            logger.info("Genre cache backfill: %s processed, %s resolved, %s failures", result["processed"], result["resolved"], result["failures"])
+            logger.info(
+                "Genre cache backfill: %s processed, %s resolved (%s from Spotify, %s from MusicBrainz), %s failures",
+                result["processed"],
+                result["resolved"],
+                result["from_spotify"],
+                result["from_musicbrainz"],
+                result["failures"],
+            )
     except Exception:
         logger.exception("Genre cache backfill failed")
     finally:

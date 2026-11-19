@@ -8,7 +8,8 @@ export const REPORT_HINTS = {
   clock:
     "Your listening around the 24 hours of the day. Longer lines mean more plays in that hour.",
   decade: "Which decade your plays come from, by release year.",
-  genres: "The genres of the artists you played most in this period.",
+  genres:
+    "The genres of the artists you played most in this period. They come from Spotify, with MusicBrainz filling in artists Spotify has no genres for.",
   "ratios.explorer":
     "Plays divided by distinct artists. Higher means you replay favourites; lower means you keep trying new artists.",
   "ratios.singles":

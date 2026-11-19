@@ -5,11 +5,14 @@ import hashlib
 import logging
 import time
 from datetime import datetime, timedelta, timezone
+from urllib.parse import quote
 
 import requests
 from cryptography.fernet import Fernet, InvalidToken
 from sqlalchemy import Boolean, DateTime, Integer, String, Text, JSON, BigInteger
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column
+
+from musicbrainz import MusicBrainzClient, MusicBrainzUnavailableError
 
 # app.py's logging.basicConfig() runs at process start (before the scheduler ever
 # calls into this module), so this propagates to the root logger it configures —
@@ -22,6 +25,13 @@ SPOTIFY_SAVED_TRACKS_URL = "https://api.spotify.com/v1/me/tracks"
 SPOTIFY_SAVED_TRACKS_LIMIT = 40
 SPOTIFY_SAVED_ALBUMS_URL = "https://api.spotify.com/v1/me/albums"
 SPOTIFY_SAVED_ALBUMS_LIMIT = 50
+# Genre lookups are one request per artist, so a run is capped and spaced out.
+# A large backlog is spread across many 5-minute runs rather than bursting Spotify.
+MAX_GENRE_LOOKUPS_PER_RUN = 20
+GENRE_LOOKUP_SPACING_SECONDS = 0.3
+# MusicBrainz allows about one request a second and each artist can take up to three
+# (Spotify link, name search, genres), so only a few artists are sent its way per run.
+MAX_MUSICBRAINZ_LOOKUPS_PER_RUN = 6
 Base = declarative_base()
 
 
@@ -334,6 +344,14 @@ class SpotifyClient:
         response = self._request("get", url, headers={"Authorization": f"Bearer {access_token}"}, params=params)
         response.raise_for_status()
         return [artist for artist in response.json().get("artists", []) if artist is not None]
+
+    def artist(self, access_token: str, artist_id: str) -> dict[str, object]:
+        """One artist record. Replaces the batch call, which Development Mode apps no longer have."""
+        url = f"https://api.spotify.com/v1/artists/{quote(artist_id, safe='')}"
+        response = self._request("get", url, headers={"Authorization": f"Bearer {access_token}"})
+        response.raise_for_status()
+        data = response.json()
+        return data if isinstance(data, dict) else {}
 
     def recently_played(self, access_token: str, after: datetime | None = None) -> list[dict[str, object]]:
         params = {"limit": 50}
@@ -743,61 +761,115 @@ def submit_genre_cache_with_retries(backend_url: str, worker_token: str, items: 
 
 
 
+def _clean_genres(raw: object) -> list[str]:
+    """Keeps only non-blank strings from a genre list, without repeats."""
+    if not isinstance(raw, list):
+        return []
+    cleaned: list[str] = []
+    for genre in raw:
+        if isinstance(genre, str) and genre.strip() and genre.strip() not in cleaned:
+            cleaned.append(genre.strip())
+    return cleaned
+
+
+def _lookup_spotify_genres(client: SpotifyClient, access_token: str, artist_id: str) -> tuple[str, list[str]]:
+    """Asks Spotify for one artist's genres.
+
+    Returns ("answered", genres) when Spotify replied (genres may be empty, and an artist
+    Spotify no longer has counts as answered), ("rate_limited", []) when Spotify is
+    blocking the app, or ("unavailable", []) for any other error."""
+    try:
+        artist = client.artist(access_token, artist_id)
+    except SpotifyRateLimitedError:
+        return "rate_limited", []
+    except requests.HTTPError as exc:
+        if exc.response is not None and exc.response.status_code == 404:
+            return "answered", []
+        return "unavailable", []
+    except requests.RequestException:
+        return "unavailable", []
+    return "answered", _clean_genres(artist.get("genres"))
+
+
 def backfill_artist_genres(
     client: SpotifyClient,
     backend_url: str,
     worker_token: str,
-    access_token: str,
-    lastfm_api_key: str = "",
-    max_items: int = 50,
+    access_token: str | None,
+    musicbrainz: MusicBrainzClient | None = None,
+    max_items: int = MAX_GENRE_LOOKUPS_PER_RUN,
+    sleep=time.sleep,
 ) -> dict[str, int]:
-    stats = {"processed": 0, "resolved": 0, "failures": 0}
+    """Fills genre_cache: Spotify first, MusicBrainz for artists Spotify has no genres for.
+
+    Spotify's Development Mode removed the batch artist call, so each artist is a
+    separate request. The run is capped and spaced out. A rate-limit response ends the
+    Spotify lookups for the run (MusicBrainz carries on), and so does having no Spotify
+    token (access_token None). MusicBrainz is capped much lower, because it allows
+    about one request a second, and an outage stops it for the rest of the run.
+
+    An artist is only saved as "no genres" once every source that is switched on has
+    given a real answer. If a source was down, the artist is left to be tried again."""
+    stats = {"processed": 0, "resolved": 0, "failures": 0, "from_spotify": 0, "from_musicbrainz": 0}
+    spotify_usable = access_token is not None
+    musicbrainz_usable = musicbrainz is not None
+    spotify_calls = 0
+    musicbrainz_lookups = 0
     try:
-        pending = fetch_pending_genre_artist_ids(backend_url, worker_token, limit=max_items)
+        pending = fetch_pending_genre_artist_ids(
+            backend_url, worker_token, limit=min(max_items, MAX_GENRE_LOOKUPS_PER_RUN)
+        )
         if not pending:
             return stats
-        
-        stats["processed"] = len(pending)
+
         resolved_items = []
-        
+
         for item in pending:
             artist_id = item["artist_spotify_id"]
             artist_name = item.get("artist_name")
-            genres = []
-            
-            if lastfm_api_key and artist_name:
+            spotify_status, genres = "skipped", []
+
+            if spotify_usable:
+                if spotify_calls:
+                    sleep(GENRE_LOOKUP_SPACING_SECONDS)
+                spotify_calls += 1
+                spotify_status, genres = _lookup_spotify_genres(client, access_token, artist_id)
+                if spotify_status == "rate_limited":
+                    spotify_usable = False
+                    logger.warning("Genre cache backfill: Spotify is rate-limiting this app, using MusicBrainz only")
+                    if musicbrainz is None:
+                        break
+
+            musicbrainz_answered = False
+            if genres:
+                stats["from_spotify"] += 1
+            elif musicbrainz_usable:
+                if musicbrainz_lookups >= MAX_MUSICBRAINZ_LOOKUPS_PER_RUN:
+                    # Out of MusicBrainz requests for this run: leave this artist and the rest for the next one.
+                    break
+                musicbrainz_lookups += 1
                 try:
-                    response = requests.get(
-                        "http://ws.audioscrobbler.com/2.0/",
-                        params={
-                            "method": "artist.getinfo",
-                            "artist": artist_name,
-                            "api_key": lastfm_api_key,
-                            "format": "json"
-                        },
-                        timeout=5
-                    )
-                    if response.status_code == 200:
-                        data = response.json()
-                        tags = data.get("artist", {}).get("tags", {}).get("tag", [])
-                        if isinstance(tags, list):
-                            genres = [t.get("name") for t in tags if isinstance(t, dict) and t.get("name")]
-                    else:
-                        response.raise_for_status()
-                except Exception:
-                    logger.exception(f"Last.fm genre fetch failed for artist {artist_name}")
-                    stats["failures"] += 1
-                    continue
-            else:
-                # If we don't have a Last.fm key, or no artist name, we cannot get genres from Last.fm.
-                # Just fail so it can be retried later when key is added.
+                    genres = musicbrainz.lookup_genres(artist_id, artist_name)
+                    musicbrainz_answered = True
+                except MusicBrainzUnavailableError as exc:
+                    musicbrainz_usable = False
+                    logger.warning("Genre cache backfill: MusicBrainz unavailable (%s), skipping it for this run", exc)
+                if genres:
+                    stats["from_musicbrainz"] += 1
+            elif not spotify_usable:
+                # Neither source can be asked any more this run.
+                break
+
+            stats["processed"] += 1
+            if genres:
+                resolved_items.append({"artist_spotify_id": artist_id, "genres": genres})
+            elif spotify_status == "answered" and (musicbrainz is None or musicbrainz_answered):
+                # Every source switched on has answered and none has genres: record that, so the
+                # artist isn't asked about again straight away.
+                resolved_items.append({"artist_spotify_id": artist_id, "genres": []})
+            elif spotify_status not in ("rate_limited", "skipped"):
+                # Spotify (or MusicBrainz) had an error, so this artist is tried again next run.
                 stats["failures"] += 1
-                continue
-            
-            resolved_items.append({
-                "artist_spotify_id": artist_id,
-                "genres": genres
-            })
 
         # Only write artists we successfully resolved — do NOT write a fallback
         # genres=[] for artists where the API call failed.

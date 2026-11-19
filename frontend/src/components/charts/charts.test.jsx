@@ -46,6 +46,21 @@ describe('GenreBarList', () => {
     const { container } = render(<GenreBarList genres={[]} />)
     expect(container.querySelector('.genre-list')).not.toBeInTheDocument()
   })
+
+  it('credits Spotify and MusicBrainz with a safe external link', () => {
+    render(<GenreBarList genres={[{ label: 'pop', count: 10 }]} />)
+
+    const link = screen.getByRole('link', { name: 'MusicBrainz' })
+    expect(link).toHaveAttribute('href', 'https://musicbrainz.org')
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+    expect(screen.getByText(/Genre data from Spotify and/)).toBeInTheDocument()
+  })
+
+  it('shows no credit when there are no genres to credit', () => {
+    render(<GenreBarList genres={[]} />)
+    expect(screen.queryByRole('link', { name: 'MusicBrainz' })).not.toBeInTheDocument()
+  })
 })
 
 describe('ListeningHeatmap', () => {
