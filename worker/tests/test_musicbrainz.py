@@ -159,6 +159,13 @@ def test_quotes_in_an_artist_name_cannot_break_out_of_the_search_phrase():
     assert session.calls[0]["params"]["query"] == 'artist:"Say \\"Hi\\" \\\\ Bye"'
 
 
+def test_an_absurdly_long_name_is_never_sent():
+    client, session, _ = _client()
+
+    assert client.find_artist_by_name("x" * 5000) is None
+    assert session.calls == []
+
+
 def test_genres_are_ordered_by_votes_and_zero_vote_genres_are_dropped():
     client, session, _ = _client(_genres(("art rock", 3), ("alternative rock", 9), ("downvoted", 0), ("electronic", 3)))
 

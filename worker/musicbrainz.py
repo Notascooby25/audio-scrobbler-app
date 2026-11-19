@@ -28,6 +28,7 @@ REQUEST_TIMEOUT_SECONDS = 10
 # A name search is only trusted when the name is the same and MusicBrainz is very sure.
 MIN_NAME_SEARCH_SCORE = 95
 NAME_SEARCH_LIMIT = 5
+MAX_SEARCH_NAME_LENGTH = 255
 MAX_GENRES_PER_ARTIST = 10
 
 _MBID_PATTERN = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
@@ -115,7 +116,8 @@ class MusicBrainzClient:
         A wrong artist with the same name would show the wrong genres, so a blank is better
         than a guess: two artists with the name, a different name or a low score all give None."""
         wanted = _normalise_name(name)
-        if not wanted:
+        if not wanted or len(name) > MAX_SEARCH_NAME_LENGTH:
+            # Artist names can come from imported history, so refuse absurd ones rather than send them on.
             return None
         data = self._get(
             "/artist",
