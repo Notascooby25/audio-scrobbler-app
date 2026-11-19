@@ -126,6 +126,29 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "genre-sources",
+    category: "Reports & Stats",
+    question: "Where do the genres in Top genres come from, and why are some artists missing?",
+    answer: (
+      <>
+        <p>
+          Spotify supplies the genres for each artist where it has any. For artists Spotify has no
+          genres for, the app asks{" "}
+          <a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">
+            MusicBrainz
+          </a>
+          , a free community music database, as a backup. A few artists are in neither, and those
+          stay out of Top genres.
+        </p>
+        <p>
+          Genres are looked up in the background, a few artists every five minutes, so a new artist
+          can take a while to appear. An artist with no genres anywhere is checked again about once
+          a month.
+        </p>
+      </>
+    ),
+  },
+  {
     id: "recommend-music",
     category: "Friends & Social",
     question: "How do I recommend a song or album to a friend?",

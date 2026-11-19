@@ -4770,6 +4770,14 @@ dd {
   text-align: right;
   color: var(--color-muted);
 }
+.genre-credit {
+  color: var(--color-muted);
+  font-size: 12px;
+  margin: 16px 0 0;
+}
+.genre-credit a {
+  color: inherit;
+}
 .import-panel {
   background: var(--color-surface);
   border: 0.5px solid var(--color-border);
