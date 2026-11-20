@@ -1,10 +1,13 @@
 import PropTypes from "prop-types";
 import InfoHint from "../InfoHint";
+import ReportViewAll from "./ReportViewAll";
 
 export default function ReportLiveConnection({ liveArtists }) {
   const attendedCount = liveArtists?.attended_artists_played || 0;
   const totalScrobbles = liveArtists?.total_scrobbles || 0;
   const topArtists = liveArtists?.top_artists || [];
+  const allArtists = liveArtists?.all_artists?.length ? liveArtists.all_artists : topArtists;
+  const allArtistLabels = allArtists.map((artist) => `${artist.artist_name} (${artist.count})`);
 
   return (
     <div
@@ -35,6 +38,7 @@ export default function ReportLiveConnection({ liveArtists }) {
           <span className="crossover-chip-empty">No live concert artists heard this period</span>
         )}
       </div>
+      <ReportViewAll title="Seen-live artists played this period" items={allArtistLabels} />
     </div>
   );
 }
@@ -44,6 +48,12 @@ ReportLiveConnection.propTypes = {
     attended_artists_played: PropTypes.number,
     total_scrobbles: PropTypes.number,
     top_artists: PropTypes.arrayOf(
+      PropTypes.shape({
+        artist_name: PropTypes.string,
+        count: PropTypes.number,
+      })
+    ),
+    all_artists: PropTypes.arrayOf(
       PropTypes.shape({
         artist_name: PropTypes.string,
         count: PropTypes.number,

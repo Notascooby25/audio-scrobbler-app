@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 export const DEFAULT_WIDGET_PREFERENCES = {
   showMilestones: true,
   showChallenge1001: true,
+  showRoughTrade: true,
   showLiveConnection: true,
   showScrobblesOverTime: true,
   showListeningRoutines: true,
@@ -100,6 +101,14 @@ export default function ReportCustomiseModal({ isOpen, preferences, onSave, onCl
                 onChange={() => handleToggle("showChallenge1001")}
               />
               <span>1001 Albums Challenge (Completed albums & progress)</span>
+            </label>
+            <label className="customise-checkbox-label">
+              <input
+                type="checkbox"
+                checked={Boolean(draft.showRoughTrade)}
+                onChange={() => handleToggle("showRoughTrade")}
+              />
+              <span>Rough Trade Top 100 (Completed albums & progress)</span>
             </label>
             <label className="customise-checkbox-label">
               <input
