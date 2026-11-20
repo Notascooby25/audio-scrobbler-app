@@ -684,11 +684,49 @@
   color: var(--color-muted) !important;
 }
 
+/* Play page control scale: compact (36px) for a mouse, 44px for touch and phones.
+   Every button on the Play page shares these, so heights and corners match.
+   The arcade (Retro Jukebox) view is excluded: its header controls are only
+   restyled while data-jukebox-view="flat". */
+[data-skin="timeline"] {
+  --tl-control-h: 36px;
+  --tl-tab-h: 32px;
+  --tl-mark-h: 28px;
+}
+
+@media (max-width: 640px), (pointer: coarse) {
+  [data-skin="timeline"] {
+    --tl-control-h: 44px;
+    --tl-tab-h: 40px;
+    --tl-mark-h: 44px;
+  }
+}
+
+/* Action row: buttons sit at their natural width instead of stretching */
+[data-skin="timeline"] .jukebox-actions {
+  align-items: center !important;
+  justify-content: flex-start !important;
+}
+
+[data-skin="timeline"] .jukebox-action-primary,
+[data-skin="timeline"] .jukebox-action-reroll,
+[data-skin="timeline"] .jukebox-action-spotify {
+  align-items: center !important;
+  display: inline-flex !important;
+  flex: none !important;
+  font-size: 13px !important;
+  justify-content: center !important;
+  letter-spacing: 0 !important;
+  line-height: 1.2 !important;
+  min-height: var(--tl-control-h) !important;
+  padding: 0 16px !important;
+  white-space: nowrap;
+}
+
 [data-skin="timeline"] .jukebox-action-primary {
   background: var(--color-primary) !important;
   color: var(--color-on-accent, #ffffff) !important;
   border-radius: var(--radius-sm) !important;
-  min-height: 44px !important;
   font-family: var(--font-body) !important;
   font-weight: 600 !important;
   text-transform: none !important;
@@ -704,21 +742,150 @@
   color: var(--color-ink) !important;
   border: 1px solid var(--color-ink) !important;
   border-radius: var(--radius-sm) !important;
-  min-height: 44px !important;
   font-family: var(--font-body) !important;
   font-weight: 600 !important;
   text-transform: none !important;
 }
 
-[data-skin="timeline"] .jukebox-action-reroll:focus-visible {
+[data-skin="timeline"] .jukebox-action-reroll:focus-visible,
+[data-skin="timeline"] .jukebox-action-spotify:focus-visible {
   outline: 2px solid var(--color-focus) !important;
   outline-offset: 2px !important;
 }
 
+/* One disabled treatment: muted label and hairline border at full opacity,
+   instead of also fading the whole button (which made the label hard to read) */
 [data-skin="timeline"] .jukebox-action-reroll:disabled {
-  opacity: 0.45 !important;
+  opacity: 1 !important;
   border-color: var(--color-border) !important;
   color: var(--color-muted) !important;
+}
+
+/* Open in Spotify: an outlined action like Re-roll, not a Spotify-green block */
+[data-skin="timeline"] .jukebox-action-spotify {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-ink) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--color-ink) !important;
+  font-family: var(--font-body) !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+}
+
+[data-skin="timeline"] .jukebox-action-spotify:hover {
+  background: var(--color-canvas) !important;
+}
+
+/* Source tabs, view switch, progress and filters: same size, corners and
+   sentence case as the rest of the page (flat view only) */
+[data-skin="timeline"] [data-jukebox-view="flat"] .jukebox-source-tabs {
+  background: var(--color-border) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 3px !important;
+}
+
+[data-skin="timeline"] [data-jukebox-view="flat"] .jukebox-source-tab-btn {
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  min-height: var(--tl-tab-h) !important;
+  padding: 0 14px !important;
+  text-transform: none !important;
+}
+
+[data-skin="timeline"] [data-jukebox-view="flat"] .jukebox-source-tab-btn.active {
+  border-color: var(--color-border) !important;
+  font-weight: 600 !important;
+}
+
+[data-skin="timeline"] [data-jukebox-view="flat"] .jukebox-source-tab-btn:focus-visible,
+[data-skin="timeline"] [data-jukebox-view="flat"] .jukebox-view-toggle:focus-visible,
+[data-skin="timeline"] [data-jukebox-view="flat"] .jukebox-progress-btn:focus-visible,
+[data-skin="timeline"] [data-jukebox-view="flat"] .jukebox-filters-toggle:focus-visible,
+[data-skin="timeline"] [data-jukebox-view="flat"] .jukebox-mark-played:focus-visible {
+  outline: 2px solid var(--color-focus) !important;
+  outline-offset: 2px !important;
+}
+
+[data-skin="timeline"] [data-jukebox-view="flat"] .jukebox-view-toggle,
+[data-skin="timeline"] [data-jukebox-view="flat"] .jukebox-progress-btn,
+[data-skin="timeline"] [data-jukebox-view="flat"] .jukebox-filters-toggle {
+  border-radius: var(--radius-sm) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  min-height: var(--tl-control-h) !important;
+  padding: 0 14px !important;
+  text-transform: none !important;
+}
+
+/* Filter chips inside the drawer: sentence case, and a real tap target on touch */
+[data-skin="timeline"] [data-jukebox-view="flat"] .jukebox-filters-drawer button {
+  border-radius: var(--radius-sm) !important;
+  font-size: 12px !important;
+  letter-spacing: 0 !important;
+  min-height: var(--tl-mark-h) !important;
+  padding: 0 12px !important;
+  text-transform: none !important;
+}
+
+[data-skin="timeline"] [data-jukebox-view="flat"] .jukebox-filters-drawer button:focus-visible {
+  outline: 2px solid var(--color-focus) !important;
+  outline-offset: 2px !important;
+}
+
+/* "Mark played" sits inside the pick card, so it is smaller than an action */
+[data-skin="timeline"] .jukebox-mark-played {
+  border-radius: var(--radius-sm) !important;
+  font-size: 12px !important;
+  letter-spacing: 0 !important;
+  min-height: var(--tl-mark-h) !important;
+  padding: 0 10px !important;
+  text-transform: none !important;
+}
+
+/* Recommendation buttons: same scale as every other Play button */
+[data-skin="timeline"] .friend-recs__btn,
+[data-skin="timeline"] .friend-recs .friend-recs__row-actions .friend-recs__btn {
+  font-size: 13px;
+  min-height: var(--tl-control-h);
+  padding: 0 16px;
+}
+
+/* Phone: Lucky Dip gets its own full-width row, the other two share the next */
+@media (max-width: 640px) {
+  [data-skin="timeline"] .jukebox-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  [data-skin="timeline"] .jukebox-actions .jukebox-action-primary {
+    grid-column: 1 / -1;
+  }
+
+  [data-skin="timeline"] .jukebox-actions .jukebox-action-reroll,
+  [data-skin="timeline"] .jukebox-actions .jukebox-action-spotify {
+    padding: 0 12px !important;
+  }
+
+  /* Source tabs: two on the first row, Rough Trade across the second, so no
+     label has to break over two lines */
+  [data-skin="timeline"] [data-jukebox-view="flat"] .jukebox-source-tabs {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  [data-skin="timeline"] [data-jukebox-view="flat"] .jukebox-source-tab-btn {
+    white-space: nowrap;
+  }
+
+  [data-skin="timeline"] [data-jukebox-view="flat"] .jukebox-source-tab-btn:last-child {
+    grid-column: 1 / -1;
+  }
 }
 
 /* Rediscover & Time Capsule Card */
@@ -761,7 +928,7 @@
   font-weight: 500 !important;
   color: var(--color-muted) !important;
   background: transparent !important;
-  min-height: 36px !important;
+  min-height: var(--tl-tab-h) !important;
   text-transform: none !important;
   cursor: pointer !important;
   transition:
@@ -792,8 +959,9 @@
   border-radius: var(--radius-sm) !important;
   font-weight: 600 !important;
   text-transform: none !important;
-  min-height: 40px !important;
-  padding: 8px 16px !important;
+  font-size: 13px !important;
+  min-height: var(--tl-control-h) !important;
+  padding: 0 14px !important;
 }
 
 [data-skin="timeline"] .rediscover-save-btn:focus-visible {

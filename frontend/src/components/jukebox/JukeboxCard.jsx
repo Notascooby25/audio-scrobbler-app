@@ -345,7 +345,7 @@ export default function JukeboxCard({ token }) {
       : 0;
 
   return (
-    <div style={{ marginBottom: "24px" }}>
+    <div style={{ marginBottom: "24px" }} data-jukebox-view={themeMode}>
       {/* Top Header Bar: Source Selector & Controls */}
       <div
         style={{
@@ -426,6 +426,7 @@ export default function JukeboxCard({ token }) {
           {sourceMode === "1001" && (
             <button
               type="button"
+              className="jukebox-progress-btn"
               onClick={() => setIsChecklistOpen(true)}
               style={{
                 fontSize: "12px",
@@ -451,6 +452,7 @@ export default function JukeboxCard({ token }) {
           {sourceMode === "rough_trade" && (
             <button
               type="button"
+              className="jukebox-progress-btn"
               onClick={() => setIsRoughTradeChecklistOpen(true)}
               style={{
                 fontSize: "12px",
@@ -476,6 +478,7 @@ export default function JukeboxCard({ token }) {
 
           <button
             type="button"
+            className="jukebox-view-toggle"
             onClick={toggleThemeMode}
             style={{
               fontSize: "12px",

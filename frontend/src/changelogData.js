@@ -1,5 +1,15 @@
 export const CHANGELOG = [
   {
+    version: "0.52.1",
+    date: "2026-11-20",
+    changes: [
+      "Slimmer Play buttons: In the Timeline theme, the buttons on the Play page are now one consistent size, a slim 36px on a computer and a roomy 44px on a phone, with matching corners and sentence-case labels. Lucky Dip is no longer a giant blue bar.",
+      "Fixed the phone jukebox buttons: Lucky Dip, Re-roll and Open in Spotify were squashed into one row so their labels broke over several lines. Lucky Dip now has its own row, and the source tabs no longer break their labels.",
+      "Calmer Open in Spotify and Re-roll: Open in Spotify now follows your theme instead of a fixed green, and a greyed-out Re-roll is easier to read.",
+      "The arcade jukebox looks exactly as it did.",
+    ],
+  },
+  {
     version: "0.52.0",
     date: "2026-11-19",
     changes: [

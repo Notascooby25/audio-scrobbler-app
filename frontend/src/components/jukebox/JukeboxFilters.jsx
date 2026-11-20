@@ -104,6 +104,7 @@ export default function JukeboxFilters({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <button
           type="button"
+          className="jukebox-filters-toggle"
           onClick={() => setExpanded((prev) => !prev)}
           style={{
             fontSize: "12px",
@@ -160,6 +161,7 @@ export default function JukeboxFilters({
 
       {expanded && (
         <div
+          className="jukebox-filters-drawer"
           data-testid="jukebox-filters-drawer"
           style={{
             marginTop: "10px",
