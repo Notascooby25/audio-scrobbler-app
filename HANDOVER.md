@@ -509,6 +509,18 @@ the NAS listing.** The live setup has drifted from the repos before.
   MusicBrainz is credited under Top genres (genre data may be CC BY-NC-SA).
   Not done: `sync_saved_albums_for_user` still calls the removed batch artist call
   and logs a warning, so saved-album genres stay empty.
+- **v0.53.5 (2026-11-20): Reports.** Rough Trade Top 100 card beside the 1001 and
+  Live Artist cards (`challenge_rough_trade` on `GET /reports/summary`), a "View all"
+  pop-up on each (`all_albums`, `all_artists` carry the full lists; `recent_albums`
+  and `top_artists` stay the first 5), `showRoughTrade` in the saved widget layout.
+- **v0.53.6 (2026-11-20): Arcade jukebox look.** `RetroJukebox.jsx` was rebuilt to
+  match the original mockup (arch bulbs, record rack of generated covers, filter
+  lamps, boxed counter, Pick from panel, grille) with the result card in
+  `RetroResultCard.jsx` and helpers in `retroCovers.js`. Appearance only: pick logic,
+  props and the Flat view are unchanged. The Sleeve skin restyles every plain button,
+  so the cabinet's own buttons use `!important` on colour, background, border and
+  text-transform. The claw animation from the mockup is not built (owner chose look
+  only). The file is still protected from site-wide restyles.
 - **Dependency updates (2026-11-18, no version bump):** PyJWT 2.15.1 (backend),
   requests 2.34.2 and python-dotenv 1.2.4 (backend and worker). Sign-in tokens
   are unchanged: `backend/app/tests/test_jwt_compat.py` decodes a token minted by
