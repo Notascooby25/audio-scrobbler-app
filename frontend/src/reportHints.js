@@ -23,6 +23,8 @@ export const REPORT_HINTS = {
     "A badge from your habits: Night Owl (lots of late-night plays), Weekend Warrior (mostly weekends), Discovery Voyager (lots of new artists), Catalogue Loyalist (replaying favourites), otherwise Deep Diver.",
   "milestones.1001":
     "Albums from the 1001 Albums You Must Hear Before You Die list that you completed in this period.",
+  "milestones.rough-trade":
+    "Albums from Rough Trade's Albums of the Year lists, 2020 to 2026, that you completed in this period.",
   "live.connection":
     "How many of the artists you played in this period are ones you have seen live, from the gigs you have logged.",
   friends: "Your listening compared with the people you follow.",

@@ -7,8 +7,16 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from backend.app.db import Base
-from backend.app.models import AttendedConcert, ListeningEvent, User, User1001AlbumCompletion
+from backend.app.models import (
+    AttendedConcert,
+    ListeningEvent,
+    User,
+    User1001AlbumCompletion,
+    UserRoughTradeAlbumCompletion,
+)
 from backend.app.services.analytics_service import get_report_summary
+from backend.app.services.catalog_1001_service import get_1001_album_by_id
+from backend.app.services.catalog_rough_trade_service import get_rough_trade_album_by_id
 
 
 @pytest.fixture
@@ -188,3 +196,165 @@ def test_report_1001_milestone_shows_album_titles_not_ids(db_session: Session):
         "The Smiths – The Queen is Dead",
     ]
     assert not any(name.startswith("Album #") for name in names)
+
+
+def _make_user(db: Session, key: str) -> User:
+    user = User(
+        spotify_user_id=f"user_{key}",
+        username=f"{key}_tester",
+        display_name=f"{key} Tester",
+        refresh_token_cipher="cipher",
+        is_active=True,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def _october_summary(db: Session, user: User):
+    return get_report_summary(
+        db=db,
+        user_id=user.id,
+        range_key="custom",
+        start_date="2026-10-01",
+        end_date="2026-10-31",
+        compare_to_previous=False,
+    )
+
+
+def _label(meta: dict) -> str:
+    return f"{meta['artist_name']} – {meta['album_name']}"
+
+
+def _oct(day: int) -> datetime:
+    return datetime(2026, 10, day, 12, 0)
+
+
+def test_report_1001_lists_every_album_newest_first(db_session: Session):
+    user = _make_user(db_session, "all1001")
+    for album_id in range(1, 8):
+        db_session.add(
+            User1001AlbumCompletion(
+                user_id=user.id,
+                album_id=album_id,
+                is_completed=True,
+                source="manual",
+                completed_at=_oct(album_id),
+            )
+        )
+    db_session.commit()
+
+    entry = _october_summary(db_session, user).challenge_1001
+
+    assert entry.completed_in_period == 7
+    assert len(entry.recent_albums) == 5
+    assert len(entry.all_albums) == 7
+    assert entry.all_albums[:5] == entry.recent_albums
+    assert entry.all_albums[0] == _label(get_1001_album_by_id(7))
+    assert entry.all_albums[-1] == _label(get_1001_album_by_id(1))
+
+
+def test_report_rough_trade_milestone(db_session: Session):
+    user = _make_user(db_session, "rt")
+    db_session.add_all(
+        [
+            UserRoughTradeAlbumCompletion(
+                user_id=user.id, album_id=1, is_completed=True, source="manual", completed_at=_oct(10)
+            ),
+            UserRoughTradeAlbumCompletion(
+                user_id=user.id, album_id=2, is_completed=True, source="manual", completed_at=_oct(20)
+            ),
+            # un-marked: must not count or be listed
+            UserRoughTradeAlbumCompletion(
+                user_id=user.id, album_id=3, is_completed=False, source="manual_unmark", completed_at=_oct(15)
+            ),
+            # completed before the period: counts towards the total only
+            UserRoughTradeAlbumCompletion(
+                user_id=user.id,
+                album_id=4,
+                is_completed=True,
+                source="manual",
+                completed_at=datetime(2026, 9, 5, 12, 0),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    entry = _october_summary(db_session, user).challenge_rough_trade
+
+    assert entry.completed_in_period == 2
+    assert entry.total_completed == 3
+    assert entry.all_albums == [
+        _label(get_rough_trade_album_by_id(2)),
+        _label(get_rough_trade_album_by_id(1)),
+    ]
+    assert entry.recent_albums == entry.all_albums
+    assert _label(get_rough_trade_album_by_id(3)) not in entry.all_albums
+
+
+def test_report_rough_trade_unknown_album_id_falls_back(db_session: Session):
+    user = _make_user(db_session, "rtunknown")
+    db_session.add(
+        UserRoughTradeAlbumCompletion(
+            user_id=user.id, album_id=999999, is_completed=True, source="manual", completed_at=_oct(5)
+        )
+    )
+    db_session.commit()
+
+    entry = _october_summary(db_session, user).challenge_rough_trade
+
+    assert entry.all_albums == ["Album #999999"]
+
+
+def test_report_rough_trade_empty_for_new_user(db_session: Session):
+    user = _make_user(db_session, "rtempty")
+
+    entry = _october_summary(db_session, user).challenge_rough_trade
+
+    assert entry.completed_in_period == 0
+    assert entry.total_completed == 0
+    assert entry.recent_albums == []
+    assert entry.all_albums == []
+
+
+def test_report_live_artists_lists_all_and_caps_top_five(db_session: Session):
+    user = _make_user(db_session, "liveall")
+    names = [f"Live Band {letter}" for letter in "ABCDEFG"]
+    for index, name in enumerate(names):
+        db_session.add(
+            AttendedConcert(
+                user_id=user.id,
+                setlist_id=f"live_{index}",
+                artist_name=name,
+                venue_name="Venue",
+                city="London",
+                country="United Kingdom",
+                event_date=datetime(2025, 5, 1, 20, 0),
+                song_count=10,
+            )
+        )
+        for play in range(len(names) - index):  # A=7 plays ... G=1 play
+            db_session.add(
+                ListeningEvent(
+                    user_id=user.id,
+                    track_id=f"t_{index}_{play}",
+                    track_name=f"Song {play}",
+                    artist_name=name,
+                    album_name="Album",
+                    played_at=datetime(2026, 10, 10, 10, play),
+                    duration_ms=200000,
+                    source="spotify",
+                    play_id=f"live_play_{index}_{play}",
+                )
+            )
+    db_session.commit()
+
+    entry = _october_summary(db_session, user).live_artists
+
+    assert entry.attended_artists_played == 7
+    assert len(entry.top_artists) == 5
+    assert len(entry.all_artists) == 7
+    counts = [item.count for item in entry.all_artists]
+    assert counts == sorted(counts, reverse=True)
+    assert entry.top_artists == entry.all_artists[:5]

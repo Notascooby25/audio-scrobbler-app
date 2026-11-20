@@ -8,6 +8,7 @@ import LiveArtistsSeenList from "./LiveArtistsSeenList";
 import Report1001Milestone from "./Report1001Milestone";
 import ReportLiveConnection from "./ReportLiveConnection";
 import ReportMilestones from "./ReportMilestones";
+import ReportRoughTradeMilestone from "./ReportRoughTradeMilestone";
 import ReportRatios from "./ReportRatios";
 import VenueRoyaltyList from "./VenueRoyaltyList";
 import { REPORT_HINTS } from "../../reportHints";
@@ -41,10 +42,12 @@ describe("Reports info hints wiring", () => {
     render(
       <MemoryRouter>
         <Report1001Milestone challenge1001={{}} />
+        <ReportRoughTradeMilestone challengeRoughTrade={{}} />
         <ReportLiveConnection liveArtists={{}} />
       </MemoryRouter>
     );
     expect(aboutButton("1001 Albums Challenge")).toBeInTheDocument();
+    expect(aboutButton("Rough Trade Top 100")).toBeInTheDocument();
     expect(aboutButton("Live Artist Connection")).toBeInTheDocument();
   });
 

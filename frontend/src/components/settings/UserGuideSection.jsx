@@ -336,10 +336,12 @@ export default function UserGuideSection() {
             Loyalist, and Deep Diver).
           </li>
           <li>
-            <strong>1001 Challenge & Live Gig Cross-Over:</strong> Track how many canonical albums
-            you've checked off from the <em>1001 Albums You Must Hear Before You Die</em> challenge
-            in the selected timeframe, and see which artists you've experienced live in concert that
-            you played this period.
+            <strong>1001 Challenge, Rough Trade Top 100 & Live Gig Cross-Over:</strong> Track how
+            many albums you've checked off from the{" "}
+            <em>1001 Albums You Must Hear Before You Die</em> challenge and from Rough Trade's
+            Albums of the Year lists in the selected timeframe, and see which artists you've
+            experienced live in concert that you played this period. Each card shows the first five;
+            click <em>View all</em> to see the full list for the period.
           </li>
           <li>
             <strong>Customisable Report Widgets:</strong> Click <em>⚙ Customise Widgets</em> in the

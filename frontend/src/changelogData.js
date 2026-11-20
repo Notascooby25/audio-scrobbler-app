@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.53.5",
+    date: "2026-11-20",
+    changes: [
+      "New Rough Trade Top 100 card on Reports: it shows how many of the 700 albums you have completed and which ones you finished in the date range you picked. It sits beside the 1001 Albums and Live Artist cards, three across on a computer, stacking on a phone.",
+      "New View all buttons: the 1001 Albums, Rough Trade and Live Artist cards each showed only five items. When there are more, a View all button opens a scrollable list of everything from that period.",
+      "The Rough Trade card can be switched off under Customise Widgets, and the 1001 Albums chips now list your most recently completed albums first.",
+    ],
+  },
+  {
     version: "0.53.4",
     date: "2026-11-20",
     changes: [

@@ -1,11 +1,13 @@
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 import InfoHint from "../InfoHint";
+import ReportViewAll from "./ReportViewAll";
 
 export default function Report1001Milestone({ challenge1001 }) {
   const completedInPeriod = challenge1001?.completed_in_period || 0;
   const totalCompleted = challenge1001?.total_completed || 0;
   const recentAlbums = challenge1001?.recent_albums || [];
+  const allAlbums = challenge1001?.all_albums?.length ? challenge1001.all_albums : recentAlbums;
   const pct = ((totalCompleted / 1001) * 100).toFixed(1);
 
   return (
@@ -46,6 +48,7 @@ export default function Report1001Milestone({ challenge1001 }) {
           </Link>
         )}
       </div>
+      <ReportViewAll title="1001 Albums completed this period" items={allAlbums} />
     </div>
   );
 }
@@ -55,5 +58,6 @@ Report1001Milestone.propTypes = {
     completed_in_period: PropTypes.number,
     total_completed: PropTypes.number,
     recent_albums: PropTypes.arrayOf(PropTypes.string),
+    all_albums: PropTypes.arrayOf(PropTypes.string),
   }),
 };

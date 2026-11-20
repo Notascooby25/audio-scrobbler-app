@@ -7092,7 +7092,7 @@ button.sfm-row-remove:hover:not(:disabled) {
 .report-crossover-grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
   margin-top: 1rem;
 }
 
@@ -7107,8 +7107,10 @@ button.sfm-row-remove:hover:not(:disabled) {
 
 .crossover-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 2px 12px;
   margin-bottom: 6px;
 }
 
@@ -7165,6 +7167,105 @@ button.sfm-row-remove:hover:not(:disabled) {
   color: var(--color-muted);
   font-size: 0.8rem;
   font-style: italic;
+}
+
+.crossover-viewall-btn {
+  /* auto top margin pins the button to the foot of its card, so the three
+     buttons line up across the row whatever the chip count */
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 0.5rem 0;
+  min-height: 44px;
+  background: transparent;
+  border: none;
+  /* the accent, darkened (lightened in dark mode) towards the ink colour so
+     small text clears 4.5:1 on every accent preset */
+  color: color-mix(in srgb, var(--color-primary) 70%, var(--color-ink));
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: none;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.crossover-viewall-btn:hover {
+  text-decoration: underline;
+}
+
+.modal-dialog.report-viewall-dialog {
+  max-width: 560px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+}
+
+.report-viewall-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 0.5px solid var(--color-border);
+}
+
+.modal-dialog.report-viewall-dialog:focus {
+  outline: none;
+}
+
+.report-viewall-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--color-ink);
+}
+
+.report-viewall-close {
+  background: transparent;
+  border: none;
+  color: var(--color-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.report-viewall-close:hover {
+  color: var(--color-ink);
+}
+
+.report-viewall-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  flex: 1 1 auto;
+}
+
+.report-viewall-list:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.report-viewall-item {
+  padding: 0.6rem 0.25rem;
+  border-bottom: 0.5px solid var(--color-border);
+  color: var(--color-ink);
+  font-size: 1rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.report-viewall-item:last-child {
+  border-bottom: none;
 }
 
 .report-ratios-grid {
@@ -7359,7 +7460,6 @@ button.sfm-row-remove:hover:not(:disabled) {
   .report-milestones-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .report-crossover-grid,
   .report-ratios-grid {
     grid-template-columns: minmax(0, 1fr);
   }

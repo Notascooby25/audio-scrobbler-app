@@ -11,6 +11,7 @@ import FriendsComparisonSection from "../components/reports/FriendsComparisonSec
 import GigReportsSection from "../components/reports/GigReportsSection";
 import ReportMilestones from "../components/reports/ReportMilestones";
 import Report1001Milestone from "../components/reports/Report1001Milestone";
+import ReportRoughTradeMilestone from "../components/reports/ReportRoughTradeMilestone";
 import ReportLiveConnection from "../components/reports/ReportLiveConnection";
 import ReportRatios from "../components/reports/ReportRatios";
 import ReportCustomiseModal, {
@@ -339,10 +340,17 @@ export default function ReportsPage() {
 
           {/* 3. Challenge 1001 & Live Concert Cross-Overs */}
           {report &&
-            (widgetPreferences.showChallenge1001 || widgetPreferences.showLiveConnection) && (
+            (widgetPreferences.showChallenge1001 ||
+              widgetPreferences.showRoughTrade ||
+              widgetPreferences.showLiveConnection) && (
               <div className="report-crossover-grid">
                 {widgetPreferences.showChallenge1001 && (
                   <Report1001Milestone challenge1001={report.summary.challenge_1001} />
+                )}
+                {widgetPreferences.showRoughTrade && (
+                  <ReportRoughTradeMilestone
+                    challengeRoughTrade={report.summary.challenge_rough_trade}
+                  />
                 )}
                 {widgetPreferences.showLiveConnection && (
                   <ReportLiveConnection liveArtists={report.summary.live_artists} />

@@ -191,4 +191,54 @@ describe("ReportsPage with Friends Comparison", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.queryByText(/12 Days/i)).not.toBeInTheDocument();
   });
+
+  describe("Rough Trade card", () => {
+    const summaryWithRoughTrade = {
+      period_scrobbles: 100,
+      comparison_percent: 0,
+      listening_minutes: 200,
+      average_per_day: 10,
+      challenge_1001: { completed_in_period: 0, total_completed: 0 },
+      challenge_rough_trade: {
+        completed_in_period: 1,
+        total_completed: 4,
+        recent_albums: ["SAULT – Untitled (Black Is)"],
+        all_albums: ["SAULT – Untitled (Black Is)"],
+      },
+      live_artists: { attended_artists_played: 0, total_scrobbles: 0, top_artists: [] },
+    };
+
+    it("is shown by default next to the other cross-over cards", async () => {
+      const { fetchReportsSummary } = await import("../api");
+      fetchReportsSummary.mockResolvedValue(summaryWithRoughTrade);
+
+      render(
+        <MemoryRouter>
+          <ReportsPage />
+        </MemoryRouter>
+      );
+
+      expect(await screen.findByLabelText("Rough Trade Top 100 Milestone")).toBeInTheDocument();
+      expect(screen.getByLabelText("1001 Albums Challenge Milestone")).toBeInTheDocument();
+      expect(screen.getByLabelText("Live Concert Artist Connection")).toBeInTheDocument();
+    });
+
+    it("is hidden when the saved layout switches it off", async () => {
+      const { fetchReportsSummary } = await import("../api");
+      fetchReportsSummary.mockResolvedValue(summaryWithRoughTrade);
+      localStorage.setItem(
+        "audio_scrobbler_reports_widgets_v1",
+        JSON.stringify({ showRoughTrade: false })
+      );
+
+      render(
+        <MemoryRouter>
+          <ReportsPage />
+        </MemoryRouter>
+      );
+
+      expect(await screen.findByLabelText("1001 Albums Challenge Milestone")).toBeInTheDocument();
+      expect(screen.queryByLabelText("Rough Trade Top 100 Milestone")).not.toBeInTheDocument();
+    });
+  });
 });
