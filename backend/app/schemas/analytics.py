@@ -176,6 +176,16 @@ class Challenge1001Entry(BaseModel):
     completed_in_period: int = 0
     total_completed: int = 0
     recent_albums: list[str] = []
+    all_albums: list[str] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ChallengeRoughTradeEntry(BaseModel):
+    completed_in_period: int = 0
+    total_completed: int = 0
+    recent_albums: list[str] = []
+    all_albums: list[str] = []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -191,6 +201,7 @@ class LiveArtistsEntry(BaseModel):
     attended_artists_played: int = 0
     total_scrobbles: int = 0
     top_artists: list[LiveArtistItem] = []
+    all_artists: list[LiveArtistItem] = []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -221,6 +232,7 @@ class ReportSummaryResponse(BaseModel):
     persona: str = "Discovery Voyager"
     discovery_velocity: DiscoveryVelocityEntry = DiscoveryVelocityEntry()
     challenge_1001: Challenge1001Entry = Challenge1001Entry()
+    challenge_rough_trade: ChallengeRoughTradeEntry = ChallengeRoughTradeEntry()
     live_artists: LiveArtistsEntry = LiveArtistsEntry()
 
 

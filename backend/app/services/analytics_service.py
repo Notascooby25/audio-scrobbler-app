@@ -15,6 +15,7 @@ from ..models import (
     ListeningEvent,
     SavedAlbum,
     User1001AlbumCompletion,
+    UserRoughTradeAlbumCompletion,
 )
 from .gig_reports_service import artist_key
 from ..queries.analytics_queries import (
@@ -41,6 +42,7 @@ from ..queries.analytics_queries import (
 )
 from ..schemas.analytics import (
     Challenge1001Entry,
+    ChallengeRoughTradeEntry,
     ChartEntry,
     ChartResponse,
     DiscoveryVelocityEntry,
@@ -67,6 +69,9 @@ from ..schemas.analytics import (
     TimelineResponse,
 )
 from .catalog_1001_service import get_1001_album_by_id
+from .catalog_rough_trade_service import get_rough_trade_album_by_id
+
+RECENT_ALBUM_CHIPS = 5
 
 
 def _calculate_streaks(db: Session, user_id: int, period_start: datetime, period_end: datetime) -> tuple[int, int]:
@@ -248,45 +253,79 @@ def _calculate_persona(
     return "Deep Diver"
 
 
-def _get_1001_milestones(db: Session, user_id: int, period_start: datetime, period_end: datetime) -> Challenge1001Entry:
-    if not hasattr(db, "query"):
-        return Challenge1001Entry()
+def _album_label(album_meta: dict | None, album_id: int) -> str:
+    """Chip text for a catalogue album: "Artist – Album", or "Album #id" if the id is unknown."""
+    if album_meta and album_meta.get("album_name"):
+        title = str(album_meta["album_name"])
+        artist = str(album_meta.get("artist_name") or "").strip()
+        return f"{artist} – {title}" if artist else title
+    return f"Album #{album_id}"
 
+
+def _album_challenge_progress(
+    db: Session,
+    completion_model: type[User1001AlbumCompletion] | type[UserRoughTradeAlbumCompletion],
+    lookup_album,
+    user_id: int,
+    period_start: datetime,
+    period_end: datetime,
+) -> tuple[int, list[str]]:
+    """Returns (all-time completed count, labels completed in the period, newest first)."""
     total_completed = (
-        db.query(func.count(User1001AlbumCompletion.id))
+        db.query(func.count(completion_model.id))
         .filter(
-            User1001AlbumCompletion.user_id == user_id,
-            User1001AlbumCompletion.is_completed == True,  # noqa: E712
+            completion_model.user_id == user_id,
+            completion_model.is_completed == True,  # noqa: E712
         )
         .scalar()
         or 0
     )
 
     completions_in_period = (
-        db.query(User1001AlbumCompletion.album_id)
+        db.query(completion_model.album_id)
         .filter(
-            User1001AlbumCompletion.user_id == user_id,
-            User1001AlbumCompletion.is_completed == True,  # noqa: E712
-            User1001AlbumCompletion.completed_at >= period_start,
-            User1001AlbumCompletion.completed_at <= period_end,
+            completion_model.user_id == user_id,
+            completion_model.is_completed == True,  # noqa: E712
+            completion_model.completed_at >= period_start,
+            completion_model.completed_at <= period_end,
         )
+        .order_by(completion_model.completed_at.desc(), completion_model.id.desc())
         .all()
     )
 
-    recent_album_names: list[str] = []
-    for row in completions_in_period[:5]:
-        album_meta = get_1001_album_by_id(row.album_id)
-        if album_meta and album_meta.get("album_name"):
-            title = str(album_meta["album_name"])
-            artist = str(album_meta.get("artist_name") or "").strip()
-            recent_album_names.append(f"{artist} – {title}" if artist else title)
-        else:
-            recent_album_names.append(f"Album #{row.album_id}")
+    labels = [_album_label(lookup_album(row.album_id), row.album_id) for row in completions_in_period]
+    return int(total_completed), labels
 
+
+def _get_1001_milestones(db: Session, user_id: int, period_start: datetime, period_end: datetime) -> Challenge1001Entry:
+    if not hasattr(db, "query"):
+        return Challenge1001Entry()
+
+    total_completed, all_albums = _album_challenge_progress(
+        db, User1001AlbumCompletion, get_1001_album_by_id, user_id, period_start, period_end
+    )
     return Challenge1001Entry(
-        completed_in_period=len(completions_in_period),
-        total_completed=int(total_completed),
-        recent_albums=recent_album_names,
+        completed_in_period=len(all_albums),
+        total_completed=total_completed,
+        recent_albums=all_albums[:RECENT_ALBUM_CHIPS],
+        all_albums=all_albums,
+    )
+
+
+def _get_rough_trade_milestones(
+    db: Session, user_id: int, period_start: datetime, period_end: datetime
+) -> ChallengeRoughTradeEntry:
+    if not hasattr(db, "query"):
+        return ChallengeRoughTradeEntry()
+
+    total_completed, all_albums = _album_challenge_progress(
+        db, UserRoughTradeAlbumCompletion, get_rough_trade_album_by_id, user_id, period_start, period_end
+    )
+    return ChallengeRoughTradeEntry(
+        completed_in_period=len(all_albums),
+        total_completed=total_completed,
+        recent_albums=all_albums[:RECENT_ALBUM_CHIPS],
+        all_albums=all_albums,
     )
 
 
@@ -343,6 +382,7 @@ def _get_live_artist_connection(
         attended_artists_played=len(top_matches),
         total_scrobbles=total_live_scrobbles,
         top_artists=top_matches[:5],
+        all_artists=top_matches,
     )
 
 
@@ -818,6 +858,7 @@ def get_report_summary(
         new_artists_percent=discovery_pct,
     )
     challenge_1001 = _get_1001_milestones(db, user_id, period_start, period_end)
+    challenge_rough_trade = _get_rough_trade_milestones(db, user_id, period_start, period_end)
     live_artists = _get_live_artist_connection(db, user_id, period_start, period_end)
 
     return ReportSummaryResponse(
@@ -846,6 +887,7 @@ def get_report_summary(
         persona=persona,
         discovery_velocity=discovery_velocity,
         challenge_1001=challenge_1001,
+        challenge_rough_trade=challenge_rough_trade,
         live_artists=live_artists,
     )
 
