@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.53.2",
+    date: "2026-11-20",
+    changes: [
+      "Fixed the squashed Play buttons on a phone in the Sleeve theme: Lucky Dip, Re-roll and Open in Spotify were crammed into one row so their labels broke over several lines. Lucky Dip now has its own full-width row, and Re-roll and Open in Spotify sit side by side beneath it.",
+      "Tidier source tabs on a phone in Sleeve: My Library and 1001 Albums share the first row with Rough Trade across the second, so no tab label breaks over two lines.",
+      "Nothing changes on a computer, in the other themes, or in the arcade jukebox.",
+    ],
+  },
+  {
     version: "0.53.1",
     date: "2026-11-20",
     changes: [
