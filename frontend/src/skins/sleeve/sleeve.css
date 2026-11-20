@@ -3300,3 +3300,44 @@
     padding: 4px !important;
   }
 }
+
+/* Play page jukebox on a phone: Lucky Dip gets its own full-width row and the other two
+   share the next, so no label has to break over several lines. The source tabs sit two
+   on the first row with Rough Trade across the second. The arcade view is untouched. */
+@media (max-width: 640px) {
+  [data-skin="sleeve"] .jukebox-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  [data-skin="sleeve"] .jukebox-actions .jukebox-action-primary {
+    grid-column: 1 / -1;
+  }
+
+  [data-skin="sleeve"] .jukebox-actions .jukebox-action-primary,
+  [data-skin="sleeve"] .jukebox-actions .jukebox-action-reroll,
+  [data-skin="sleeve"] .jukebox-actions .jukebox-action-spotify {
+    align-items: center;
+    display: inline-flex !important;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 0;
+    padding: 0 12px !important;
+    white-space: nowrap;
+  }
+
+  [data-skin="sleeve"] [data-jukebox-view="flat"] .jukebox-source-tabs {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  [data-skin="sleeve"] [data-jukebox-view="flat"] .jukebox-source-tab-btn {
+    min-height: 40px;
+    white-space: nowrap;
+  }
+
+  [data-skin="sleeve"] [data-jukebox-view="flat"] .jukebox-source-tab-btn:last-child {
+    grid-column: 1 / -1;
+  }
+}
