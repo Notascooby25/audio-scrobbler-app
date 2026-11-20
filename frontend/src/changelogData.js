@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.53.3",
+    date: "2026-11-20",
+    changes: [
+      "Fixed the Delete by Import Batch list in Settings: when a Spotify batch and a YouTube batch were created in the same hour, picking the YouTube one showed the Spotify one instead, so it could not be selected.",
+      "Safer batch deletes: deleting an import batch now removes only the source you picked. Before, it would also have removed any other source imported in the same hour. The confirmation message now names the source.",
+    ],
+  },
+  {
     version: "0.53.2",
     date: "2026-11-20",
     changes: [
