@@ -217,8 +217,7 @@ describe("JukeboxCard", () => {
       { name: /Mark .* as (?:played|unplayed)/i },
       { timeout: 3000 }
     );
-    const initiallyCompleted =
-      actionBtn.textContent.includes("Played") && actionBtn.textContent.includes("✓");
+    const initiallyCompleted = actionBtn.textContent.includes("Played") && actionBtn.textContent.includes("✓");
 
     // Click the toggle button
     fireEvent.click(actionBtn);
