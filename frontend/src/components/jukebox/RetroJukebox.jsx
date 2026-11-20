@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import styles from "./RetroJukebox.module.css";
 import JukeboxFilters from "./JukeboxFilters";
+import RetroArtwork from "./RetroArtwork";
 import RetroResultCard from "./RetroResultCard";
 import { buildRackTiles, coverBackground, coverInitials } from "./retroCovers";
 
@@ -99,7 +100,9 @@ export default function RetroJukebox({
               title={
                 tile.album ? `${tile.album.artist_name} – ${tile.album.album_name}` : undefined
               }
-            />
+            >
+              <RetroArtwork src={tile.album?.artwork_url} className={styles.tileImage} />
+            </div>
           ))}
         </div>
         <div className={styles.turntable} aria-hidden="true">
@@ -107,9 +110,11 @@ export default function RetroJukebox({
             <div className={`${styles.vinyl} ${spinning ? styles.vinylSpinning : ""}`}>
               <div
                 className={styles.vinylLabel}
+                data-testid="vinyl-label"
                 style={currentPick ? { background: coverBackground(currentPick) } : undefined}
               >
                 <span>{currentPick ? coverInitials(currentPick.album_name) : "LP"}</span>
+                <RetroArtwork src={currentPick?.artwork_url} className={styles.vinylImage} />
               </div>
             </div>
           </div>
