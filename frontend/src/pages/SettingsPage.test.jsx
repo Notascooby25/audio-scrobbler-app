@@ -387,6 +387,49 @@ describe("SettingsPage", () => {
     );
   });
 
+  it("lets you pick the second batch when two sources share the same import hour, and deletes only that source", async () => {
+    fetchImportBatches.mockResolvedValue({
+      batches: [
+        { batch_time: "2026-11-20T18:00:00", source: "spotify", count: 8 },
+        { batch_time: "2026-11-20T18:00:00", source: "youtube", count: 35570 },
+        { batch_time: "2026-11-20T17:00:00", source: "spotify", count: 18 },
+      ],
+    });
+    advancedDeleteImports.mockResolvedValue({ deleted: 35570 });
+
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(await screen.findByRole("tab", { name: "Danger Zone" }));
+    fireEvent.click(screen.getByLabelText("By Import Batch"));
+
+    const select = await screen.findByLabelText(/Select Batch/);
+    await waitFor(() => expect(select.options.length).toBe(4));
+    const youtubeOption = Array.from(select.options).find((o) => /^youtube/.test(o.textContent));
+    fireEvent.change(select, { target: { value: youtubeOption.value } });
+
+    // The dropdown must show the YouTube row, not the Spotify row above it.
+    expect(select.options[select.selectedIndex].textContent).toMatch(/^youtube - 35570/);
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete Scrobbles" }));
+    expect(await screen.findByText(/\(35570 scrobbles\)/)).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText("DELETE"), { target: { value: "DELETE" } });
+    fireEvent.click(screen.getAllByRole("button", { name: "Delete Scrobbles" })[1]);
+
+    await waitFor(() =>
+      expect(advancedDeleteImports).toHaveBeenCalledWith({
+        token: "token",
+        source: "youtube",
+        startDate: null,
+        endDate: null,
+        batchTime: "2026-11-20T18:00:00",
+      })
+    );
+  });
+
   it("saves the strip remaster tags toggle and poll interval from the Scrobble tab and displays Scope Creep", async () => {
     render(
       <MemoryRouter>

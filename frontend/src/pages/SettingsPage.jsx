@@ -45,6 +45,10 @@ const SETTINGS_TABS = [
   ["danger", "Danger Zone"],
 ];
 
+// A batch is one source in one import hour. Two sources can share an hour, so
+// the dropdown value must include the source or the second one can't be picked.
+const batchKey = (batch) => `${batch.source}|${batch.batch_time}`;
+
 const POLL_INTERVAL_OPTIONS = [5, 10, 15, 30, 60];
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50, 100, 250];
 
@@ -297,13 +301,17 @@ export default function SettingsPage() {
       }
       desc = `You are about to permanently delete all scrobbles between ${deleteStartDate || "the beginning"} and ${deleteEndDate || "today"}.`;
     } else if (deleteMode === "batch") {
-      batchTime = deleteBatch;
-      if (!batchTime) {
+      const matchedBatch = importBatches.find((b) => batchKey(b) === deleteBatch);
+      if (!matchedBatch) {
         setAdvancedDeleteError("Please select a batch.");
         return;
       }
-      const matchedBatch = importBatches.find((b) => b.batch_time === batchTime);
-      desc = `You are about to permanently delete scrobbles from the import batch on ${new Date(batchTime).toLocaleString()}${matchedBatch ? ` (${matchedBatch.count} scrobbles)` : ""}.`;
+      // A batch is one source in one import hour, so send both to the server.
+      // Without the source, a batch delete would also remove every other
+      // source imported in the same hour.
+      source = matchedBatch.source;
+      batchTime = matchedBatch.batch_time;
+      desc = `You are about to permanently delete ${matchedBatch.source} scrobbles from the import batch on ${new Date(batchTime).toLocaleString()} (${matchedBatch.count} scrobbles).`;
     }
 
     setDeletePendingParams({ source, startDate, endDate, batchTime });
@@ -1258,7 +1266,7 @@ export default function SettingsPage() {
                 >
                   <option value="">-- Select a batch --</option>
                   {importBatches.map((b) => (
-                    <option key={b.batch_time + b.source} value={b.batch_time}>
+                    <option key={batchKey(b)} value={batchKey(b)}>
                       {b.source} - {b.count} scrobbles ({new Date(b.batch_time).toLocaleString()})
                     </option>
                   ))}
