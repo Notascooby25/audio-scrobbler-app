@@ -516,8 +516,10 @@ the NAS listing.** The live setup has drifted from the repos before.
 - **v0.53.6 (2026-11-20): Arcade jukebox look.** `RetroJukebox.jsx` was rebuilt to
   match the original mockup (arch bulbs, record rack, filter lamps, boxed counter,
   Pick from panel, grille; v0.53.7 put real album artwork on the rack tiles and the
-  turntable label, via `RetroArtwork.jsx`, with the generated coloured cover from
-  `retroCovers.js` as the fallback) with the result card in
+  turntable label, via `RetroArtwork.jsx`, which asks Spotify, Deezer and Apple for
+  a small copy of each cover (`thumbnailUrl` in `retroCovers.js`; about 100 KB for a
+  whole rack instead of several MB), then the full image, then the generated
+  coloured cover) with the result card in
   `RetroResultCard.jsx` and helpers in `retroCovers.js`. Appearance only: pick logic,
   props and the Flat view are unchanged. The Sleeve skin restyles every plain button,
   so the cabinet's own buttons use `!important` on colour, background, border and
