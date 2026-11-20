@@ -117,6 +117,95 @@ describe("RetroJukebox", () => {
     });
   });
 
+  describe("album artwork", () => {
+    const withArt = (id) => album(id, { artwork_url: `https://example.test/cover-${id}.jpg` });
+    const tileImage = (tile) => tile.querySelector("img");
+
+    it("shows the album artwork on a rack tile when there is some", () => {
+      render(
+        <RetroJukebox
+          {...defaultProps}
+          filteredAlbums={[withArt(1), album(2)]}
+          pool={[]}
+          currentPick={null}
+        />
+      );
+      const [first, second, third] = tiles();
+      expect(tileImage(first)).toHaveAttribute("src", "https://example.test/cover-1.jpg");
+      expect(tileImage(first)).toHaveAttribute("loading", "lazy");
+      expect(tileImage(second)).toBeNull();
+      expect(third.getAttribute("data-state")).toBe("empty");
+      expect(tileImage(third)).toBeNull();
+    });
+
+    it("drops back to the coloured square when an image fails to load", () => {
+      render(
+        <RetroJukebox
+          {...defaultProps}
+          filteredAlbums={[withArt(1)]}
+          pool={[]}
+          currentPick={null}
+        />
+      );
+      const [first] = tiles();
+      fireEvent.error(tileImage(first));
+      expect(tileImage(first)).toBeNull();
+      expect(first.style.background).toContain("gradient");
+    });
+
+    it("keeps artwork on tiles that are half-dimmed or outlined", () => {
+      const all = [withArt(1), withArt(2)];
+      render(
+        <RetroJukebox {...defaultProps} filteredAlbums={all} pool={[all[0]]} currentPick={all[0]} />
+      );
+      const [current, outpool] = tiles();
+      expect(current.getAttribute("data-state")).toBe("current");
+      expect(tileImage(current)).not.toBeNull();
+      expect(outpool.getAttribute("data-state")).toBe("outpool");
+      expect(tileImage(outpool)).not.toBeNull();
+    });
+
+    it("puts the pick's artwork on the turntable label, with initials as the fallback", () => {
+      const pick = withArt(1);
+      render(
+        <RetroJukebox {...defaultProps} filteredAlbums={[pick]} pool={[pick]} currentPick={pick} />
+      );
+      const label = screen.getByTestId("vinyl-label");
+      expect(label.querySelector("img")).toHaveAttribute("src", pick.artwork_url);
+
+      fireEvent.error(label.querySelector("img"));
+      expect(label.querySelector("img")).toBeNull();
+      expect(label).toHaveTextContent("A1");
+    });
+
+    it("shows initials on the turntable label when the pick has no artwork, and LP with no pick", () => {
+      const { rerender } = render(<RetroJukebox {...defaultProps} currentPick={album(5)} />);
+      expect(screen.getByTestId("vinyl-label")).toHaveTextContent("A5");
+      expect(screen.getByTestId("vinyl-label").querySelector("img")).toBeNull();
+
+      rerender(<RetroJukebox {...defaultProps} currentPick={null} />);
+      expect(screen.getByTestId("vinyl-label")).toHaveTextContent("LP");
+    });
+
+    it("starts with a fresh image when the pick changes after a failed load", () => {
+      const first = withArt(1);
+      const second = withArt(2);
+      const { rerender } = render(
+        <RetroJukebox {...defaultProps} filteredAlbums={[first, second]} currentPick={first} />
+      );
+      fireEvent.error(screen.getByTestId("vinyl-label").querySelector("img"));
+      expect(screen.getByTestId("vinyl-label").querySelector("img")).toBeNull();
+
+      rerender(
+        <RetroJukebox {...defaultProps} filteredAlbums={[first, second]} currentPick={second} />
+      );
+      expect(screen.getByTestId("vinyl-label").querySelector("img")).toHaveAttribute(
+        "src",
+        second.artwork_url
+      );
+    });
+  });
+
   describe("counter", () => {
     it("says record for one and records for the rest", () => {
       const { rerender } = render(<RetroJukebox {...defaultProps} />);

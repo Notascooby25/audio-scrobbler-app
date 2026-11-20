@@ -514,8 +514,10 @@ the NAS listing.** The live setup has drifted from the repos before.
   pop-up on each (`all_albums`, `all_artists` carry the full lists; `recent_albums`
   and `top_artists` stay the first 5), `showRoughTrade` in the saved widget layout.
 - **v0.53.6 (2026-11-20): Arcade jukebox look.** `RetroJukebox.jsx` was rebuilt to
-  match the original mockup (arch bulbs, record rack of generated covers, filter
-  lamps, boxed counter, Pick from panel, grille) with the result card in
+  match the original mockup (arch bulbs, record rack, filter lamps, boxed counter,
+  Pick from panel, grille; v0.53.7 put real album artwork on the rack tiles and the
+  turntable label, via `RetroArtwork.jsx`, with the generated coloured cover from
+  `retroCovers.js` as the fallback) with the result card in
   `RetroResultCard.jsx` and helpers in `retroCovers.js`. Appearance only: pick logic,
   props and the Flat view are unchanged. The Sleeve skin restyles every plain button,
   so the cabinet's own buttons use `!important` on colour, background, border and

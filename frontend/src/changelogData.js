@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.53.7",
+    date: "2026-11-20",
+    changes: [
+      "The Arcade view's record rack now shows the real album artwork instead of coloured squares. Albums with no artwork, or whose image will not load, keep a coloured square.",
+      "The little label on the turntable's record shows the album artwork for your current pick too.",
+    ],
+  },
+  {
     version: "0.53.6",
     date: "2026-11-20",
     changes: [
