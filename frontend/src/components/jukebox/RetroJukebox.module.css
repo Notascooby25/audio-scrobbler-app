@@ -546,14 +546,6 @@
   font-size: 0.85rem;
 }
 
-.card {
-  background: #fffdf8;
-  border: 3px solid #24212b;
-  border-radius: 16px;
-  padding: 16px;
-  margin-top: 14px;
-}
-
 .grille {
   height: 100px;
   margin-top: 14px;
