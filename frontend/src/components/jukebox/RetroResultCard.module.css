@@ -39,6 +39,7 @@
   place-items: center;
   border: 2px solid #24212b;
   border-radius: 8px;
+  background: #8d81a8; /* shown until there is a pick; a pick sets its own cover inline */
   color: #ffffff;
   font-size: 2rem;
   font-weight: 800;
@@ -78,12 +79,20 @@
   display: grid;
   gap: 4px;
   margin: 0;
+  padding: 0;
+  border-top: 0;
   font-size: 0.88rem;
 }
 
 .details div {
   display: flex;
+  justify-content: flex-start;
   gap: 6px;
+}
+
+.details dt,
+.details dd {
+  font-size: 0.88rem;
 }
 
 .details dt {
@@ -93,6 +102,7 @@
 
 .details dd {
   margin: 0;
+  color: #24212b;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
@@ -101,19 +111,19 @@
   margin-top: 10px;
   min-height: 36px;
   padding: 4px 12px;
-  border: 2px solid #394651;
+  border: 2px solid #394651 !important;
   border-radius: 999px;
-  background: #ffffff;
-  color: #394651;
+  background: #ffffff !important;
+  color: #394651 !important;
   font-size: 0.8rem;
   font-weight: 700;
-  text-transform: none;
+  text-transform: none !important;
   cursor: pointer;
 }
 
 .playedOn {
-  background: #3cc8b4;
-  color: #24212b;
+  background: #3cc8b4 !important;
+  color: #24212b !important;
 }
 
 .actions {
@@ -130,18 +140,18 @@
   justify-content: center;
   min-height: 44px;
   padding: 10px 14px;
-  border: 2px solid #24212b;
+  border: 2px solid #24212b !important;
   border-radius: 999px;
-  color: #24212b;
+  color: #24212b !important;
   font-size: 0.9rem;
   font-weight: 700;
   text-decoration: none;
-  text-transform: none;
+  text-transform: none !important;
   cursor: pointer;
 }
 
 .rerollBtn {
-  background: #ffffff;
+  background: #ffffff !important;
 }
 
 .rerollBtn:disabled {
@@ -150,7 +160,7 @@
 }
 
 .spotifyBtn {
-  background: #3cc8b4;
+  background: #3cc8b4 !important;
 }
 
 .rerollBtn:focus-visible,

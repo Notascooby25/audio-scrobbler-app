@@ -113,6 +113,28 @@ describe("RetroResultCard", () => {
       expect(screen.getByText("Rough Trade 2024")).toBeInTheDocument();
     });
 
+    it("works out the decade from the year when a 1001 album has none", () => {
+      render(
+        <RetroResultCard
+          {...baseProps}
+          sourceMode="1001"
+          currentPick={{ ...pick, release_year: 2014, decade: undefined }}
+        />
+      );
+      expect(screen.getByText("2010s")).toBeInTheDocument();
+    });
+
+    it("says Unknown for the decade only when there is no year either", () => {
+      render(
+        <RetroResultCard
+          {...baseProps}
+          sourceMode="1001"
+          currentPick={{ ...pick, release_year: undefined, year: undefined, decade: undefined }}
+        />
+      );
+      expect(screen.getByText("Unknown", { selector: "dd" })).toBeInTheDocument();
+    });
+
     it("wraps a very long title inside the card", () => {
       const longTitle =
         "The Rise and Fall of Ziggy Stardust and the Spiders from Mars and Other Long Things";

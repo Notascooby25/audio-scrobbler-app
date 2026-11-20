@@ -77,7 +77,8 @@ export default function RetroResultCard({
   if (currentPick) {
     if (year) details.push(["Year", String(year)]);
     if (sourceMode === "1001") {
-      details.push(["Decade", currentPick.decade ? `${currentPick.decade}s` : "Unknown"]);
+      const decade = currentPick.decade || (year ? Math.floor(Number(year) / 10) * 10 : null);
+      details.push(["Decade", decade ? `${decade}s` : "Unknown"]);
       if (currentPick.genres?.length) details.push(["Genres", currentPick.genres.join(", ")]);
     } else if (sourceMode === "rough_trade") {
       if (currentPick.rank) details.push(["Rank", `#${currentPick.rank}`]);
