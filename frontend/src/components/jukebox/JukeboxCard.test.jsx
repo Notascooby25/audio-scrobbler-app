@@ -109,6 +109,25 @@ describe("JukeboxCard", () => {
     expect(screen.getByRole("button", { name: /Flat View/i })).toBeInTheDocument();
   });
 
+  it("marks the flat view so skins can restyle its controls without touching the arcade cabinet", async () => {
+    const { container } = render(<JukeboxCard token="mock-token" />);
+    expect(await screen.findByText(/Album Jukebox/i)).toBeInTheDocument();
+
+    const root = container.firstElementChild;
+    expect(root).toHaveAttribute("data-jukebox-view", "flat");
+    expect(screen.getByRole("button", { name: /Arcade View/i })).toHaveClass("jukebox-view-toggle");
+    expect(screen.getByRole("button", { name: /Filters/i })).toHaveClass("jukebox-filters-toggle");
+    expect(screen.getByRole("button", { name: /Lucky Dip/i }).parentElement).toHaveClass(
+      "jukebox-actions"
+    );
+    expect(screen.getByRole("link", { name: /Open in Spotify/i })).toHaveClass(
+      "jukebox-action-spotify"
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Arcade View/i }));
+    expect(container.firstElementChild).toHaveAttribute("data-jukebox-view", "arcade");
+  });
+
   it("switches between My Library and 1001 Albums modes, showing progress and confirmation prompt", async () => {
     render(<JukeboxCard token="mock-token" />);
     expect(await screen.findByText(/Album Jukebox/i)).toBeInTheDocument();
@@ -198,7 +217,8 @@ describe("JukeboxCard", () => {
       { name: /Mark .* as (?:played|unplayed)/i },
       { timeout: 3000 }
     );
-    const initiallyCompleted = actionBtn.textContent.includes("Played") && actionBtn.textContent.includes("✓");
+    const initiallyCompleted =
+      actionBtn.textContent.includes("Played") && actionBtn.textContent.includes("✓");
 
     // Click the toggle button
     fireEvent.click(actionBtn);

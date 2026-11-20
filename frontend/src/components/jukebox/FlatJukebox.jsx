@@ -252,6 +252,7 @@ export default function FlatJukebox({
             {sourceMode === "1001" && currentPick && (
               <button
                 type="button"
+                className="jukebox-mark-played"
                 onClick={() =>
                   onToggle1001Completed &&
                   onToggle1001Completed(currentPick.id, !currentPick.is_completed)
@@ -280,6 +281,7 @@ export default function FlatJukebox({
             {sourceMode === "rough_trade" && currentPick && (
               <button
                 type="button"
+                className="jukebox-mark-played"
                 onClick={() =>
                   onToggleRoughTradeCompleted &&
                   onToggleRoughTradeCompleted(currentPick.id, !currentPick.is_completed)
@@ -358,7 +360,7 @@ export default function FlatJukebox({
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+      <div className="jukebox-actions" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
         <button
           type="button"
           className="jukebox-action-primary"
@@ -400,6 +402,7 @@ export default function FlatJukebox({
           Re-roll ({rollsLeft} left)
         </button>
         <a
+          className="jukebox-action-spotify"
           href={spotifyLink}
           target="_blank"
           rel="noopener noreferrer"
