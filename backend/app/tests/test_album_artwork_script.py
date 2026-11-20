@@ -59,6 +59,67 @@ def test_artists_match_rejects_other_artists():
     assert not script.artists_match("", "Someone")
 
 
+@pytest.mark.parametrize(
+    "wanted, returned",
+    [
+        ("Black Sabbath Volume 4", "Black Sabbath Vol. 4"),
+        ("No.1 Record", "#1 Record"),
+        ("Bryter Later", "Bryter Layter"),
+        ("Rumors", "Rumours"),
+        ("Hejeira", "Hejira"),
+        ("Bros Gonna Work It Out", "Brothers Gonna Work It Out"),
+    ],
+)
+def test_careful_pass_accepts_small_wording_differences(wanted, returned):
+    assert script.titles_close(wanted, returned)
+
+
+@pytest.mark.parametrize(
+    "wanted, returned",
+    [
+        ("Led Zeppelin IV", "Led Zeppelin II"),
+        ("Volume 4", "Volume 5"),
+        ("Dark Side of the Moon", "Dark Side of the Moon Live"),
+        ("Blue", "Blues"),
+        ("Rumours", "Rumours Tribute"),
+        ("Abbey Road", "Let It Be"),
+        ("", "Anything"),
+    ],
+)
+def test_careful_pass_still_rejects_different_albums(wanted, returned):
+    assert not script.titles_close(wanted, returned)
+
+
+def test_careful_pass_allows_a_small_artist_typo_but_not_another_artist():
+    assert script.artists_close("Cindy Lauper", "Cyndi Lauper")
+    assert script.artists_close("Finlay Quaye", "Finley Quaye")
+    assert not script.artists_close("Wet Leg", "Wet Dream")
+    assert not script.artists_close("Oasis", "Oasis Tribute Band")
+    assert not script.artists_close("Muse", "Moose")  # too short to allow a spelling slip
+
+
+def test_fuzzy_cover_needs_both_artist_and_title_to_be_close(monkeypatch):
+    monkeypatch.setattr(script.time, "sleep", lambda _s: None)
+    deezer = {
+        "data": [
+            {"id": 1, "title": "Other Album", "artist": {"name": "Nick Drake"}, "cover_medium": "https://d/1.jpg"},
+            {"id": 2, "title": "Bryter Layter", "artist": {"name": "Somebody Else"}, "cover_medium": "https://d/2.jpg"},
+            {"id": 3, "title": "Bryter Layter", "artist": {"name": "Nick Drake"}, "cover_medium": "https://d/3.jpg"},
+        ]
+    }
+    monkeypatch.setattr(script, "_get_json", lambda url: deezer)
+    result = script.fuzzy_cover("Nick Drake", "Bryter Later", 0)
+    assert result["url"] == "https://d/3.jpg"
+    assert result["fuzzy"] is True
+    assert result["matched"] == "Nick Drake - Bryter Layter"
+
+
+def test_fuzzy_cover_records_a_clean_miss(monkeypatch):
+    monkeypatch.setattr(script.time, "sleep", lambda _s: None)
+    monkeypatch.setattr(script, "_get_json", lambda url: {"data": [], "results": []})
+    assert script.fuzzy_cover("A", "B", 0) == {"url": "", "source": "", "fuzzy_done": True}
+
+
 def test_find_cover_prefers_deezer_then_falls_back_to_itunes(monkeypatch):
     monkeypatch.setattr(script.time, "sleep", lambda _s: None)
     monkeypatch.setattr(script, "deezer_cover", lambda a, b: ("https://deezer/c.jpg", ""))

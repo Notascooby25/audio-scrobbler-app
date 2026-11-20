@@ -18,6 +18,7 @@ resumes where it stopped. A report is written to `<work-dir>/album-artwork-repor
 from __future__ import annotations
 
 import argparse
+import difflib
 import json
 import re
 import sys
@@ -92,6 +93,123 @@ def artists_match(wanted: str, returned: str) -> bool:
 def titles_match(wanted: str, returned: str) -> bool:
     target = normalise_title(wanted)
     return bool(target) and target == normalise_title(returned)
+
+
+# Careful second pass: for albums the strict pass missed. Titles may differ in small ways
+# (Vol./Volume, No./#, a typo), but the artist must still be right and any number in the
+# title must be identical, so "Led Zeppelin II" can never pass for "Led Zeppelin IV".
+_ROMAN_NUMERALS = {"i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x"}
+_WORD_FIXES = {"volume": "vol", "vols": "vol", "number": "no", "pt": "part", "bros": "brothers", "versus": "vs"}
+# Words that mean a different release (a live album, a tribute...) when only the result has them
+_DIFFERENT_RELEASE_WORDS = {
+    "live",
+    "remix",
+    "remixes",
+    "tribute",
+    "karaoke",
+    "instrumental",
+    "instrumentals",
+    "sessions",
+    "demo",
+    "demos",
+    "acoustic",
+    "covers",
+    "rarities",
+    "outtakes",
+    "unplugged",
+    "dub",
+    "versions",
+}
+FUZZY_TITLE_SIMILARITY = 0.88
+FUZZY_ARTIST_SIMILARITY = 0.8
+_FUZZY_MIN_LENGTH = 6  # shorter titles must match exactly, or "Blue" would match "Blues"
+
+
+def loose_words(title: str) -> list[str]:
+    text = _EDITION_BRACKETS.sub("", title or "")
+    text = _EDITION_SUFFIX.sub("", text)
+    text = _ascii_fold(text).lower().replace("&", " and ").replace("#", " no ")
+    words = re.findall(r"[a-z0-9]+", text)
+    if words and words[0] == "the":
+        words = words[1:]
+    return [_WORD_FIXES.get(word, word) for word in words]
+
+
+def _number_words(words: list[str]) -> list[str]:
+    return sorted(word for word in words if word.isdigit() or word in _ROMAN_NUMERALS)
+
+
+def _similar(a: str, b: str) -> float:
+    return difflib.SequenceMatcher(None, a, b).ratio()
+
+
+def titles_close(wanted: str, returned: str) -> bool:
+    """Same album with small wording or spelling differences."""
+    a, b = loose_words(wanted), loose_words(returned)
+    if not a or not b or _number_words(a) != _number_words(b):
+        return False
+    if (set(b) - set(a)) & _DIFFERENT_RELEASE_WORDS:
+        return False
+    joined_a, joined_b = "".join(a), "".join(b)
+    if joined_a == joined_b:
+        return True
+    if min(len(joined_a), len(joined_b)) < _FUZZY_MIN_LENGTH:
+        return False
+    return _similar(joined_a, joined_b) >= FUZZY_TITLE_SIMILARITY
+
+
+def artists_close(wanted: str, returned: str) -> bool:
+    """Same artist, allowing a small spelling slip in either name."""
+    if artists_match(wanted, returned):
+        return True
+    target = normalise_artist(wanted)
+    if len(target) < 6:
+        return False
+    parts = re.split(r"\s*(?:,|&|/| and | feat\.? | ft\.? | with )\s*", returned or "", flags=re.IGNORECASE)
+    return any(_similar(target, normalise_artist(part)) >= FUZZY_ARTIST_SIMILARITY for part in [returned, *parts])
+
+
+def _dedupe(items: list[dict[str, Any]], key: str) -> list[dict[str, Any]]:
+    seen: set[Any] = set()
+    unique = []
+    for item in items:
+        if item.get(key) not in seen:
+            seen.add(item.get(key))
+            unique.append(item)
+    return unique
+
+
+def fuzzy_cover(artist: str, album: str, pause: float) -> dict[str, Any]:
+    """Look an album up allowing small title differences. Raises LookupFailed on network trouble."""
+    deezer: list[dict[str, Any]] = []
+    for query in (f"{artist} {album}", artist):
+        data = _get_json(f"https://api.deezer.com/search/album?q={urllib.parse.quote(query)}&limit=25")
+        deezer += [r for r in (data.get("data", []) if isinstance(data, dict) else []) if isinstance(r, dict)]
+        time.sleep(pause)
+    for item in _dedupe(deezer, "id"):
+        name = str((item.get("artist") or {}).get("name", ""))
+        title = str(item.get("title", ""))
+        cover = item.get("cover_medium")
+        if artists_close(artist, name) and titles_close(album, title) and _https(cover) and "/cover//" not in cover:
+            return {"url": cover, "source": "deezer", "fuzzy": True, "matched": f"{name} - {title}"}
+
+    itunes: list[dict[str, Any]] = []
+    for term in (f"{artist} {album}", artist):
+        data = _get_json(f"https://itunes.apple.com/search?term={urllib.parse.quote(term)}&entity=album&limit=25")
+        itunes += [r for r in (data.get("results", []) if isinstance(data, dict) else []) if isinstance(r, dict)]
+        time.sleep(pause)
+    for item in _dedupe(itunes, "collectionId"):
+        name = str(item.get("artistName", ""))
+        title = str(item.get("collectionName", ""))
+        art = item.get("artworkUrl100")
+        if artists_close(artist, name) and titles_close(album, title) and _https(art):
+            return {
+                "url": art.replace("100x100bb", "300x300bb"),
+                "source": "itunes",
+                "fuzzy": True,
+                "matched": f"{name} - {title}",
+            }
+    return {"url": "", "source": "", "fuzzy_done": True}
 
 
 def _get_json(url: str, attempts: int = 3) -> Any:
@@ -200,6 +318,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--apply", action="store_true", help="Write the links into the data files")
     parser.add_argument("--pause", type=float, default=0.5, help="Seconds between outside requests")
     parser.add_argument("--limit", type=int, default=0, help="Only look up this many albums (testing)")
+    parser.add_argument("--fuzzy", action="store_true", help="Second, careful pass over albums the first pass missed")
     args = parser.parse_args(argv)
 
     work_dir = Path(args.work_dir).resolve()
@@ -230,6 +349,32 @@ def main(argv: list[str] | None = None) -> int:
             if looked_up % 50 == 0:
                 print(f"{looked_up} looked up this run...", flush=True)
             time.sleep(args.pause)
+
+    review: list[str] = []
+    if args.fuzzy:
+        for list_key, path in DATA_FILES.items():
+            for album in load_albums(path):
+                key = f"{list_key}:{album['id']}"
+                result = state.get(key)
+                if result is None or result["url"] or result.get("fuzzy_done"):
+                    continue
+                try:
+                    state[key] = fuzzy_cover(album["artist_name"], album["album_name"], args.pause)
+                except LookupFailed as exc:
+                    errors += 1
+                    print(f"{key}: careful lookup failed ({exc}); it will be retried next run", file=sys.stderr)
+                    continue
+                state_path.write_text(json.dumps(state, indent=1, ensure_ascii=False))
+        for list_key, path in DATA_FILES.items():
+            for album in load_albums(path):
+                result = state.get(f"{list_key}:{album['id']}") or {}
+                if result.get("fuzzy"):
+                    review.append(
+                        f"{list_key}:{album['id']}  WANTED {album['artist_name']} - {album['album_name']}\n"
+                        f"      GOT    {result['matched']}  [{result['source']}]  {result['url']}"
+                    )
+        (work_dir / "album-artwork-fuzzy-review.txt").write_text("\n".join(review) + "\n", encoding="utf-8")
+        print(f"Careful pass matched {len(review)} more albums: {work_dir / 'album-artwork-fuzzy-review.txt'}")
 
     report: list[str] = []
     totals: dict[str, dict[str, int]] = {}
