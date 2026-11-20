@@ -276,8 +276,8 @@ def _get_1001_milestones(db: Session, user_id: int, period_start: datetime, peri
     recent_album_names: list[str] = []
     for row in completions_in_period[:5]:
         album_meta = get_1001_album_by_id(row.album_id)
-        if album_meta and album_meta.get("album"):
-            recent_album_names.append(str(album_meta.get("album")))
+        if album_meta and album_meta.get("album_name"):
+            recent_album_names.append(str(album_meta.get("album_name")))
         else:
             recent_album_names.append(f"Album #{row.album_id}")
 

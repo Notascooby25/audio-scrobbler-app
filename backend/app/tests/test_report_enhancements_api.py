@@ -145,3 +145,43 @@ def test_report_summary_enhanced_fields(db_session: Session):
     assert len(summary.live_artists.top_artists) == 1
     assert summary.live_artists.top_artists[0].artist_name == "Pulp"
     assert "Blur" not in [a.artist_name for a in summary.live_artists.top_artists]
+
+
+def test_report_1001_milestone_shows_album_titles_not_ids(db_session: Session):
+    """Issue #102: the 1001 chips showed "Album #581" instead of the title."""
+    user = User(
+        spotify_user_id="user_1001_titles",
+        username="titles_tester",
+        display_name="Titles Tester",
+        refresh_token_cipher="cipher",
+        is_active=True,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    completed_at = datetime(2026, 10, 15, 12, 0, tzinfo=timezone.utc).replace(tzinfo=None)
+    for album_id in (581, 223):
+        db_session.add(
+            User1001AlbumCompletion(
+                user_id=user.id,
+                album_id=album_id,
+                is_completed=True,
+                source="manual",
+                completed_at=completed_at,
+            )
+        )
+    db_session.commit()
+
+    summary = get_report_summary(
+        db=db_session,
+        user_id=user.id,
+        range_key="custom",
+        start_date="2026-10-01",
+        end_date="2026-10-31",
+        compare_to_previous=False,
+    )
+
+    names = summary.challenge_1001.recent_albums
+    assert sorted(names) == ["The Queen is Dead", "What's Going On"]
+    assert not any(name.startswith("Album #") for name in names)

@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.53.4",
+    date: "2026-11-20",
+    changes: [
+      "Fixed the 1001 Albums Challenge card on the Reports page: it listed the albums you completed as \"Album #581\" and so on instead of their names. It now shows the real titles, such as The Queen is Dead.",
+    ],
+  },
+  {
     version: "0.53.3",
     date: "2026-11-20",
     changes: [
