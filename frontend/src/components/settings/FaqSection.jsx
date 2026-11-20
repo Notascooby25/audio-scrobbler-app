@@ -126,6 +126,31 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "reports-album-cards",
+    category: "Reports & Stats",
+    question: "What are the 1001 Albums, Rough Trade and Live Artist cards on Reports?",
+    answer: (
+      <>
+        <p>
+          These three cards sit side by side near the top of Reports. The{" "}
+          <strong>1001 Albums</strong> and <strong>Rough Trade Top 100</strong> cards show how many
+          of those albums you have completed, and which ones you finished in the date range you
+          picked. The <strong>Live Artist</strong> card shows which artists you have seen live that
+          you also played in that range.
+        </p>
+        <p>
+          Each card shows the first five, with a <strong>View all</strong> button underneath when
+          there are more. It opens a scrollable list of everything from that period.
+        </p>
+        <p>
+          <strong>Why is an album I just played missing?</strong> Albums are ticked off when you
+          open the Jukebox, so a record you have only scrobbled may not appear until your next visit
+          there. You can hide any of the cards with <em>Customise Widgets</em>.
+        </p>
+      </>
+    ),
+  },
+  {
     id: "genre-sources",
     category: "Reports & Stats",
     question: "Where do the genres in Top genres come from, and why are some artists missing?",
