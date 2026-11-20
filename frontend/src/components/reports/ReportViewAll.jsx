@@ -13,7 +13,12 @@ export default function ReportViewAll({ title, items }) {
 
   return (
     <>
-      <button type="button" className="crossover-viewall-btn" onClick={() => setIsOpen(true)}>
+      <button
+        type="button"
+        className="crossover-viewall-btn"
+        aria-haspopup="dialog"
+        onClick={() => setIsOpen(true)}
+      >
         View all {items.length}
       </button>
       <ReportViewAllModal

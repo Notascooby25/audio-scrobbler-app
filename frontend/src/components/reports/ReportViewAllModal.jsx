@@ -1,8 +1,21 @@
-import { useEffect, useId } from "react";
+import { useEffect, useId, useRef } from "react";
 import PropTypes from "prop-types";
 
 export default function ReportViewAllModal({ isOpen, title, items, onClose }) {
   const titleId = useId();
+  const dialogRef = useRef(null);
+
+  // Move focus into the dialog while it is open and give it back to whatever
+  // opened it (the View all button) when it closes.
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const opener = document.activeElement;
+    dialogRef.current?.focus();
+    return () => {
+      if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -11,6 +24,21 @@ export default function ReportViewAllModal({ isOpen, title, items, onClose }) {
       if (event.key === "Escape") {
         event.preventDefault();
         onClose?.();
+        return;
+      }
+      if (event.key !== "Tab" || !dialogRef.current) return;
+
+      // Keep Tab inside the dialog: the close button and the scrollable list.
+      const stops = dialogRef.current.querySelectorAll('button, [tabindex="0"]');
+      const first = stops[0];
+      const last = stops[stops.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey && (active === first || active === dialogRef.current)) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first?.focus();
       }
     };
 
@@ -33,10 +61,12 @@ export default function ReportViewAllModal({ isOpen, title, items, onClose }) {
       onClick={handleBackdropClick}
     >
       <div
+        ref={dialogRef}
         className="modal-dialog report-viewall-dialog"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        tabIndex={-1}
       >
         <div className="report-viewall-header">
           <h3 id={titleId} className="report-viewall-title">
@@ -51,7 +81,7 @@ export default function ReportViewAllModal({ isOpen, title, items, onClose }) {
             ✕
           </button>
         </div>
-        <ul className="report-viewall-list">
+        <ul className="report-viewall-list" tabIndex={0} aria-labelledby={titleId}>
           {items.map((item, index) => (
             <li key={`${index}-${item}`} className="report-viewall-item">
               {item}

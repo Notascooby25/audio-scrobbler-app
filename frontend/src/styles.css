@@ -7107,8 +7107,10 @@ button.sfm-row-remove:hover:not(:disabled) {
 
 .crossover-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 2px 12px;
   margin-bottom: 6px;
 }
 
@@ -7168,16 +7170,21 @@ button.sfm-row-remove:hover:not(:disabled) {
 }
 
 .crossover-viewall-btn {
+  /* auto top margin pins the button to the foot of its card, so the three
+     buttons line up across the row whatever the chip count */
   align-self: flex-start;
-  margin-top: 12px;
+  margin-top: auto;
   padding: 0.5rem 0;
   min-height: 44px;
   background: transparent;
   border: none;
-  color: var(--color-primary);
-  font-size: 0.85rem;
+  /* the accent, darkened (lightened in dark mode) towards the ink colour so
+     small text clears 4.5:1 on every accent preset */
+  color: color-mix(in srgb, var(--color-primary) 70%, var(--color-ink));
+  font-size: 0.9rem;
   font-weight: 600;
   text-transform: none;
+  text-underline-offset: 3px;
   cursor: pointer;
 }
 
@@ -7203,11 +7210,17 @@ button.sfm-row-remove:hover:not(:disabled) {
   border-bottom: 0.5px solid var(--color-border);
 }
 
+.modal-dialog.report-viewall-dialog:focus {
+  outline: none;
+}
+
 .report-viewall-title {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.3;
   color: var(--color-ink);
+  text-wrap: balance;
 }
 
 .report-viewall-close {
@@ -7238,11 +7251,17 @@ button.sfm-row-remove:hover:not(:disabled) {
   flex: 1 1 auto;
 }
 
+.report-viewall-list:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .report-viewall-item {
-  padding: 0.55rem 0.25rem;
+  padding: 0.6rem 0.25rem;
   border-bottom: 0.5px solid var(--color-border);
   color: var(--color-ink);
-  font-size: 0.9rem;
+  font-size: 1rem;
+  line-height: 1.4;
   overflow-wrap: anywhere;
 }
 
