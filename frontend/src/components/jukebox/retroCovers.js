@@ -39,6 +39,28 @@ export function coverInitials(title) {
   return letters.toUpperCase();
 }
 
+// The rack and the record label are tiny, so ask the image host for a small copy
+// instead of downloading the full cover (a Spotify cover is about 100 KB; its 64 px
+// version is about 3 KB). Unknown hosts and odd shapes come back unchanged.
+const SPOTIFY_FULL = /(\/image\/)ab67616d0000(?:b273|1e02)/;
+const DEEZER_SIZE = /\/(\d+)x\1-000000-80-0-0\.jpg$/;
+const APPLE_SIZE = /\/(\d+)x\1bb\.jpg$/;
+
+export function thumbnailUrl(url) {
+  if (typeof url !== "string" || !url) return url;
+  let host;
+  try {
+    host = new URL(url).host;
+  } catch {
+    return url;
+  }
+  if (host === "i.scdn.co") return url.replace(SPOTIFY_FULL, "$1ab67616d00004851");
+  if (host === "cdn-images.dzcdn.net")
+    return url.replace(DEEZER_SIZE, "/100x100-000000-80-0-0.jpg");
+  if (host.endsWith("mzstatic.com")) return url.replace(APPLE_SIZE, "/100x100bb.jpg");
+  return url;
+}
+
 export const RACK_SIZE = 40;
 
 // The rack shows up to `size` of the records that match the filters. Spare slots

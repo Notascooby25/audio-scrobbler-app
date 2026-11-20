@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildRackTiles, coverBackground, coverInitials } from "./retroCovers";
+import { buildRackTiles, coverBackground, coverInitials, thumbnailUrl } from "./retroCovers";
 
 const album = (id, extra = {}) => ({
   id,
@@ -17,6 +17,47 @@ describe("coverBackground", () => {
 
   it("copes with missing names", () => {
     expect(typeof coverBackground({})).toBe("string");
+  });
+});
+
+describe("thumbnailUrl", () => {
+  it("asks Spotify for the 64px cover instead of the 640px or 300px one", () => {
+    expect(thumbnailUrl("https://i.scdn.co/image/ab67616d0000b273abcdef0123456789abcdef01")).toBe(
+      "https://i.scdn.co/image/ab67616d00004851abcdef0123456789abcdef01"
+    );
+    expect(thumbnailUrl("https://i.scdn.co/image/ab67616d00001e02abcdef0123456789abcdef01")).toBe(
+      "https://i.scdn.co/image/ab67616d00004851abcdef0123456789abcdef01"
+    );
+  });
+
+  it("asks Deezer for the 100px cover", () => {
+    expect(
+      thumbnailUrl("https://cdn-images.dzcdn.net/images/cover/77f4c452/250x250-000000-80-0-0.jpg")
+    ).toBe("https://cdn-images.dzcdn.net/images/cover/77f4c452/100x100-000000-80-0-0.jpg");
+  });
+
+  it("asks Apple for the 100px cover", () => {
+    expect(
+      thumbnailUrl(
+        "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/9c/14UMGIM.jpg/300x300bb.jpg"
+      )
+    ).toBe("https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/9c/14UMGIM.jpg/100x100bb.jpg");
+  });
+
+  it("leaves other hosts, odd shapes and missing values alone", () => {
+    const other = "https://www.listchallenges.com/f/items/0c8fcb17.jpg";
+    expect(thumbnailUrl(other)).toBe(other);
+    expect(thumbnailUrl("https://i.scdn.co/image/someotherprefix123")).toBe(
+      "https://i.scdn.co/image/someotherprefix123"
+    );
+    expect(thumbnailUrl("not a url")).toBe("not a url");
+    expect(thumbnailUrl(undefined)).toBeUndefined();
+    expect(thumbnailUrl("")).toBe("");
+  });
+
+  it("is a no-op on a url that is already a thumbnail", () => {
+    const small = thumbnailUrl("https://i.scdn.co/image/ab67616d0000b273abcdef0123456789abcdef01");
+    expect(thumbnailUrl(small)).toBe(small);
   });
 });
 
