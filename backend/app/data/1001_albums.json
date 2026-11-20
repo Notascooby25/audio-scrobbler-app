@@ -340,7 +340,7 @@
   {
     "id": 24,
     "album_name": "A Date with the Everly Brothers",
-    "artist_name": "The Everly Bothers",
+    "artist_name": "The Everly Brothers",
     "release_year": 1960,
     "decade": 1960,
     "genres": [
@@ -350,7 +350,7 @@
     "track_count": 12,
     "spotify_album_id": "",
     "spotify_url": "https://open.spotify.com/search/The%20Everly%20Bothers%20A%20Date%20with%20the%20Everly%20Brothers",
-    "artwork_url": "https://cdn-images.dzcdn.net/images/cover/bfe843f2bc40499bae779b1634390d73/250x250-000000-80-0-0.jpg"
+    "artwork_url": "https://cdn-images.dzcdn.net/images/cover/351469ddc04b2bf0a374fc6e6181a36e/250x250-000000-80-0-0.jpg"
   },
   {
     "id": 25,
@@ -1106,7 +1106,7 @@
   },
   {
     "id": 77,
-    "album_name": "I Never Loved a Man the Way That I Love You",
+    "album_name": "I Never Loved a Man the Way I Love You",
     "artist_name": "Aretha Franklin",
     "release_year": 1967,
     "decade": 1960,
@@ -2706,7 +2706,7 @@
   },
   {
     "id": 189,
-    "album_name": "Bryter Later",
+    "album_name": "Bryter Layter",
     "artist_name": "Nick Drake",
     "release_year": 1970,
     "decade": 1970,
@@ -3191,7 +3191,7 @@
   },
   {
     "id": 223,
-    "album_name": "What's Goin' On",
+    "album_name": "What's Going On",
     "artist_name": "Marvin Gaye",
     "release_year": 1971,
     "decade": 1970,
@@ -3202,7 +3202,7 @@
     "track_count": 9,
     "spotify_album_id": "",
     "spotify_url": "https://open.spotify.com/search/Marvin%20Gaye%20What%27s%20Goin%27%20On",
-    "artwork_url": "https://cdn-images.dzcdn.net/images/cover/dd5e37f720256949a07a7e1a91754550/250x250-000000-80-0-0.jpg"
+    "artwork_url": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/76/36/2d/76362d74-cb7a-8ef9-104e-cde1d858e9a9/20UMGIM95279.rgb.jpg/300x300bb.jpg"
   },
   {
     "id": 224,
@@ -3235,7 +3235,7 @@
   {
     "id": 226,
     "album_name": "There's a Riot Goin' On",
-    "artist_name": "Sly and and The Family Stone",
+    "artist_name": "Sly and the Family Stone",
     "release_year": 1971,
     "decade": 1970,
     "genres": [
@@ -3321,7 +3321,7 @@
   },
   {
     "id": 232,
-    "album_name": "A Nod's As Good As Wink",
+    "album_name": "A Nod Is as Good as a Wink... to a Blind Horse",
     "artist_name": "The Faces",
     "release_year": 1971,
     "decade": 1970,
@@ -3331,7 +3331,7 @@
     "track_count": 9,
     "spotify_album_id": "",
     "spotify_url": "https://open.spotify.com/search/The%20Faces%20A%20Nod%27s%20As%20Good%20As%20Wink",
-    "artwork_url": ""
+    "artwork_url": "https://cdn-images.dzcdn.net/images/cover/359d18a975939a091eff95641933ef52/250x250-000000-80-0-0.jpg"
   },
   {
     "id": 233,
@@ -3966,7 +3966,7 @@
   },
   {
     "id": 277,
-    "album_name": "Grevious Angel",
+    "album_name": "Grievous Angel",
     "artist_name": "Gram Parsons",
     "release_year": 1973,
     "decade": 1970,
@@ -4079,8 +4079,8 @@
   },
   {
     "id": 285,
-    "album_name": "Stephen Stills",
-    "artist_name": "Manassas",
+    "album_name": "Manassas",
+    "artist_name": "Stephen Stills",
     "release_year": 1973,
     "decade": 1970,
     "genres": [
@@ -4089,7 +4089,7 @@
     "track_count": 9,
     "spotify_album_id": "",
     "spotify_url": "https://open.spotify.com/search/Manassas%20Stephen%20Stills",
-    "artwork_url": ""
+    "artwork_url": "https://cdn-images.dzcdn.net/images/cover/8f3550c492dd88a772c3c4c21942fa39/250x250-000000-80-0-0.jpg"
   },
   {
     "id": 286,
@@ -4206,7 +4206,7 @@
   },
   {
     "id": 294,
-    "album_name": "nnervisions",
+    "album_name": "Innervisions",
     "artist_name": "Stevie Wonder",
     "release_year": 1973,
     "decade": 1970,
@@ -4433,7 +4433,7 @@
   {
     "id": 310,
     "album_name": "Winter in America",
-    "artist_name": "Gill Scott-Heron",
+    "artist_name": "Gil Scott-Heron",
     "release_year": 1974,
     "decade": 1970,
     "genres": [
@@ -4616,7 +4616,7 @@
   },
   {
     "id": 323,
-    "album_name": "Fullfillingness' First Finale",
+    "album_name": "Fulfillingness' First Finale",
     "artist_name": "Stevie Wonder",
     "release_year": 1974,
     "decade": 1970,
@@ -5091,7 +5091,7 @@
   },
   {
     "id": 356,
-    "album_name": "Hejeira",
+    "album_name": "Hejira",
     "artist_name": "Joni Mitchell",
     "release_year": 1976,
     "decade": 1970,
@@ -5264,7 +5264,7 @@
   {
     "id": 368,
     "album_name": "C'est Chic",
-    "artist_name": "Chic Manish",
+    "artist_name": "Chic",
     "release_year": 1977,
     "decade": 1970,
     "genres": [
@@ -5274,7 +5274,7 @@
     "track_count": 9,
     "spotify_album_id": "",
     "spotify_url": "https://open.spotify.com/search/Chic%20Manish%20C%27est%20Chic",
-    "artwork_url": ""
+    "artwork_url": "https://cdn-images.dzcdn.net/images/cover/6903fa4285a6b9f6f82afe5e6a884519/250x250-000000-80-0-0.jpg"
   },
   {
     "id": 369,
@@ -5564,7 +5564,7 @@
   },
   {
     "id": 389,
-    "album_name": "Never Mind The Bollocks'",
+    "album_name": "Never Mind the Bollocks",
     "artist_name": "The Sex Pistols",
     "release_year": 1977,
     "decade": 1970,
@@ -5793,7 +5793,7 @@
   },
   {
     "id": 405,
-    "album_name": "Honky Tonk Masquarade",
+    "album_name": "Honky Tonk Masquerade",
     "artist_name": "Joe Ely",
     "release_year": 1978,
     "decade": 1970,
@@ -5907,7 +5907,7 @@
   {
     "id": 413,
     "album_name": "Siembra",
-    "artist_name": "Ruben Blades & Willie Col\u00c2\u00a2n",
+    "artist_name": "Rubén Blades & Willie Colón",
     "release_year": 1978,
     "decade": 1970,
     "genres": [
@@ -5964,7 +5964,7 @@
   },
   {
     "id": 417,
-    "album_name": "tori amos",
+    "album_name": "Crossing the Red Sea with The Adverts",
     "artist_name": "The Adverts",
     "release_year": 1978,
     "decade": 1970,
@@ -6448,7 +6448,7 @@
   },
   {
     "id": 451,
-    "album_name": "Regatta De Blanc",
+    "album_name": "Reggatta de Blanc",
     "artist_name": "The Police",
     "release_year": 1979,
     "decade": 1970,
@@ -6878,7 +6878,7 @@
   {
     "id": 481,
     "album_name": "The Poet",
-    "artist_name": "Bobbie Womack",
+    "artist_name": "Bobby Womack",
     "release_year": 1981,
     "decade": 1980,
     "genres": [
@@ -6906,7 +6906,7 @@
   {
     "id": 483,
     "album_name": "Kollaps",
-    "artist_name": "Einsturzende",
+    "artist_name": "Einstürzende Neubauten",
     "release_year": 1981,
     "decade": 1980,
     "genres": [
@@ -6915,7 +6915,7 @@
     "track_count": 9,
     "spotify_album_id": "",
     "spotify_url": "https://open.spotify.com/search/Einsturzende%20Kollaps",
-    "artwork_url": ""
+    "artwork_url": "https://cdn-images.dzcdn.net/images/cover/c457e50877bb4859323862c0c1a9999b/250x250-000000-80-0-0.jpg"
   },
   {
     "id": 484,
@@ -7599,7 +7599,7 @@
   {
     "id": 532,
     "album_name": "She's So Unusual",
-    "artist_name": "Cindy Lauper",
+    "artist_name": "Cyndi Lauper",
     "release_year": 1984,
     "decade": 1980,
     "genres": [
@@ -8194,7 +8194,7 @@
   },
   {
     "id": 574,
-    "album_name": "Last fo the True Believers",
+    "album_name": "The Last of the True Believers",
     "artist_name": "Nanci Griffith",
     "release_year": 1986,
     "decade": 1980,
@@ -8422,7 +8422,7 @@
   {
     "id": 590,
     "album_name": "Trio",
-    "artist_name": "Emmylou Harris, Lisa Rondstadt, Dolly Parton",
+    "artist_name": "Emmylou Harris, Linda Ronstadt, Dolly Parton",
     "release_year": 1987,
     "decade": 1980,
     "genres": [
@@ -8677,8 +8677,8 @@
   },
   {
     "id": 608,
-    "album_name": "Astor Piazzolla",
-    "artist_name": "The New Tango (with Gary Burton)",
+    "album_name": "The New Tango",
+    "artist_name": "Astor Piazzolla",
     "release_year": 1987,
     "decade": 1980,
     "genres": [
@@ -8789,7 +8789,7 @@
   },
   {
     "id": 616,
-    "album_name": "Buenos Noches from a Lonely Room",
+    "album_name": "Buenas Noches from a Lonely Room",
     "artist_name": "Dwight Yoakam",
     "release_year": 1988,
     "decade": 1980,
@@ -10128,7 +10128,7 @@
   },
   {
     "id": 711,
-    "album_name": "Hiphoprisy Is The Greatest Luxury",
+    "album_name": "Hypocrisy Is the Greatest Luxury",
     "artist_name": "Disposable Heroes of Hiphoprisy",
     "release_year": 1992,
     "decade": 1990,
@@ -10227,7 +10227,7 @@
   },
   {
     "id": 718,
-    "album_name": "A Vulgar Display Of Power",
+    "album_name": "Vulgar Display of Power",
     "artist_name": "Pantera",
     "release_year": 1992,
     "decade": 1990,
@@ -10496,7 +10496,7 @@
   {
     "id": 737,
     "album_name": "Qui Seme Le Vent Recolte Le Tempo",
-    "artist_name": "MC Solar",
+    "artist_name": "MC Solaar",
     "release_year": 1993,
     "decade": 1990,
     "genres": [
@@ -10580,7 +10580,7 @@
   {
     "id": 743,
     "album_name": "Very",
-    "artist_name": "Pet Shops Boys",
+    "artist_name": "Pet Shop Boys",
     "release_year": 1993,
     "decade": 1990,
     "genres": [
@@ -10678,7 +10678,7 @@
   },
   {
     "id": 750,
-    "album_name": "Gentleman",
+    "album_name": "Gentlemen",
     "artist_name": "The Afghan Whigs",
     "release_year": 1993,
     "decade": 1990,
@@ -10720,8 +10720,8 @@
   },
   {
     "id": 753,
-    "album_name": "Aimee Mann",
-    "artist_name": "Whatever",
+    "album_name": "Whatever",
+    "artist_name": "Aimee Mann",
     "release_year": 1993,
     "decade": 1990,
     "genres": [
@@ -10730,7 +10730,7 @@
     "track_count": 11,
     "spotify_album_id": "",
     "spotify_url": "https://open.spotify.com/search/Whatever%20Aimee%20Mann",
-    "artwork_url": ""
+    "artwork_url": "https://cdn-images.dzcdn.net/images/cover/298134610436b426da723e6187f2496e/250x250-000000-80-0-0.jpg"
   },
   {
     "id": 754,
@@ -12001,7 +12001,7 @@
   {
     "id": 844,
     "album_name": "Maverick A Strike",
-    "artist_name": "Finlay Quaye",
+    "artist_name": "Finley Quaye",
     "release_year": 1997,
     "decade": 1990,
     "genres": [
@@ -12113,7 +12113,7 @@
   },
   {
     "id": 852,
-    "album_name": "Schleep",
+    "album_name": "Shleep",
     "artist_name": "Robert Wyatt",
     "release_year": 1997,
     "decade": 1990,
@@ -12652,7 +12652,7 @@
   {
     "id": 890,
     "album_name": "Darkdancer",
-    "artist_name": "Les Rhythmes Digitales",
+    "artist_name": "Les Rythmes Digitales",
     "release_year": 1999,
     "decade": 1990,
     "genres": [
@@ -12722,8 +12722,8 @@
   },
   {
     "id": 895,
-    "album_name": "Suba",
-    "artist_name": "Sao Paulo Tales",
+    "album_name": "São Paulo Confessions",
+    "artist_name": "Suba",
     "release_year": 1999,
     "decade": 1990,
     "genres": [
@@ -12732,7 +12732,7 @@
     "track_count": 11,
     "spotify_album_id": "",
     "spotify_url": "https://open.spotify.com/search/Sao%20Paulo%20Tales%20Suba",
-    "artwork_url": ""
+    "artwork_url": "https://cdn-images.dzcdn.net/images/cover/edd5a75166d3b7e7391d02f22dd0e352/250x250-000000-80-0-0.jpg"
   },
   {
     "id": 896,
@@ -13047,7 +13047,7 @@
   },
   {
     "id": 918,
-    "album_name": "Welcome to the Aftterfuture",
+    "album_name": "Welcome to the Afterfuture",
     "artist_name": "Mike Ladd",
     "release_year": 2000,
     "decade": 2000,
@@ -13991,7 +13991,7 @@
   },
   {
     "id": 985,
-    "album_name": "Cole's Cornes",
+    "album_name": "Coles Corner",
     "artist_name": "Richard Hawley",
     "release_year": 2005,
     "decade": 2000,
@@ -14107,7 +14107,7 @@
   },
   {
     "id": 993,
-    "album_name": "Food & Liqour",
+    "album_name": "Food & Liquor",
     "artist_name": "Lupe Fiasco",
     "release_year": 2006,
     "decade": 2000,
