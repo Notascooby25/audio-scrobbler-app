@@ -113,6 +113,18 @@ describe("RetroResultCard", () => {
       expect(screen.getByText("Rough Trade 2024")).toBeInTheDocument();
     });
 
+    it("leaves out the Rough Trade list row rather than saying undefined", () => {
+      render(
+        <RetroResultCard
+          {...baseProps}
+          sourceMode="rough_trade"
+          currentPick={{ ...pick, rank: undefined, year: undefined }}
+        />
+      );
+      expect(screen.queryByText("List")).not.toBeInTheDocument();
+      expect(screen.queryByText(/undefined/)).not.toBeInTheDocument();
+    });
+
     it("works out the decade from the year when a 1001 album has none", () => {
       render(
         <RetroResultCard

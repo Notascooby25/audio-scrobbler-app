@@ -82,7 +82,7 @@ export default function RetroResultCard({
       if (currentPick.genres?.length) details.push(["Genres", currentPick.genres.join(", ")]);
     } else if (sourceMode === "rough_trade") {
       if (currentPick.rank) details.push(["Rank", `#${currentPick.rank}`]);
-      details.push(["List", `Rough Trade ${currentPick.year}`]);
+      if (currentPick.year) details.push(["List", `Rough Trade ${currentPick.year}`]);
     } else if (typeof currentPick.play_count === "number") {
       details.push(["Plays", String(currentPick.play_count)]);
     }
