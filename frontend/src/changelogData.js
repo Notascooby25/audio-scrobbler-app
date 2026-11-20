@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.53.1",
+    date: "2026-11-20",
+    changes: [
+      "Typos fixed in the 1001 Albums and Rough Trade lists: About 45 misspelt or muddled artists and titles are corrected, such as Bryter Layter, Grievous Angel, Cyndi Lauper, Pet Shop Boys and A$AP Rocky. Four albums that had their artist and title the wrong way round (Aimee Mann, Astor Piazzolla, Stephen Stills and Suba) now read correctly.",
+      "Better matching of your listening: with the right spellings, albums you have already played should now be recognised, so a few may tick themselves off as completed.",
+      "A few more album covers: seven albums that had no cover now show one. Your progress is unchanged.",
+    ],
+  },
+  {
     version: "0.53.0",
     date: "2026-11-20",
     changes: [
