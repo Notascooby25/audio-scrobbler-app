@@ -114,5 +114,23 @@ describe("JukeboxFilters", () => {
       border: "2px solid #394651",
     });
   });
+
+  it("shows the pool selection mode by default and hides it on request", () => {
+    const props = {
+      albums: [],
+      filters: defaultFilters,
+      toggleFilter: vi.fn(),
+      clearFilters: vi.fn(),
+      mode: "any",
+      setMode: vi.fn(),
+    };
+    const { rerender } = render(<JukeboxFilters {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: /Filters/i }));
+    expect(screen.getByText("POOL SELECTION MODE")).toBeInTheDocument();
+
+    rerender(<JukeboxFilters {...props} hideModeSelector />);
+    expect(screen.queryByText("POOL SELECTION MODE")).not.toBeInTheDocument();
+    expect(screen.getByText("ARTIST SEARCH")).toBeInTheDocument();
+  });
 });
 

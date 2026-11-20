@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.53.6",
+    date: "2026-11-20",
+    changes: [
+      "The Arcade view of the Jukebox now looks much more like the original design: bulbs around the arch, a rack of little album covers that fills as your filters change, a turntable with a tone arm, lamps that light up for the filters you are using, a boxed record counter, a Pick from panel, and a speaker grille at the foot.",
+      "The result card shows the album cover (or a coloured stand-in when there is none) with a tag and the album's details, and a No records match box with a Clear filters button appears when your filters leave nothing to pick.",
+      "Nothing changes in how picks work, and the Flat view is untouched.",
+    ],
+  },
+  {
     version: "0.53.5",
     date: "2026-11-20",
     changes: [

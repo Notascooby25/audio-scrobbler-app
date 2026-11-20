@@ -1,0 +1,189 @@
+/* Arcade jukebox result card, ported from the original jukebox mockup.
+   Explicit colours throughout so themes and skins cannot wash the text out. */
+
+.card {
+  margin-top: 14px;
+  padding: 16px;
+  background: #fffdf8;
+  color: #24212b;
+  border: 3px solid #24212b;
+  border-radius: 16px;
+}
+
+.tag {
+  display: inline-block;
+  margin: 0 0 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #ffc145;
+  color: #24212b;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.body {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.cover {
+  position: relative;
+  flex: none;
+  width: 120px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border: 2px solid #24212b;
+  border-radius: 8px;
+  background: #8d81a8; /* shown until there is a pick; a pick sets its own cover inline */
+  color: #ffffff;
+  font-size: 2rem;
+  font-weight: 800;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+.coverImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.info {
+  min-width: 0;
+  flex: 1;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.artist {
+  margin: 2px 0 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.details {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border-top: 0;
+  font-size: 0.88rem;
+}
+
+.details div {
+  display: flex;
+  justify-content: flex-start;
+  gap: 6px;
+}
+
+.details dt,
+.details dd {
+  font-size: 0.88rem;
+}
+
+.details dt {
+  min-width: 70px;
+  color: #4d4857;
+}
+
+.details dd {
+  margin: 0;
+  color: #24212b;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.playedBtn {
+  margin-top: 10px;
+  min-height: 36px;
+  padding: 4px 12px;
+  border: 2px solid #394651 !important;
+  border-radius: 999px;
+  background: #ffffff !important;
+  color: #394651 !important;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: none !important;
+  cursor: pointer;
+}
+
+.playedOn {
+  background: #3cc8b4 !important;
+  color: #24212b !important;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.rerollBtn,
+.spotifyBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 2px solid #24212b !important;
+  border-radius: 999px;
+  color: #24212b !important;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: none !important;
+  cursor: pointer;
+}
+
+.rerollBtn {
+  background: #ffffff !important;
+}
+
+.rerollBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.spotifyBtn {
+  background: #3cc8b4 !important;
+}
+
+.rerollBtn:focus-visible,
+.spotifyBtn:focus-visible,
+.playedBtn:focus-visible {
+  outline: 3px solid #514367;
+  outline-offset: 2px;
+}
+
+.status {
+  min-height: 1.3em;
+  margin: 10px 0 0;
+  color: #4d4857;
+  font-size: 0.88rem;
+}
+
+.statusOut {
+  color: #c94032;
+  font-weight: 700;
+}
+
+@media (min-width: 600px) {
+  .cover {
+    width: 150px;
+  }
+}

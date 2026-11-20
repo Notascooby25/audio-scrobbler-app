@@ -12,6 +12,7 @@ export default function JukeboxFilters({
   excludeCompleted = false,
   setExcludeCompleted,
   variant = "flat",
+  hideModeSelector = false,
 }) {
   const [expanded, setExpanded] = useState(false);
   const isRetro = variant === "retro";
@@ -210,7 +211,7 @@ export default function JukeboxFilters({
           )}
 
           {/* Mode Selector (in Library mode) */}
-          {sourceMode === "library" && (
+          {sourceMode === "library" && !hideModeSelector && (
             <div>
               <div style={sectionHeadingStyle}>POOL SELECTION MODE</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
