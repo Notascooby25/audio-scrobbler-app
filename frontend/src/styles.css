@@ -7167,6 +7167,71 @@ button.sfm-row-remove:hover:not(:disabled) {
   font-style: italic;
 }
 
+.modal-dialog.report-viewall-dialog {
+  max-width: 560px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+}
+
+.report-viewall-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 0.5px solid var(--color-border);
+}
+
+.report-viewall-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.report-viewall-close {
+  background: transparent;
+  border: none;
+  color: var(--color-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.report-viewall-close:hover {
+  color: var(--color-ink);
+}
+
+.report-viewall-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  flex: 1 1 auto;
+}
+
+.report-viewall-item {
+  padding: 0.55rem 0.25rem;
+  border-bottom: 0.5px solid var(--color-border);
+  color: var(--color-ink);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.report-viewall-item:last-child {
+  border-bottom: none;
+}
+
 .report-ratios-grid {
   display: grid;
   gap: 1rem;
