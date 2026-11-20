@@ -1,11 +1,20 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import styles from "./RetroJukebox.module.css";
 import JukeboxFilters from "./JukeboxFilters";
+import { buildRackTiles, coverBackground, coverInitials } from "./retroCovers";
+
+const BULB_COUNT = 13;
+const PICK_FROM_MODES = [
+  { key: "any", label: "Any" },
+  { key: "least", label: "Least played" },
+  { key: "most", label: "Most played" },
+  { key: "recent", label: "Recently added" },
+];
 
 export default function RetroJukebox({
   albums = [],
   filteredAlbums = [],
-  _pool = [],
+  pool = [],
   currentPick = null,
   rollsLeft = 3,
   sessionActive = false,
@@ -26,6 +35,7 @@ export default function RetroJukebox({
   onToggleRoughTradeCompleted,
 }) {
   const [spinning, setSpinning] = useState(false);
+  const filtersRef = useRef(null);
 
   const handleRoll = (actionFn) => {
     if (busy || !canRoll) return;
@@ -43,38 +53,143 @@ export default function RetroJukebox({
       ? `https://open.spotify.com/search/${encodeURIComponent(currentPick.artist_name + " " + currentPick.album_name)}`
       : "#");
 
+  const matchCount = filteredAlbums.length;
+  const isLibrary = sourceMode === "library";
+  const rackTiles = buildRackTiles({ filteredAlbums, pool, currentPick });
+  const poolMode = PICK_FROM_MODES.find((option) => option.key === mode);
+  const poolNote =
+    isLibrary && mode !== "any" && matchCount > 0 && poolMode
+      ? `· picking from ${pool.length} ${poolMode.label.toLowerCase()}`
+      : "";
+
+  const lamps = [
+    { key: "artist", label: "Artist", on: filters.artist.trim().length > 0 },
+    { key: "year", label: "Year", on: filters.decade.size > 0 || (filters.year?.size ?? 0) > 0 },
+    { key: "genre", label: "Genre", on: filters.genre.size > 0 },
+    ...(isLibrary ? [{ key: "length", label: "Length", on: filters.length.size > 0 }] : []),
+  ];
+
+  const goToFilters = () => {
+    const block = filtersRef.current;
+    if (!block) return;
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    block.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
+    block.querySelector(".jukebox-filters-toggle")?.focus({ preventScroll: true });
+  };
+
   return (
     <div className={styles.jukebox}>
+      <div className={styles.bulbs} aria-hidden="true">
+        {Array.from({ length: BULB_COUNT }, (_, index) => (
+          <span key={index} />
+        ))}
+      </div>
       <div className={styles.marquee}>JUKEBOX</div>
 
       <div className={styles.stage}>
-        <div className={styles.turntable}>
+        <div className={styles.rack} aria-hidden="true">
+          {rackTiles.map((tile) => (
+            <div
+              key={tile.key}
+              data-testid="rack-tile"
+              data-state={tile.state}
+              className={`${styles.tile} ${styles[`tile_${tile.state}`]}`}
+              style={tile.album ? { background: coverBackground(tile.album) } : undefined}
+              title={
+                tile.album ? `${tile.album.artist_name} – ${tile.album.album_name}` : undefined
+              }
+            />
+          ))}
+        </div>
+        <div className={styles.turntable} aria-hidden="true">
           <div className={styles.platter}>
             <div className={`${styles.vinyl} ${spinning ? styles.vinylSpinning : ""}`}>
-              <div className={styles.vinylLabel}>
-                {currentPick ? currentPick.album_name.slice(0, 2).toUpperCase() : "LP"}
+              <div
+                className={styles.vinylLabel}
+                style={currentPick ? { background: coverBackground(currentPick) } : undefined}
+              >
+                <span>{currentPick ? coverInitials(currentPick.album_name) : "LP"}</span>
               </div>
             </div>
           </div>
+          <div
+            className={styles.toneArm}
+            data-testid="tone-arm"
+            data-on={currentPick ? "true" : "false"}
+          />
         </div>
       </div>
 
-      <div style={{ textAlign: "center", marginBottom: "10px", color: "#24212b", fontWeight: 600 }}>
-        <strong>{filteredAlbums.length}</strong> records match filters
+      <div
+        className={styles.lamps}
+        role="group"
+        aria-label="Filter selectors"
+        style={{ "--lamp-count": lamps.length }}
+      >
+        {lamps.map((lamp) => (
+          <button
+            key={lamp.key}
+            type="button"
+            className={`${styles.lamp} ${lamp.on ? styles.lampOn : ""}`}
+            data-on={lamp.on ? "true" : "false"}
+            aria-label={`${lamp.label} filter ${lamp.on ? "on" : "off"}, go to filters`}
+            onClick={goToFilters}
+          >
+            <span className={styles.lampBulb} aria-hidden="true" />
+            <span className={styles.lampText}>{lamp.label}</span>
+          </button>
+        ))}
       </div>
 
-      <JukeboxFilters
-        albums={albums}
-        filters={filters}
-        toggleFilter={toggleFilter}
-        clearFilters={clearFilters}
-        mode={mode}
-        setMode={setMode}
-        sourceMode={sourceMode}
-        excludeCompleted={excludeCompleted}
-        setExcludeCompleted={setExcludeCompleted}
-        variant="retro"
-      />
+      <p className={styles.counter} data-testid="rack-counter" style={{ color: "#24212b" }}>
+        <strong>{matchCount}</strong> {matchCount === 1 ? "record" : "records"}
+        {poolNote && <span className={styles.poolNote}> {poolNote}</span>}
+      </p>
+
+      {matchCount === 0 && (
+        <div className={styles.emptyBox}>
+          <p>No records match these filters.</p>
+          <button type="button" className={styles.emptyBtn} onClick={clearFilters}>
+            Clear filters
+          </button>
+        </div>
+      )}
+
+      {isLibrary && (
+        <fieldset className={styles.modes}>
+          <legend className={styles.modesLegend}>Pick from</legend>
+          <div className={styles.seg}>
+            {PICK_FROM_MODES.map((option) => (
+              <label key={option.key} className={styles.segOption}>
+                <input
+                  type="radio"
+                  name="retro-pick-from"
+                  value={option.key}
+                  checked={mode === option.key}
+                  onChange={() => setMode && setMode(option.key)}
+                />
+                <span>{option.label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
+
+      <div ref={filtersRef}>
+        <JukeboxFilters
+          albums={albums}
+          filters={filters}
+          toggleFilter={toggleFilter}
+          clearFilters={clearFilters}
+          mode={mode}
+          setMode={setMode}
+          sourceMode={sourceMode}
+          excludeCompleted={excludeCompleted}
+          setExcludeCompleted={setExcludeCompleted}
+          variant="retro"
+          hideModeSelector
+        />
+      </div>
 
       <button
         type="button"
@@ -84,6 +199,13 @@ export default function RetroJukebox({
       >
         Lucky Dip
       </button>
+      <p className={styles.dipHint}>
+        {outOfRolls
+          ? "No more rolls – give it a spin!"
+          : matchCount === 0
+            ? "Nothing to pick – loosen a filter."
+            : ""}
+      </p>
 
       <div className={styles.card}>
         <div
@@ -246,6 +368,8 @@ export default function RetroJukebox({
           </a>
         </div>
       </div>
+
+      <div className={styles.grille} aria-hidden="true" />
     </div>
   );
 }
