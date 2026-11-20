@@ -183,5 +183,8 @@ def test_report_1001_milestone_shows_album_titles_not_ids(db_session: Session):
     )
 
     names = summary.challenge_1001.recent_albums
-    assert sorted(names) == ["The Queen is Dead", "What's Going On"]
+    assert sorted(names) == [
+        "Marvin Gaye – What's Going On",
+        "The Smiths – The Queen is Dead",
+    ]
     assert not any(name.startswith("Album #") for name in names)
