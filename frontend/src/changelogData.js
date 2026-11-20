@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.53.0",
+    date: "2026-11-20",
+    changes: [
+      "Album covers in your progress lists: Most albums in the 1001 Albums and Rough Trade lists now show their cover when you open Progress, and the Jukebox shows them too. About 1,580 of 1,700 albums have one, found on Deezer and Apple Music.",
+      "Cleaner, more reliable covers: The older covers that were linked from other websites have been replaced, so they no longer disappear when those sites change.",
+      "Albums that could not be matched with confidence still show their initials, as before.",
+    ],
+  },
+  {
     version: "0.52.1",
     date: "2026-11-20",
     changes: [
