@@ -13,6 +13,7 @@ export default function EditGigModal({ gig, onClose, onSaved, token }) {
   const [isFestival, setIsFestival] = useState(Boolean(gig.is_festival));
   const [festivalName, setFestivalName] = useState(gig.festival_name || "");
   const [isCoverBand, setIsCoverBand] = useState(Boolean(gig.is_cover_band));
+  const [isSupportAct, setIsSupportAct] = useState(Boolean(gig.is_support_act));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [duplicateInfo, setDuplicateInfo] = useState(null);
@@ -38,6 +39,7 @@ export default function EditGigModal({ gig, onClose, onSaved, token }) {
         isFestival,
         festivalName: isFestival ? festivalName.trim() || null : null,
         isCoverBand,
+        isSupportAct,
         allowDuplicate,
       });
       setDuplicateInfo(null);
@@ -162,6 +164,14 @@ export default function EditGigModal({ gig, onClose, onSaved, token }) {
               onChange={(e) => setIsCoverBand(e.target.checked)}
             />
             <span>Cover band / Tribute act</span>
+          </label>
+          <label className="sfm-check">
+            <input
+              type="checkbox"
+              checked={isSupportAct}
+              onChange={(e) => setIsSupportAct(e.target.checked)}
+            />
+            <span>Support act</span>
           </label>
           {!gig.is_support_act && (
             <p className="sfm-gig-meta">

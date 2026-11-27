@@ -84,4 +84,35 @@ describe("EditGigModal festival name", () => {
       )
     );
   });
+
+  it("starts the support act box ticked for a support gig", () => {
+    render(
+      <EditGigModal
+        gig={{ ...gig, is_support_act: true }}
+        token="test-token"
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole("checkbox", { name: "Support act" })).toBeChecked();
+  });
+
+  it("passes isSupportAct in updateConcert when ticked", async () => {
+    setlistsApi.updateConcert.mockResolvedValue({ ...gig, is_support_act: true });
+    render(<EditGigModal gig={gig} token="test-token" onClose={vi.fn()} onSaved={vi.fn()} />);
+
+    const supportCheckbox = screen.getByRole("checkbox", { name: "Support act" });
+    expect(supportCheckbox).not.toBeChecked();
+    fireEvent.click(supportCheckbox);
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", { name: "Save changes" })
+    );
+
+    await waitFor(() =>
+      expect(setlistsApi.updateConcert).toHaveBeenCalledWith(
+        expect.objectContaining({ isSupportAct: true })
+      )
+    );
+  });
 });
