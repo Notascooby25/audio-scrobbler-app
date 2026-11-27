@@ -145,6 +145,12 @@ export function NewArtistsSlide({ music }) {
       <Chip>New for you</Chip>
       <Big>{formatNumber(music.new_artists)}</Big>
       <p className="wrapped-line">artists you hadn&apos;t played before this year.</p>
+      {music.new_artists_top?.length > 0 && (
+        <>
+          <p className="wrapped-line">Your top three:</p>
+          <CoverList items={music.new_artists_top} detail={playsDetail} />
+        </>
+      )}
       {first && (
         <p className="wrapped-note">
           First song of the year: {first.name} by {first.artist}.

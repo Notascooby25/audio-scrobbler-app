@@ -33,6 +33,11 @@ export function sampleSnapshot(overrides = {}) {
       listener_label: "Night owl",
       biggest_day: { date: "2026-09-09", plays: 80, minutes: 300 },
       new_artists: 120,
+      new_artists_top: [
+        { name: "Fresh One", plays: 90, artwork_url: "https://img.example/f1.jpg" },
+        { name: "Fresh Two", plays: 60 },
+        { name: "Fresh Three", plays: 30 },
+      ],
       first_song: { name: "First Song", artist: "Artist A", played_at: "2026-01-01T00:10:00" },
     },
     gigs: {

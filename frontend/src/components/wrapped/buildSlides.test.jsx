@@ -166,6 +166,24 @@ describe("music slides", () => {
     expect(document.querySelectorAll(".wrapped-rows .wrapped-cover")).toHaveLength(5);
   });
 
+  it("shows the top three new artists under the count", () => {
+    renderSlide(sampleSnapshot(), "new-artists");
+    expect(screen.getByText("120")).toBeInTheDocument();
+    expect(screen.getByText("Fresh One")).toBeInTheDocument();
+    expect(screen.getByText("Fresh Two")).toBeInTheDocument();
+    expect(screen.getByText("Fresh Three")).toBeInTheDocument();
+    expect(screen.getByText(/90 plays/)).toBeInTheDocument();
+    expect(document.querySelectorAll(".wrapped-rows .wrapped-cover")).toHaveLength(3);
+  });
+
+  it("still shows the count for an older snapshot with no new-artist list", () => {
+    const snapshot = sampleSnapshot();
+    delete snapshot.music.new_artists_top;
+    renderSlide(snapshot, "new-artists");
+    expect(screen.getByText("120")).toBeInTheDocument();
+    expect(document.querySelector(".wrapped-rows")).toBeNull();
+  });
+
   it("shows the listening clock label", () => {
     renderSlide(sampleSnapshot(), "clock");
     expect(screen.getByText("Night owl")).toBeInTheDocument();

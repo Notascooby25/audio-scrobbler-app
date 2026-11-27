@@ -139,6 +139,11 @@ def build_music_stats(db: Session, user_id: int, start: datetime, end: datetime)
     history_starts_at = db.execute(
         select(func.min(ListeningEvent.played_at)).where(ListeningEvent.user_id == user_id)
     ).scalar_one()
+    # Only claim "new" artists when we hold history from before the year; otherwise every artist would look new.
+    history_known = history_starts_at is not None and history_starts_at < start
+    new_artists: Counter[str] = Counter()
+    if history_known:
+        new_artists = Counter({key: plays for key, plays in artist_plays.items() if key not in seen_before})
 
     return {
         "total_plays": len(rows),
@@ -159,11 +164,8 @@ def build_music_stats(db: Session, user_id: int, start: datetime, end: datetime)
             "minutes": round(day_ms[biggest_day_key] / 60000),
         },
         # If their history starts inside the year, every artist would look new, so don't claim it.
-        "new_artists": (
-            None
-            if history_starts_at is None or history_starts_at >= start
-            else sum(1 for key in artist_plays if key not in seen_before)
-        ),
+        "new_artists": len(new_artists) if history_known else None,
+        "new_artists_top": _top(new_artists, artist_names, 3) if history_known else [],
         "first_song": {
             "name": first.track_name,
             "artist": first.artist_name,

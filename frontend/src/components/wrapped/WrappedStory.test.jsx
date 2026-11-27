@@ -88,6 +88,22 @@ describe("WrappedStory", () => {
     expect(container.querySelector(".wrapped-section-label")).toHaveTextContent("Gigs");
   });
 
+  it("starts loading every cover as soon as the story opens, so later slides don't wait", () => {
+    const requested = [];
+    class FakeImage {
+      set src(value) {
+        requested.push(value);
+      }
+    }
+    vi.stubGlobal("Image", FakeImage);
+    const snapshot = sampleSnapshot();
+    render(<WrappedStory snapshot={snapshot} onClose={() => {}} />);
+    vi.unstubAllGlobals();
+    expect(requested).toContain("https://img.example/a.jpg");
+    expect(requested).toContain("https://img.example/f1.jpg");
+    expect(new Set(requested).size).toBe(requested.length); // each cover asked for once
+  });
+
   it("has a Share button and a Close button", () => {
     render(<WrappedStory snapshot={sampleSnapshot()} onClose={() => {}} />);
     expect(screen.getByRole("button", { name: "Share" })).toBeInTheDocument();

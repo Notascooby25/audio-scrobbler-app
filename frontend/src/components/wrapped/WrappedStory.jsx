@@ -27,6 +27,25 @@ export default function WrappedStory({ snapshot, onClose }) {
     rootRef.current?.focus();
   }, []);
 
+  // Cover art comes from other websites and can be slow, so ask for all of it as soon as the story opens and
+  // later slides are ready by the time you reach them.
+  useEffect(() => {
+    const urls = new Set();
+    const collect = (value) => {
+      if (Array.isArray(value)) value.forEach(collect);
+      else if (value && typeof value === "object") {
+        if (typeof value.artwork_url === "string" && value.artwork_url) urls.add(value.artwork_url);
+        Object.values(value).forEach(collect);
+      }
+    };
+    collect(snapshot.music);
+    urls.forEach((url) => {
+      const image = new Image();
+      image.referrerPolicy = "no-referrer"; // same as the cover itself, so the browser reuses the download
+      image.src = url;
+    });
+  }, [snapshot]);
+
   useEffect(() => {
     function onKey(event) {
       if (event.key === "ArrowRight") setIndex((value) => Math.min(value + 1, last));

@@ -144,6 +144,25 @@ def test_new_artists_use_full_history(db_session):
     assert stats["history_starts_at"].startswith("2024-01-01")
 
 
+def test_top_three_new_artists_by_plays(db_session):
+    _play(db_session, datetime(2024, 1, 1, 10, 0), artist="Old")
+    _fill(db_session, count=20, artist="Old")
+    for name, count, day in (("Fresh One", 30, 1), ("Fresh Two", 20, 2), ("Fresh Three", 10, 3), ("Fresh Four", 5, 4)):
+        _fill(db_session, count=count, artist=name, start=datetime(2026, 8, day, 10, 0))
+    stats = build_music_stats(db_session, 1, START, END)
+    assert stats["new_artists"] == 4
+    assert [a["name"] for a in stats["new_artists_top"]] == ["Fresh One", "Fresh Two", "Fresh Three"]
+    assert stats["new_artists_top"][0]["plays"] == 30
+    assert stats["new_artists_top"][0]["artwork_url"]
+
+
+def test_no_new_artist_list_when_history_starts_inside_the_year(db_session):
+    _fill(db_session, count=40, start=datetime(2026, 5, 1, 9, 0))
+    stats = build_music_stats(db_session, 1, START, END)
+    assert stats["new_artists"] is None
+    assert stats["new_artists_top"] == []
+
+
 def test_blocked_items_excluded(db_session):
     _fill(db_session, count=40, artist="Keep")
     _fill(db_session, count=10, artist="Hidden", start=datetime(2026, 5, 1, 9, 0))
