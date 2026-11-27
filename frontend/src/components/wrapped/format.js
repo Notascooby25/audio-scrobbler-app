@@ -49,6 +49,15 @@ export function formatShortDay(iso) {
   return `${day} ${MONTH_SHORT[month - 1]}`;
 }
 
+// "2026-06-26", "2026-06-28" -> "26–28 Jun"; across months, "28 Aug – 2 Sep"; no end date, just the day.
+export function formatDayRange(startIso, endIso) {
+  if (!endIso || endIso === startIso) return formatShortDay(startIso);
+  const [, startMonth, startDay] = startIso.slice(0, 10).split("-").map(Number);
+  const [, endMonth, endDay] = endIso.slice(0, 10).split("-").map(Number);
+  if (startMonth === endMonth) return `${startDay}–${endDay} ${MONTH_SHORT[endMonth - 1]}`;
+  return `${formatShortDay(startIso)} – ${formatShortDay(endIso)}`;
+}
+
 export function formatHour(hour) {
   if (hour === 0) return "12am";
   if (hour === 12) return "12pm";

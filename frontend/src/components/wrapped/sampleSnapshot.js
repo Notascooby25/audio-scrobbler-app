@@ -59,6 +59,7 @@ export function sampleSnapshot(overrides = {}) {
       last_night: "2026-12-12",
       longest_gap_days: 71,
       songs_heard_live: 312,
+      gig_list_total: 14,
       gig_list: [
         {
           date: "2026-01-17",
@@ -76,8 +77,9 @@ export function sampleSnapshot(overrides = {}) {
         },
         {
           date: "2026-06-26",
-          artist: "Artist C",
-          venue: "The Field",
+          end_date: "2026-06-28",
+          artist: "Big Weekend",
+          venue: null,
           city: "Pilton",
           festival: "Big Weekend",
         },

@@ -108,6 +108,7 @@ describe("buildSlides: order and parts", () => {
       festival: null,
     }));
     snapshot.gigs.nights = 20;
+    snapshot.gigs.gig_list_total = 20;
     const pages = ids(snapshot).filter((id) => id.startsWith("gigs-list"));
     expect(pages).toEqual(["gigs-list-1", "gigs-list-2", "gigs-list-3"]);
     renderSlide(snapshot, "gigs-list-3");
@@ -216,7 +217,13 @@ describe("gig slides", () => {
     expect(screen.getByText("17 Jan")).toBeInTheDocument();
     expect(screen.getByText("Artist A")).toBeInTheDocument();
     expect(screen.getByText("Venue One, Leeds")).toBeInTheDocument();
-    expect(screen.getByText("Big Weekend, The Field, Pilton")).toBeInTheDocument();
+  });
+
+  it("shows a festival as just its title, city and dates, never its acts or stages", () => {
+    renderSlide(sampleSnapshot(), "gigs-list-1");
+    expect(screen.getByText("Big Weekend")).toBeInTheDocument();
+    expect(screen.getByText("Pilton")).toBeInTheDocument();
+    expect(screen.getByText("26–28 Jun")).toBeInTheDocument();
   });
 
   it("says the miles are there and back, as the crow flies", () => {

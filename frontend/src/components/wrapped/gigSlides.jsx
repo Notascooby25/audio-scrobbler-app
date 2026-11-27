@@ -5,7 +5,7 @@ import {
   distanceComparison,
   formatDay,
   formatNumber,
-  formatShortDay,
+  formatDayRange,
   plural,
 } from "./format";
 
@@ -46,19 +46,20 @@ export function GigsGlanceSlide({ gigs }) {
 // The gigs themselves, a page at a time, so nothing has to be cut short.
 export function GigsListSlide({ gigs, page, pages, range }) {
   const list = gigs.gig_list.slice(...range(page));
-  const hidden = gigs.nights - gigs.gig_list.length;
+  // A festival is one entry however long it ran, so count entries, not nights.
+  const hidden = (gigs.gig_list_total ?? gigs.gig_list.length) - gigs.gig_list.length;
   const last = page === pages - 1;
   return (
     <>
       <Chip>{pages > 1 ? `Your gigs (${page + 1} of ${pages})` : "Your gigs"}</Chip>
       <ol className="wrapped-gigs">
         {list.map((gig) => (
-          <li key={`${gig.date}-${gig.venue}`}>
-            <span className="wrapped-gig-date">{formatShortDay(gig.date)}</span>
+          <li key={`${gig.date}-${gig.festival || gig.venue}-${gig.artist}`}>
+            <span className="wrapped-gig-date">{formatDayRange(gig.date, gig.end_date)}</span>
             <span className="wrapped-row-text">
               <span className="wrapped-row-name">{gig.artist}</span>
               <span className="wrapped-row-sub">
-                {[gig.festival, gig.venue, gig.city].filter(Boolean).join(", ")}
+                {[gig.venue, gig.city].filter(Boolean).join(", ")}
               </span>
             </span>
           </li>

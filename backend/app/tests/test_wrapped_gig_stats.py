@@ -96,8 +96,15 @@ def test_gig_list_has_one_entry_per_night_headliner_first_in_date_order(db_sessi
     _gig(db_session, "Early", datetime(2026, 2, 1), venue="Club", city="York")
     stats = build_gig_stats(db_session, 1, 2026, today=TODAY)
     assert stats["gig_list"] == [
-        {"date": "2026-02-01", "artist": "Early", "venue": "Club", "city": "York", "festival": None},
-        {"date": "2026-05-02", "artist": "Headliner", "venue": "Hall", "city": "Leeds", "festival": None},
+        {"date": "2026-02-01", "end_date": None, "artist": "Early", "venue": "Club", "city": "York", "festival": None},
+        {
+            "date": "2026-05-02",
+            "end_date": None,
+            "artist": "Headliner",
+            "venue": "Hall",
+            "city": "Leeds",
+            "festival": None,
+        },
     ]
 
 
@@ -108,7 +115,44 @@ def test_gig_list_names_the_festival_and_is_capped(db_session):
     stats = build_gig_stats(db_session, 1, 2026, today=TODAY)
     assert stats["gig_list"][0]["festival"] == "Big Weekend"
     assert len(stats["gig_list"]) == 18
+    assert stats["gig_list_total"] == 29  # 1 festival + 28 gigs; only the list is capped
     assert stats["nights"] == 29  # the total is never capped, only the list
+
+
+def test_a_festival_is_one_entry_however_many_acts_stages_or_days(db_session):
+    kwargs = {"is_festival": True, "festival_name": "Victorious Festival - 2026", "city": "Portsmouth"}
+    _gig(db_session, "Primal Scream", datetime(2026, 8, 29), venue="Castle Stage", **kwargs)
+    _gig(db_session, "The Black Keys", datetime(2026, 8, 29), venue="Common Stage", **kwargs)
+    _gig(db_session, "Another Act", datetime(2026, 8, 30), venue="Castle Stage", **kwargs)
+    _gig(db_session, "Solo Show", datetime(2026, 9, 5), venue="Hall", city="Leeds")
+    stats = build_gig_stats(db_session, 1, 2026, today=TODAY)
+    assert stats["gig_list"] == [
+        {
+            "date": "2026-08-29",
+            "end_date": "2026-08-30",
+            "artist": "Victorious Festival - 2026",
+            "venue": None,
+            "city": "Portsmouth",
+            "festival": "Victorious Festival - 2026",
+        },
+        {
+            "date": "2026-09-05",
+            "end_date": None,
+            "artist": "Solo Show",
+            "venue": "Hall",
+            "city": "Leeds",
+            "festival": None,
+        },
+    ]
+    assert stats["gig_list_total"] == 2
+    assert stats["nights"] == 4  # the headline totals still count every night
+
+
+def test_festival_rows_with_no_title_stay_as_ordinary_gigs(db_session):
+    _gig(db_session, "Band", datetime(2026, 6, 26), venue="Field", is_festival=True)
+    stats = build_gig_stats(db_session, 1, 2026, today=TODAY)
+    assert stats["gig_list"][0]["artist"] == "Band"
+    assert stats["gig_list"][0]["festival"] is None
 
 
 def test_months_busiest_first_last_gap_and_songs(db_session):

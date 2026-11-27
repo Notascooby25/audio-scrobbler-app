@@ -69,6 +69,7 @@ def build_gig_stats(db: Session, user_id: int, year: int, today: date | None = N
         if headliner_nights[top_key] >= 2:  # seeing everyone once isn't a favourite
             most_seen = {"artist": display_names[top_key], "times": headliner_nights[top_key]}
 
+    gig_entries = _gig_list(nights)
     gaps = [(b - a).days for a, b in zip(night_dates, night_dates[1:])]
 
     return {
@@ -85,7 +86,8 @@ def build_gig_stats(db: Session, user_id: int, year: int, today: date | None = N
         "last_night": night_dates[-1].isoformat(),
         "longest_gap_days": max(gaps) if gaps else None,
         "songs_heard_live": sum(r.song_count or 0 for r in in_year),
-        "gig_list": _gig_list(nights),
+        "gig_list": gig_entries[:GIG_LIST_LIMIT],
+        "gig_list_total": len(gig_entries),
     }
 
 
@@ -93,22 +95,41 @@ GIG_LIST_LIMIT = 18
 
 
 def _gig_list(nights: dict[tuple[date, str], list[Any]]) -> list[dict[str, Any]]:
-    """One entry per night in date order (headliner first), capped so a busy year can't bloat the snapshot.
-    Only artist, venue, city and festival name are included, never notes."""
-    entries = []
+    """The gigs to list, in date order. A named festival is ONE entry however many acts, stages or days it had
+    (just its title, the first and last day, and the city). Anything else is one entry per night, headliner
+    first. Only artist, venue, city and festival title are included, never notes. The caller caps the list."""
+    entries: list[dict[str, Any]] = []
+    festivals: dict[str, dict[str, Any]] = {}
     for (night, _venue), group in sorted(nights.items(), key=lambda item: item[0]):
+        title = next((r.festival_name.strip() for r in group if r.is_festival and r.festival_name), None)
+        if title:
+            key = title.casefold()
+            if key in festivals:
+                festivals[key]["end_date"] = night.isoformat()
+                continue
+            entry = {
+                "date": night.isoformat(),
+                "end_date": None,
+                "artist": title,
+                "venue": None,
+                "city": group[0].city,
+                "festival": title,
+            }
+            festivals[key] = entry
+            entries.append(entry)
+            continue
         lead = next((r for r in group if not r.is_support_act), group[0])
-        festival = next((r.festival_name for r in group if r.is_festival and r.festival_name), None)
         entries.append(
             {
                 "date": night.isoformat(),
+                "end_date": None,
                 "artist": lead.artist_name,
                 "venue": lead.venue_name,
                 "city": lead.city,
-                "festival": festival,
+                "festival": None,
             }
         )
-    return entries[:GIG_LIST_LIMIT]
+    return entries
 
 
 def _miles(db: Session, user_id: int, nights: dict[tuple[date, str], list[Any]]) -> dict[str, Any] | None:
