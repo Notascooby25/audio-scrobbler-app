@@ -2763,13 +2763,23 @@
   line-height: 1.4 !important;
 }
 
-[data-skin="timeline"] .guide-chapter,
-[data-skin="timeline"] .faq-item {
+[data-skin="timeline"] .guide-chapter {
   background: var(--color-surface) !important;
   border: 1px solid var(--color-border) !important;
   border-radius: var(--radius-md) !important;
   padding: 20px !important;
   margin-bottom: 16px !important;
+}
+
+/* FAQ cards carry no padding of their own: the question row and the answer do, so the whole
+   row is the tap target. The list's own 8px gap spaces the cards. */
+[data-skin="timeline"] .faq-item {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 0 !important;
+  margin-bottom: 0 !important;
+  overflow: hidden !important;
 }
 
 [data-skin="timeline"] .guide-chapter h3,
@@ -2824,12 +2834,59 @@
   font-weight: 600 !important;
   color: var(--color-ink) !important;
   cursor: pointer !important;
+  padding: 12px 16px !important;
+  min-height: 48px !important;
+}
+
+[data-skin="timeline"] .faq-question:focus-visible {
+  outline: 2px solid var(--color-primary) !important;
+  outline-offset: -2px !important;
+  border-radius: calc(var(--radius-md) - 1px) !important;
 }
 
 [data-skin="timeline"] .faq-answer {
-  padding-top: 12px !important;
-  margin-top: 12px !important;
+  padding: 12px 16px 16px !important;
+  margin-top: 0 !important;
   border-top: 1px solid var(--color-border-subtle) !important;
+  font-size: 14px !important;
+}
+
+/* Keep answer text to a readable line length on wide screens. */
+[data-skin="timeline"] .faq-answer p,
+[data-skin="timeline"] .faq-answer ul,
+[data-skin="timeline"] .faq-answer ol {
+  max-width: 70ch !important;
+}
+
+/* List text matches paragraph text (the answer box is no longer the smaller rem size). */
+[data-skin="timeline"] .faq-answer li,
+[data-skin="timeline"] .guide-chapter li {
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  color: var(--color-ink) !important;
+}
+
+/* Links use the ink colour with an accent underline, so they read in light and dark and with every accent preset. */
+[data-skin="timeline"] .faq-answer a,
+[data-skin="timeline"] .guide-chapter a {
+  color: var(--color-ink) !important;
+  text-decoration-line: underline !important;
+  text-decoration-color: var(--color-primary) !important;
+  text-decoration-thickness: 2px !important;
+  text-underline-offset: 3px !important;
+}
+
+/* Code and web addresses wrap inside the card instead of being clipped on phones. */
+[data-skin="timeline"] .faq-answer code,
+[data-skin="timeline"] .guide-chapter code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  font-size: 0.9em !important;
+  background: var(--color-canvas) !important;
+  border: 1px solid var(--color-border-subtle) !important;
+  border-radius: 4px !important;
+  padding: 1px 5px !important;
+  overflow-wrap: anywhere !important;
 }
 
 [data-skin="timeline"] .faq-search-input {
@@ -2840,6 +2897,11 @@
   font-family: var(--font-body) !important;
   font-size: 14px !important;
   padding: 8px 16px !important;
+  min-height: 44px !important;
+}
+
+[data-skin="timeline"] .faq-search-clear {
+  min-height: 44px !important;
 }
 
 /* ==========================================================================
@@ -2847,6 +2909,11 @@
    ========================================================================== */
 
 @media (max-width: 640px) {
+  /* FAQ search: 16px stops iOS Safari zooming the page when the box is tapped */
+  [data-skin="timeline"] .faq-search-input {
+    font-size: 16px !important;
+  }
+
   /* Time Capsule & Rediscover: let title take full width, badge on second row */
   [data-skin="timeline"] .rediscover-item {
     display: grid !important;
