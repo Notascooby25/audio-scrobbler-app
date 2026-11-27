@@ -48,6 +48,9 @@ class Settings:
     skiddle_api_key: str = os.getenv("SKIDDLE_API_KEY", "").strip("'\" \r\n")
     # Comma-separated app user ids who may see unreleased Wrapped snapshots (previews and the sample year).
     wrapped_early_access_user_ids: str = os.getenv("WRAPPED_EARLY_ACCESS_USER_IDS", "")
+    # First past year to build a quiet "archive" Wrapped for, for everyone (no banner or notification). The years
+    # run from this one up to the year before the live release. 0 turns it off.
+    wrapped_backfill_from_year: str = os.getenv("WRAPPED_BACKFILL_FROM_YEAR", "2020")
     cors_origins: str = os.getenv(
         "CORS_ORIGINS",
         "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000",
@@ -58,6 +61,10 @@ class Settings:
 
     def wrapped_early_access_ids(self) -> list[int]:
         return [int(uid) for uid in self.wrapped_early_access_user_ids.split(",") if uid.strip().isdigit()]
+
+    def wrapped_backfill_year(self) -> int:
+        text = self.wrapped_backfill_from_year.strip()
+        return int(text) if text.isdigit() else 0
 
     def allowed_spotify_ids(self) -> list[str]:
         return [uid.strip() for uid in self.allowed_spotify_user_ids.split(",") if uid.strip()]

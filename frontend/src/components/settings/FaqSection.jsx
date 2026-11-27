@@ -117,6 +117,11 @@ const FAQ_DATA = [
           that changed shows an Updated tag. Minutes are estimated from track length, and gig miles
           are there and back as the crow flies from your home city.
         </p>
+        <p>
+          Earlier years are built too, back to 2020, for any year where you had at least 30 plays or
+          a gig. They sit in the Wrapped tab on Reports with no banner or notification, and they
+          don&apos;t change once made.
+        </p>
       </>
     ),
   },

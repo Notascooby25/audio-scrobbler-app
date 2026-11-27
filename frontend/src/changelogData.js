@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.56.0",
+    date: "2026-11-28",
+    changes: [
+      "Your past years in review: Wrapped now also builds one for each earlier year back to 2020 (for any year where you listened to at least 30 plays or went to a gig). They appear in the Wrapped tab on Reports, newest first, and open the same story as this year's. There is no banner or notification for them, and each is frozen once made.",
+      "A year where your records start part way through says so (for example, From 14 March), and minutes are still estimated from track length.",
+    ],
+  },
+  {
     version: "0.55.0",
     date: "2026-11-27",
     changes: [

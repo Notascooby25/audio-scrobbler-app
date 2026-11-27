@@ -551,6 +551,13 @@ the NAS listing.** The live setup has drifted from the repos before.
   nights) and artist pictures; the share picture copies covers as data first
   (the security policy blocks blob fetches) and drops any it can't copy. The year
   cards live in the **Wrapped** tab after Gigs on Reports.
+  **v0.56.0 (2026-11-28): past years.** `run_due` also builds quiet `archive`
+  snapshots for every active person for each year from `WRAPPED_BACKFILL_FROM_YEAR`
+  (default 2020, 0 = off) up to the year before 2026: no banner (the banner only
+  looks at `unlock` and `final`), no notification, full year window, frozen once
+  made, skipped if the person already has any snapshot for that year. Nothing is
+  needed on the host for the default; set the variable only to change the first
+  year or turn it off.
 - **Dependency updates (2026-11-18, no version bump):** PyJWT 2.15.1 (backend),
   requests 2.34.2 and python-dotenv 1.2.4 (backend and worker). Sign-in tokens
   are unchanged: `backend/app/tests/test_jwt_compat.py` decodes a token minted by
