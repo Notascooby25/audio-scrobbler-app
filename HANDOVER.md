@@ -525,6 +525,23 @@ the NAS listing.** The live setup has drifted from the repos before.
   so the cabinet's own buttons use `!important` on colour, background, border and
   text-transform. The claw animation from the mockup is not built (owner chose look
   only). The file is still protected from site-wide restyles.
+- **v0.55.0 (2026-11-27): Year Wrapped.** Table `year_reviews` (migration 0038):
+  one frozen JSON snapshot per user, year and stage (`preview` 30 Dec 08:00 London,
+  `unlock` 31 Dec 18:00, `final` 1 Jan 00:05; later stages quietly replace earlier
+  ones on read). `services/wrapped_service.py` `run_due(db, now)` is the one place
+  the clock lives; the worker job `wrapped-check` (every
+  `WORKER_WRAPPED_CHECK_INTERVAL_MINUTES`, default 30) calls
+  `POST /wrapped/internal/run-due`, so a worker outage catches up on its next run.
+  Stats are worked out in Python in `wrapped_music_stats.py` and
+  `wrapped_gig_stats.py` (London time; a gig night is date plus venue; miles are
+  there and back as the crow flies from cached geocodes only). The unlock stage
+  makes one bell notification and one push per person. Previews and the sample year
+  show only to ids in `WRAPPED_EARLY_ACCESS_USER_IDS` (backend env). The host
+  compose file is hand-managed: add that variable by hand (and optionally the
+  worker interval) and check with `exec <service> sh -c 'test -n "$VAR"'`. To
+  make the 2025 sample for the owner, call
+  `generate_year_review(db, user_id, 2025, "final", now, is_sample=True)` from a
+  backend shell. Spec: `docs/superpowers/specs/2026-11-27-year-wrapped-design.md`.
 - **Dependency updates (2026-11-18, no version bump):** PyJWT 2.15.1 (backend),
   requests 2.34.2 and python-dotenv 1.2.4 (backend and worker). Sign-in tokens
   are unchanged: `backend/app/tests/test_jwt_compat.py` decodes a token minted by

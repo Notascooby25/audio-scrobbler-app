@@ -287,6 +287,15 @@ export default function UserGuideSection() {
             your five furthest headline gigs from home.
           </li>
           <li>
+            <strong>Your year in review (Wrapped):</strong> On the evening of 31 December a banner
+            and a notification tell you your Wrapped is ready. Tap the right side of the screen to
+            go on and the left to go back. It covers your music, then your gigs: how many, the miles
+            travelled there and back as the crow flies, and which months you went. The Share button
+            turns the slide you are on into a picture. Past years are kept on the Reports page.
+            Minutes are estimated from track length, and miles need a home city set in{" "}
+            <em>Settings → General</em>.
+          </li>
+          <li>
             <strong>Hints on Reports:</strong> Tap the ⓘ next to a chart or card title to see a
             short plain-English note on what it shows and how to read it.
           </li>
