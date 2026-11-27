@@ -12,17 +12,16 @@ from __future__ import annotations
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..datetime_utils import utc_now
-from ..models import Notification, User, YearReview
+from ..models import ListeningEvent, Notification, User, YearReview
 from .push_service import queue_push
 from .wrapped_gig_stats import build_gig_stats
-from .wrapped_music_stats import LONDON, to_london
-from .wrapped_music_stats import build_music_stats
+from .wrapped_music_stats import LONDON, MIN_PLAYS, build_music_stats, to_london
 
 FORMAT_VERSION = 1
 FIRST_LIVE_YEAR = 2026
@@ -160,6 +159,19 @@ def generate_year_review(
     if notify:
         queue_push(user_id, title, message, link)
     return review
+
+
+def is_eligible(db: Session, user_id: int, year: int, now: datetime) -> bool:
+    """True when the person already has enough in the year to get a Wrapped (30 plays or a gig night)."""
+    start, end = _window(year, "preview", now)
+    plays = db.scalar(
+        select(func.count(ListeningEvent.id)).where(
+            ListeningEvent.user_id == user_id, ListeningEvent.played_at >= start, ListeningEvent.played_at < end
+        )
+    )
+    if (plays or 0) >= MIN_PLAYS:
+        return True
+    return build_gig_stats(db, user_id, year, today=to_london(end - timedelta(seconds=1)).date()) is not None
 
 
 def _notification_text(year: int, music: dict[str, Any] | None, gigs: dict[str, Any] | None) -> tuple[str, str, str]:

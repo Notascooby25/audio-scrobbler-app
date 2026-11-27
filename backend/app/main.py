@@ -21,6 +21,7 @@ from .api.tools import router as tools_router
 from .api.notifications import router as notifications_router
 from .api.recommendations import router as recommendations_router
 from .api.setlists import router as setlists_router
+from .api.wrapped import router as wrapped_router
 from .api.jukebox import router as jukebox_router
 from .api.jukebox_1001 import router as jukebox_1001_router
 from .api.jukebox_rough_trade import router as jukebox_rough_trade_router
@@ -55,6 +56,7 @@ app.include_router(tools_router)
 app.include_router(notifications_router)
 app.include_router(recommendations_router)
 app.include_router(setlists_router)
+app.include_router(wrapped_router)
 app.include_router(jukebox_router)
 app.include_router(jukebox_1001_router)
 app.include_router(jukebox_rough_trade_router)
