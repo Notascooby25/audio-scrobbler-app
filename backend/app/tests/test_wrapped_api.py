@@ -147,6 +147,16 @@ def test_banner_shows_then_clears_after_seen():
     assert client.get("/year-reviews").json()["banner"] is None
 
 
+def test_seen_and_dismiss_answer_with_a_truly_empty_204():
+    # A 204 that carries a JSON content type made the browser report the request as aborted.
+    _row()
+    for path in ("/year-reviews/2026/seen", "/year-reviews/2026/dismiss"):
+        response = client.post(path)
+        assert response.status_code == 204
+        assert response.content == b""
+        assert "content-type" not in response.headers
+
+
 def test_banner_clears_after_dismiss():
     _row()
     assert client.post("/year-reviews/2026/dismiss").status_code == 204
@@ -201,6 +211,8 @@ def test_internal_route_rejects_missing_or_wrong_token():
 
 
 def test_internal_route_runs_with_token():
-    response = client.post("/year-reviews/internal/run-due", headers={"X-Worker-Token": settings.worker_ingestion_token})
+    response = client.post(
+        "/year-reviews/internal/run-due", headers={"X-Worker-Token": settings.worker_ingestion_token}
+    )
     assert response.status_code == 200
     assert response.json() == {"generated": 0}

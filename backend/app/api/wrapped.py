@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -118,28 +118,30 @@ def get_wrapped(
     )
 
 
-@router.post("/{year}/seen", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+@router.post("/{year}/seen", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
 def mark_seen(
     year: int,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
-) -> None:
+) -> Response:
     row = _newest(_year_rows_or_404(db, current_user.id, year))
     if row.seen_at is None:
         row.seen_at = utc_now()
         db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.post("/{year}/dismiss", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+@router.post("/{year}/dismiss", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
 def dismiss(
     year: int,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
-) -> None:
+) -> Response:
     row = _newest(_year_rows_or_404(db, current_user.id, year))
     if row.dismissed_at is None:
         row.dismissed_at = utc_now()
         db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/internal/run-due")
