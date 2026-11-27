@@ -21,6 +21,7 @@ LONDON = ZoneInfo("Europe/London")
 MIN_PLAYS = 30
 MIN_ALBUM_TRACKS = 3
 TOP_LIMIT = 5
+DEFAULT_DURATION_MS = 210_000  # 3.5 minutes, when none of a person's plays has a known length
 
 
 def to_london(moment: datetime) -> datetime:
@@ -75,10 +76,14 @@ def build_music_stats(db: Session, user_id: int, start: datetime, end: datetime)
     day_plays: Counter[str] = Counter()
     day_ms: Counter[str] = Counter()
     total_ms = 0
+    # Some sources (YouTube imports) have no track length. Those plays count at the person's own average
+    # known length rather than as zero minutes, so the minutes total stays a fair estimate.
+    known = [row.duration_ms for row in rows if row.duration_ms]
+    fallback_ms = round(sum(known) / len(known)) if known else DEFAULT_DURATION_MS
 
     for row in rows:
         local = to_london(row.played_at)
-        duration = int(row.duration_ms or 0)
+        duration = int(row.duration_ms or fallback_ms)
         total_ms += duration
         months[local.month - 1] += 1
         hours[local.hour] += 1

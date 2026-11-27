@@ -60,6 +60,21 @@ def test_minutes_use_duration_ms(db_session):
     assert stats["estimated_minutes"] == 120
 
 
+def test_missing_duration_uses_the_average_of_known_plays(db_session):
+    # YouTube imports have no track length. They count at the person's own average, not as zero minutes.
+    _fill(db_session, count=20, duration_ms=180_000)
+    _fill(db_session, count=20, duration_ms=None, start=datetime(2026, 5, 1, 9, 0))
+    stats = build_music_stats(db_session, 1, START, END)
+    assert stats["estimated_minutes"] == 120  # 40 plays x 3 minutes
+
+
+def test_no_known_durations_count_as_three_and_a_half_minutes(db_session):
+    _fill(db_session, count=40, duration_ms=None)
+    stats = build_music_stats(db_session, 1, START, END)
+    assert stats["estimated_minutes"] == 140
+    assert stats["biggest_day"]["minutes"] == 140
+
+
 def test_london_time_grouping_across_bst(db_session):
     _fill(db_session, count=30)
     # 23:30 UTC on 30 June is 00:30 BST on 1 July.
