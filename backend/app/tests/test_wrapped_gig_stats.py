@@ -90,6 +90,27 @@ def test_only_gigs_in_the_year_and_not_in_future(db_session):
     assert stats["nights"] == 1
 
 
+def test_gig_list_has_one_entry_per_night_headliner_first_in_date_order(db_session):
+    _gig(db_session, "Support", datetime(2026, 5, 2), venue="Hall", city="Leeds", support=True)
+    _gig(db_session, "Headliner", datetime(2026, 5, 2), venue="Hall", city="Leeds")
+    _gig(db_session, "Early", datetime(2026, 2, 1), venue="Club", city="York")
+    stats = build_gig_stats(db_session, 1, 2026, today=TODAY)
+    assert stats["gig_list"] == [
+        {"date": "2026-02-01", "artist": "Early", "venue": "Club", "city": "York", "festival": None},
+        {"date": "2026-05-02", "artist": "Headliner", "venue": "Hall", "city": "Leeds", "festival": None},
+    ]
+
+
+def test_gig_list_names_the_festival_and_is_capped(db_session):
+    _gig(db_session, "Band", datetime(2026, 6, 26), venue="Field", is_festival=True, festival_name="Big Weekend")
+    for day in range(1, 29):
+        _gig(db_session, f"Act {day}", datetime(2026, 7, day), venue=f"Venue {day}")
+    stats = build_gig_stats(db_session, 1, 2026, today=TODAY)
+    assert stats["gig_list"][0]["festival"] == "Big Weekend"
+    assert len(stats["gig_list"]) == 18
+    assert stats["nights"] == 29  # the total is never capped, only the list
+
+
 def test_months_busiest_first_last_gap_and_songs(db_session):
     _gig(db_session, "A", datetime(2026, 1, 10), song_count=20)
     _gig(db_session, "A", datetime(2026, 6, 1), venue="V2", song_count=15)

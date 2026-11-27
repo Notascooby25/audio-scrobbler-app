@@ -49,6 +49,7 @@ def build_music_stats(db: Session, user_id: int, start: datetime, end: datetime)
             ListeningEvent.artist_name,
             ListeningEvent.album_name,
             ListeningEvent.artwork_url,
+            ListeningEvent.artist_artwork_url,
             ListeningEvent.played_at,
             ListeningEvent.duration_ms,
         )
@@ -68,6 +69,7 @@ def build_music_stats(db: Session, user_id: int, start: datetime, end: datetime)
     album_plays: Counter[str] = Counter()
     album_tracks: dict[str, set[str]] = defaultdict(set)
     artist_names: dict[str, dict[str, Any]] = {}
+    artist_pictures: dict[str, bool] = {}
     song_names: dict[str, dict[str, Any]] = {}
     album_names: dict[str, dict[str, Any]] = {}
     months = [0] * 12
@@ -94,9 +96,14 @@ def build_music_stats(db: Session, user_id: int, start: datetime, end: datetime)
 
         artist_key = row.artist_name.casefold()
         artist_plays[artist_key] += 1
-        artist_names.setdefault(artist_key, {"name": row.artist_name, "artwork_url": row.artwork_url})
-        if not artist_names[artist_key]["artwork_url"] and row.artwork_url:
-            artist_names[artist_key]["artwork_url"] = row.artwork_url
+        # An artist's own picture if we have one, otherwise the cover of something they played.
+        picture = row.artist_artwork_url or row.artwork_url
+        artist_names.setdefault(artist_key, {"name": row.artist_name, "artwork_url": picture})
+        if row.artist_artwork_url and not artist_pictures.get(artist_key):
+            artist_pictures[artist_key] = True
+            artist_names[artist_key]["artwork_url"] = row.artist_artwork_url
+        elif not artist_names[artist_key]["artwork_url"] and picture:
+            artist_names[artist_key]["artwork_url"] = picture
 
         song_key = f"{row.track_name.casefold()}\u0000{artist_key}"
         song_plays[song_key] += 1

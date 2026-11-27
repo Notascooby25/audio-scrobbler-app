@@ -117,6 +117,16 @@ def test_top_artists_and_songs_ranked_by_plays(db_session):
     assert stats["top_songs"][0]["artist"] == "Big"
 
 
+def test_artist_rows_prefer_the_artist_picture_over_album_art(db_session):
+    _fill(db_session, count=35, artist="Big", album="Some Album")
+    for event in db_session.query(ListeningEvent).all():
+        event.artist_artwork_url = "https://img/big-artist.jpg"
+    db_session.commit()
+    stats = build_music_stats(db_session, 1, START, END)
+    assert stats["top_artists"][0]["artwork_url"] == "https://img/big-artist.jpg"
+    assert stats["top_songs"][0]["artwork_url"] == "https://img/Some Album.jpg"
+
+
 def test_artist_casing_is_one_artist(db_session):
     _fill(db_session, count=20, artist="Big Band")
     _fill(db_session, count=15, artist="big band", start=datetime(2026, 5, 1, 9, 0))

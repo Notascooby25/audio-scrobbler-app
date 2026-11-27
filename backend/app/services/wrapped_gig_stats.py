@@ -37,6 +37,7 @@ def build_gig_stats(db: Session, user_id: int, year: int, today: date | None = N
             AttendedConcert.event_date,
             AttendedConcert.is_support_act,
             AttendedConcert.is_festival,
+            AttendedConcert.festival_name,
             AttendedConcert.song_count,
         ).where(AttendedConcert.user_id == user_id)
     ).all()
@@ -84,7 +85,30 @@ def build_gig_stats(db: Session, user_id: int, year: int, today: date | None = N
         "last_night": night_dates[-1].isoformat(),
         "longest_gap_days": max(gaps) if gaps else None,
         "songs_heard_live": sum(r.song_count or 0 for r in in_year),
+        "gig_list": _gig_list(nights),
     }
+
+
+GIG_LIST_LIMIT = 18
+
+
+def _gig_list(nights: dict[tuple[date, str], list[Any]]) -> list[dict[str, Any]]:
+    """One entry per night in date order (headliner first), capped so a busy year can't bloat the snapshot.
+    Only artist, venue, city and festival name are included, never notes."""
+    entries = []
+    for (night, _venue), group in sorted(nights.items(), key=lambda item: item[0]):
+        lead = next((r for r in group if not r.is_support_act), group[0])
+        festival = next((r.festival_name for r in group if r.is_festival and r.festival_name), None)
+        entries.append(
+            {
+                "date": night.isoformat(),
+                "artist": lead.artist_name,
+                "venue": lead.venue_name,
+                "city": lead.city,
+                "festival": festival,
+            }
+        )
+    return entries[:GIG_LIST_LIMIT]
 
 
 def _miles(db: Session, user_id: int, nights: dict[tuple[date, str], list[Any]]) -> dict[str, Any] | None:
