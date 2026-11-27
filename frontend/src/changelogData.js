@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.56.2",
+    date: "2026-11-28",
+    changes: [
+      "Timeline theme: the FAQ is easier to read and tap. Links are now readable in dark mode, long web addresses and file names wrap instead of being cut off on a phone, and bullet lists are the same size as the text around them.",
+      "Questions are lighter and shorter, so the whole row is the tap target, the page is about 40% shorter, and answer lines stop at a comfortable width on a computer. The search box and Clear button are 44px tall, and the search text is 16px on a phone so iPhones no longer zoom in.",
+      "The User Guide gets the same link, code and list fixes. Classic and Sleeve are unchanged.",
+    ],
+  },
+  {
     version: "0.56.1",
     date: "2026-11-28",
     changes: [
