@@ -11,7 +11,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from ..models import AttendedConcert, GigCompanion, ListeningEvent
-from .setlist_artwork_service import existing_gig_artwork, local_live_artwork
+from .setlist_artwork_service import existing_gig_artwork, local_live_albums, local_live_artwork
 from .setlist_service import SetlistService
 from .setlist_stats_service import _venue_key
 
@@ -332,6 +332,7 @@ class SetlistAttendanceService:
         # Keep artwork the old scrobbles had, then fill gaps from the user's own plays
         kept = existing_gig_artwork(self.db, user_id, setlist_id)
         local_tracks, artist_image = local_live_artwork(self.db, user_id, artist_name) if songs else ({}, None)
+        local_albums = local_live_albums(self.db, user_id, artist_name) if songs else {}
 
         # First delete existing scrobbles for this setlist to ensure clean replacement
         self.db.execute(
@@ -350,7 +351,7 @@ class SetlistAttendanceService:
                 track_id=f"setlistfm:{setlist_id}:{idx}",
                 track_name=song_title,
                 artist_name=artist_name,
-                album_name=f"Live at {venue_name}" if venue_name else None,
+                album_name=local_albums.get(song_title.lower()),
                 artwork_url=kept_art if kept_art is not None else local_tracks.get(song_title.lower()),
                 artist_artwork_url=kept_artist_art if kept_artist_art is not None else artist_image,
                 played_at=played_at,
@@ -577,7 +578,8 @@ class SetlistAttendanceService:
                 gig.venue_name, gig.city, gig.country = venue, city, country
             for event in self.db.query(ListeningEvent).filter(*self._gig_events(user_id, gig.setlist_id)):
                 event.played_at = event.played_at + shift
-                event.album_name = f"Live at {gig.venue_name}"
+                if event.album_name and event.album_name.lower().startswith("live at "):
+                    event.album_name = None
                 if gig is concert:
                     event.artist_name = artist
                 event.raw_metadata = {

@@ -74,6 +74,32 @@ def local_live_artwork(db: Session, user_id: int, artist_name: str) -> tuple[dic
     return tracks, artist_image if _usable(artist_image) else None
 
 
+def local_live_albums(db: Session, user_id: int, artist_name: str) -> dict[str, str]:
+    """Most-played non-gig album_name per lowercased track title from the user's own plays of this artist."""
+    rows = db.execute(
+        select(
+            ListeningEvent.track_name,
+            ListeningEvent.album_name,
+            func.count(ListeningEvent.id).label("plays"),
+        )
+        .where(
+            ListeningEvent.user_id == user_id,
+            func.lower(ListeningEvent.artist_name) == func.lower(artist_name.strip()),
+            ListeningEvent.source != LIVE_SOURCE,
+            ListeningEvent.album_name.isnot(None),
+            ListeningEvent.album_name != "",
+            ~ListeningEvent.album_name.ilike("Live at %"),
+        )
+        .group_by(ListeningEvent.track_name, ListeningEvent.album_name)
+        .order_by(func.count(ListeningEvent.id).desc())
+    ).all()
+    albums: dict[str, str] = {}
+    for title, album_name, _plays in rows:
+        if album_name:
+            albums.setdefault(title.lower(), album_name)
+    return albums
+
+
 def _cache_key(kind: str, *parts: str) -> str:
     normalised = "|".join(part.strip().lower() for part in parts)
     return f"{kind}:{hashlib.sha1(normalised.encode()).hexdigest()}"
