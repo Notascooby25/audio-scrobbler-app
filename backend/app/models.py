@@ -303,6 +303,26 @@ class Notification(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
+class YearReview(Base):
+    """A frozen "Wrapped" snapshot for one person and year. Stage is preview, unlock or final."""
+
+    __tablename__ = "year_reviews"
+    __table_args__ = (UniqueConstraint("user_id", "year", "stage", name="uq_year_review_user_year_stage"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
+    stage: Mapped[str] = mapped_column(String(16), nullable=False)
+    format_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    data: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    is_sample: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
+    window_start: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    window_end: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    generated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    seen_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    dismissed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
 class MusicRecommendation(Base):
     __tablename__ = "music_recommendations"
 
