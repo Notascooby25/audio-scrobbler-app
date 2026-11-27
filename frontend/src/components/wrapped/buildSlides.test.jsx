@@ -81,7 +81,24 @@ describe("buildSlides: order and parts", () => {
     expect(ids(snapshot)).not.toContain("gigs-miles");
   });
 
-  it("splits a long gig list into pages of six", () => {
+  it("shares gigs evenly across pages so the last page isn't nearly empty", () => {
+    const snapshot = sampleSnapshot();
+    snapshot.gigs.gig_list = Array.from({ length: 13 }, (_, i) => ({
+      date: `2026-03-${String(i + 1).padStart(2, "0")}`,
+      artist: `Act ${i + 1}`,
+      venue: `Venue ${i + 1}`,
+      city: "Leeds",
+      festival: null,
+    }));
+    const sizes = [1, 2, 3].map((page) => {
+      cleanup();
+      renderSlide(snapshot, `gigs-list-${page}`);
+      return document.querySelectorAll(".wrapped-gigs li").length;
+    });
+    expect(sizes).toEqual([5, 4, 4]);
+  });
+
+  it("splits a long gig list into pages of six at most", () => {
     const snapshot = sampleSnapshot();
     snapshot.gigs.gig_list = Array.from({ length: 13 }, (_, i) => ({
       date: `2026-03-${String(i + 1).padStart(2, "0")}`,

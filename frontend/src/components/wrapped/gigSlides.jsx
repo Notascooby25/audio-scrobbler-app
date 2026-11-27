@@ -11,6 +11,12 @@ import {
 
 export const GIGS_PER_PAGE = 6;
 
+// Pages of at most six, with the gigs shared out evenly (13 gigs is 5, 4 and 4, not 6, 6 and 1).
+export function gigPages(listed) {
+  const pages = Math.ceil(listed / GIGS_PER_PAGE);
+  return { pages, size: Math.ceil(listed / pages) };
+}
+
 export function GigsGlanceSlide({ gigs }) {
   const details = [
     `${formatNumber(gigs.artists)} different ${gigs.artists === 1 ? "artist" : "artists"}`,
@@ -32,8 +38,8 @@ export function GigsGlanceSlide({ gigs }) {
 }
 
 // The gigs themselves, a page at a time, so nothing has to be cut short.
-export function GigsListSlide({ gigs, page, pages }) {
-  const list = gigs.gig_list.slice(page * GIGS_PER_PAGE, (page + 1) * GIGS_PER_PAGE);
+export function GigsListSlide({ gigs, page, pages, size }) {
+  const list = gigs.gig_list.slice(page * size, (page + 1) * size);
   const hidden = gigs.nights - gigs.gig_list.length;
   const last = page === pages - 1;
   return (

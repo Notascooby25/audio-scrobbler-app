@@ -1,7 +1,8 @@
 // Flat decorative shapes in the person's accent colour. No gradients and no shadows. Each slide gets one
 // variant in one corner so the story doesn't feel like the same page repeated.
 export const SHAPE_VARIANTS = ["rings", "stripes", "dots", "arc"];
-export const SHAPE_CORNERS = ["tr", "bl", "tr", "br", "tl"];
+// Never top-left: that's where the section label sits.
+export const SHAPE_CORNERS = ["tr", "bl", "tr", "br"];
 
 function Variant({ variant }) {
   switch (variant) {

@@ -40,7 +40,7 @@ export default function WrappedStory({ snapshot, onClose }) {
   return (
     <div
       ref={rootRef}
-      className="wrapped-story"
+      className={`wrapped-story wrapped-tone-${slide.tone}`}
       role="dialog"
       aria-modal="true"
       aria-label={`Your ${snapshot.year} Wrapped`}

@@ -20,7 +20,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--w-ink);
+  /* The screen around the slide matches the slide's own colour, so a phone shows one seamless slide. */
+  background: var(--w-bg, var(--w-ink));
   outline: none;
 }
 

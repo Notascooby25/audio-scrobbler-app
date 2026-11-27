@@ -12,7 +12,7 @@ import {
   TopArtistSlide,
 } from "./musicSlides";
 import {
-  GIGS_PER_PAGE,
+  gigPages,
   GigsCalendarSlide,
   GigsGlanceSlide,
   GigsHighlightsSlide,
@@ -77,13 +77,13 @@ export function buildSlides(snapshot) {
     add("gigs-glance", 2, "light", <GigsGlanceSlide gigs={gigs} />, "Gigs");
     const listed = gigs.gig_list?.length || 0;
     if (listed) {
-      const pages = Math.ceil(listed / GIGS_PER_PAGE);
+      const { pages, size } = gigPages(listed);
       for (let page = 0; page < pages; page += 1) {
         add(
           `gigs-list-${page + 1}`,
           2,
           "light",
-          <GigsListSlide gigs={gigs} page={page} pages={pages} />,
+          <GigsListSlide gigs={gigs} page={page} pages={pages} size={size} />,
           "Gigs"
         );
       }
