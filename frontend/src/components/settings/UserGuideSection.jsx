@@ -66,7 +66,8 @@ export default function UserGuideSection() {
         <h4>Visual Themes & Skins (Classic, Sleeve & Timeline)</h4>
         <p>
           You can personalize your visual experience in <strong>Settings → General</strong> using
-          the <strong>Skin switcher</strong>:
+          the <strong>Skin switcher</strong>. Timeline is the default skin for new accounts, and
+          existing accounts keep the skin they already chose:
         </p>
         <ul>
           <li>
@@ -79,7 +80,10 @@ export default function UserGuideSection() {
           </li>
           <li>
             <strong>Timeline:</strong> A calm, data-first vertical rail of plays with quiet gaps,
-            hourly listening charts, and geometric source markers in both light and dark themes.
+            hourly listening charts, and geometric source markers in both light and dark themes. The
+            Today page is that rail: a marker shows where each play came from, and a dashed quiet
+            gap appears after an hour or more with nothing played. In the Library, the List and Grid
+            buttons switch between rows with play-count bars and a grid of covers.
           </li>
         </ul>
         <p>
@@ -174,7 +178,8 @@ export default function UserGuideSection() {
             <strong>Start Time</strong> and <strong>End Time</strong>, and click{" "}
             <strong>Share Scrobbles</strong>. Your songs from that period are added to their
             history, and they get a notification so they know. You can only share with people you
-            follow.
+            follow. Sharing cannot be undone from your side, and the songs are not marked as coming
+            from you, so check the times before you confirm.
           </p>
         </div>
 
@@ -292,8 +297,9 @@ export default function UserGuideSection() {
             go on and the left to go back. It covers your music, then your gigs: how many, the miles
             travelled there and back as the crow flies, and which months you went. The Share button
             turns the slide you are on into a picture. Past years, back to 2020, are kept in the
-            Wrapped tab on Reports, after Gigs. Minutes are estimated from track length, and miles
-            need a home city set in <em>Settings → General</em>.
+            Wrapped tab on Reports, after Gigs. Earlier years have no banner or notification and
+            don&apos;t change once made. Minutes are estimated from track length, and miles need a
+            home city set in <em>Settings → General</em>.
           </li>
           <li>
             <strong>Hints on Reports:</strong> Tap the ⓘ next to a chart or card title to see a
@@ -324,7 +330,9 @@ export default function UserGuideSection() {
             both challenge modes, you can exclude previously played records, track overall
             completion via the progress button, open a dedicated checklist modal to manually check
             off records, and confirm completed albums via the post-listen prompt when you open a
-            pick in Spotify.
+            pick in Spotify. Lucky Dip gives you up to three rolls (Re-roll shows how many are
+            left), and the button at the bottom of the Jukebox switches between the Flat and Arcade
+            views.
           </li>
           <li>
             <strong>Customisable Visible Amounts & Pagination:</strong> In the Library, you can
@@ -382,7 +390,7 @@ export default function UserGuideSection() {
             Spotify? Click the three-dots menu on any track, album, or artist in your Library and
             select <em>Block</em>. Blocked items are permanently excluded from all stats, reports,
             and rankings without deleting your raw play logs. You can review and unblock items at
-            any time in <em>Settings → General</em>.
+            any time in <em>Settings → Data</em>.
           </li>
           <li>
             <strong>Cleaning Up Accidental Imports:</strong> Need to remove an import batch or wipe
@@ -402,9 +410,9 @@ export default function UserGuideSection() {
           </li>
           <li>
             <strong>Signing Out &amp; Cache Privacy:</strong> Need to switch accounts or sign out on
-            a shared computer? You can sign out at any time from your Profile page or from the Home
-            page Spotify card. Signing out clears your local session tokens and automatically wipes
-            all offline application CacheStorage data from your browser.
+            a shared computer? You can sign out at any time from your Profile page or from the
+            Spotify card on the Connect page. Signing out clears your local session tokens and
+            automatically wipes all offline application CacheStorage data from your browser.
           </li>
         </ul>
       </article>
@@ -542,6 +550,12 @@ export default function UserGuideSection() {
                 occurred) with round-trip journey arcs radiating from your home city, total travel
                 odometers, and milestone achievement badges (Solo Explorer, Road Warrior, Century
                 Club, Live First, Mud Survivor, and active monthly gig streaks).
+              </li>
+              <li>
+                <em>Gig report widgets:</em> The Gigs tab also has Live Artist Rankings, Annual Gig
+                Cadence, Venue Stomping Grounds, Post-Gig Surge, the Setlist Replay Tracker, Day of
+                Week Rhythm, Furthest Gigs, Gigs by Month &amp; Year and Live Gap. Use{" "}
+                <em>Customise widgets</em> to turn any of them off.
               </li>
               <li>
                 <em>Live-First Discoveries &amp; Listening Surges:</em> Uncover bands you saw live

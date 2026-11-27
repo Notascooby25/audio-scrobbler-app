@@ -1,9 +1,37 @@
 export const CHANGELOG = [
   {
-    version: "0.56.1",
+    version: "0.57.1",
     date: "2026-11-27",
     changes: [
       'Gigs, Library & Wrapped: songs played at gigs now match to their real album from your listening history (or look it up in the background) instead of creating fake "Live at <Venue>" albums, and existing Wrapped stories are refreshed automatically to clear them.',
+    ],
+  },
+  {
+    version: "0.57.0",
+    date: "2026-11-28",
+    changes: [
+      "Timeline is now the default look for new accounts. Anyone who signs up from now on starts in the calm, data-first Timeline theme. Classic and Sleeve are still there: switch any time in Settings → General.",
+      "Nothing changes for existing accounts. Everyone who already has an account keeps the skin they have, including Classic.",
+      "One small catch: if you use Classic and sign in on a new device or after clearing your browser data, you may see Timeline for a moment before your saved Classic look loads.",
+      "The FAQ and User Guide now say Timeline is the default.",
+    ],
+  },
+  {
+    version: "0.56.2",
+    date: "2026-11-28",
+    changes: [
+      "Timeline theme: the FAQ is easier to read and tap. Links are now readable in dark mode, long web addresses and file names wrap instead of being cut off on a phone, and bullet lists are the same size as the text around them.",
+      "Questions are lighter and shorter, so the whole row is the tap target, the page is about 40% shorter, and answer lines stop at a comfortable width on a computer. The search box and Clear button are 44px tall, and the search text is 16px on a phone so iPhones no longer zoom in.",
+      "The User Guide gets the same link, code and list fixes. Classic and Sleeve are unchanged.",
+    ],
+  },
+  {
+    version: "0.56.1",
+    date: "2026-11-28",
+    changes: [
+      "Help catch-up: the FAQ has new answers on the Discover tab filters, the Cover band / Tribute act tick box, Lucky Dip and the Flat and Arcade jukebox views, the Gigs report widgets, finding your past Wrapped years and sharing a slide, the Today page markers and quiet gaps, and the fact that Share Scrobbles can't be undone.",
+      "The page map in the FAQ now lists the Today page, the Discover tab and the Wrapped tab. The User Guide covers the same new ground.",
+      "Fixed help text that sent you to the wrong place: Reconnect Spotify is in Settings → Scrobble, and blocked items are unblocked in Settings → Data.",
     ],
   },
   {

@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "0039_backfill_gig_albums"
-down_revision: Union[str, None] = "0038_add_year_reviews"
+revision: str = "0040_backfill_gig_albums"
+down_revision: Union[str, None] = "0039_default_skin_timeline"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -75,9 +75,7 @@ def upgrade() -> None:
     ).all()
 
     for user_id, artist_name, track_name in live_targets:
-        matched = best_album.get(
-            (user_id, (artist_name or "").lower(), (track_name or "").lower())
-        )
+        matched = best_album.get((user_id, (artist_name or "").lower(), (track_name or "").lower()))
         bind.execute(
             sa.update(listening_events)
             .where(

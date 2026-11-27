@@ -45,7 +45,7 @@ export const SKINS = [
   },
 ];
 
-export const DEFAULT_SKIN_ID = "classic";
+export const DEFAULT_SKIN_ID = "timeline";
 
 export function getSkin(id) {
   const match = SKINS.find((skin) => skin.id === id);

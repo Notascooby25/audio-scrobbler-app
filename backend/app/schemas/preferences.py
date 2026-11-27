@@ -30,7 +30,7 @@ class UserPreferencesResponse(BaseModel):
     home_city: str | None = None
     default_date_range: str
     theme: str
-    skin: str = "classic"
+    skin: str = "timeline"
     match_album_sleeve: bool = True
     accent_color: str = "blue_monday"
     default_page_size: int
