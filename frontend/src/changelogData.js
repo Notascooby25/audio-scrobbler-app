@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.54.2",
+    date: "2026-11-27",
+    changes: [
+      "Gigs: same-date gigs in My Gigs now always put the headliner above support acts, no matter which order you logged them.",
+      "Gigs: upcoming or manual gigs with a Setlist.fm link now pull the other acts on the night into On the bill so you can pick who you saw.",
+    ],
+  },
+  {
     version: "0.54.1",
     date: "2026-11-27",
     changes: [
