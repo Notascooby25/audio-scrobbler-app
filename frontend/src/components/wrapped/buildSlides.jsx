@@ -77,13 +77,13 @@ export function buildSlides(snapshot) {
     add("gigs-glance", 2, "light", <GigsGlanceSlide gigs={gigs} />, "Gigs");
     const listed = gigs.gig_list?.length || 0;
     if (listed) {
-      const { pages, size } = gigPages(listed);
+      const { pages, range } = gigPages(listed);
       for (let page = 0; page < pages; page += 1) {
         add(
           `gigs-list-${page + 1}`,
           2,
           "light",
-          <GigsListSlide gigs={gigs} page={page} pages={pages} size={size} />,
+          <GigsListSlide gigs={gigs} page={page} pages={pages} range={range} />,
           "Gigs"
         );
       }
