@@ -72,7 +72,7 @@ def _gig(db, user_id=1, day=datetime(2026, 5, 1)):
 def test_run_due_before_30_dec_does_nothing(db_session):
     _user(db_session)
     _plays(db_session)
-    assert run_due(db_session, datetime(2026, 12, 30, 7, 59)) == {"generated": 0}
+    assert run_due(db_session, datetime(2026, 12, 30, 7, 59)) == {"generated": 0, "failed": 0}
     assert db_session.query(YearReview).count() == 0
 
 

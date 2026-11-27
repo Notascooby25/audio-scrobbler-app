@@ -13,16 +13,25 @@ export default function WrappedBanner() {
   useEffect(() => {
     if (!token) return undefined;
     let cancelled = false;
-    fetchWrapped({ token })
-      .then((list) => {
-        if (!cancelled) setYear(list.banner?.year ?? null);
-      })
-      .catch(() => {});
+    function load() {
+      fetchWrapped({ token })
+        .then((list) => {
+          if (!cancelled) setYear(list.banner?.year ?? null);
+        })
+        .catch(() => {});
+    }
+    load();
+    // Someone with the app already open at unlock time sees the banner when they come back to it.
+    function onVisible() {
+      if (document.visibilityState === "visible") load();
+    }
     const hide = () => setYear(null);
     window.addEventListener("wrapped_seen", hide);
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
       window.removeEventListener("wrapped_seen", hide);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [token]);
 

@@ -10,9 +10,17 @@ const UNLOCK_FORMAT = new Intl.DateTimeFormat("en-GB", {
 });
 
 // The server sends naive UTC times with no "Z".
-function formatUnlock(iso) {
+function toDate(iso) {
   const stamp = /[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`;
-  return UNLOCK_FORMAT.format(new Date(stamp));
+  return new Date(stamp);
+}
+
+function formatUnlock(iso) {
+  return UNLOCK_FORMAT.format(toDate(iso));
+}
+
+function unlockPassed(iso) {
+  return toDate(iso).getTime() <= Date.now();
 }
 
 // One card per year on the Reports page, newest first. A year that hasn't unlocked yet shows its date.
@@ -42,7 +50,11 @@ export default function WrappedYearsCard({ token }) {
           <li key={entry.year} className="wrapped-year-card">
             <h3>{entry.year} Wrapped</h3>
             {entry.status === "locked" ? (
-              <p>Unlocks {formatUnlock(entry.unlocks_at)}</p>
+              <p>
+                {unlockPassed(entry.unlocks_at)
+                  ? "Being made now. Check back in a few minutes."
+                  : `Unlocks ${formatUnlock(entry.unlocks_at)}`}
+              </p>
             ) : (
               <>
                 {entry.top_artist && <p>Top artist: {entry.top_artist}</p>}

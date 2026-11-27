@@ -151,7 +151,12 @@ def build_music_stats(db: Session, user_id: int, start: datetime, end: datetime)
             "plays": day_plays[biggest_day_key],
             "minutes": round(day_ms[biggest_day_key] / 60000),
         },
-        "new_artists": sum(1 for key in artist_plays if key not in seen_before),
+        # If their history starts inside the year, every artist would look new, so don't claim it.
+        "new_artists": (
+            None
+            if history_starts_at is None or history_starts_at >= start
+            else sum(1 for key in artist_plays if key not in seen_before)
+        ),
         "first_song": {
             "name": first.track_name,
             "artist": first.artist_name,
@@ -162,7 +167,10 @@ def build_music_stats(db: Session, user_id: int, start: datetime, end: datetime)
 
 def _top_genres(db: Session, user_id: int, start: datetime, end: datetime) -> list[dict[str, Any]]:
     """Top five genres by share of plays, from the same Spotify and MusicBrainz cache Reports uses."""
-    counts = db.execute(build_report_genre_artist_counts_query(user_id=user_id, start=start, end=end)).all()
+    statement = build_report_genre_artist_counts_query(user_id=user_id, start=start, end=end).where(
+        not_blocked_clause(user_id)
+    )
+    counts = db.execute(statement).all()
     artist_ids = {row.artist_id for row in counts if row.artist_id}
     if not artist_ids:
         return []

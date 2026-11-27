@@ -24,7 +24,8 @@ function download(blob, filename) {
   link.href = url;
   link.download = filename;
   link.click();
-  URL.revokeObjectURL(url);
+  // Safari can cancel the download if the address is revoked straight away.
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
 // Makes a tall 1080 x 1920 picture of the current slide and hands it to the phone's share menu,
@@ -51,7 +52,13 @@ export default function ShareSlideButton({ slide, tone, filename }) {
         if (!blob) throw new Error("No image was made");
         const file = new File([blob], filename, { type: "image/png" });
         if (navigator.canShare?.({ files: [file] })) {
-          await navigator.share({ files: [file], title: "My year in review" });
+          try {
+            await navigator.share({ files: [file], title: "My year in review" });
+          } catch (shareError) {
+            if (shareError?.name === "AbortError") throw shareError;
+            // Phones refuse a share that starts too long after the tap (making the picture takes a moment).
+            download(blob, filename);
+          }
         } else {
           download(blob, filename);
         }

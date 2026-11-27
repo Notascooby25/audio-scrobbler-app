@@ -47,6 +47,15 @@ describe("WrappedYearsCard", () => {
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 
+  it("says it is being made once the unlock time has passed", async () => {
+    fetchWrapped.mockResolvedValue({
+      years: [{ year: 2020, status: "locked", unlocks_at: "2020-12-31T18:00:00" }],
+    });
+    renderCard();
+    expect(await screen.findByText(/being made now/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Unlocks/)).not.toBeInTheDocument();
+  });
+
   it("shows nothing when there are no years", async () => {
     fetchWrapped.mockResolvedValue({ years: [] });
     renderCard();

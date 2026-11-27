@@ -465,6 +465,31 @@ def run_wrapped_check() -> None:
         return
     if counts.get("generated"):
         logger.info("Wrapped check: %s snapshots made", counts["generated"])
+    if counts.get("failed"):
+        logger.warning("Wrapped check: %s snapshots failed (see backend log)", counts["failed"])
+
+
+def schedule_wrapped_checks(target: BackgroundScheduler) -> None:
+    """Runs the Wrapped check at the exact moments snapshots fall due (London time), on top of the
+    regular catch-up check, so unlock isn't up to half an hour late."""
+    for job_id, month, day, hour, minute in (
+        ("wrapped-preview-moment", 12, 30, 8, 0),
+        ("wrapped-unlock-moment", 12, 31, 18, 0),
+        ("wrapped-final-moment", 1, 1, 0, 5),
+    ):
+        target.add_job(
+            run_wrapped_check,
+            "cron",
+            month=month,
+            day=day,
+            hour=hour,
+            minute=minute,
+            second=30,
+            timezone="Europe/London",
+            misfire_grace_time=3600,
+            id=job_id,
+            replace_existing=True,
+        )
 
 
 def run_gig_discovery_sync(user_id: int | None = None) -> None:
@@ -690,6 +715,7 @@ def start_scheduler() -> None:
         id="wrapped-check",
         replace_existing=True,
     )
+    schedule_wrapped_checks(scheduler)
     scheduler.add_job(
         run_gig_discovery_sync,
         "interval",

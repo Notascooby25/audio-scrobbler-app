@@ -65,7 +65,8 @@ def build_gig_stats(db: Session, user_id: int, year: int, today: date | None = N
     most_seen = None
     if headliner_nights:
         top_key = min(headliner_nights, key=lambda k: (-headliner_nights[k], k))
-        most_seen = {"artist": display_names[top_key], "times": headliner_nights[top_key]}
+        if headliner_nights[top_key] >= 2:  # seeing everyone once isn't a favourite
+            most_seen = {"artist": display_names[top_key], "times": headliner_nights[top_key]}
 
     gaps = [(b - a).days for a, b in zip(night_dates, night_dates[1:])]
 

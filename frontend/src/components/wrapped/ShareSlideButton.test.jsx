@@ -54,6 +54,18 @@ describe("ShareSlideButton", () => {
     expect(screen.getByRole("button", { name: "Share" })).toBeEnabled();
   });
 
+  it("downloads instead when the phone refuses the share because the tap was too long ago", async () => {
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    navigator.canShare = vi.fn(() => true);
+    const refused = Object.assign(new Error("needs a fresh tap"), { name: "NotAllowedError" });
+    navigator.share = vi.fn().mockRejectedValue(refused);
+    renderButton();
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    await waitFor(() => expect(click).toHaveBeenCalled());
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    click.mockRestore();
+  });
+
   it("stays quiet when the person closes the share sheet", async () => {
     navigator.canShare = vi.fn(() => true);
     const abort = Object.assign(new Error("cancelled"), { name: "AbortError" });

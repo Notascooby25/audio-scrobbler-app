@@ -9,6 +9,7 @@ decides which stages are due, so a worker that was down at the wrong moment catc
 
 from __future__ import annotations
 
+import logging
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
@@ -19,9 +20,12 @@ from sqlalchemy.orm import Session
 from ..config import settings
 from ..datetime_utils import utc_now
 from ..models import ListeningEvent, Notification, User, YearReview
+from ..queries.analytics_queries import not_blocked_clause
 from .push_service import queue_push
 from .wrapped_gig_stats import build_gig_stats
 from .wrapped_music_stats import LONDON, MIN_PLAYS, build_music_stats, to_london
+
+logger = logging.getLogger(__name__)
 
 FORMAT_VERSION = 1
 FIRST_LIVE_YEAR = 2026
@@ -54,10 +58,10 @@ def _stage_moment(year: int, stage: str) -> datetime:
 
 
 def _years_to_check(now: datetime) -> list[int]:
-    """This year, plus last year during January so its final snapshot is made."""
+    """This year, plus last year until the end of February so a worker that was down still catches up."""
     local = to_london(now)
     years = [local.year]
-    if local.month == 1:
+    if local.month <= 2:
         years.append(local.year - 1)
     return sorted(year for year in years if year >= FIRST_LIVE_YEAR)
 
@@ -166,7 +170,10 @@ def is_eligible(db: Session, user_id: int, year: int, now: datetime) -> bool:
     start, end = _window(year, "preview", now)
     plays = db.scalar(
         select(func.count(ListeningEvent.id)).where(
-            ListeningEvent.user_id == user_id, ListeningEvent.played_at >= start, ListeningEvent.played_at < end
+            ListeningEvent.user_id == user_id,
+            ListeningEvent.played_at >= start,
+            ListeningEvent.played_at < end,
+            not_blocked_clause(user_id),
         )
     )
     if (plays or 0) >= MIN_PLAYS:
@@ -186,7 +193,7 @@ def _notification_text(year: int, music: dict[str, Any] | None, gigs: dict[str, 
 def run_due(db: Session, now: datetime) -> dict[str, int]:
     """Makes every snapshot that is due and missing, for every active person. Safe to run repeatedly."""
     user_ids = list(db.scalars(select(User.id).where(User.is_active.is_(True)).order_by(User.id)))
-    generated = 0
+    generated = failed = 0
     for year in _years_to_check(now):
         for stage in STAGES:
             if now < _stage_moment(year, stage):
@@ -195,6 +202,11 @@ def run_due(db: Session, now: datetime) -> dict[str, int]:
             for user_id in user_ids:
                 if user_id in have:
                     continue
-                if generate_year_review(db, user_id, year, stage, now) is not None:
-                    generated += 1
-    return {"generated": generated}
+                try:
+                    if generate_year_review(db, user_id, year, stage, now) is not None:
+                        generated += 1
+                except Exception as exc:  # one person's problem must not stop everyone after them
+                    db.rollback()
+                    failed += 1
+                    logger.warning("Wrapped %s %s failed for user %s: %s", year, stage, user_id, type(exc).__name__)
+    return {"generated": generated, "failed": failed}

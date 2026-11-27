@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from types import SimpleNamespace
+
+from apscheduler.schedulers.background import BackgroundScheduler
 
 import app
 
@@ -236,6 +238,22 @@ def test_wrapped_check_posts_to_internal_route(monkeypatch):
 
     assert calls[0][0] == ("http://backend:8000/year-reviews/internal/run-due",)
     assert calls[0][1]["headers"] == {"X-Worker-Token": "test-token"}
+
+
+def test_wrapped_checks_fire_at_the_exact_moments_in_london_time():
+    sched = BackgroundScheduler()
+    app.schedule_wrapped_checks(sched)
+    jobs = {job.id: job for job in sched.get_jobs()}
+    assert set(jobs) == {"wrapped-preview-moment", "wrapped-unlock-moment", "wrapped-final-moment"}
+
+    def next_fire(job_id, after):
+        return jobs[job_id].trigger.get_next_fire_time(None, after)
+
+    after = datetime(2026, 12, 31, 12, 0, tzinfo=timezone.utc)
+    fire = next_fire("wrapped-unlock-moment", after)
+    assert fire.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S") == "2026-12-31 18:00:30"
+    final = next_fire("wrapped-final-moment", datetime(2026, 12, 31, 23, 0, tzinfo=timezone.utc))
+    assert final.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S") == "2027-01-01 00:05:30"
 
 
 def test_wrapped_check_survives_backend_errors(monkeypatch):

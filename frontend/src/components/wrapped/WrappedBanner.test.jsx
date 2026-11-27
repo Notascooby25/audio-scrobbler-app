@@ -72,6 +72,17 @@ describe("WrappedBanner", () => {
     expect(screen.queryByText("Your 2026 Wrapped is ready")).not.toBeInTheDocument();
   });
 
+  it("shows up without a reload when the app is brought back to the front", async () => {
+    fetchWrapped.mockResolvedValueOnce({ years: [], banner: null });
+    renderBanner();
+    await waitFor(() => expect(fetchWrapped).toHaveBeenCalledTimes(1));
+    fetchWrapped.mockResolvedValueOnce({ years: [], banner: { year: 2026 } });
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    expect(await screen.findByText("Your 2026 Wrapped is ready")).toBeInTheDocument();
+  });
+
   it("stays out of the way on the story page", async () => {
     fetchWrapped.mockResolvedValue({ years: [], banner: { year: 2026 } });
     renderBanner("/wrapped/2026");
