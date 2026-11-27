@@ -11,6 +11,7 @@ from backend.app.api import users as users_module
 from backend.app.db import Base
 from backend.app.main import app
 from backend.app.models import Follow, ListeningEvent, Notification, User
+from backend.app.services import social_service
 
 engine = create_engine(
     "sqlite://",
@@ -193,6 +194,41 @@ def test_share_skips_a_play_they_have_under_a_different_play_id():
     assert response.status_code == 200
     assert response.json()["shared_count"] == 1
     assert sorted(e.track_id for e in theirs) == ["other-song", "same-song"]
+
+
+def test_share_checks_every_play_id_when_the_range_needs_several_lookups(monkeypatch):
+    """Postgres rejects one query with over 65,535 values, so lookups go in batches.
+
+    The batch size is shrunk so a handful of plays spans several batches. Two of the recipient's
+    rows share a play id but sit at a different time, so only the play-id lookup can catch them.
+    """
+    monkeypatch.setattr(social_service, "PLAY_ID_LOOKUP_BATCH", 2)
+    db = TestingSession()
+    try:
+        _seed(db)
+        for n in range(1, 6):
+            _play(db, 1, f"p{n}", datetime(2026, 11, 26, 18, n))
+        for n in (1, 4):
+            db.add(
+                ListeningEvent(
+                    user_id=2,
+                    track_id=f"their-track-{n}",
+                    track_name="Other",
+                    artist_name="Other",
+                    played_at=datetime(2026, 5, 1, 9, n),
+                    source="spotify",
+                    play_id=f"p{n}",
+                )
+            )
+        db.commit()
+        response = _post(db, 2, WHOLE_YEAR)
+        added = db.query(ListeningEvent).filter(ListeningEvent.user_id == 2, ListeningEvent.track_id.like("p%")).all()
+    finally:
+        db.close()
+
+    assert response.status_code == 200
+    assert response.json()["shared_count"] == 3
+    assert sorted(e.play_id for e in added) == ["p2", "p3", "p5"]
 
 
 def test_share_does_not_pull_their_plays_into_my_history():

@@ -11,6 +11,10 @@ from ..queries.analytics_queries import build_report_period_count_query
 from ..schemas.users import LastScrobble, UserProfileResponse
 
 
+# How many play ids one lookup query may carry; well under Postgres's 65,535-value limit.
+PLAY_ID_LOOKUP_BATCH = 5000
+
+
 def get_active_user(db: Session, user_id: int) -> User | None:
     return db.query(User).filter(User.id == user_id, User.is_active.is_(True)).first()
 
@@ -250,14 +254,19 @@ def _copy_events_between_users(
         return 0
         
     # to be absolutely bulletproof against IntegrityError without raw SQL UPSERT:
-    all_existing_keys = {
-        (row[0], row[1]) for row in db.query(ListeningEvent.source, ListeningEvent.play_id)
-        .filter(
-            ListeningEvent.user_id == to_user_id,
-            ListeningEvent.play_id.in_([e.play_id for e in events])
-        ).all()
-    }
-    
+    # Postgres refuses a query with more than 65,535 values, and a wide range can hold more
+    # plays than that, so look the play ids up in batches.
+    play_ids = [e.play_id for e in events]
+    all_existing_keys: set[tuple[str, str]] = set()
+    for offset in range(0, len(play_ids), PLAY_ID_LOOKUP_BATCH):
+        batch = play_ids[offset : offset + PLAY_ID_LOOKUP_BATCH]
+        rows = (
+            db.query(ListeningEvent.source, ListeningEvent.play_id)
+            .filter(ListeningEvent.user_id == to_user_id, ListeningEvent.play_id.in_(batch))
+            .all()
+        )
+        all_existing_keys.update((row[0], row[1]) for row in rows)
+
     # The table also forbids two rows with the same track at the same moment for one user, even
     # when their source or play id differ, so skip those too or the whole insert would fail.
     existing_moments = {
