@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.53.8",
+    date: "2026-11-27",
+    changes: [
+      "Gigs: a new Support act tick box when you edit or log a gig. Tick it on the act that played first and it gets the Support act label, links to the other gig you logged at the same venue that night, and moves just before the headliner on your timeline. Untick it to undo.",
+    ],
+  },
+  {
     version: "0.53.7",
     date: "2026-11-20",
     changes: [
@@ -29,7 +36,7 @@ export const CHANGELOG = [
     version: "0.53.4",
     date: "2026-11-20",
     changes: [
-      "Fixed the 1001 Albums Challenge card on the Reports page: it listed the albums you completed as \"Album #581\" and so on instead of their names. It now shows the artist and title, such as The Smiths – The Queen is Dead.",
+      'Fixed the 1001 Albums Challenge card on the Reports page: it listed the albums you completed as "Album #581" and so on instead of their names. It now shows the artist and title, such as The Smiths – The Queen is Dead.',
     ],
   },
   {

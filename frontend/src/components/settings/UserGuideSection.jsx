@@ -527,7 +527,8 @@ export default function UserGuideSection() {
                 in person before you ever recorded a stream, track post-concert listening surges (+%
                 bump in plays), and explore your concert cadence across days of the week. Customise
                 which panels you see or filter by focus sub-tabs. You can also tag gigs as
-                <em>Cover band / Tribute act</em> when logging or editing shows.
+                <em>Cover band / Tribute act</em> or <em>Support act</em> when logging or editing
+                shows.
               </li>
             </ul>
           </li>
