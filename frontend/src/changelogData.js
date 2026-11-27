@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.56.1",
+    date: "2026-11-27",
+    changes: [
+      'Gigs, Library & Wrapped: songs played at gigs now match to their real album from your listening history (or look it up in the background) instead of creating fake "Live at <Venue>" albums, and existing Wrapped stories are refreshed automatically to clear them.',
+    ],
+  },
+  {
     version: "0.56.0",
     date: "2026-11-28",
     changes: [

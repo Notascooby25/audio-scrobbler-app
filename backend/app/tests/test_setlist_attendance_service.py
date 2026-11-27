@@ -293,11 +293,13 @@ def test_editing_someone_elses_gig_is_not_found(db_session: Session):
 def test_gig_scrobbles_match_most_played_real_album_and_keep_it_on_edit(db_session: Session):
     base = datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc)
     # Two plays on the studio album vs one on a compilation -> studio album wins
-    for idx, (album, mins) in enumerate([
-        ("The Last Broadcast", 0),
-        ("The Last Broadcast", 4),
-        ("Greatest Hits", 8),
-    ]):
+    for idx, (album, mins) in enumerate(
+        [
+            ("The Last Broadcast", 0),
+            ("The Last Broadcast", 4),
+            ("Greatest Hits", 8),
+        ]
+    ):
         db_session.add(
             ListeningEvent(
                 user_id=1,
