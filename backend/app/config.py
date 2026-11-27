@@ -46,6 +46,8 @@ class Settings:
     setlist_fm_api_key: str = os.getenv("SETLIST_FM_API_KEY", "").strip("'\" \r\n")
     ticketmaster_api_key: str = os.getenv("TICKETMASTER_API_KEY", "").strip("'\" \r\n")
     skiddle_api_key: str = os.getenv("SKIDDLE_API_KEY", "").strip("'\" \r\n")
+    # Comma-separated app user ids who may see unreleased Wrapped snapshots (previews and the sample year).
+    wrapped_early_access_user_ids: str = os.getenv("WRAPPED_EARLY_ACCESS_USER_IDS", "")
     cors_origins: str = os.getenv(
         "CORS_ORIGINS",
         "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000",
@@ -53,6 +55,9 @@ class Settings:
 
     def allowed_cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    def wrapped_early_access_ids(self) -> list[int]:
+        return [int(uid) for uid in self.wrapped_early_access_user_ids.split(",") if uid.strip().isdigit()]
 
     def allowed_spotify_ids(self) -> list[str]:
         return [uid.strip() for uid in self.allowed_spotify_user_ids.split(",") if uid.strip()]

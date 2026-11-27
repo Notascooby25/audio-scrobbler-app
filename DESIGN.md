@@ -135,6 +135,17 @@ Utilitarian geometric forms.
 - **Don't** use dropdown menus for primary navigation or filtering where segmented tabs could fit.
 - **Don't** modify or restyle `RetroJukebox.jsx` or `RetroJukebox.module.css` during global theme/accent restyles.
 
+## Year Wrapped (deliberate exception)
+
+The Year Wrapped story (`frontend/src/components/wrapped/`) is a celebratory, shareable surface, so it is allowed to be bolder than the rest of the app. It stays flat (no gradients, no shadows) and keeps the 0.5px hairlines, but:
+
+- It has its own **fixed palette**: near-black `#121417`, warm paper `#f3efe6`, and the person's accent colour. It deliberately ignores light/dark mode and the skins, so the story and the picture people share look the same for everyone. All 8 accent presets work because the accent is only used for shapes, bars, covers and highlights, and text is always ink or paper (or on-accent, large and bold only).
+- It uses **bold flat decoration**: accent-coloured stripes, rings, dots and arcs behind the text, headings set in solid boxes, and oversized numbers.
+- Its two parts are told apart by background: **Part 1 (music)** is near-black, **Part 2 (gigs)** is paper, and each part opens with an accent-coloured title card.
+- Cover art and artist pictures are shown wherever a list names them; names are always shown in full (no truncation).
+
+The banner and the year cards on Reports are normal themed UI and follow the usual rules.
+
 ## Skins
 
 The application architecture supports selectable visual skins built on a unified skins framework:

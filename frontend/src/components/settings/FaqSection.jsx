@@ -101,6 +101,26 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "year-wrapped",
+    category: "Reports & Stats",
+    question: "When does my year in review (Wrapped) arrive, and can it change?",
+    answer: (
+      <>
+        <p>
+          It unlocks at 6pm UK time on 31 December, with a banner, a bell notification and, if you
+          have phone alerts on, a push. You need at least 30 plays or one gig in the year to get
+          one.
+        </p>
+        <p>
+          The numbers are saved when they&apos;re made. Just after midnight on 1 January a full-year
+          version replaces the 31 December one, so anything logged late is included, and any slide
+          that changed shows an Updated tag. Minutes are estimated from track length, and gig miles
+          are there and back as the crow flies from your home city.
+        </p>
+      </>
+    ),
+  },
+  {
     id: "reports-overview",
     category: "Reports & Stats",
     question: "What do the numbers and charts on the Reports page mean?",

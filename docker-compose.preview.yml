@@ -39,6 +39,8 @@ services:
       SPOTIFY_CLIENT_ID: preview-disabled
       SPOTIFY_CLIENT_SECRET: preview-disabled
       CORS_ORIGINS: ${CORS_ORIGINS}
+      # The preview's signed-in person may see unreleased Year Wrapped snapshots (preview and sample year).
+      WRAPPED_EARLY_ACCESS_USER_IDS: ${WRAPPED_EARLY_ACCESS_USER_IDS:-}
     networks:
       - preview_internal
     healthcheck:

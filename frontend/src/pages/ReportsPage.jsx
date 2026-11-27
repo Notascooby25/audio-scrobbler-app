@@ -14,6 +14,7 @@ import Report1001Milestone from "../components/reports/Report1001Milestone";
 import ReportRoughTradeMilestone from "../components/reports/ReportRoughTradeMilestone";
 import ReportLiveConnection from "../components/reports/ReportLiveConnection";
 import ReportRatios from "../components/reports/ReportRatios";
+import WrappedYearsCard from "../components/wrapped/WrappedYearsCard";
 import ReportCustomiseModal, {
   DEFAULT_WIDGET_PREFERENCES,
 } from "../components/reports/ReportCustomiseModal";
@@ -158,6 +159,8 @@ export default function ReportsPage() {
         {[
           { id: "listening", label: "Listening" },
           { id: "gigs", label: "Gigs" },
+          // Your own year-in-review cards. Someone else's reports don't have them.
+          ...(isOwnReport ? [{ id: "wrapped", label: "Wrapped" }] : []),
         ].map((tab) => (
           <button
             key={tab.id}
@@ -171,6 +174,7 @@ export default function ReportsPage() {
           </button>
         ))}
       </div>
+      {reportView === "wrapped" && isOwnReport && <WrappedYearsCard token={session?.accessToken} />}
       {reportView === "gigs" && session?.accessToken && (
         <GigReportsSection token={session.accessToken} userId={targetUserId} />
       )}

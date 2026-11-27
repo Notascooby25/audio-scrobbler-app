@@ -79,6 +79,7 @@ setlist_artwork_interval_minutes = int(os.getenv("WORKER_SETLIST_ARTWORK_INTERVA
 # Map lookups are limited to one a second, so 60 a run keeps each run within about a minute
 venue_geocode_interval_minutes = int(os.getenv("WORKER_VENUE_GEOCODE_INTERVAL_MINUTES", "2"))
 venue_geocode_batch_size = int(os.getenv("WORKER_VENUE_GEOCODE_BATCH_SIZE", "60"))
+wrapped_check_interval_minutes = int(os.getenv("WORKER_WRAPPED_CHECK_INTERVAL_MINUTES", "30"))
 gig_discovery_interval_minutes = int(os.getenv("WORKER_GIG_DISCOVERY_INTERVAL_MINUTES", "360"))
 _last_discovery_trigger_by_user: dict[int, datetime] = {}
 _gig_discovery_lock = threading.Lock()
@@ -449,6 +450,48 @@ def run_venue_geocoding() -> None:
         )
 
 
+def run_wrapped_check() -> None:
+    """Asks the backend to make any year-end Wrapped snapshots that are now due (the backend's clock decides)."""
+    try:
+        response = requests.post(
+            f"{backend_url}/year-reviews/internal/run-due",
+            headers={"X-Worker-Token": worker_token},
+            timeout=900,
+        )
+        response.raise_for_status()
+        counts = response.json()
+    except requests.RequestException as exc:
+        logger.warning("Wrapped check failed: %s", exc)
+        return
+    if counts.get("generated"):
+        logger.info("Wrapped check: %s snapshots made", counts["generated"])
+    if counts.get("failed"):
+        logger.warning("Wrapped check: %s snapshots failed (see backend log)", counts["failed"])
+
+
+def schedule_wrapped_checks(target: BackgroundScheduler) -> None:
+    """Runs the Wrapped check at the exact moments snapshots fall due (London time), on top of the
+    regular catch-up check, so unlock isn't up to half an hour late."""
+    for job_id, month, day, hour, minute in (
+        ("wrapped-preview-moment", 12, 30, 8, 0),
+        ("wrapped-unlock-moment", 12, 31, 18, 0),
+        ("wrapped-final-moment", 1, 1, 0, 5),
+    ):
+        target.add_job(
+            run_wrapped_check,
+            "cron",
+            month=month,
+            day=day,
+            hour=hour,
+            minute=minute,
+            second=30,
+            timezone="Europe/London",
+            misfire_grace_time=3600,
+            id=job_id,
+            replace_existing=True,
+        )
+
+
 def run_gig_discovery_sync(user_id: int | None = None) -> None:
     params = {"user_id": user_id} if user_id is not None else {}
     try:
@@ -665,6 +708,14 @@ def start_scheduler() -> None:
         id="venue-geocoding",
         replace_existing=True,
     )
+    scheduler.add_job(
+        run_wrapped_check,
+        "interval",
+        minutes=wrapped_check_interval_minutes,
+        id="wrapped-check",
+        replace_existing=True,
+    )
+    schedule_wrapped_checks(scheduler)
     scheduler.add_job(
         run_gig_discovery_sync,
         "interval",
