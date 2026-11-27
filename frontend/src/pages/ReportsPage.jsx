@@ -14,6 +14,7 @@ import Report1001Milestone from "../components/reports/Report1001Milestone";
 import ReportRoughTradeMilestone from "../components/reports/ReportRoughTradeMilestone";
 import ReportLiveConnection from "../components/reports/ReportLiveConnection";
 import ReportRatios from "../components/reports/ReportRatios";
+import WrappedYearsCard from "../components/wrapped/WrappedYearsCard";
 import ReportCustomiseModal, {
   DEFAULT_WIDGET_PREFERENCES,
 } from "../components/reports/ReportCustomiseModal";
@@ -154,6 +155,7 @@ export default function ReportsPage() {
           {error}
         </p>
       )}
+      {isOwnReport && session?.accessToken && <WrappedYearsCard token={session.accessToken} />}
       <div className="sfm-tabs" role="tablist" aria-label="Report sections">
         {[
           { id: "listening", label: "Listening" },
