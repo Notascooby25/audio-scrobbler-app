@@ -1,5 +1,12 @@
 export const CHANGELOG = [
   {
+    version: "0.56.1",
+    date: "2026-11-27",
+    changes: [
+      "Library & Reports (Timeline theme): Grid cards no longer clip album, artist or rank text on the left and right edges, and List rows now show the proportional green progress bar cleanly along the bottom of each row with standalone play counts on the right.",
+    ],
+  },
+  {
     version: "0.56.0",
     date: "2026-11-28",
     changes: [
