@@ -51,7 +51,10 @@ export default function ReportMilestones({ summary }) {
           >
             {rotation ? rotation.track_name : "None"}
           </strong>
-          <span className="milestone-subtext milestone-truncate">
+          <span
+            className="milestone-subtext milestone-truncate"
+            title={rotation ? `${rotation.artist_name} • ${rotation.count} plays` : "No repeat tracks"}
+          >
             {rotation ? `${rotation.artist_name} • ${rotation.count} plays` : "No repeat tracks"}
           </span>
         </div>

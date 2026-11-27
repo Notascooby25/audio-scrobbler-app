@@ -57,6 +57,7 @@ export default function RankedBarList({
               <div key={item.key} className="sfm-row">
                 <div
                   className={`sfm-row-main ${isExpandable ? "is-expandable" : ""}`}
+                  style={{ "--rank-pct": `${width}%` }}
                   onClick={isExpandable ? toggle : undefined}
                 >
                   <span className="sfm-rank">{showRank ? rank : ""}</span>

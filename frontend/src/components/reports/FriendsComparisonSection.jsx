@@ -66,7 +66,7 @@ export default function FriendsComparisonSection({ token, dateRange }) {
                     <div className="friends-item-main">
                       <span className="friends-rank">{idx + 1}</span>
                       <div className="friends-item-details">
-                        <span className="friends-item-title">{artist.name}</span>
+                        <span className="friends-item-title" title={artist.name}>{artist.name}</span>
                         <span className="friends-item-breakdown">
                           {artist.contributions.map((c) => `${c.username} (${c.scrobbles})`).join(' · ')}
                         </span>
@@ -93,8 +93,12 @@ export default function FriendsComparisonSection({ token, dateRange }) {
                     <div className="friends-item-main">
                       <span className="friends-rank">{idx + 1}</span>
                       <div className="friends-item-details">
-                        <span className="friends-item-title">{track.name}</span>
-                        {track.artist_name && <span className="friends-item-subtitle">{track.artist_name}</span>}
+                        <span className="friends-item-title" title={track.name}>{track.name}</span>
+                        {track.artist_name && (
+                          <span className="friends-item-subtitle" title={track.artist_name}>
+                            {track.artist_name}
+                          </span>
+                        )}
                         <span className="friends-item-breakdown">
                           {track.contributions.map((c) => `${c.username} (${c.scrobbles})`).join(' · ')}
                         </span>

@@ -70,9 +70,11 @@ export default function LiveArtistsSeenList({ artists = [] }) {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
+                  width: "100%",
+                  gap: "12px",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flex: 1 }}>
                   <span
                     className="rank-number"
                     style={{
@@ -80,11 +82,12 @@ export default function LiveArtistsSeenList({ artists = [] }) {
                       fontWeight: 700,
                       color: "var(--color-muted)",
                       width: "22px",
+                      flexShrink: 0,
                     }}
                   >
                     {idx + 1}
                   </span>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <strong style={{ color: "var(--color-ink)", fontSize: "14px" }}>
                       {artist.artist_name}
                     </strong>
@@ -105,6 +108,8 @@ export default function LiveArtistsSeenList({ artists = [] }) {
                     fontSize: "13px",
                     color: "var(--color-ink)",
                     fontVariantNumeric: "tabular-nums",
+                    flexShrink: 0,
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {artist.count} gig{artist.count === 1 ? "" : "s"}

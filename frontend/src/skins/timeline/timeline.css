@@ -421,7 +421,7 @@
 
 [data-skin="timeline"] .timeline-rail-item {
   display: grid;
-  grid-template-columns: 52px 24px 1fr;
+  grid-template-columns: 52px 24px minmax(0, 1fr);
   align-items: stretch;
   min-height: 56px;
 }
@@ -540,7 +540,7 @@
 /* ─── Quiet Gap Stretch ──────────────────────────────────────────────────── */
 [data-skin="timeline"] .timeline-quiet-gap {
   display: grid;
-  grid-template-columns: 52px 24px 1fr;
+  grid-template-columns: 52px 24px minmax(0, 1fr);
   align-items: center;
   min-height: 40px;
   margin: 4px 0;
@@ -981,6 +981,7 @@
   border-bottom: 1px solid var(--color-border-subtle) !important;
   padding: 12px 14px !important;
   min-height: 44px !important;
+  column-gap: 1.1rem !important;
 }
 
 [data-skin="timeline"] .rediscover-item:last-child {
@@ -1301,7 +1302,7 @@
   overflow-wrap: break-word !important;
 }
 
-[data-skin="timeline"] .library-scrobble-time {
+[data-skin="timeline"] .scrobble-grid-time {
   font-size: 12px !important;
   color: var(--color-muted) !important;
   font-variant-numeric: tabular-nums !important;
@@ -1945,10 +1946,38 @@
   text-decoration: none !important;
 }
 
+[data-skin="timeline"] .sfm-table-head,
+[data-skin="timeline"] .sfm-row-main {
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto !important;
+}
+
+[data-skin="timeline"] .sfm-row-main {
+  position: relative !important;
+  padding-bottom: 12px !important;
+}
+
+[data-skin="timeline"] .sfm-row-main::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: var(--rank-pct, 0%);
+  height: 2px;
+  background: var(--color-primary);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
 [data-skin="timeline"] .sfm-bar {
-  background: var(--tl-rail) !important;
-  height: 4px !important;
-  border-radius: 2px !important;
+  background: transparent !important;
+  height: auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+  font-variant-numeric: tabular-nums !important;
 }
 
 /* ─── Gig Detail Page (/gigs/:concertId) ──────────────────────────────────── */
@@ -2914,6 +2943,41 @@
     font-size: 16px !important;
   }
 
+  /* TimelineRail: keep track titles readable on 320px-375px phones */
+  [data-skin="timeline"] .timeline-rail-item,
+  [data-skin="timeline"] .timeline-quiet-gap {
+    grid-template-columns: 44px 20px minmax(0, 1fr);
+  }
+  [data-skin="timeline"] .timeline-time-col {
+    font-size: 11px;
+    padding-right: 4px;
+  }
+  [data-skin="timeline"] .timeline-track-col {
+    padding: 4px 0 10px 6px;
+  }
+  [data-skin="timeline"] .timeline-track-row {
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  [data-skin="timeline"] .timeline-track-title {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.3;
+  }
+  [data-skin="timeline"] .timeline-track-side {
+    gap: 4px;
+  }
+
+  /* Gigs RankedBarList: keep count right-aligned on the same row with 2px underline bar */
+  [data-skin="timeline"] .sfm-table-head > :nth-child(3) {
+    display: block;
+  }
+  [data-skin="timeline"] .sfm-row-main > :nth-child(3) {
+    grid-column: auto;
+  }
+
   /* Time Capsule & Rediscover: let title take full width, badge on second row */
   [data-skin="timeline"] .rediscover-item {
     display: grid !important;
@@ -2996,8 +3060,8 @@
   }
 
   [data-skin="timeline"] .library-rank-row .liked-heart-btn {
-    min-width: 32px !important;
-    min-height: 32px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
     padding: 4px !important;
   }
 
@@ -3057,8 +3121,8 @@
   [data-skin="timeline"] .library-scrobble-row .liked-heart-btn {
     grid-area: heart !important;
     justify-self: end !important;
-    min-width: 32px !important;
-    min-height: 32px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
     padding: 4px !important;
   }
 
@@ -3077,7 +3141,7 @@
   }
 
   [data-skin="timeline"] .compare-toggle-btn {
-    min-height: 36px !important;
+    min-height: 44px !important;
     padding: 0 12px !important;
     font-size: 12.5px !important;
     border-radius: 9999px !important;
@@ -3123,8 +3187,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 28px;
-  padding: 0 10px;
+  min-height: 44px;
+  padding: 0 12px;
   border-radius: var(--radius-pill);
   background-color: var(--tl-tile);
   color: var(--color-ink);

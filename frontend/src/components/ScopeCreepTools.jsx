@@ -528,6 +528,8 @@ export default function ScopeCreepTools() {
                           <img
                             src={res.image_url}
                             alt=""
+                            loading="lazy"
+                            decoding="async"
                             style={{ width: 36, height: 36, borderRadius: '4px', objectFit: 'cover', flexShrink: 0 }}
                           />
                         )}
