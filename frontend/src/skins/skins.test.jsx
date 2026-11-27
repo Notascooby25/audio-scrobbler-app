@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import React from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
@@ -13,7 +13,7 @@ afterEach(() => cleanup());
 
 describe("Skins Registry & Token Contract", () => {
   it("registers Classic, Sleeve, and Timeline as live", () => {
-    expect(DEFAULT_SKIN_ID).toBe("classic");
+    expect(DEFAULT_SKIN_ID).toBe("timeline");
     const classic = getSkin("classic");
     expect(classic).toBeDefined();
     expect(classic.status).toBe("live");
@@ -91,6 +91,58 @@ describe("Skins Registry & Token Contract", () => {
         }
       }
     }
+  });
+});
+
+describe("Default skin", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    window.history.pushState({}, "", "/");
+    document.documentElement.removeAttribute("data-skin");
+  });
+
+  it("falls back to Timeline for an unknown skin id", () => {
+    expect(getSkin("nonsense").id).toBe("timeline");
+  });
+
+  it("starts a visitor with nothing saved in Timeline", () => {
+    render(
+      <SkinProvider>
+        <span>content</span>
+      </SkinProvider>
+    );
+    expect(document.documentElement.getAttribute("data-skin")).toBe("timeline");
+  });
+
+  it("keeps a saved Classic choice", () => {
+    localStorage.setItem("audio-scrobbler-skin", "classic");
+    render(
+      <SkinProvider>
+        <span>content</span>
+      </SkinProvider>
+    );
+    expect(document.documentElement.getAttribute("data-skin")).toBe("classic");
+  });
+
+  it("lets ?skin=classic in the address win over the default", () => {
+    window.history.pushState({}, "", "/?skin=classic");
+    render(
+      <SkinProvider>
+        <span>content</span>
+      </SkinProvider>
+    );
+    expect(document.documentElement.getAttribute("data-skin")).toBe("classic");
+  });
+
+  it("sets data-skin=timeline before the app loads when nothing is saved (theme-init.js)", () => {
+    const script = fs.readFileSync(path.resolve(__dirname, "../../public/theme-init.js"), "utf-8");
+    new Function(script)();
+    expect(document.documentElement.getAttribute("data-skin")).toBe("timeline");
+
+    document.documentElement.removeAttribute("data-skin");
+    localStorage.setItem("audio-scrobbler-skin", "classic");
+    new Function(script)();
+    expect(document.documentElement.getAttribute("data-skin")).toBe("classic");
   });
 });
 

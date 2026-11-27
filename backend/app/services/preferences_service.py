@@ -9,7 +9,7 @@ from ..schemas.preferences import ACCENT_COLORS, DATE_RANGES, PAGE_SIZES, SKINS,
 DEFAULTS = {
     "default_date_range": "last.week",
     "theme": "system",
-    "skin": "classic",
+    "skin": "timeline",
     "match_album_sleeve": True,
     "accent_color": "blue_monday",
     "default_page_size": 50,

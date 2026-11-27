@@ -69,6 +69,11 @@ describe("UserGuideSection", () => {
     expect(screen.getByText(/list and grid buttons/i)).toBeInTheDocument();
   });
 
+  it("says Timeline is the default skin", () => {
+    render(<UserGuideSection />);
+    expect(screen.getByText(/timeline is the default skin for new accounts/i)).toBeInTheDocument();
+  });
+
   it("says Share Scrobbles cannot be undone", () => {
     render(<UserGuideSection />);
     expect(screen.getByText(/sharing cannot be undone/i)).toBeInTheDocument();

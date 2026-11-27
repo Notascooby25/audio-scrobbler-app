@@ -55,3 +55,41 @@ def test_alembic_upgrade_head_creates_canonical_import_schema(tmp_path):
             pass
     finally:
         engine.dispose()
+
+
+def _skin_server_default(engine) -> str:
+    columns = {column["name"]: column for column in inspect(engine).get_columns("user_preferences")}
+    return str(columns["skin"]["default"])
+
+
+def test_skin_default_migration_changes_only_the_default_not_existing_rows(tmp_path):
+    database_url = f"sqlite:///{tmp_path / 'skin_default_test.db'}"
+    subprocess.run(
+        ["alembic", "upgrade", "0038_add_year_reviews"],
+        cwd=BACKEND_DIR,
+        env={**os.environ, "DATABASE_URL": database_url},
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    engine = create_engine(database_url)
+    try:
+        assert "classic" in _skin_server_default(engine)
+        with engine.begin() as connection:
+            connection.execute(text("INSERT INTO user_preferences (user_id) VALUES (1)"))
+            assert connection.execute(text("SELECT skin FROM user_preferences WHERE user_id = 1")).scalar() == "classic"
+    finally:
+        engine.dispose()
+
+    _run_migrations(database_url)
+
+    engine = create_engine(database_url)
+    try:
+        assert "timeline" in _skin_server_default(engine)
+        with engine.begin() as connection:
+            # An existing account keeps its stored skin; an account created now starts in Timeline.
+            assert connection.execute(text("SELECT skin FROM user_preferences WHERE user_id = 1")).scalar() == "classic"
+            connection.execute(text("INSERT INTO user_preferences (user_id) VALUES (2)"))
+            assert connection.execute(text("SELECT skin FROM user_preferences WHERE user_id = 2")).scalar() == "timeline"
+    finally:
+        engine.dispose()

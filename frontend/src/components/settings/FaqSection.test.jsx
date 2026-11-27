@@ -168,6 +168,15 @@ describe("FaqSection", () => {
     expect(answer).toHaveTextContent(/grid/i);
   });
 
+  it("says Timeline is the default skin and existing accounts keep theirs", () => {
+    render(<FaqSection />);
+    const answer = screen
+      .getByText(/what are visual skins, and which skins are available/i)
+      .closest("details");
+    expect(answer).toHaveTextContent(/timeline is the default/i);
+    expect(answer).toHaveTextContent(/keep the skin they already have/i);
+  });
+
   it("says Share Scrobbles cannot be undone", () => {
     render(<FaqSection />);
     const answer = screen.getByText(/can i undo share scrobbles/i).closest("details");

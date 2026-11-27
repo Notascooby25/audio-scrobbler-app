@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from backend.app.api import preferences as preferences_module
-from backend.app.db import get_db
+from backend.app.db import Base, get_db
 from backend.app.main import app
 from backend.app.models import UserPreferences
+from backend.app.schemas.preferences import UserPreferencesResponse
+from backend.app.services.preferences_service import DEFAULTS, get_or_create, update
 
 client = TestClient(app)
 
@@ -178,10 +183,35 @@ def test_settings_rejects_invalid_jukebox_archive_limit():
     assert response.status_code == 400
 
 
-def test_settings_returns_classic_skin_default():
+def test_settings_returns_timeline_skin_default():
     response = client.get("/users/me/settings", headers={"Authorization": "Bearer demo"})
     assert response.status_code == 200
-    assert response.json()["skin"] == "classic"
+    assert response.json()["skin"] == "timeline"
+
+
+def test_skin_default_is_timeline_in_service_model_and_schema():
+    assert DEFAULTS["skin"] == "timeline"
+    assert UserPreferences.__table__.c.skin.default.arg == "timeline"
+    assert UserPreferencesResponse.model_fields["skin"].default == "timeline"
+
+
+def _real_session():
+    """A real SQLite session set up like the app's: not autoflush (see backend/app/db.py)."""
+    engine = create_engine("sqlite://", poolclass=StaticPool, connect_args={"check_same_thread": False})
+    Base.metadata.create_all(engine)
+    return sessionmaker(autocommit=False, autoflush=False, bind=engine)()
+
+
+def test_new_user_gets_timeline_and_existing_classic_user_keeps_classic():
+    db = _real_session()
+    try:
+        assert get_or_create(db, 101).skin == "timeline"
+        db.add(UserPreferences(user_id=102, **{**DEFAULTS, "skin": "classic"}))
+        db.commit()
+        assert get_or_create(db, 102).skin == "classic"
+        assert update(db, 102, {"skin": "sleeve"}).skin == "sleeve"
+    finally:
+        db.close()
 
 
 def test_settings_updates_skin():

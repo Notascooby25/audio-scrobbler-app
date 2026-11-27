@@ -63,6 +63,7 @@ describe("App", () => {
   });
 
   it("renders the Play page at the root route when authenticated", () => {
+    localStorage.setItem("audio-scrobbler-skin", "classic");
     localStorage.setItem(
       "audio-scrobbler-session",
       JSON.stringify({ userId: 1, accessToken: "token-123" })
@@ -70,6 +71,13 @@ describe("App", () => {
     window.history.pushState({}, "", "/");
     render(<App />);
     expect(screen.getByRole("heading", { name: "Play" })).toBeInTheDocument();
+  });
+
+  it("starts a new visitor in the Timeline skin", () => {
+    window.history.pushState({}, "", "/library");
+    render(<App />);
+    expect(document.documentElement.getAttribute("data-skin")).toBe("timeline");
+    expect(screen.getByRole("navigation", { name: "Timeline navigation" })).toBeInTheDocument();
   });
 
   it("renders the Play page at /play when authenticated", () => {
@@ -233,6 +241,8 @@ describe("App", () => {
 describe("Navigation", () => {
   beforeEach(() => {
     localStorage.clear();
+    // These checks are about the Classic header; Timeline is the default for new visitors.
+    localStorage.setItem("audio-scrobbler-skin", "classic");
   });
 
   afterEach(() => {

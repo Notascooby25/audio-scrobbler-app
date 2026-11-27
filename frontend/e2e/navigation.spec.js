@@ -12,6 +12,14 @@ const PAGES = [
 const PRIMARY_LINKS = ["Play", "Library", "Reports", "Gigs"];
 
 test.describe("navigation", () => {
+  // Timeline is the default skin for new visitors. These checks cover the Classic header,
+  // so they pin Classic; the test at the end covers the default.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("audio-scrobbler-skin", "classic");
+    });
+  });
+
   for (const [path, label] of PAGES) {
     test(`shows the header navigation on ${label}`, async ({ page }) => {
       await page.goto(path);
@@ -71,5 +79,15 @@ test.describe("navigation", () => {
 
     await nav.getByRole("link", { name: "Library", exact: true }).click();
     await expect(page).toHaveURL(/\/library$/);
+  });
+
+  test("starts a new visitor in the Timeline skin, and ?skin=classic still works", async ({
+    page,
+  }) => {
+    await page.addInitScript(() => localStorage.removeItem("audio-scrobbler-skin"));
+    await page.goto("/connect");
+    await expect(page.locator("html")).toHaveAttribute("data-skin", "timeline");
+    await page.goto("/connect?skin=classic");
+    await expect(page.locator("html")).toHaveAttribute("data-skin", "classic");
   });
 });
