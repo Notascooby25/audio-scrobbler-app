@@ -1,11 +1,15 @@
+import { Big, Chip } from "./Pieces";
 import {
   MONTH_NAMES,
   MONTH_SHORT,
   distanceComparison,
   formatDay,
   formatNumber,
+  formatShortDay,
   plural,
 } from "./format";
+
+export const GIGS_PER_PAGE = 6;
 
 export function GigsGlanceSlide({ gigs }) {
   const details = [
@@ -15,8 +19,8 @@ export function GigsGlanceSlide({ gigs }) {
   if (gigs.festival_nights > 0) details.push(plural(gigs.festival_nights, "festival night"));
   return (
     <>
-      <p className="wrapped-kicker">Your year live</p>
-      <p className="wrapped-big">{formatNumber(gigs.nights)}</p>
+      <Chip>Your year live</Chip>
+      <Big>{formatNumber(gigs.nights)}</Big>
       <p className="wrapped-line">
         {gigs.nights === 1 ? "gig" : "gigs"}: {details.join(", ")}.
       </p>
@@ -27,18 +31,44 @@ export function GigsGlanceSlide({ gigs }) {
   );
 }
 
+// The gigs themselves, a page at a time, so nothing has to be cut short.
+export function GigsListSlide({ gigs, page, pages }) {
+  const list = gigs.gig_list.slice(page * GIGS_PER_PAGE, (page + 1) * GIGS_PER_PAGE);
+  const hidden = gigs.nights - gigs.gig_list.length;
+  const last = page === pages - 1;
+  return (
+    <>
+      <Chip>{pages > 1 ? `Your gigs (${page + 1} of ${pages})` : "Your gigs"}</Chip>
+      <ol className="wrapped-gigs">
+        {list.map((gig) => (
+          <li key={`${gig.date}-${gig.venue}`}>
+            <span className="wrapped-gig-date">{formatShortDay(gig.date)}</span>
+            <span className="wrapped-row-text">
+              <span className="wrapped-row-name">{gig.artist}</span>
+              <span className="wrapped-row-sub">
+                {[gig.festival, gig.venue, gig.city].filter(Boolean).join(", ")}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ol>
+      {last && hidden > 0 && <p className="wrapped-note">and {hidden} more.</p>}
+    </>
+  );
+}
+
 export function GigsMilesSlide({ gigs }) {
   const { miles } = gigs;
   const comparison = distanceComparison(miles.total);
   return (
     <>
-      <p className="wrapped-kicker">Miles travelled</p>
-      <p className="wrapped-big">{formatNumber(miles.total)}</p>
+      <Chip>Miles travelled</Chip>
+      <Big>{formatNumber(miles.total)}</Big>
       <p className="wrapped-line">miles there and back, as the crow flies.</p>
       {miles.furthest && (
         <p className="wrapped-line">
-          Furthest: <span className="wrapped-truncate">{miles.furthest.venue}</span>,{" "}
-          {miles.furthest.city} ({formatNumber(miles.furthest.miles)} miles from home).
+          Furthest: {miles.furthest.venue}, {miles.furthest.city} (
+          {formatNumber(miles.furthest.miles)} miles from home).
         </p>
       )}
       {comparison && <p className="wrapped-note">{comparison}</p>}
@@ -59,7 +89,7 @@ export function GigsCalendarSlide({ gigs }) {
   const busiest = gigs.busiest_month;
   return (
     <>
-      <p className="wrapped-kicker">Your gig calendar</p>
+      <Chip>Your gig calendar</Chip>
       <div className="wrapped-months">
         {MONTH_SHORT.map((label, index) => (
           <div
@@ -82,12 +112,12 @@ export function GigsCalendarSlide({ gigs }) {
 export function GigsHighlightsSlide({ gigs }) {
   return (
     <>
-      <p className="wrapped-kicker">Your gig highlights</p>
+      <Chip>Your gig highlights</Chip>
       <ul className="wrapped-facts">
         {gigs.most_seen && (
           <li>
             Most seen:{" "}
-            <strong className="wrapped-truncate">
+            <strong>
               {gigs.most_seen.artist} ({gigs.most_seen.times}x)
             </strong>
           </li>

@@ -66,6 +66,42 @@ describe("ShareSlideButton", () => {
     click.mockRestore();
   });
 
+  it("copies covers into the picture and drops any that can't be fetched, so none come out blank", async () => {
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    const fetchMock = vi.fn((url) =>
+      url.includes("good")
+        ? Promise.resolve({ ok: true, blob: async () => blob })
+        : Promise.reject(new Error("cors"))
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    // jsdom never finishes loading images, so say they are already loaded.
+    const complete = vi.spyOn(HTMLImageElement.prototype, "complete", "get").mockReturnValue(true);
+    let seen;
+    toBlob.mockImplementation(async (node) => {
+      seen = Array.from(node.querySelectorAll("img")).map((img) => img.getAttribute("src"));
+      return blob;
+    });
+    render(
+      <ShareSlideButton
+        slide={
+          <>
+            <img src="https://img/good.jpg" alt="" />
+            <img src="https://img/bad.jpg" alt="" />
+          </>
+        }
+        tone="dark"
+        filename="wrapped.png"
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    await waitFor(() => expect(toBlob).toHaveBeenCalled());
+    expect(seen).toEqual(["blob:x"]); // the good one is a local copy; the bad one is gone
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    click.mockRestore();
+    complete.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
   it("stays quiet when the person closes the share sheet", async () => {
     navigator.canShare = vi.fn(() => true);
     const abort = Object.assign(new Error("cancelled"), { name: "AbortError" });

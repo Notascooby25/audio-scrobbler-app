@@ -4,6 +4,24 @@ import { toBlob } from "html-to-image";
 const TRANSPARENT_PIXEL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
+// Covers come from other websites, and the picture maker can only copy ones that allow it. Fetch each one up
+// front: a cover we can copy becomes a local copy, and one we can't is removed so the coloured tile behind it
+// shows instead of a blank hole.
+async function inlineImages(node) {
+  const images = Array.from(node?.querySelectorAll("img") || []);
+  await Promise.all(
+    images.map(async (img) => {
+      try {
+        const response = await fetch(img.src, { mode: "cors", referrerPolicy: "no-referrer" });
+        if (!response.ok) throw new Error("bad response");
+        img.src = URL.createObjectURL(await response.blob());
+      } catch {
+        img.remove();
+      }
+    })
+  );
+}
+
 async function waitForImages(node) {
   const images = Array.from(node?.querySelectorAll("img") || []);
   await Promise.all(
@@ -13,6 +31,7 @@ async function waitForImages(node) {
         : new Promise((resolve) => {
             img.addEventListener("load", resolve, { once: true });
             img.addEventListener("error", resolve, { once: true });
+            setTimeout(resolve, 5000); // never hang on a picture that won't load
           })
     )
   );
@@ -41,6 +60,7 @@ export default function ShareSlideButton({ slide, tone, filename }) {
     (async () => {
       try {
         await document.fonts?.ready;
+        await inlineImages(stageRef.current);
         await waitForImages(stageRef.current);
         const blob = await toBlob(stageRef.current, {
           width: 1080,

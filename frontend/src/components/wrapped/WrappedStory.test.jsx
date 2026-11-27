@@ -21,7 +21,7 @@ describe("WrappedStory", () => {
       "aria-valuemax",
       String(buildSlides(snapshot).length)
     );
-    expect(screen.getByText("Your 2026 in music")).toBeInTheDocument();
+    expect(screen.getByText("Your year in music and gigs")).toBeInTheDocument();
   });
 
   it("goes on with the right side and back with the left side", () => {
@@ -65,8 +65,27 @@ describe("WrappedStory", () => {
     const snapshot = sampleSnapshot({ changed: ["music.estimated_minutes"] });
     render(<WrappedStory snapshot={snapshot} onClose={() => {}} />);
     expect(screen.queryByText(/updated with the full year/i)).not.toBeInTheDocument();
-    fireEvent.keyDown(window, { key: "ArrowRight" });
+    fireEvent.keyDown(window, { key: "ArrowRight" }); // Part 1 card
+    fireEvent.keyDown(window, { key: "ArrowRight" }); // minutes
     expect(screen.getByText(/updated with the full year/i)).toBeInTheDocument();
+  });
+
+  it("splits the progress bar into a music part and a gigs part", () => {
+    const snapshot = sampleSnapshot();
+    const { container } = render(<WrappedStory snapshot={snapshot} onClose={() => {}} />);
+    const groups = container.querySelectorAll(".wrapped-progress-group");
+    expect(groups).toHaveLength(2);
+    const total = buildSlides(snapshot).length;
+    expect(groups[0].children.length + groups[1].children.length).toBe(total);
+  });
+
+  it("shows which part you are in", () => {
+    const { container } = render(<WrappedStory snapshot={sampleSnapshot()} onClose={() => {}} />);
+    expect(container.querySelector(".wrapped-section-label")).toBeNull(); // intro
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    expect(container.querySelector(".wrapped-section-label")).toHaveTextContent("Music");
+    for (let i = 0; i < 12; i += 1) fireEvent.keyDown(window, { key: "ArrowRight" });
+    expect(container.querySelector(".wrapped-section-label")).toHaveTextContent("Gigs");
   });
 
   it("has a Share button and a Close button", () => {

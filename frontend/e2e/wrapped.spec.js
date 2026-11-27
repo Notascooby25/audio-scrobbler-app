@@ -65,12 +65,12 @@ test.describe("year Wrapped", () => {
 
     await expect(page).toHaveURL(/\/wrapped\/2026$/);
     await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.getByText("Your 2026 in music")).toBeVisible();
+    await expect(page.getByText("Your year in music", { exact: true })).toBeVisible();
 
     await page.getByRole("button", { name: "Next slide", exact: true }).click();
     await expect(page.getByText("61,420")).toBeVisible();
     await page.getByRole("button", { name: "Previous slide", exact: true }).click();
-    await expect(page.getByText("Your 2026 in music")).toBeVisible();
+    await expect(page.getByText("Your year in music", { exact: true })).toBeVisible();
 
     await page.getByRole("button", { name: "Close", exact: true }).click();
     await expect(page).toHaveURL(/\/reports$/);

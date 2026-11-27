@@ -1,5 +1,17 @@
-/* Year Wrapped story, banner and cards. Flat colours from the app's tokens only: no gradients, no shadows.
-   Sizes use container query units so a slide looks the same on a phone and in the 1080 x 1920 share picture. */
+/* Year Wrapped story, banner and cards.
+
+   The story has its own fixed palette (near-black, warm paper and the person's accent colour), so it looks the same
+   in light mode, dark mode and every skin, and the picture people share is always the same. It is still flat: no
+   gradients and no shadows. Sizes use container query units so a slide looks the same on a phone and in the
+   1080 x 1920 share picture. See the Year Wrapped note in DESIGN.md. */
+
+.wrapped-story,
+.wrapped-share-offscreen {
+  --w-ink: #121417;
+  --w-paper: #f3efe6;
+  --w-accent: var(--color-accent);
+  --w-on-accent: var(--color-on-accent, #ffffff);
+}
 
 .wrapped-story {
   position: fixed;
@@ -8,7 +20,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-ink);
+  background: var(--w-ink);
   outline: none;
 }
 
@@ -20,32 +32,26 @@
   height: min(100dvh, calc(100vw * 16 / 9));
   max-width: 100vw;
   overflow: hidden;
+  background: var(--w-bg);
+  color: var(--w-fg);
 }
 
 .wrapped-tone-dark {
-  background: var(--color-ink);
-  color: var(--color-surface);
+  --w-bg: var(--w-ink);
+  --w-fg: var(--w-paper);
+  --w-shape: var(--w-accent);
 }
 
 .wrapped-tone-light {
-  background: var(--color-surface);
-  color: var(--color-ink);
+  --w-bg: var(--w-paper);
+  --w-fg: var(--w-ink);
+  --w-shape: var(--w-accent);
 }
 
-.wrapped-frame {
-  border: 0.5px solid var(--color-border);
-}
-
-.wrapped-slide {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 1.4cqw;
-  padding: 14cqw 9cqw 18cqw;
-  font-size: 4.6cqw;
-  line-height: 1.3;
+.wrapped-tone-accent {
+  --w-bg: var(--w-accent);
+  --w-fg: var(--w-on-accent);
+  --w-shape: var(--w-ink);
 }
 
 /* The share picture is always exactly 1080 x 1920, whatever the screen size. */
@@ -61,47 +67,121 @@
   top: 0;
 }
 
+.wrapped-slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 16cqw 8cqw 20cqw;
+  font-size: 4.6cqw;
+  line-height: 1.3;
+}
+
+.wrapped-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2.6cqw;
+  min-width: 0;
+}
+
 /* The app sets its own text colours on paragraphs and headings; slides take their colour from the tone. */
 .wrapped-slide :is(p, h2, ol, ul, li, span, strong) {
   color: inherit;
 }
 
-.wrapped-kicker {
-  margin: 0;
-  font-size: 0.8em;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.75;
+/* Decorative shapes, always behind the text. */
+.wrapped-shapes {
+  position: absolute;
+  z-index: 0;
+  width: 62cqw;
+  height: 62cqw;
+  color: var(--w-shape);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  pointer-events: none;
 }
 
-.wrapped-title {
+.wrapped-shapes .fill {
+  fill: currentColor;
+  stroke: none;
+}
+
+.wrapped-corner-tr {
+  top: -16cqw;
+  right: -18cqw;
+}
+
+.wrapped-corner-tl {
+  top: -16cqw;
+  left: -18cqw;
+}
+
+.wrapped-corner-br {
+  bottom: -14cqw;
+  right: -18cqw;
+}
+
+.wrapped-corner-bl {
+  bottom: -14cqw;
+  left: -18cqw;
+}
+
+/* The heading, set in a solid box. */
+.wrapped-slide .wrapped-chip {
+  align-self: flex-start;
+  max-width: 100%;
   margin: 0;
-  font-size: 2em;
+  padding: 0.14em 0.4em 0.2em;
+  background: var(--w-fg);
+  color: var(--w-bg);
+  font-size: 1.85em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 
 .wrapped-big {
   margin: 0;
-  font-size: 4.2em;
-  font-weight: 800;
-  line-height: 1;
-  overflow-wrap: anywhere;
+  font-size: 4.6em;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+  overflow-wrap: normal;
+}
+
+.wrapped-big.wrapped-size-m {
+  font-size: 3.4em;
+}
+
+.wrapped-big.wrapped-size-s {
+  font-size: 2.5em;
+}
+
+.wrapped-year-mark {
+  margin: 0;
+  font-size: 7.6em;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
 }
 
 .wrapped-line {
   margin: 0;
-  font-size: 1.1em;
-}
-
-.wrapped-list + .wrapped-line {
-  margin-top: 0.8em;
+  font-size: 1.15em;
+  font-weight: 500;
+  overflow-wrap: anywhere;
 }
 
 .wrapped-note {
   margin: 0;
   font-size: 0.85em;
-  opacity: 0.75;
+  opacity: 0.8;
+  overflow-wrap: anywhere;
 }
 
 .wrapped-updated {
@@ -111,46 +191,211 @@
   border: 0.5px solid currentColor;
   border-radius: 99px;
   font-size: 0.75em;
+  position: relative;
+  z-index: 1;
 }
 
-.wrapped-truncate {
-  display: inline-block;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  vertical-align: bottom;
+/* Section title cards. */
+.wrapped-part-number {
+  margin: 0;
+  font-size: 11em;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 0.85;
 }
 
-.wrapped-list,
-.wrapped-facts {
+.wrapped-part-title {
+  margin: 0;
+  font-size: 3em;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+/* Ranked rows with covers. Names wrap in full rather than being cut off. */
+.wrapped-rows,
+.wrapped-gigs,
+.wrapped-facts,
+.wrapped-genres {
   display: grid;
-  gap: 0.6em;
-  margin: 0.4em 0 0;
+  gap: 0.9em;
+  margin: 0.3em 0 0;
   padding: 0;
   list-style: none;
+}
+
+.wrapped-rows li {
+  display: grid;
+  grid-template-columns: 1.4em 3.4em minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7em;
+}
+
+.wrapped-rank {
+  font-size: 1.1em;
+  font-weight: 900;
+  text-align: center;
+}
+
+.wrapped-row-text {
+  display: grid;
+  min-width: 0;
+  gap: 0.1em;
+}
+
+.wrapped-row-name {
+  font-size: 1.05em;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.wrapped-row-sub {
+  font-size: 0.8em;
+  line-height: 1.2;
+  opacity: 0.8;
+  overflow-wrap: anywhere;
+}
+
+.wrapped-row-detail {
+  font-size: 0.75em;
+  opacity: 0.8;
+  text-align: right;
+}
+
+.wrapped-cover {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 3.4em;
+  height: 3.4em;
+  overflow: hidden;
+  background: var(--w-accent);
+  color: var(--w-on-accent);
+}
+
+.wrapped-slide .wrapped-cover-initial {
+  font-size: 1.4em;
+  font-weight: 900;
+  color: var(--w-on-accent);
+}
+
+.wrapped-cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Top artist: a big round picture ringed in the accent colour. */
+.wrapped-hero-art {
+  display: grid;
+  place-items: center;
+  padding: 2.4cqw 0 4cqw;
+}
+
+.wrapped-cover.wrapped-cover-hero {
+  width: 52cqw;
+  height: 52cqw;
+  border-radius: 50%;
+  outline: 1.4cqw solid var(--w-accent);
+  outline-offset: 2.4cqw;
+}
+
+.wrapped-slide .wrapped-cover-hero .wrapped-cover-initial {
+  font-size: 9em;
+}
+
+.wrapped-hero-name {
+  margin: 0;
+  font-size: 2.6em;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.02;
+  overflow-wrap: anywhere;
+}
+
+.wrapped-hero-name.wrapped-size-m {
+  font-size: 2.1em;
+}
+
+.wrapped-hero-name.wrapped-size-s {
+  font-size: 1.6em;
+}
+
+/* Genres, set as solid word boxes, biggest first. */
+.wrapped-genres {
+  justify-items: start;
+}
+
+.wrapped-genres li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6em;
+  max-width: 100%;
+}
+
+.wrapped-slide .wrapped-genre-name {
+  padding: 0.1em 0.35em 0.16em;
+  background: var(--w-fg);
+  color: var(--w-bg);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.wrapped-genres li[data-rank="1"] .wrapped-genre-name {
+  font-size: 2.3em;
+}
+
+.wrapped-genres li[data-rank="2"] .wrapped-genre-name {
+  font-size: 1.9em;
+}
+
+.wrapped-genres li[data-rank="3"] .wrapped-genre-name {
+  font-size: 1.5em;
+}
+
+.wrapped-genres li[data-rank="4"] .wrapped-genre-name,
+.wrapped-genres li[data-rank="5"] .wrapped-genre-name {
+  font-size: 1.2em;
+}
+
+.wrapped-genre-share {
+  font-size: 0.8em;
+  opacity: 0.8;
+}
+
+/* Gigs list. */
+.wrapped-gigs li {
+  display: grid;
+  grid-template-columns: 4.2em minmax(0, 1fr);
+  align-items: start;
+  gap: 0.8em;
+}
+
+.wrapped-gig-date {
+  font-size: 0.95em;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.wrapped-facts {
   font-size: 1.1em;
 }
 
-.wrapped-list li {
-  display: flex;
-  justify-content: space-between;
-  gap: 1em;
-  min-width: 0;
+.wrapped-facts li {
+  overflow-wrap: anywhere;
 }
 
-.wrapped-list-detail {
-  flex: none;
-  opacity: 0.75;
-  font-size: 0.8em;
-  align-self: center;
-}
-
+/* Month bars and the gig calendar. */
 .wrapped-bars {
   display: flex;
   align-items: flex-end;
   gap: 1.4cqw;
-  height: 40cqw;
+  height: 42cqw;
 }
 
 .wrapped-bar-col {
@@ -167,7 +412,7 @@
 .wrapped-bar {
   width: 100%;
   min-height: 2px;
-  background: var(--color-accent);
+  background: var(--w-accent);
 }
 
 .wrapped-months {
@@ -184,13 +429,15 @@
   opacity: 0.45;
 }
 
-.wrapped-month[data-active="true"] {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-on-accent);
+.wrapped-slide .wrapped-month[data-active="true"] {
+  background: var(--w-accent);
+  border-color: var(--w-accent);
+  color: var(--w-on-accent);
+  font-weight: 800;
   opacity: 1;
 }
 
+/* Progress, split in two parts, and the section label. */
 .wrapped-progress {
   position: absolute;
   top: 3cqw;
@@ -198,7 +445,17 @@
   right: 4cqw;
   z-index: 2;
   display: flex;
+  gap: 3cqw;
+}
+
+.wrapped-progress-group {
+  display: flex;
   gap: 1cqw;
+  flex: 1;
+}
+
+.wrapped-progress-group:first-child:not(:only-child) {
+  flex: 3;
 }
 
 .wrapped-progress span {
@@ -211,6 +468,18 @@
 
 .wrapped-progress span[data-done="true"] {
   opacity: 1;
+}
+
+.wrapped-section-label {
+  position: absolute;
+  top: 8cqw;
+  left: 4cqw;
+  z-index: 3;
+  margin: 0;
+  font-size: 3.6cqw;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .wrapped-tap {
@@ -246,19 +515,6 @@
   border: 0;
 }
 
-.wrapped-story .wrapped-close,
-.wrapped-story .wrapped-share,
-.wrapped-story .wrapped-close:hover:not(:disabled),
-.wrapped-story .wrapped-share:hover:not(:disabled) {
-  background: transparent;
-  color: inherit;
-}
-
-.wrapped-story .wrapped-close:hover:not(:disabled),
-.wrapped-story .wrapped-share:hover:not(:disabled) {
-  background: color-mix(in srgb, currentColor 12%, transparent);
-}
-
 .wrapped-close,
 .wrapped-share {
   position: absolute;
@@ -275,6 +531,19 @@
   letter-spacing: normal;
   text-transform: none;
   cursor: pointer;
+}
+
+.wrapped-story .wrapped-close,
+.wrapped-story .wrapped-share,
+.wrapped-story .wrapped-close:hover:not(:disabled),
+.wrapped-story .wrapped-share:hover:not(:disabled) {
+  background: transparent;
+  color: inherit;
+}
+
+.wrapped-story .wrapped-close:hover:not(:disabled),
+.wrapped-story .wrapped-share:hover:not(:disabled) {
+  background: color-mix(in srgb, currentColor 12%, transparent);
 }
 
 .wrapped-close {

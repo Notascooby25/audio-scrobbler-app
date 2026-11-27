@@ -9,6 +9,15 @@ import ShareSlideButton from "./ShareSlideButton";
 export default function WrappedStory({ snapshot, onClose }) {
   const slides = useMemo(() => buildSlides(snapshot), [snapshot]);
   const updated = useMemo(() => changedSlideIds(snapshot.changed), [snapshot.changed]);
+  // The progress bar is split in two (music, then gigs), so the two parts are clear at a glance.
+  const groups = useMemo(() => {
+    const byPart = new Map();
+    slides.forEach((item, position) => {
+      if (!byPart.has(item.part)) byPart.set(item.part, { part: item.part, items: [] });
+      byPart.get(item.part).items.push({ item, position });
+    });
+    return [...byPart.values()];
+  }, [slides]);
   const [index, setIndex] = useState(0);
   const rootRef = useRef(null);
   const last = slides.length - 1;
@@ -46,10 +55,20 @@ export default function WrappedStory({ snapshot, onClose }) {
           aria-valuemax={slides.length}
           aria-valuenow={index + 1}
         >
-          {slides.map((item, position) => (
-            <span key={item.id} data-done={position <= index ? "true" : "false"} />
+          {groups.map((group) => (
+            <div
+              key={group.part}
+              className="wrapped-progress-group"
+              data-part={group.part}
+              style={{ flex: group.items.length }}
+            >
+              {group.items.map(({ item, position }) => (
+                <span key={item.id} data-done={position <= index ? "true" : "false"} />
+              ))}
+            </div>
           ))}
         </div>
+        {slide.label && <p className="wrapped-section-label">{slide.label}</p>}
         <button type="button" className="wrapped-close" onClick={onClose}>
           Close
         </button>

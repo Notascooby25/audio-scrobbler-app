@@ -42,6 +42,13 @@ export function formatDay(iso, { withYear = false } = {}) {
   return withYear ? `${text} ${year}` : text;
 }
 
+// "2026-01-17" -> "17 Jan"
+export function formatShortDay(iso) {
+  if (!iso) return "";
+  const [, month, day] = iso.slice(0, 10).split("-").map(Number);
+  return `${day} ${MONTH_SHORT[month - 1]}`;
+}
+
 export function formatHour(hour) {
   if (hour === 0) return "12am";
   if (hour === 12) return "12pm";

@@ -14,23 +14,52 @@ function renderSlide(snapshot, id) {
   render(<div>{slide.node}</div>);
 }
 
-describe("buildSlides", () => {
-  it("orders music, then gigs, then the summary", () => {
+describe("buildSlides: order and parts", () => {
+  it("runs intro, Part 1 music, Part 2 gigs, then the summary", () => {
     const all = ids(sampleSnapshot());
     expect(all[0]).toBe("intro");
-    expect(all.indexOf("minutes")).toBeLessThan(all.indexOf("gigs-glance"));
+    expect(all.indexOf("part-music")).toBeLessThan(all.indexOf("minutes"));
+    expect(all.indexOf("minutes")).toBeLessThan(all.indexOf("part-gigs"));
+    expect(all.indexOf("part-gigs")).toBeLessThan(all.indexOf("gigs-glance"));
     expect(all[all.length - 1]).toBe("summary");
   });
 
-  it("skips the gig slides when there are no gigs", () => {
+  it("tags every slide with the part it belongs to", () => {
+    const slides = buildSlides(sampleSnapshot());
+    const part = (id) => slides.find((s) => s.id === id).part;
+    expect(part("minutes")).toBe(1);
+    expect(part("part-gigs")).toBe(2);
+    expect(part("gigs-miles")).toBe(2);
+    expect(part("summary")).toBe(2);
+  });
+
+  it("uses a different background for each part and an accent card to open each one", () => {
+    const slides = buildSlides(sampleSnapshot());
+    const tone = (id) => slides.find((s) => s.id === id).tone;
+    expect(tone("minutes")).toBe("dark");
+    expect(tone("gigs-glance")).toBe("light");
+    expect(tone("part-music")).toBe("accent");
+    expect(tone("part-gigs")).toBe("accent");
+  });
+
+  it("labels each slide's section", () => {
+    const slides = buildSlides(sampleSnapshot());
+    expect(slides.find((s) => s.id === "artists").label).toBe("Music");
+    expect(slides.find((s) => s.id === "gigs-calendar").label).toBe("Gigs");
+  });
+
+  it("skips the gig slides and the part cards when there are no gigs", () => {
     const all = ids(sampleSnapshot({ gigs: null }));
     expect(all.some((id) => id.startsWith("gigs"))).toBe(false);
+    expect(all).not.toContain("part-music");
+    expect(all).not.toContain("part-gigs");
   });
 
   it("skips the music slides when there is no music", () => {
     const all = ids(sampleSnapshot({ music: null }));
     expect(all).toContain("gigs-glance");
     expect(all).not.toContain("minutes");
+    expect(all).not.toContain("part-gigs");
   });
 
   it("skips slides with nothing to show", () => {
@@ -38,10 +67,12 @@ describe("buildSlides", () => {
     snapshot.music.top_albums = [];
     snapshot.music.top_genres = [];
     snapshot.gigs.miles = null;
+    delete snapshot.gigs.gig_list;
     const all = ids(snapshot);
     expect(all).not.toContain("albums");
     expect(all).not.toContain("genres");
     expect(all).not.toContain("gigs-miles");
+    expect(all.some((id) => id.startsWith("gigs-list"))).toBe(false);
   });
 
   it("skips the miles slide when no venue could be placed", () => {
@@ -50,13 +81,46 @@ describe("buildSlides", () => {
     expect(ids(snapshot)).not.toContain("gigs-miles");
   });
 
+  it("splits a long gig list into pages of six", () => {
+    const snapshot = sampleSnapshot();
+    snapshot.gigs.gig_list = Array.from({ length: 13 }, (_, i) => ({
+      date: `2026-03-${String(i + 1).padStart(2, "0")}`,
+      artist: `Act ${i + 1}`,
+      venue: `Venue ${i + 1}`,
+      city: "Leeds",
+      festival: null,
+    }));
+    snapshot.gigs.nights = 20;
+    const pages = ids(snapshot).filter((id) => id.startsWith("gigs-list"));
+    expect(pages).toEqual(["gigs-list-1", "gigs-list-2", "gigs-list-3"]);
+    renderSlide(snapshot, "gigs-list-3");
+    expect(screen.getByText("Act 13")).toBeInTheDocument();
+    expect(screen.getByText(/and 7 more/i)).toBeInTheDocument();
+  });
+});
+
+describe("intro", () => {
   it("labels a year that starts part way through", () => {
     renderSlide(sampleSnapshot({ partial_from: "2026-03-14" }), "intro");
     expect(screen.getByText(/from 14 March 2026/i)).toBeInTheDocument();
   });
+
+  it("shows the year big and says what the story covers", () => {
+    renderSlide(sampleSnapshot(), "intro");
+    expect(screen.getByText("2026")).toBeInTheDocument();
+    expect(screen.getByText(/your year in music and gigs/i)).toBeInTheDocument();
+  });
 });
 
 describe("music slides", () => {
+  it("opens with a title card for each part", () => {
+    renderSlide(sampleSnapshot(), "part-music");
+    expect(screen.getByRole("heading", { name: "Your music" })).toBeInTheDocument();
+    cleanup();
+    renderSlide(sampleSnapshot(), "part-gigs");
+    expect(screen.getByRole("heading", { name: "Your gigs" })).toBeInTheDocument();
+  });
+
   it("says minutes are estimated from track length", () => {
     renderSlide(sampleSnapshot(), "minutes");
     expect(screen.getByText("61,420")).toBeInTheDocument();
@@ -68,17 +132,36 @@ describe("music slides", () => {
     expect(screen.getByText(/busiest month was/i)).toHaveTextContent("May");
   });
 
-  it("lists the top five artists with plays", () => {
+  it("makes the top artist a big picture slide", () => {
+    renderSlide(sampleSnapshot(), "top-artist");
+    expect(screen.getByRole("heading", { name: "Your top artist" })).toBeInTheDocument();
+    expect(screen.getByText("Artist A", { selector: "p" })).toBeInTheDocument();
+    expect(document.querySelector(".wrapped-cover-hero img")).toHaveAttribute(
+      "src",
+      "https://img.example/a.jpg"
+    );
+  });
+
+  it("lists the top five artists with plays and a cover each", () => {
     renderSlide(sampleSnapshot(), "artists");
-    expect(screen.getByText("Artist A")).toBeInTheDocument();
-    expect(screen.getByText(/812/)).toBeInTheDocument();
     expect(screen.getByText("Artist E")).toBeInTheDocument();
+    expect(screen.getByText(/812/)).toBeInTheDocument();
+    expect(document.querySelectorAll(".wrapped-rows .wrapped-cover")).toHaveLength(5);
   });
 
   it("shows the listening clock label", () => {
     renderSlide(sampleSnapshot(), "clock");
     expect(screen.getByText("Night owl")).toBeInTheDocument();
     expect(screen.getByText(/11pm/)).toBeInTheDocument();
+  });
+
+  it("shows full names, never cut off", () => {
+    const long = "An Extremely Long Album Title That Would Once Have Been Cut Off With Dots";
+    const snapshot = sampleSnapshot();
+    snapshot.music.top_albums = [{ name: long, artist: "Some Artist", plays: 10 }];
+    renderSlide(snapshot, "albums");
+    expect(screen.getByText(long)).toBeInTheDocument();
+    expect(document.querySelector(".wrapped-truncate")).toBeNull();
   });
 });
 
@@ -92,6 +175,15 @@ describe("gig slides", () => {
     expect(screen.getByText(/3 venues new to you/)).toBeInTheDocument();
   });
 
+  it("lists each gig with artist, venue, city, date and festival name", () => {
+    renderSlide(sampleSnapshot(), "gigs-list-1");
+    expect(screen.getByRole("heading", { name: "Your gigs" })).toBeInTheDocument();
+    expect(screen.getByText("17 Jan")).toBeInTheDocument();
+    expect(screen.getByText("Artist A")).toBeInTheDocument();
+    expect(screen.getByText("Venue One, Leeds")).toBeInTheDocument();
+    expect(screen.getByText("Big Weekend, The Field, Pilton")).toBeInTheDocument();
+  });
+
   it("says the miles are there and back, as the crow flies", () => {
     renderSlide(sampleSnapshot(), "gigs-miles");
     expect(screen.getByText("2,310")).toBeInTheDocument();
@@ -100,8 +192,7 @@ describe("gig slides", () => {
   });
 
   it("only mentions left-out and city-placed gigs when there are some", () => {
-    const quiet = sampleSnapshot();
-    renderSlide(quiet, "gigs-miles");
+    renderSlide(sampleSnapshot(), "gigs-miles");
     expect(screen.queryByText(/left out/i)).not.toBeInTheDocument();
     cleanup();
     const noisy = sampleSnapshot();
@@ -123,18 +214,13 @@ describe("gig slides", () => {
     );
   });
 
-  it("shows highlights", () => {
-    renderSlide(sampleSnapshot(), "gigs-highlights");
-    expect(screen.getByText(/Artist A \(3x\)/)).toBeInTheDocument();
+  it("shows highlights with the whole artist name", () => {
+    const snapshot = sampleSnapshot();
+    snapshot.gigs.most_seen = { artist: "A".repeat(80), times: 3 };
+    renderSlide(snapshot, "gigs-highlights");
+    expect(screen.getByText(new RegExp(`A{80} \\(3x\\)`))).toBeInTheDocument();
     expect(screen.getByText(/17 January/)).toBeInTheDocument();
     expect(screen.getByText(/71 days/)).toBeInTheDocument();
     expect(screen.getByText(/312/)).toBeInTheDocument();
-  });
-
-  it("copes with very long names", () => {
-    const snapshot = sampleSnapshot();
-    snapshot.gigs.most_seen = { artist: "A".repeat(200), times: 2 };
-    renderSlide(snapshot, "gigs-highlights");
-    expect(screen.getByText(/A{50}/)).toHaveClass("wrapped-truncate");
   });
 });

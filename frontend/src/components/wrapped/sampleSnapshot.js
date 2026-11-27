@@ -13,7 +13,7 @@ export function sampleSnapshot(overrides = {}) {
       months: [10, 20, 30, 40, 90, 50, 40, 30, 20, 10, 5, 2],
       busiest_month: 5,
       top_artists: [
-        { name: "Artist A", plays: 812 },
+        { name: "Artist A", plays: 812, artwork_url: "https://img.example/a.jpg" },
         { name: "Artist B", plays: 600 },
         { name: "Artist C", plays: 400 },
         { name: "Artist D", plays: 300 },
@@ -54,6 +54,29 @@ export function sampleSnapshot(overrides = {}) {
       last_night: "2026-12-12",
       longest_gap_days: 71,
       songs_heard_live: 312,
+      gig_list: [
+        {
+          date: "2026-01-17",
+          artist: "Artist A",
+          venue: "Venue One",
+          city: "Leeds",
+          festival: null,
+        },
+        {
+          date: "2026-03-05",
+          artist: "Artist B",
+          venue: "Venue Two",
+          city: "York",
+          festival: null,
+        },
+        {
+          date: "2026-06-26",
+          artist: "Artist C",
+          venue: "The Field",
+          city: "Pilton",
+          festival: "Big Weekend",
+        },
+      ],
     },
     ...overrides,
   };

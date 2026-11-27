@@ -1,23 +1,17 @@
+import { Chip, CoverList, playsDetail } from "./Pieces";
 import { formatNumber, plural } from "./format";
 
 export default function SummarySlide({ snapshot }) {
   const { year, music, gigs } = snapshot;
   return (
     <>
-      <p className="wrapped-kicker">Your {year} in short</p>
+      <Chip>Your {year} in short</Chip>
       {music && (
         <>
-          <ol className="wrapped-list">
-            {music.top_artists.slice(0, 3).map((artist) => (
-              <li key={artist.name}>
-                <span className="wrapped-truncate">{artist.name}</span>
-                <span className="wrapped-list-detail">{formatNumber(artist.plays)} plays</span>
-              </li>
-            ))}
-          </ol>
+          <CoverList items={music.top_artists.slice(0, 3)} detail={playsDetail} />
           {music.top_songs[0] && (
             <p className="wrapped-line">
-              Top song: <span className="wrapped-truncate">{music.top_songs[0].name}</span>
+              Top song: <strong>{music.top_songs[0].name}</strong>
             </p>
           )}
           <p className="wrapped-line">
