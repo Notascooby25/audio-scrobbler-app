@@ -72,7 +72,7 @@ def _gig(db, user_id=1, day=datetime(2026, 5, 1)):
 def test_run_due_before_30_dec_does_nothing(db_session):
     _user(db_session)
     _plays(db_session)
-    assert run_due(db_session, datetime(2026, 12, 30, 7, 59)) == {"generated": 0, "failed": 0}
+    assert run_due(db_session, datetime(2026, 12, 30, 7, 59)) == {"generated": 0, "failed": 0, "archived": 0}
     assert db_session.query(YearReview).count() == 0
 
 
@@ -173,8 +173,9 @@ def test_never_backfills_the_sample_year(db_session):
     _user(db_session)
     _plays(db_session, start=datetime(2025, 3, 1, 12, 0))
     _plays(db_session, start=datetime(2026, 3, 1, 12, 0))
-    run_due(db_session, datetime(2026, 6, 1, 12, 0))
-    run_due(db_session, datetime(2026, 12, 31, 18, 0))
+    with patch.object(wrapped_service, "backfill_from_year", lambda: 0):
+        run_due(db_session, datetime(2026, 6, 1, 12, 0))
+        run_due(db_session, datetime(2026, 12, 31, 18, 0))
     assert {r.year for r in db_session.query(YearReview)} == {2026}
 
 

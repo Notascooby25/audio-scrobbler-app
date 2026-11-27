@@ -23,7 +23,7 @@ from .ingestion import require_worker_token
 # Not "/wrapped": that is the page's own address in the app (/wrapped/2026), so the API needs a different path.
 router = APIRouter(prefix="/year-reviews", tags=["wrapped"])
 
-STAGE_ORDER = {"preview": 0, "unlock": 1, "final": 2}
+STAGE_ORDER = {"preview": 0, "archive": 1, "unlock": 1, "final": 2}
 
 
 def _visible_rows(db: Session, user_id: int) -> list[YearReview]:

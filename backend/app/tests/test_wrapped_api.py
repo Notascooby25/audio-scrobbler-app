@@ -215,4 +215,4 @@ def test_internal_route_runs_with_token():
         "/year-reviews/internal/run-due", headers={"X-Worker-Token": settings.worker_ingestion_token}
     )
     assert response.status_code == 200
-    assert response.json() == {"generated": 0, "failed": 0}
+    assert response.json() == {"generated": 0, "failed": 0, "archived": 0}

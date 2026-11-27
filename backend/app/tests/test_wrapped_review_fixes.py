@@ -73,9 +73,14 @@ def test_one_failing_user_does_not_stop_the_others(db_session):
             raise RuntimeError("boom")
         return real(db, user_id, start, end)
 
-    with patch.object(wrapped_service, "build_music_stats", flaky), patch.object(wrapped_service, "queue_push"):
+    with (
+        patch.object(wrapped_service, "build_music_stats", flaky),
+        patch.object(wrapped_service, "queue_push"),
+        patch.object(wrapped_service, "backfill_from_year", lambda: 0),  # past years have their own test
+    ):
         counts = run_due(db_session, datetime(2026, 12, 31, 18, 0))
-    assert counts == {"generated": 2, "failed": 2}  # user 2: preview and unlock; user 1: both failed
+    # user 2: preview and unlock made; user 1: both failed; past years are switched off for this test
+    assert counts == {"generated": 2, "failed": 2, "archived": 0}
     assert {(r.user_id, r.stage) for r in db_session.query(YearReview)} == {(2, "preview"), (2, "unlock")}
     assert [n.user_id for n in db_session.query(Notification)] == [2]
 

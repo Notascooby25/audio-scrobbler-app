@@ -96,4 +96,28 @@ describe("Library List Row Density per DESIGN.md", () => {
       /\.report-category-grid\s+\.library-bar-track\s*\{[^}]*max-width:\s*180px/
     );
   });
+
+  it("keeps grid card bodies bounded and scopes skin list-row overrides away from grid cards", () => {
+    const timelinePath = path.resolve(__dirname, "skins/timeline/timeline.css");
+    const sleevePath = path.resolve(__dirname, "skins/sleeve/sleeve.css");
+    const timelineContent = fs.readFileSync(timelinePath, "utf-8");
+    const sleeveContent = fs.readFileSync(sleevePath, "utf-8");
+
+    expect(stylesContent).toMatch(/\.grid-card-body\s*\{[^}]*width:\s*100%/);
+    expect(stylesContent).toMatch(/\.grid-card-body\s*\{[^}]*max-width:\s*100%/);
+    expect(stylesContent).toMatch(/\.grid-card-body\s*\{[^}]*box-sizing:\s*border-box/);
+
+    expect(timelineContent).toMatch(
+      /\[data-skin="timeline"\]\s+\.library-rank-row:not\(\.library-grid-card\)\s*\{[^}]*align-items:\s*center/
+    );
+    expect(timelineContent).toMatch(
+      /\[data-skin="timeline"\]\s+\.library-rank-row:not\(\.library-grid-card\)::after\s*\{[^}]*width:\s*var\(--rank-pct,\s*0%\)/
+    );
+    expect(timelineContent).not.toMatch(
+      /\[data-skin="timeline"\]\s+\.library-count-bar\s*\{[^}]*height:\s*4px/
+    );
+    expect(sleeveContent).toMatch(
+      /\[data-skin="sleeve"\]\s+\.library-rank-row:not\(\.library-grid-card\)\s*\{[^}]*align-items:\s*center/
+    );
+  });
 });

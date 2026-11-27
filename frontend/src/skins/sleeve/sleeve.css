@@ -1117,7 +1117,7 @@
   margin: 0;
 }
 
-[data-skin="sleeve"] .library-rank-row {
+[data-skin="sleeve"] .library-rank-row:not(.library-grid-card) {
   min-height: 64px !important;
   height: auto !important;
   box-sizing: border-box !important;

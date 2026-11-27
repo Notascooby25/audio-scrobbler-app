@@ -44,6 +44,11 @@ def early_access_ids() -> list[int]:
     return settings.wrapped_early_access_ids()
 
 
+def backfill_from_year() -> int:
+    """First past year to build an archive Wrapped for (0 = off)."""
+    return settings.wrapped_backfill_year()
+
+
 def unlock_moment(year: int) -> datetime:
     """When a year unlocks, as naive UTC."""
     return london_to_utc_naive(datetime(year, *UNLOCK_AT))
@@ -69,7 +74,7 @@ def _years_to_check(now: datetime) -> list[int]:
 def _window(year: int, stage: str, now: datetime) -> tuple[datetime, datetime]:
     start = london_to_utc_naive(datetime(year, 1, 1))
     year_end = london_to_utc_naive(datetime(year + 1, 1, 1))
-    end = year_end if stage == "final" else min(now, year_end)
+    end = year_end if stage in ("final", "archive") else min(now, year_end)
     return start, end
 
 
@@ -209,4 +214,30 @@ def run_due(db: Session, now: datetime) -> dict[str, int]:
                     db.rollback()
                     failed += 1
                     logger.warning("Wrapped %s %s failed for user %s: %s", year, stage, user_id, type(exc).__name__)
-    return {"generated": generated, "failed": failed}
+    archived, archive_failed = _backfill_past_years(db, now, user_ids)
+    return {"generated": generated, "failed": failed + archive_failed, "archived": archived}
+
+
+def _backfill_past_years(db: Session, now: datetime, user_ids: list[int]) -> tuple[int, int]:
+    """Quiet "archive" snapshots for the years before the live release, for everyone with enough in that year.
+
+    No banner and no notification (the banner only looks at unlock and final snapshots). A person who already
+    has any snapshot for a year keeps it. People with too little in a year get nothing, and are simply checked
+    again next time, which is cheap."""
+    first = backfill_from_year()
+    if first <= 0:
+        return 0, 0
+    made = failed = 0
+    for year in range(first, FIRST_LIVE_YEAR):
+        have = set(db.scalars(select(YearReview.user_id).where(YearReview.year == year)))
+        for user_id in user_ids:
+            if user_id in have:
+                continue
+            try:
+                if generate_year_review(db, user_id, year, "archive", now) is not None:
+                    made += 1
+            except Exception as exc:  # one person's problem must not stop everyone after them
+                db.rollback()
+                failed += 1
+                logger.warning("Wrapped %s archive failed for user %s: %s", year, user_id, type(exc).__name__)
+    return made, failed
