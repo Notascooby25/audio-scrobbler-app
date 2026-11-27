@@ -4,6 +4,15 @@ import { toBlob } from "html-to-image";
 const TRANSPARENT_PIXEL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
+function toDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
 // Covers come from other websites, and the picture maker can only copy ones that allow it. Fetch each one up
 // front: a cover we can copy becomes a local copy, and one we can't is removed so the coloured tile behind it
 // shows instead of a blank hole.
@@ -14,7 +23,8 @@ async function inlineImages(node) {
       try {
         const response = await fetch(img.src, { mode: "cors", referrerPolicy: "no-referrer" });
         if (!response.ok) throw new Error("bad response");
-        img.src = URL.createObjectURL(await response.blob());
+        // A data address, not a blob address: the app's security policy doesn't let the picture maker fetch blobs.
+        img.src = await toDataUrl(await response.blob());
       } catch {
         img.remove();
       }

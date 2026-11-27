@@ -95,7 +95,8 @@ describe("ShareSlideButton", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
     await waitFor(() => expect(toBlob).toHaveBeenCalled());
-    expect(seen).toEqual(["blob:x"]); // the good one is a local copy; the bad one is gone
+    // The good one is a local data copy (the app's security policy blocks blob fetches); the bad one is gone.
+    expect(seen).toEqual(["data:image/png;base64,eA=="]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     click.mockRestore();
     complete.mockRestore();

@@ -96,8 +96,8 @@
 .wrapped-shapes {
   position: absolute;
   z-index: 0;
-  width: 62cqw;
-  height: 62cqw;
+  width: 46cqw;
+  height: 46cqw;
   color: var(--w-shape);
   fill: none;
   stroke: currentColor;
@@ -110,24 +110,25 @@
   stroke: none;
 }
 
+/* Pushed well into the corners so they frame the slide instead of sitting on the text. */
 .wrapped-corner-tr {
-  top: -16cqw;
-  right: -18cqw;
+  top: -14cqw;
+  right: -16cqw;
 }
 
 .wrapped-corner-tl {
-  top: -16cqw;
-  left: -18cqw;
+  top: -14cqw;
+  left: -16cqw;
 }
 
 .wrapped-corner-br {
-  bottom: -14cqw;
-  right: -18cqw;
+  bottom: -18cqw;
+  right: -16cqw;
 }
 
 .wrapped-corner-bl {
-  bottom: -14cqw;
-  left: -18cqw;
+  bottom: -18cqw;
+  left: -16cqw;
 }
 
 /* The heading, set in a solid box. */
@@ -460,8 +461,8 @@
 
 .wrapped-progress span {
   flex: 1;
-  height: 0.8cqw;
-  min-height: 3px;
+  height: 1.1cqw;
+  min-height: 4px;
   background: currentColor;
   opacity: 0.3;
 }
@@ -470,7 +471,8 @@
   opacity: 1;
 }
 
-.wrapped-section-label {
+.wrapped-frame .wrapped-section-label {
+  color: inherit; /* the app's own paragraph colour would be unreadable on the dark slides */
   position: absolute;
   top: 8cqw;
   left: 4cqw;
