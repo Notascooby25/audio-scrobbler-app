@@ -1,5 +1,15 @@
 export const CHANGELOG = [
   {
+    version: "0.57.0",
+    date: "2026-11-28",
+    changes: [
+      "Timeline is now the default look for new accounts. Anyone who signs up from now on starts in the calm, data-first Timeline theme. Classic and Sleeve are still there: switch any time in Settings → General.",
+      "Nothing changes for existing accounts. Everyone who already has an account keeps the skin they have, including Classic.",
+      "One small catch: if you use Classic and sign in on a new device or after clearing your browser data, you may see Timeline for a moment before your saved Classic look loads.",
+      "The FAQ and User Guide now say Timeline is the default.",
+    ],
+  },
+  {
     version: "0.56.2",
     date: "2026-11-28",
     changes: [

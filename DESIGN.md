@@ -150,9 +150,9 @@ The banner and the year cards on Reports are normal themed UI and follow the usu
 
 The application architecture supports selectable visual skins built on a unified skins framework:
 
-- **Classic (Default):** The focused, utilitarian default described in this document. Always remains pixel-identical across releases. Unscoped styles in `frontend/src/styles.css`.
+- **Classic:** The focused, utilitarian base described in this document. Always remains pixel-identical across releases. Unscoped styles in `frontend/src/styles.css`. It is the base layer every skin builds on, and a choice in Settings, but no longer the default skin.
 - **Sleeve (Idea B):** An album-led, immersive dark aesthetic dynamically derived from artwork dominant colours. Detailed in [`docs/design/sleeve-skin.md`](docs/design/sleeve-skin.md). Scoped under `[data-skin="sleeve"]`.
-- **Timeline (Idea A):** A calm, data-first vertical rail of plays with quiet gaps and hourly charts. Detailed in [`docs/design/timeline-skin.md`](docs/design/timeline-skin.md). Scoped under `[data-skin="timeline"]`.
+- **Timeline (Idea A, the default for new accounts since v0.57.0):** A calm, data-first vertical rail of plays with quiet gaps and hourly charts. Detailed in [`docs/design/timeline-skin.md`](docs/design/timeline-skin.md). Scoped under `[data-skin="timeline"]`.
 
 All skins adhere to the core design system rules:
 - **Flat-By-Default:** Zero gradients and zero box-shadows across all skin stylesheets.

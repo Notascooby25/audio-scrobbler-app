@@ -66,7 +66,8 @@ export default function UserGuideSection() {
         <h4>Visual Themes & Skins (Classic, Sleeve & Timeline)</h4>
         <p>
           You can personalize your visual experience in <strong>Settings → General</strong> using
-          the <strong>Skin switcher</strong>:
+          the <strong>Skin switcher</strong>. Timeline is the default skin for new accounts, and
+          existing accounts keep the skin they already chose:
         </p>
         <ul>
           <li>

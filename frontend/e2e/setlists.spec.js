@@ -41,6 +41,8 @@ test.use({ serviceWorkers: "block" });
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
+    // Timeline is the default skin; this spec checks the Classic header.
+    localStorage.setItem("audio-scrobbler-skin", "classic");
     localStorage.setItem("audio-scrobbler-session", JSON.stringify({ accessToken: "e2e-token" }));
   });
   // Mock the API in the browser; navigations still go to the Vite dev server

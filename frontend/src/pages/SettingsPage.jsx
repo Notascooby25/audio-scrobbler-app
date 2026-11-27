@@ -32,7 +32,7 @@ import DevicePushSection from "../components/settings/DevicePushSection";
 import HomeCitySection from "../components/settings/HomeCitySection";
 import BlockedItemsSection from "../components/settings/BlockedItemsSection";
 import { useSkin } from "../skins/useSkin";
-import { getAvailableSkins } from "../skins";
+import { DEFAULT_SKIN_ID, getAvailableSkins } from "../skins";
 
 const SETTINGS_TABS = [
   ["general", "General"],
@@ -433,7 +433,7 @@ export default function SettingsPage() {
                   Skin
                   <select
                     aria-label="Skin"
-                    value={settings.skin || activeSkinId || "classic"}
+                    value={settings.skin || activeSkinId || DEFAULT_SKIN_ID}
                     onChange={(event) => changeSetting("skin", event.target.value)}
                   >
                     {availableSkins.map((s) => (

@@ -444,7 +444,8 @@ const FAQ_DATA = [
           dashboard), <em>Sleeve</em> (an editorial, vinyl-inspired theme with Young Serif
           typography and dedicated navigation), and <em>Timeline</em> (a calm, data-first vertical
           rail of plays with quiet gaps, hourly charts, and high-contrast source markers in light
-          and dark themes).
+          and dark themes). Timeline is the default for new accounts. People who already had an
+          account keep the skin they already have, and can switch at any time.
         </p>
         <p>
           When using the Sleeve skin, you can turn on <strong>Match the album sleeve</strong> to let

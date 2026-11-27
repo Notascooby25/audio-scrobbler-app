@@ -1,8 +1,9 @@
 try {
   var params = new URLSearchParams(window.location.search);
   var urlSkin = params.get("skin");
-  var skin = urlSkin || localStorage.getItem("audio-scrobbler-skin");
-  if (skin) document.documentElement.setAttribute("data-skin", skin);
+  // Timeline is the default skin; keep this in step with DEFAULT_SKIN_ID in src/skins/index.js.
+  var skin = urlSkin || localStorage.getItem("audio-scrobbler-skin") || "timeline";
+  document.documentElement.setAttribute("data-skin", skin);
   var theme = localStorage.getItem("audio-scrobbler-theme");
   if (theme && (!skin || skin === "classic" || skin === "timeline")) {
     document.documentElement.setAttribute("data-theme", theme);

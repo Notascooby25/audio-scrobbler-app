@@ -79,7 +79,7 @@ class UserPreferences(Base):
     user_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
     default_date_range: Mapped[str] = mapped_column(String(32), nullable=False, default="last.week")
     theme: Mapped[str] = mapped_column(String(16), nullable=False, default="system")
-    skin: Mapped[str] = mapped_column(String(16), nullable=False, default="classic")
+    skin: Mapped[str] = mapped_column(String(16), nullable=False, default="timeline")
     match_album_sleeve: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     accent_color: Mapped[str] = mapped_column(String(24), nullable=False, default="blue_monday")
     jukebox_source: Mapped[str] = mapped_column(String(32), nullable=False, default="spotify_saved")
