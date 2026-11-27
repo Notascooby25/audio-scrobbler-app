@@ -10,7 +10,12 @@ async function wrappedRequest(path, { token, method = "GET" } = {}) {
     error.status = response.status;
     throw error;
   }
-  return response.status === 204 ? null : response.json();
+  if (response.status === 204) {
+    // Read the (empty) body anyway: leaving it unread makes the browser report the request as aborted.
+    await response.text();
+    return null;
+  }
+  return response.json();
 }
 
 export function fetchWrapped({ token }) {
