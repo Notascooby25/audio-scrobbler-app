@@ -203,7 +203,10 @@ def build_top_entities_query(
         selected_columns.append(func.max(_spotify_track_id_expr()).label("spotify_track_id"))
     statement = select(*selected_columns).where(ListeningEvent.user_id == user_id).where(not_blocked_clause(user_id))
     if entity == "albums":
-        statement = statement.where(ListeningEvent.album_name.isnot(None))
+        statement = statement.where(
+            ListeningEvent.album_name.isnot(None),
+            ~and_(ListeningEvent.source == "setlistfm", ListeningEvent.album_name.ilike("Live at %")),
+        )
 
     if start is not None:
         statement = statement.where(ListeningEvent.played_at >= start)
@@ -366,7 +369,10 @@ def build_library_entities_query(
 
     statement = select(*selected_columns).where(ListeningEvent.user_id == user_id).where(not_blocked_clause(user_id))
     if entity == "albums":
-        statement = statement.where(ListeningEvent.album_name.isnot(None))
+        statement = statement.where(
+            ListeningEvent.album_name.isnot(None),
+            ~and_(ListeningEvent.source == "setlistfm", ListeningEvent.album_name.ilike("Live at %")),
+        )
 
     if start is not None:
         statement = statement.where(ListeningEvent.played_at >= start)
@@ -452,7 +458,17 @@ def build_report_period_count_query(user_id: int, start: datetime, end: datetime
         func.count(ListeningEvent.id).label("scrobble_count"),
         func.coalesce(func.sum(ListeningEvent.duration_ms), 0).label("duration_ms"),
         func.count(func.distinct(ListeningEvent.artist_name)).label("unique_artists"),
-        func.count(func.distinct(ListeningEvent.album_name)).label("unique_albums"),
+        func.count(
+            func.distinct(
+                case(
+                    (
+                        ~and_(ListeningEvent.source == "setlistfm", ListeningEvent.album_name.ilike("Live at %")),
+                        ListeningEvent.album_name,
+                    ),
+                    else_=None,
+                )
+            )
+        ).label("unique_albums"),
         func.count(func.distinct(ListeningEvent.track_name)).label("unique_tracks"),
     ).where(
         ListeningEvent.user_id == user_id,

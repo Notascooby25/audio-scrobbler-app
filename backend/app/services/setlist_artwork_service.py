@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..models import ArtworkCache, ListeningEvent, User
-from .processed_import_service import deezer_artwork, deezer_search, is_artist_match, itunes_artwork
+from .processed_import_service import clean_title, deezer_artwork, deezer_search, is_artist_match, itunes_artwork
 
 logger = logging.getLogger(__name__)
 
@@ -218,6 +218,103 @@ def backfill_live_artwork(db: Session, max_lookups: int = 60, pause_seconds: flo
                 ListeningEvent.artwork_url.is_(None),
             )
             .values(artwork_url=url)
+            .execution_options(synchronize_session=False)
+        )
+        counts["updated"] += int(result.rowcount or 0)
+        db.commit()
+
+    db.commit()
+    return counts
+
+
+def _itunes_album(artist: str, title: str, timeout: float = 3.0) -> str | None:
+    """Fallback search using the iTunes API for a track's album name."""
+    query = urllib.parse.quote(f"{artist} {clean_title(title)}")
+    url = f"https://itunes.apple.com/search?term={query}&entity=song&limit=5"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "music-parser-app/1.0"})
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            for result in data.get("results", []):
+                if is_artist_match(artist, str(result.get("artistName", ""))):
+                    album = str(result.get("collectionName") or "").strip()
+                    if album and not album.lower().startswith("live at "):
+                        return album
+    except Exception as exc:  # noqa: BLE001 - a failed lookup is just a miss
+        logger.debug("iTunes album lookup failed for %s - %s: %s", artist, title, exc)
+    return None
+
+
+def _lookup_track_album(artist: str, title: str) -> str | None:
+    album: str | None = None
+    if settings.enable_deezer_artwork_lookup:
+        track = deezer_search(artist, title, timeout=3.0)
+        raw_album = ((track or {}).get("album") or {}).get("title") if isinstance(track, dict) else None
+        if isinstance(raw_album, str) and raw_album.strip() and not raw_album.strip().lower().startswith("live at "):
+            album = raw_album.strip()
+    if not album:
+        album = _itunes_album(artist, title)
+    return album
+
+
+def _cached_text(db: Session, key: str) -> tuple[bool, str | None]:
+    """(known, value) for non-URL text cached in ArtworkCache."""
+    entry = db.get(ArtworkCache, key)
+    if entry is None:
+        return False, None
+    if entry.artwork_url:
+        return True, entry.artwork_url
+    return entry.cached_at > utc_now() - MISS_RETRY_AFTER, None
+
+
+def backfill_live_albums(db: Session, max_lookups: int = 60, pause_seconds: float = 0.5) -> dict[str, int]:
+    """Fills in real album names for gig scrobbles that have none. Called by the worker."""
+    pending = db.execute(
+        select(ListeningEvent.user_id, ListeningEvent.artist_name, ListeningEvent.track_name)
+        .join(User, User.id == ListeningEvent.user_id)
+        .where(
+            ListeningEvent.source == LIVE_SOURCE,
+            ListeningEvent.album_name.is_(None),
+            User.is_active.is_(True),
+        )
+        .group_by(ListeningEvent.user_id, ListeningEvent.artist_name, ListeningEvent.track_name)
+        .order_by(func.random())
+        .limit(PENDING_SCAN_LIMIT)
+    ).all()
+
+    counts = {"checked": 0, "updated": 0, "missed": 0, "lookups": 0}
+    local: dict[tuple[int, str], dict[str, str]] = {}
+
+    for user_id, artist, title in pending:
+        local_key = (user_id, artist.lower())
+        if local_key not in local:
+            local[local_key] = local_live_albums(db, user_id, artist)
+        album_name = local[local_key].get(title.lower())
+        if not album_name:
+            cache_key = _cache_key("live-album", artist, title)
+            known, album_name = _cached_text(db, cache_key)
+            if not known:
+                if counts["lookups"] >= max_lookups:
+                    continue
+                counts["lookups"] += 1
+                time.sleep(pause_seconds)
+                album_name = _lookup_track_album(artist, title)
+                _remember(db, cache_key, album_name)
+
+        counts["checked"] += 1
+        if not album_name:
+            counts["missed"] += 1
+            continue
+        result = db.execute(
+            update(ListeningEvent)
+            .where(
+                ListeningEvent.user_id == user_id,
+                ListeningEvent.source == LIVE_SOURCE,
+                ListeningEvent.artist_name == artist,
+                ListeningEvent.track_name == title,
+                ListeningEvent.album_name.is_(None),
+            )
+            .values(album_name=album_name)
             .execution_options(synchronize_session=False)
         )
         counts["updated"] += int(result.rowcount or 0)
