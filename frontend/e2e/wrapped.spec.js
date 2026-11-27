@@ -80,6 +80,7 @@ test.describe("year Wrapped", () => {
     await page.goto("/reports");
     await page.getByRole("button", { name: "Not now", exact: true }).click();
     await expect(page.getByText("Your 2026 Wrapped is ready")).toBeHidden();
+    await page.getByRole("tab", { name: "Wrapped", exact: true }).click();
     await expect(page.getByRole("link", { name: "Play story", exact: true })).toBeVisible();
   });
 });

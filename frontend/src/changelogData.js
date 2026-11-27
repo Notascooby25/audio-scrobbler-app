@@ -5,7 +5,7 @@ export const CHANGELOG = [
     changes: [
       "New: your year in review. On the evening of 31 December a banner, a notification and a phone alert tell you your Wrapped is ready. Tap through slides for your minutes listened, top artists, songs, albums and genres, your busiest month, your listening clock, your biggest day and the artists new to you this year.",
       "Gigs get their own slides: gigs and festival nights, miles travelled there and back as the crow flies, which months you went to a gig in, and highlights like the artist you saw most. Every slide has a Share button that makes a picture for your phone's share menu.",
-      "Your numbers are saved when they're made, so they won't change under you. On 1 January the full-year version quietly replaces the 31 December one, with an Updated tag on any slide that changed. Past years stay on the Reports page. Minutes are estimated from track length.",
+      "Your numbers are saved when they're made, so they won't change under you. On 1 January the full-year version quietly replaces the 31 December one, with an Updated tag on any slide that changed. Past years stay in the new Wrapped tab on Reports, after Gigs. Minutes are estimated from track length.",
     ],
   },
   {

@@ -291,7 +291,7 @@ export default function UserGuideSection() {
             and a notification tell you your Wrapped is ready. Tap the right side of the screen to
             go on and the left to go back. It covers your music, then your gigs: how many, the miles
             travelled there and back as the crow flies, and which months you went. The Share button
-            turns the slide you are on into a picture. Past years are kept on the Reports page.
+            turns the slide you are on into a picture. Past years are kept in the Wrapped tab on Reports, after Gigs.
             Minutes are estimated from track length, and miles need a home city set in{" "}
             <em>Settings → General</em>.
           </li>

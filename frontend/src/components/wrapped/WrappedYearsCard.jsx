@@ -40,11 +40,15 @@ export default function WrappedYearsCard({ token }) {
     };
   }, [token]);
 
-  if (!years.length) return null;
-
   return (
     <section className="wrapped-years" aria-label="Your years in review">
       <h2>Your year in review</h2>
+      {!years.length && (
+        <p className="wrapped-years__empty">
+          Nothing here yet. Your first year in review arrives on 31 December, once you have a year
+          of listening or gigs to look back on.
+        </p>
+      )}
       <ul className="wrapped-years__list">
         {years.map((entry) => (
           <li key={entry.year} className="wrapped-year-card">

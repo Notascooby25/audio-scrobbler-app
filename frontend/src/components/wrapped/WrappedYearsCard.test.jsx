@@ -56,17 +56,18 @@ describe("WrappedYearsCard", () => {
     expect(screen.queryByText(/Unlocks/)).not.toBeInTheDocument();
   });
 
-  it("shows nothing when there are no years", async () => {
+  it("explains the empty tab when there are no years", async () => {
     fetchWrapped.mockResolvedValue({ years: [] });
     renderCard();
     await waitFor(() => expect(fetchWrapped).toHaveBeenCalled());
-    expect(screen.queryByRole("heading")).not.toBeInTheDocument();
+    expect(screen.getByText(/first year in review arrives on 31 December/i)).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 3 })).not.toBeInTheDocument();
   });
 
-  it("shows nothing when the request fails", async () => {
+  it("shows the same calm message when the request fails", async () => {
     fetchWrapped.mockRejectedValue(new Error("down"));
     renderCard();
     await waitFor(() => expect(fetchWrapped).toHaveBeenCalled());
-    expect(screen.queryByRole("heading")).not.toBeInTheDocument();
+    expect(screen.getByText(/first year in review arrives on 31 December/i)).toBeInTheDocument();
   });
 });

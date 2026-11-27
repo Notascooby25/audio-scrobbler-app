@@ -148,8 +148,8 @@ Sections in page order:
     `UnboundLocalError`.
 - **Removed:** the Playlists tab (`2acb98b`). `playlist_cache` and its migration
   remain.
-- **Year Wrapped (v0.55.0):** a "Your year in review" card list sits above the tabs
-  on your own Reports (`WrappedYearsCard`, reads `GET /wrapped`). Each year opens
+- **Year Wrapped (v0.55.0):** a **Wrapped** tab, after Gigs, on your own Reports
+  holds the "Your year in review" cards (`WrappedYearsCard`, reads `GET /year-reviews`). Each year opens
   at `/wrapped/:year` (`WrappedPage` → `WrappedStory`, tap-only slides, Share
   makes a 1080 x 1920 picture). A banner (`WrappedBanner`, in `Layout`) shows
   until the story is opened or dismissed. Snapshots live in `year_reviews`
