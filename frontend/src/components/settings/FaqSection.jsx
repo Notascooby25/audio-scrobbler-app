@@ -29,7 +29,7 @@ const FAQ_DATA = [
         <p>
           You can disconnect or reconnect at any time. If the app asks you to reconnect, it needs a
           new Spotify permission, for example to save songs you like. Click{" "}
-          <em>Reconnect Spotify</em> in <strong>Settings → Connections</strong> and approve it.
+          <em>Reconnect Spotify</em> in <strong>Settings → Scrobble</strong> and approve it.
         </p>
       </>
     ),
@@ -66,13 +66,19 @@ const FAQ_DATA = [
           Capsule, and any music friends have recommended.
         </li>
         <li>
+          <strong>Today:</strong> in the Timeline and Sleeve skins, a live view of what you have
+          played today.
+        </li>
+        <li>
           <strong>Library:</strong> every play you have logged, by scrobble, artist, album or track.
         </li>
         <li>
-          <strong>Reports:</strong> stats and trends for a date range you choose, plus a Gigs tab.
+          <strong>Reports:</strong> stats and trends for a date range you choose. Its tabs are
+          Listening, Gigs and Wrapped (your years in review).
         </li>
         <li>
-          <strong>Gigs:</strong> log concerts, see setlists, and track your live history.
+          <strong>Gigs:</strong> log concerts, see setlists, and track your live history. The{" "}
+          <em>Discover</em> tab finds upcoming shows.
         </li>
         <li>
           <strong>Profile icon menu:</strong> your Profile, Friends, Settings, Connect, and Sign
@@ -121,6 +127,73 @@ const FAQ_DATA = [
           Earlier years are built too, back to 2020, for any year where you had at least 30 plays or
           a gig. They sit in the Wrapped tab on Reports with no banner or notification, and they
           don&apos;t change once made.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "wrapped-where-and-share",
+    category: "Reports & Stats",
+    question: "Where do I find my past Wrapped years, and can I share a slide?",
+    answer: (
+      <>
+        <p>
+          Open <strong>Reports</strong> and choose the <strong>Wrapped</strong> tab. It lists your
+          years in review, newest first, and <em>Play story</em> opens one. Wrapped also builds one
+          for each earlier year back to 2020, as long as you had at least 30 plays or a gig that
+          year. Those earlier years have no banner or notification, and they don&apos;t change once
+          made. The tab is only on your own Reports, so friends can&apos;t see yours.
+        </p>
+        <p>
+          Every slide has a <strong>Share</strong> button. It makes a picture, which your phone
+          offers to send through its share menu, or which downloads on a computer. A year that
+          starts part way through your records says so, for example <em>From 14 March</em>.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "gig-report-widgets",
+    category: "Reports & Stats",
+    question: "What are the widgets on the Gigs report, and can I hide them?",
+    answer: (
+      <>
+        <p>
+          The Gigs tab on Reports is split into <em>All Intelligence</em>, <em>Travel &amp; Map</em>
+          , <em>Badges &amp; Streaks</em> and <em>Discoveries &amp; Bump</em>. The widgets are:
+        </p>
+        <ul>
+          <li>
+            <strong>Gig Odyssey Map:</strong> every venue you have visited, with a Festivals on/off
+            switch.
+          </li>
+          <li>
+            <strong>Live Artist Rankings:</strong> the artists you have seen most often.
+          </li>
+          <li>
+            <strong>Annual Gig Cadence:</strong> a grid of when in each year you go to gigs.
+          </li>
+          <li>
+            <strong>Venue Stomping Grounds:</strong> your most visited venues. A night counts once,
+            however many acts you saw.
+          </li>
+          <li>
+            <strong>Badges &amp; Streaks:</strong> milestones you have unlocked.
+          </li>
+          <li>
+            <strong>Post-Gig Surge:</strong> how much more you play an act after seeing them.
+          </li>
+          <li>
+            <strong>Setlist Replay Tracker:</strong> songs you have heard live.
+          </li>
+          <li>
+            <strong>Day of Week Rhythm, Furthest Gigs, Gigs by Month &amp; Year</strong> and{" "}
+            <strong>Live Gap</strong> round it out.
+          </li>
+        </ul>
+        <p>
+          Use the <em>Customise widgets</em> button on the Gigs tab to turn any widget on or off.
+          Gigs that haven&apos;t happened yet are never counted.
         </p>
       </>
     ),
@@ -232,6 +305,25 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "jukebox-lucky-dip",
+    category: "General & Appearance",
+    question: "How do Lucky Dip and Re-roll work, and what are Flat and Arcade views?",
+    answer: (
+      <>
+        <p>
+          On the Play page, <strong>Lucky Dip</strong> picks a whole album for you to listen to. You
+          get up to <strong>three</strong> rolls: <em>Re-roll</em> shows how many are left, and
+          after the third you stick with your pick. <em>Open in Spotify</em> starts it, and{" "}
+          <em>Mark Played</em> ticks it off.
+        </p>
+        <p>
+          The button at the bottom of the Jukebox switches between the clean <strong>Flat</strong>{" "}
+          view and the retro <strong>Arcade</strong> view. Both use the same filters and picks.
+        </p>
+      </>
+    ),
+  },
+  {
     id: "entry-menu",
     category: "Library & Data Maintenance",
     question: "How do I delete, block or clear artwork for a single track, album or artist?",
@@ -291,7 +383,7 @@ const FAQ_DATA = [
         <p>
           <strong>Why do I see a reconnect prompt?</strong> Saving songs to Spotify requires the{" "}
           <code>user-library-modify</code> permission scope. If you connected before this feature
-          was added, click <em>Reconnect Spotify</em> in <strong>Settings → Connections</strong> to
+          was added, click <em>Reconnect Spotify</em> in <strong>Settings → Scrobble</strong> to
           grant this new permission.
         </p>
         <p>
@@ -358,6 +450,27 @@ const FAQ_DATA = [
           When using the Sleeve skin, you can turn on <strong>Match the album sleeve</strong> to let
           the background atmosphere dynamically tint to match the dominant colours of whatever album
           is currently playing.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "timeline-skin-guide",
+    category: "General & Appearance",
+    question: "What do the markers and quiet gaps on the Today page mean?",
+    answer: (
+      <>
+        <p>
+          In the Timeline skin, Today is a vertical rail of your plays. Each play has a small marker
+          showing where it came from, such as Spotify, Apple Music, BBC Sounds, YouTube or a gig
+          from Setlist.fm. When nothing played for an hour or more, a dashed{" "}
+          <strong>quiet gap</strong> shows how long the pause was. The chart above the rail shows
+          your plays hour by hour.
+        </p>
+        <p>
+          In the <strong>Library</strong>, the <em>List</em> and <em>Grid</em> buttons switch how
+          artists, albums and tracks are shown. Grid shows covers, and List shows a row for each
+          with a bar for its play count.
         </p>
       </>
     ),
@@ -487,6 +600,20 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "share-scrobbles-undo",
+    category: "Friends & Social",
+    question: "Can I undo Share Scrobbles?",
+    answer: (
+      <p>
+        <strong>Not yet.</strong> Once you confirm, the songs are added to your friend&apos;s
+        history and it cannot be undone from your side. They aren&apos;t marked as coming from you,
+        though your friend gets a notification saying how many were added. Check the start and end
+        time before you confirm. Sharing the same period again does nothing, because songs they
+        already have are skipped.
+      </p>
+    ),
+  },
+  {
     id: "car-duplicates",
     category: "Friends & Social",
     question: "Will copying a friend's scrobbles duplicate songs I already listened to?",
@@ -554,7 +681,7 @@ const FAQ_DATA = [
         <li>
           <strong>Blocking:</strong> Excludes an artist, album, or track from your charts, heatmaps,
           top lists, and reports. The underlying scrobble remains in the database so you can unblock
-          it later in <em>Settings → General</em> if you change your mind. Great for podcasts, white
+          it later in <em>Settings → Data</em> if you change your mind. Great for podcasts, white
           noise, or sleep tracks.
         </li>
         <li>
@@ -742,6 +869,47 @@ const FAQ_DATA = [
         by artist name and date, even when the spelling differs slightly, and shows{" "}
         <strong>✓ Going</strong> instead of the Going button. This app is not affiliated with or
         endorsed by Skiddle.
+      </p>
+    ),
+  },
+  {
+    id: "discover-filters",
+    category: "Set Lists & Gigs",
+    question: "How do I use the filters on the Discover tab?",
+    answer: (
+      <>
+        <p>
+          At the top, choose <strong>My Artists</strong> (shows by artists you listen to, with an
+          optional country) or <strong>Local Radar</strong> (everything on within a number of miles
+          of your home city, which you set in <em>Settings → General</em>). Open{" "}
+          <strong>Filters</strong> to narrow by <em>When</em> (Any time, This weekend, Next 7 days,
+          Next 30 days) and to show only <em>Newly announced</em> gigs or only ones you marked{" "}
+          <em>Interested</em>.
+        </p>
+        <p>
+          Tap <em>I&apos;m interested</em> on a gig to put it on your shortlist. The Interested
+          filter shows that shortlist wherever the gigs are. <em>+ I&apos;m going</em> logs the gig.
+        </p>
+        <p>
+          <strong>Artist criteria</strong> decides which artists count as yours: your top 50, 100 or
+          200 most played, or those played at least a set number of times, over the last 3, 6, 12 or
+          24 months or all time, with an option to include artists you have seen live. When you
+          change the filters, <em>Save these as my default</em> appears so they are used next time.
+          The <em>What do the labels mean?</em> button explains the badges on each gig.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "setlists-cover-band",
+    category: "Set Lists & Gigs",
+    question: "What does the Cover band or Tribute act tick box do?",
+    answer: (
+      <p>
+        When you log a gig by hand or choose <em>Edit details</em>, tick{" "}
+        <em>Cover band / Tribute act</em> if you saw a tribute rather than the real artist. The gig
+        gets a <strong>Cover band</strong> tag on its page and in My Gigs, so it is clear in your
+        history that it wasn&apos;t the original act. Untick it and save to remove the tag.
       </p>
     ),
   },
