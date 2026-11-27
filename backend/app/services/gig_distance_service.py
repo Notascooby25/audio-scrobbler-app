@@ -115,6 +115,16 @@ def _place(db: Session, venue_query: str, city_query: str | None) -> tuple[bool,
     return True, city_point, city_point is not None
 
 
+def place_venue(
+    db: Session, venue_name: str, city: str, country: str
+) -> tuple[bool, tuple[float, float] | None, bool]:
+    """Where a venue is, from places the worker has already set (never asks the map).
+
+    Returns (placed yet, point or None, approximate: placed at city level)."""
+    venue_query, city_query = _queries(venue_name, city, country)
+    return _place(db, venue_query, city_query)
+
+
 # Gigs listed under one venue in the furthest list. A festival can have dozens of bands.
 MAX_GIGS_PER_VENUE = 50
 
