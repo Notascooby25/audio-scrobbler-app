@@ -600,6 +600,17 @@ export function copyScrobbles({ token, userId, startDate, endDate }) {
   });
 }
 
+export function shareScrobbles({ token, userId, startDate, endDate }) {
+  return fetchAnalyticsResource(`/users/${userId}/share-scrobbles`, {
+    token,
+    method: "POST",
+    body: {
+      start_date: startDate,
+      end_date: endDate,
+    },
+  });
+}
+
 export async function fetchNotifications({ token }) {
   const res = await fetch(`${API_BASE_URL}/notifications`, {
     headers: { Authorization: `Bearer ${token}` },

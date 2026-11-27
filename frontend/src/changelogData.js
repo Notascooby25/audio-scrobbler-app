@@ -1,9 +1,17 @@
 export const CHANGELOG = [
   {
-    version: "0.53.8",
+    version: "0.54.1",
     date: "2026-11-27",
     changes: [
       "Gigs: a new Support act tick box when you edit or log a gig. Tick it on the act that played first and it gets the Support act label, links to the other gig you logged at the same venue that night, and moves just before the headliner on your timeline. Untick it to undo.",
+    ],
+  },
+  {
+    version: "0.54.0",
+    date: "2026-11-27",
+    changes: [
+      "New Share Scrobbles button on the profile of anyone you follow, next to Copy Scrobbles. Pick the start and end time of a journey or hangout and your scrobbles from that period are added to their history. It is Copy Scrobbles the other way round, for when your music was playing and your friend will forget to add it.",
+      "They get a notification saying who added how many scrobbles. Songs they already have are skipped, so sharing the same period twice does nothing, and your own history is not changed.",
     ],
   },
   {

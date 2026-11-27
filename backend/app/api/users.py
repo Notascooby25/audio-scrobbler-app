@@ -13,7 +13,8 @@ from ..queries.analytics_queries import DATE_RANGE_PRESETS, resolve_date_range
 from ..schemas.users import (
     FollowActionResponse, FollowersListResponse, FollowingListResponse, UserProfileResponse,
     UserSearchResponse, NowPlayingResponse, LeaderboardResponse,
-    CopyScrobblesRequest, CopyScrobblesResponse, RemoveFollowerResponse
+    CopyScrobblesRequest, CopyScrobblesResponse, RemoveFollowerResponse,
+    ShareScrobblesRequest, ShareScrobblesResponse
 )
 from ..services import social_service
 from ..services.color_service import fetch_and_extract_color
@@ -248,3 +249,47 @@ def copy_scrobbles_endpoint(
         end_date=payload.end_date
     )
     return CopyScrobblesResponse(copied_count=copied)
+
+
+@router.post("/{user_id}/share-scrobbles", response_model=ShareScrobblesResponse, status_code=status.HTTP_200_OK)
+def share_scrobbles_endpoint(
+    user_id: int,
+    payload: ShareScrobblesRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ShareScrobblesResponse:
+    """Adds the signed-in user's plays in a time range to someone they follow."""
+    recipient = _get_active_user_or_404(db, user_id)
+    if recipient.id == current_user.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot share scrobbles with yourself")
+    if not social_service.is_following(db, current_user.id, recipient.id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Must follow user to share scrobbles with them")
+
+    shared = social_service.share_scrobbles(
+        db=db,
+        sharer_id=current_user.id,
+        recipient_id=recipient.id,
+        start_date=payload.start_date,
+        end_date=payload.end_date,
+    )
+    if shared:
+        _notify_scrobbles_shared(db, current_user, recipient.id, shared)
+    return ShareScrobblesResponse(shared_count=shared)
+
+
+def _notify_scrobbles_shared(db: Session, sharer: User, recipient_id: int, count: int) -> None:
+    name = getattr(sharer, "display_name", None) or getattr(sharer, "username", None) or "Someone"
+    noun = "scrobble" if count == 1 else "scrobbles"
+    message = f"{name} added {count} {noun} to your history"
+    link = f"/profile/{sharer.id}"
+    db.add(
+        Notification(
+            user_id=recipient_id,
+            title="Scrobbles shared with you",
+            message=message,
+            type="general",
+            link=link,
+        )
+    )
+    db.commit()
+    queue_push(recipient_id, "Scrobbles shared with you", message, link)
