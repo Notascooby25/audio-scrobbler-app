@@ -7,6 +7,7 @@ import LibraryPage from "./pages/LibraryPage";
 import OverviewPage from "./pages/OverviewPage";
 import ProfilePage from "./pages/ProfilePage";
 import ReportsPage from "./pages/ReportsPage";
+import WrappedPage from "./pages/WrappedPage";
 import SettingsPage from "./pages/SettingsPage";
 import ChangelogPage from "./pages/ChangelogPage";
 import SetlistsPage from "./components/setlists/SetlistsPage";
@@ -75,6 +76,7 @@ export default function App() {
             {/* Not under /setlists/: that prefix is proxied to the API by nginx and Vite */}
             <Route path="/gigs/:concertId" element={<SetlistGigPage />} />
             <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/wrapped/:year" element={<WrappedPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/profile/:userId" element={<ProfilePage />} />
             <Route path="/following" element={<FollowingPage />} />

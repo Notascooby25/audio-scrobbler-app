@@ -1,0 +1,370 @@
+/* Year Wrapped story, banner and cards. Flat colours from the app's tokens only: no gradients, no shadows.
+   Sizes use container query units so a slide looks the same on a phone and in the 1080 x 1920 share picture. */
+
+.wrapped-story {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-ink);
+  outline: none;
+}
+
+.wrapped-frame,
+.wrapped-share-stage {
+  container-type: inline-size;
+  position: relative;
+  aspect-ratio: 9 / 16;
+  height: min(100dvh, calc(100vw * 16 / 9));
+  max-width: 100vw;
+  overflow: hidden;
+}
+
+.wrapped-tone-dark {
+  background: var(--color-ink);
+  color: var(--color-surface);
+}
+
+.wrapped-tone-light {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+.wrapped-frame {
+  border: 0.5px solid var(--color-border);
+}
+
+.wrapped-slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.4cqw;
+  padding: 14cqw 9cqw 18cqw;
+  font-size: 4.6cqw;
+  line-height: 1.3;
+}
+
+.wrapped-share-stage {
+  height: 1920px;
+  width: 1080px;
+}
+
+.wrapped-share-offscreen {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+}
+
+.wrapped-kicker {
+  margin: 0;
+  font-size: 0.8em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.wrapped-title {
+  margin: 0;
+  font-size: 2em;
+  line-height: 1.1;
+}
+
+.wrapped-big {
+  margin: 0;
+  font-size: 4.2em;
+  font-weight: 800;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.wrapped-line {
+  margin: 0;
+  font-size: 1.1em;
+}
+
+.wrapped-note {
+  margin: 0;
+  font-size: 0.85em;
+  opacity: 0.75;
+}
+
+.wrapped-updated {
+  align-self: flex-start;
+  margin: 0 0 1cqw;
+  padding: 0.3em 0.7em;
+  border: 0.5px solid currentColor;
+  border-radius: 99px;
+  font-size: 0.75em;
+}
+
+.wrapped-truncate {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.wrapped-list,
+.wrapped-facts {
+  display: grid;
+  gap: 0.6em;
+  margin: 0.4em 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 1.1em;
+}
+
+.wrapped-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1em;
+  min-width: 0;
+}
+
+.wrapped-list-detail {
+  flex: none;
+  opacity: 0.75;
+  font-size: 0.8em;
+  align-self: center;
+}
+
+.wrapped-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.4cqw;
+  height: 40cqw;
+}
+
+.wrapped-bar-col {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+  gap: 0.4em;
+  font-size: 0.7em;
+}
+
+.wrapped-bar {
+  width: 100%;
+  min-height: 2px;
+  background: var(--color-accent);
+}
+
+.wrapped-months {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.6cqw;
+  margin: 0.6em 0;
+}
+
+.wrapped-month {
+  padding: 0.7em 0;
+  border: 0.5px solid currentColor;
+  text-align: center;
+  opacity: 0.45;
+}
+
+.wrapped-month[data-active="true"] {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+  opacity: 1;
+}
+
+.wrapped-progress {
+  position: absolute;
+  top: 3cqw;
+  left: 4cqw;
+  right: 4cqw;
+  z-index: 2;
+  display: flex;
+  gap: 1cqw;
+}
+
+.wrapped-progress span {
+  flex: 1;
+  height: 0.8cqw;
+  min-height: 3px;
+  background: currentColor;
+  opacity: 0.3;
+}
+
+.wrapped-progress span[data-done="true"] {
+  opacity: 1;
+}
+
+.wrapped-tap {
+  position: absolute;
+  top: 12cqw;
+  bottom: 16cqw;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.wrapped-tap-prev {
+  left: 0;
+  width: 30%;
+}
+
+.wrapped-tap-next {
+  right: 0;
+  width: 70%;
+}
+
+.wrapped-tap:disabled {
+  cursor: default;
+}
+
+.wrapped-close,
+.wrapped-share {
+  position: absolute;
+  z-index: 3;
+  min-height: 44px;
+  padding: 0 1.1rem;
+  border: 0.5px solid currentColor;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.wrapped-close {
+  top: 6cqw;
+  right: 4cqw;
+}
+
+.wrapped-actions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4cqw;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+}
+
+.wrapped-actions .wrapped-share {
+  position: static;
+}
+
+.wrapped-share-message {
+  position: absolute;
+  left: 4cqw;
+  right: 4cqw;
+  bottom: 18cqw;
+  z-index: 3;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.wrapped-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.wrapped-banner strong {
+  display: block;
+}
+
+.wrapped-banner__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.wrapped-banner a,
+.wrapped-banner button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 1rem;
+  border: 0.5px solid currentColor;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.wrapped-banner a.wrapped-banner__primary {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border-color: var(--color-surface);
+}
+
+.wrapped-years {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.wrapped-years__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wrapped-year-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 0.5px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+.wrapped-year-card h3 {
+  margin: 0;
+}
+
+.wrapped-year-card p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.wrapped-year-card a {
+  align-self: flex-start;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wrapped-story * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
