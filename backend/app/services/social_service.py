@@ -223,10 +223,23 @@ def get_community_leaderboard(db: Session, user_id: int, start: datetime | None,
 
 
 def copy_scrobbles(db: Session, target_user_id: int, current_user_id: int, start_date: datetime, end_date: datetime) -> int:
+    """Pulls the target's plays in the range into the current user's own history."""
+    return _copy_events_between_users(db, target_user_id, current_user_id, start_date, end_date)
+
+
+def share_scrobbles(db: Session, sharer_id: int, recipient_id: int, start_date: datetime, end_date: datetime) -> int:
+    """Pushes the sharer's plays in the range into the recipient's history (the reverse of copy)."""
+    return _copy_events_between_users(db, sharer_id, recipient_id, start_date, end_date)
+
+
+def _copy_events_between_users(
+    db: Session, from_user_id: int, to_user_id: int, start_date: datetime, end_date: datetime
+) -> int:
+    """Copies plays from one user to another, skipping any the destination already has."""
     events = (
         db.query(ListeningEvent)
         .filter(
-            ListeningEvent.user_id == target_user_id,
+            ListeningEvent.user_id == from_user_id,
             ListeningEvent.played_at >= start_date,
             ListeningEvent.played_at <= end_date,
         )
@@ -240,17 +253,32 @@ def copy_scrobbles(db: Session, target_user_id: int, current_user_id: int, start
     all_existing_keys = {
         (row[0], row[1]) for row in db.query(ListeningEvent.source, ListeningEvent.play_id)
         .filter(
-            ListeningEvent.user_id == current_user_id,
+            ListeningEvent.user_id == to_user_id,
             ListeningEvent.play_id.in_([e.play_id for e in events])
         ).all()
     }
     
+    # The table also forbids two rows with the same track at the same moment for one user, even
+    # when their source or play id differ, so skip those too or the whole insert would fail.
+    existing_moments = {
+        (row[0], row[1])
+        for row in db.query(ListeningEvent.track_id, ListeningEvent.played_at)
+        .filter(
+            ListeningEvent.user_id == to_user_id,
+            ListeningEvent.played_at >= min(e.played_at for e in events),
+            ListeningEvent.played_at <= max(e.played_at for e in events),
+        )
+        .all()
+    }
+
     new_events = []
     for ev in events:
-        if (ev.source, ev.play_id) not in all_existing_keys:
+        moment = (ev.track_id, ev.played_at)
+        if (ev.source, ev.play_id) not in all_existing_keys and moment not in existing_moments:
+            existing_moments.add(moment)
             new_events.append(
                 ListeningEvent(
-                    user_id=current_user_id,
+                    user_id=to_user_id,
                     track_id=ev.track_id,
                     track_name=ev.track_name,
                     artist_name=ev.artist_name,

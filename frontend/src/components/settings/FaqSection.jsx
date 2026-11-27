@@ -444,6 +444,24 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "share-scrobbles",
+    category: "Friends & Social",
+    question: "Can I add the music I played to a friend's history?",
+    answer: (
+      <>
+        <p>
+          Yes. Open the profile of someone you follow, click <strong>Share Scrobbles</strong>,
+          choose the <strong>Start Time</strong> and <strong>End Time</strong>, and confirm.
+        </p>
+        <p>
+          Your songs from that time window are added to their history, and they get a notification
+          saying how many were added. Songs they already have are skipped, and your own history is
+          not changed.
+        </p>
+      </>
+    ),
+  },
+  {
     id: "car-duplicates",
     category: "Friends & Social",
     question: "Will copying a friend's scrobbles duplicate songs I already listened to?",

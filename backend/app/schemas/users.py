@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer, model_validator
 
 
 class FollowActionResponse(BaseModel):
@@ -113,4 +113,26 @@ class CopyScrobblesRequest(BaseModel):
 
 class CopyScrobblesResponse(BaseModel):
     copied_count: int
+
+
+class ShareScrobblesRequest(BaseModel):
+    start_date: datetime
+    end_date: datetime
+
+    @model_validator(mode="after")
+    def _end_not_before_start(self) -> "ShareScrobblesRequest":
+        # Comparing an aware and a naive time raises TypeError, so strip the zone from both.
+        if _naive_utc(self.end_date) < _naive_utc(self.start_date):
+            raise ValueError("end_date must not be before start_date")
+        return self
+
+
+class ShareScrobblesResponse(BaseModel):
+    shared_count: int
+
+
+def _naive_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value
+    return value.astimezone(timezone.utc).replace(tzinfo=None)
 
