@@ -188,6 +188,7 @@ describe("SetlistGigPage", () => {
         isFestival: false,
         festivalName: null,
         isCoverBand: false,
+        isSupportAct: false,
         allowDuplicate: false,
       })
     );

@@ -29,6 +29,7 @@ class LogManualConcertRequest(BaseModel):
     is_festival: bool = False
     festival_name: str | None = Field(None, max_length=255)
     is_cover_band: bool = False
+    is_support_act: bool = False
     allow_duplicate: bool = False
 
 
@@ -44,6 +45,8 @@ class UpdateConcertRequest(BaseModel):
     # None leaves the name as it is; blank clears it
     festival_name: str | None = Field(None, max_length=255)
     is_cover_band: bool | None = None
+    # None leaves the support-act tick as it is
+    is_support_act: bool | None = None
     allow_duplicate: bool = False
 
 

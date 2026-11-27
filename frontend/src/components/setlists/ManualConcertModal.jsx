@@ -13,6 +13,7 @@ export default function ManualConcertModal({ isOpen, onClose, onSaved, token }) 
   const [isFestival, setIsFestival] = useState(false);
   const [festivalName, setFestivalName] = useState("");
   const [isCoverBand, setIsCoverBand] = useState(false);
+  const [isSupportAct, setIsSupportAct] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [duplicateInfo, setDuplicateInfo] = useState(null);
@@ -42,6 +43,7 @@ export default function ManualConcertModal({ isOpen, onClose, onSaved, token }) 
         isFestival,
         festivalName: isFestival ? festivalName.trim() || null : null,
         isCoverBand,
+        isSupportAct,
         allowDuplicate,
       });
       setDuplicateInfo(null);
@@ -174,6 +176,14 @@ export default function ManualConcertModal({ isOpen, onClose, onSaved, token }) 
               onChange={(e) => setIsCoverBand(e.target.checked)}
             />
             <span>Cover band / Tribute act</span>
+          </label>
+          <label className="sfm-check">
+            <input
+              type="checkbox"
+              checked={isSupportAct}
+              onChange={(e) => setIsSupportAct(e.target.checked)}
+            />
+            <span>Support act</span>
           </label>
 
           <label className="sfm-field">

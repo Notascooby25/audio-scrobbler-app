@@ -666,6 +666,25 @@ const FAQ_DATA = [
     ),
   },
   {
+    id: "setlists-support-act",
+    category: "Set Lists & Gigs",
+    question: "A support act is labelled the wrong way round. How do I fix it?",
+    answer: (
+      <>
+        <p>
+          Open the act&apos;s gig, choose <strong>Edit details</strong>, tick <em>Support act</em>{" "}
+          and save. The gig gets the Support act label and is linked to the other gig you logged at
+          the same venue on the same night, which becomes the headliner. Its songs move to just
+          before the headliner on your timeline.
+        </p>
+        <p>
+          To undo it, untick the box and save. A gig that has support acts of its own can&apos;t be
+          ticked as a support act until you remove those first.
+        </p>
+      </>
+    ),
+  },
+  {
     id: "setlists-import-export",
     category: "Set Lists & Gigs",
     question: "Can I import past attended gigs from my Setlist.fm profile (or a friend's profile)?",

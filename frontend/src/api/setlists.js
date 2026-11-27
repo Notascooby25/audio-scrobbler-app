@@ -96,6 +96,7 @@ export async function logManualConcert({
   isFestival = false,
   festivalName = null,
   isCoverBand = false,
+  isSupportAct = false,
   allowDuplicate = false,
 }) {
   const response = await fetch(`${API_BASE_URL}/setlists/manual`, {
@@ -115,6 +116,7 @@ export async function logManualConcert({
       is_festival: isFestival,
       festival_name: festivalName,
       is_cover_band: isCoverBand,
+      is_support_act: isSupportAct,
       allow_duplicate: allowDuplicate,
     }),
   });
@@ -171,6 +173,7 @@ export async function updateConcert({
   isFestival = null,
   festivalName = null,
   isCoverBand = null,
+  isSupportAct = null,
   allowDuplicate = false,
 }) {
   const response = await fetch(`${API_BASE_URL}/setlists/${concertId}`, {
@@ -189,6 +192,7 @@ export async function updateConcert({
       is_festival: isFestival,
       festival_name: festivalName,
       ...(isCoverBand !== null ? { is_cover_band: isCoverBand } : {}),
+      ...(isSupportAct !== null ? { is_support_act: isSupportAct } : {}),
       allow_duplicate: allowDuplicate,
     }),
   });
