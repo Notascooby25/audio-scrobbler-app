@@ -68,9 +68,11 @@ export default function SetlistReplayHighlights({ songs = [] }) {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
+                  width: "100%",
+                  gap: "12px",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flex: 1 }}>
                   <span
                     className="rank-number"
                     style={{
@@ -78,11 +80,12 @@ export default function SetlistReplayHighlights({ songs = [] }) {
                       fontWeight: 700,
                       color: "var(--color-muted)",
                       width: "22px",
+                      flexShrink: 0,
                     }}
                   >
                     {idx + 1}
                   </span>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <strong style={{ color: "var(--color-ink)", fontSize: "14px" }}>
                       {song.track_name || song.song_name}
                     </strong>
@@ -98,7 +101,7 @@ export default function SetlistReplayHighlights({ songs = [] }) {
                   </div>
                 </div>
 
-                <div style={{ textAlign: "right" }}>
+                <div style={{ textAlign: "right", flexShrink: 0, whiteSpace: "nowrap" }}>
                   <strong
                     style={{
                       fontSize: "13px",

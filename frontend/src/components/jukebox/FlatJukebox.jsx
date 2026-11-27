@@ -165,6 +165,7 @@ export default function FlatJukebox({
               <img
                 src={currentPick.artwork_url}
                 alt={currentPick.album_name}
+                decoding="async"
                 onError={() => setArtFailed(true)}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
               />

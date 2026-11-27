@@ -342,27 +342,7 @@ export default function ReportsPage() {
             <ReportMilestones summary={report.summary} />
           )}
 
-          {/* 3. Challenge 1001 & Live Concert Cross-Overs */}
-          {report &&
-            (widgetPreferences.showChallenge1001 ||
-              widgetPreferences.showRoughTrade ||
-              widgetPreferences.showLiveConnection) && (
-              <div className="report-crossover-grid">
-                {widgetPreferences.showChallenge1001 && (
-                  <Report1001Milestone challenge1001={report.summary.challenge_1001} />
-                )}
-                {widgetPreferences.showRoughTrade && (
-                  <ReportRoughTradeMilestone
-                    challengeRoughTrade={report.summary.challenge_rough_trade}
-                  />
-                )}
-                {widgetPreferences.showLiveConnection && (
-                  <ReportLiveConnection liveArtists={report.summary.live_artists} />
-                )}
-              </div>
-            )}
-
-          {/* 4. Scrobbles over time */}
+          {/* 3. Scrobbles over time */}
           {report && widgetPreferences.showScrobblesOverTime && (
             <div className="report-data-grid">
               <BarTrendChart
@@ -430,6 +410,26 @@ export default function ReportsPage() {
               )}
             </div>
           )}
+
+          {/* 6. Challenge 1001 & Live Concert Cross-Overs */}
+          {report &&
+            (widgetPreferences.showChallenge1001 ||
+              widgetPreferences.showRoughTrade ||
+              widgetPreferences.showLiveConnection) && (
+              <div className="report-crossover-grid">
+                {widgetPreferences.showChallenge1001 && (
+                  <Report1001Milestone challenge1001={report.summary.challenge_1001} />
+                )}
+                {widgetPreferences.showRoughTrade && (
+                  <ReportRoughTradeMilestone
+                    challengeRoughTrade={report.summary.challenge_rough_trade}
+                  />
+                )}
+                {widgetPreferences.showLiveConnection && (
+                  <ReportLiveConnection liveArtists={report.summary.live_artists} />
+                )}
+              </div>
+            )}
 
           {/* 7. Music ratios & Discovery velocity */}
           {report && widgetPreferences.showRatios && <ReportRatios summary={report.summary} />}

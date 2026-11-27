@@ -28,7 +28,12 @@ export default function WhatsNewModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="modal-backdrop" data-testid="whats-new-backdrop" onClick={handleBackdropClick}>
+    <div
+      className="modal-backdrop"
+      data-testid="whats-new-backdrop"
+      role="presentation"
+      onClick={handleBackdropClick}
+    >
       <div
         className="modal-dialog whats-new-dialog"
         role="dialog"
