@@ -14,19 +14,22 @@ async function wrappedRequest(path, { token, method = "GET" } = {}) {
 }
 
 export function fetchWrapped({ token }) {
-  return wrappedRequest("/wrapped", { token });
+  return wrappedRequest("/year-reviews", { token });
 }
 
 export function fetchWrappedYear({ token, year }) {
-  return wrappedRequest(`/wrapped/${encodeURIComponent(year)}`, { token });
+  return wrappedRequest(`/year-reviews/${encodeURIComponent(year)}`, { token });
 }
 
 export function markWrappedSeen({ token, year }) {
-  return wrappedRequest(`/wrapped/${encodeURIComponent(year)}/seen`, { token, method: "POST" });
+  return wrappedRequest(`/year-reviews/${encodeURIComponent(year)}/seen`, {
+    token,
+    method: "POST",
+  });
 }
 
 export function dismissWrapped({ token, year }) {
-  return wrappedRequest(`/wrapped/${encodeURIComponent(year)}/dismiss`, {
+  return wrappedRequest(`/year-reviews/${encodeURIComponent(year)}/dismiss`, {
     token,
     method: "POST",
   });

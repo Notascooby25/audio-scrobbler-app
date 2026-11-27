@@ -531,7 +531,10 @@ the NAS listing.** The live setup has drifted from the repos before.
   ones on read). `services/wrapped_service.py` `run_due(db, now)` is the one place
   the clock lives; the worker job `wrapped-check` (every
   `WORKER_WRAPPED_CHECK_INTERVAL_MINUTES`, default 30) calls
-  `POST /wrapped/internal/run-due`, so a worker outage catches up on its next run.
+  `POST /year-reviews/internal/run-due`, so a worker outage catches up on its next run.
+  The API lives under `/year-reviews` because `/wrapped/:year` is the page's own
+  address; the new path is listed in `nginx.conf` and `vite.config.js` (without
+  that, the app's page server answers API calls with the web page).
   Stats are worked out in Python in `wrapped_music_stats.py` and
   `wrapped_gig_stats.py` (London time; a gig night is date plus venue; miles are
   there and back as the crow flies from cached geocodes only). The unlock stage

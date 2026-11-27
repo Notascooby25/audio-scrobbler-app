@@ -234,7 +234,7 @@ def test_wrapped_check_posts_to_internal_route(monkeypatch):
 
     app.run_wrapped_check()
 
-    assert calls[0][0] == ("http://backend:8000/wrapped/internal/run-due",)
+    assert calls[0][0] == ("http://backend:8000/year-reviews/internal/run-due",)
     assert calls[0][1]["headers"] == {"X-Worker-Token": "test-token"}
 
 

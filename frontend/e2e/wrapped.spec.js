@@ -33,7 +33,7 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem("audio-scrobbler-session", JSON.stringify({ accessToken: "e2e-token" }));
   });
-  await page.route("**/wrapped", (route) =>
+  await page.route("**/year-reviews", (route) =>
     route.fulfill({
       json: {
         years: [{ year: 2026, status: "ready", stage: "unlock", top_artist: "Artist A" }],
@@ -41,7 +41,7 @@ test.beforeEach(async ({ page }) => {
       },
     })
   );
-  await page.route("**/wrapped/2026", (route) =>
+  await page.route("**/year-reviews/2026", (route) =>
     route.fulfill({
       json: {
         year: 2026,
@@ -53,8 +53,8 @@ test.beforeEach(async ({ page }) => {
       },
     })
   );
-  await page.route("**/wrapped/2026/seen", (route) => route.fulfill({ status: 204 }));
-  await page.route("**/wrapped/2026/dismiss", (route) => route.fulfill({ status: 204 }));
+  await page.route("**/year-reviews/2026/seen", (route) => route.fulfill({ status: 204 }));
+  await page.route("**/year-reviews/2026/dismiss", (route) => route.fulfill({ status: 204 }));
 });
 
 test.describe("year Wrapped", () => {

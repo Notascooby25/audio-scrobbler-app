@@ -20,7 +20,8 @@ from ..services.wrapped_music_stats import to_london
 from .deps import get_current_user
 from .ingestion import require_worker_token
 
-router = APIRouter(prefix="/wrapped", tags=["wrapped"])
+# Not "/wrapped": that is the page's own address in the app (/wrapped/2026), so the API needs a different path.
+router = APIRouter(prefix="/year-reviews", tags=["wrapped"])
 
 STAGE_ORDER = {"preview": 0, "unlock": 1, "final": 2}
 

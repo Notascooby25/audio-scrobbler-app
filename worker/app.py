@@ -454,7 +454,7 @@ def run_wrapped_check() -> None:
     """Asks the backend to make any year-end Wrapped snapshots that are now due (the backend's clock decides)."""
     try:
         response = requests.post(
-            f"{backend_url}/wrapped/internal/run-due",
+            f"{backend_url}/year-reviews/internal/run-due",
             headers={"X-Worker-Token": worker_token},
             timeout=900,
         )

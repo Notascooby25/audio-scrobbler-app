@@ -71,6 +71,8 @@ export default defineConfig(({ command }) => ({
           if (path === "/setlists" || path === "/setlists/") return req.url;
         },
       },
+      // The Year Wrapped API. The page itself is /wrapped/:year, which stays with the SPA.
+      "/year-reviews": { target: backendUrl, changeOrigin: true },
       "/spotify": { target: backendUrl, changeOrigin: true },
       "/users": { target: backendUrl, changeOrigin: true },
       "/preferences": { target: backendUrl, changeOrigin: true },
