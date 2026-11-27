@@ -55,7 +55,7 @@ from ..services.gig_distance_service import furthest_gigs, geocode_pending_venue
 from ..services.gig_badges_service import GigBadgesService
 from ..services.gig_reports_service import GigReportsService
 from ..services.setlist_profile_export_service import ProfileExportTooLargeError, build_profile_export
-from ..services.setlist_artwork_service import backfill_live_artwork
+from ..services.setlist_artwork_service import backfill_live_albums, backfill_live_artwork
 from ..services.setlist_attendance_service import DuplicateGigError, SetlistAttendanceService
 from ..services.setlist_service import (
     SetlistApiAuthError,
@@ -961,8 +961,11 @@ def backfill_gig_artwork(
     db: Session = Depends(get_db),
     _: None = Depends(require_worker_token),
 ) -> dict[str, int]:
-    """Called by the worker: looks up artwork for gig scrobbles that have none."""
-    return backfill_live_artwork(db)
+    """Called by the worker: looks up artwork and real album names for gig scrobbles that have none."""
+    counts = dict(backfill_live_artwork(db))
+    album_counts = backfill_live_albums(db)
+    counts["albums_updated"] = album_counts["updated"]
+    return counts
 
 
 @router.post("/internal/discover-sync")

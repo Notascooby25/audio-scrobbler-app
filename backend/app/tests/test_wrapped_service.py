@@ -72,7 +72,12 @@ def _gig(db, user_id=1, day=datetime(2026, 5, 1)):
 def test_run_due_before_30_dec_does_nothing(db_session):
     _user(db_session)
     _plays(db_session)
-    assert run_due(db_session, datetime(2026, 12, 30, 7, 59)) == {"generated": 0, "failed": 0, "archived": 0}
+    assert run_due(db_session, datetime(2026, 12, 30, 7, 59)) == {
+        "generated": 0,
+        "failed": 0,
+        "archived": 0,
+        "refreshed": 0,
+    }
     assert db_session.query(YearReview).count() == 0
 
 
@@ -205,3 +210,23 @@ def test_partial_year_is_labelled(db_session):
     _plays(db_session, start=datetime(2026, 3, 14, 12, 0))
     row = generate_year_review(db_session, 1, 2026, "preview", datetime(2026, 12, 30, 9, 0))
     assert row.data["partial_from"] == "2026-03-14"
+
+
+def test_outdated_snapshots_refresh_without_duplicate_notifications(db_session):
+    _user(db_session)
+    _plays(db_session)
+    with patch.object(wrapped_service, "queue_push") as push:
+        row = generate_year_review(db_session, 1, 2026, "unlock", datetime(2026, 12, 31, 18, 0))
+        assert push.call_count == 1
+        row.format_version = 1
+        row.data = {**row.data, "music": {**row.data["music"], "top_albums": [{"name": "Live at Venue"}]}}
+        db_session.commit()
+
+        counts = run_due(db_session, datetime(2026, 12, 31, 18, 30))
+
+    assert counts["refreshed"] == 1
+    assert push.call_count == 1
+    assert db_session.query(Notification).count() == 1
+    db_session.refresh(row)
+    assert row.format_version == wrapped_service.FORMAT_VERSION
+    assert all(a["name"] != "Live at Venue" for a in row.data["music"]["top_albums"])

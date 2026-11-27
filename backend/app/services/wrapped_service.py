@@ -27,7 +27,7 @@ from .wrapped_music_stats import LONDON, MIN_PLAYS, build_music_stats, to_london
 
 logger = logging.getLogger(__name__)
 
-FORMAT_VERSION = 1
+FORMAT_VERSION = 2
 FIRST_LIVE_YEAR = 2026
 STAGES = ("preview", "unlock", "final")
 PREVIEW_AT = (12, 30, 8, 0)  # month, day, hour, minute in London time
@@ -140,6 +140,7 @@ def generate_year_review(
 
     if existing is not None:
         review = existing
+        review.format_version = FORMAT_VERSION
         review.data, review.window_start, review.window_end = data, start, end
         review.generated_at, review.is_sample = utc_now(), is_sample
     else:
@@ -215,7 +216,45 @@ def run_due(db: Session, now: datetime) -> dict[str, int]:
                     failed += 1
                     logger.warning("Wrapped %s %s failed for user %s: %s", year, stage, user_id, type(exc).__name__)
     archived, archive_failed = _backfill_past_years(db, now, user_ids)
-    return {"generated": generated, "failed": failed + archive_failed, "archived": archived}
+    refreshed, refresh_failed = _refresh_outdated(db, now)
+    return {
+        "generated": generated,
+        "failed": failed + archive_failed + refresh_failed,
+        "archived": archived,
+        "refreshed": refreshed,
+    }
+
+
+def _refresh_outdated(db: Session, now: datetime) -> tuple[int, int]:
+    """Rebuilds any existing snapshot built under an older FORMAT_VERSION without sending notifications."""
+    outdated = list(
+        db.scalars(
+            select(YearReview).where(YearReview.format_version < FORMAT_VERSION).order_by(YearReview.id)
+        )
+    )
+    refreshed = failed = 0
+    for row in outdated:
+        try:
+            if (
+                generate_year_review(
+                    db,
+                    row.user_id,
+                    row.year,
+                    row.stage,
+                    now,
+                    is_sample=row.is_sample,
+                    replace=True,
+                )
+                is not None
+            ):
+                refreshed += 1
+        except Exception as exc:  # one person's problem must not stop everyone after them
+            db.rollback()
+            failed += 1
+            logger.warning(
+                "Wrapped refresh %s %s failed for user %s: %s", row.year, row.stage, row.user_id, type(exc).__name__
+            )
+    return refreshed, failed
 
 
 def _backfill_past_years(db: Session, now: datetime, user_ids: list[int]) -> tuple[int, int]:

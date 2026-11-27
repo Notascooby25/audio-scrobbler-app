@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
 import pytest
@@ -248,7 +249,7 @@ def test_editing_a_gig_moves_its_scrobbles_and_support_acts(db_session: Session)
     assert {e.played_at.date().isoformat() for e in head_plays} == {"2025-05-02"}
     # Same start times, just on the corrected night
     assert [e.played_at.time() for e in head_plays] == times_before
-    assert {e.album_name for e in head_plays} == {"Live at Rescue Rooms"}
+    assert {e.album_name for e in head_plays} == {None}
     support = db_session.query(AttendedConcert).filter_by(setlist_id="supp").one()
     assert (support.venue_name, support.event_date.date().isoformat()) == ("Rescue Rooms", "2025-05-02")
     assert _plays(db_session, "Support Band")[0].played_at.date().isoformat() == "2025-05-02"
@@ -287,3 +288,39 @@ def test_editing_someone_elses_gig_is_not_found(db_session: Session):
     gig = service.log_manual_concert(1, "Elbow", "Arena", "Leeds", "UK", "2025-06-01")
     with pytest.raises(LookupError):
         service.update_concert_details(2, gig.id, "Elbow", "Arena", "Leeds", "UK", "2025-06-02")
+
+
+def test_gig_scrobbles_match_most_played_real_album_and_keep_it_on_edit(db_session: Session):
+    base = datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc)
+    # Two plays on the studio album vs one on a compilation -> studio album wins
+    for idx, (album, mins) in enumerate(
+        [
+            ("The Last Broadcast", 0),
+            ("The Last Broadcast", 4),
+            ("Greatest Hits", 8),
+        ]
+    ):
+        db_session.add(
+            ListeningEvent(
+                user_id=1,
+                track_id=f"sp:{idx}",
+                track_name="Pounding",
+                artist_name="Doves",
+                album_name=album,
+                played_at=base + timedelta(minutes=mins),
+                source="spotify",
+                play_id=f"sp_{idx}",
+            )
+        )
+    db_session.commit()
+
+    service = _bill_service(db_session)
+    gig = service.log_concert_attendance(user_id=1, setlist_id="head")
+    by_track = {e.track_name: e.album_name for e in _plays(db_session, "Doves") if e.source == "setlistfm"}
+    assert by_track["Pounding"] == "The Last Broadcast"
+    assert by_track["There Goes the Fear"] is None
+
+    service.update_concert_details(1, gig.id, "Doves", "Rock City", "Nottingham", "UK", "2025-05-03")
+    by_track_after = {e.track_name: e.album_name for e in _plays(db_session, "Doves") if e.source == "setlistfm"}
+    assert by_track_after["Pounding"] == "The Last Broadcast"
+    assert by_track_after["There Goes the Fear"] is None

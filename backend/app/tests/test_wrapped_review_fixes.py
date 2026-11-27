@@ -80,7 +80,7 @@ def test_one_failing_user_does_not_stop_the_others(db_session):
     ):
         counts = run_due(db_session, datetime(2026, 12, 31, 18, 0))
     # user 2: preview and unlock made; user 1: both failed; past years are switched off for this test
-    assert counts == {"generated": 2, "failed": 2, "archived": 0}
+    assert counts == {"generated": 2, "failed": 2, "archived": 0, "refreshed": 0}
     assert {(r.user_id, r.stage) for r in db_session.query(YearReview)} == {(2, "preview"), (2, "unlock")}
     assert [n.user_id for n in db_session.query(Notification)] == [2]
 

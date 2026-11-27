@@ -289,3 +289,39 @@ def test_deezer_artist_picture_checks_the_name_and_skips_placeholders():
     placeholder = {"data": [{"name": "Foo Fighters", "picture_big": "https://cdn/images/artist//500x500.jpg"}]}
     with patch.object(artwork.urllib.request, "urlopen", return_value=deezer(placeholder)):
         assert artwork.deezer_artist_picture("Foo Fighters") is None
+
+
+def test_backfill_live_albums_uses_local_history_and_cached_lookup(db_session: Session):
+    _add_user(db_session, 1)
+    # Local Spotify play gives album for Everlong without external lookup
+    db_session.add(
+        ListeningEvent(
+            user_id=1,
+            track_id="sp:1",
+            track_name="Everlong",
+            artist_name="Foo Fighters",
+            album_name="The Colour and the Shape",
+            played_at=utc_now() - timedelta(days=1),
+            source="spotify",
+            play_id="sp_1",
+        )
+    )
+    _log(db_session, 1, ["Everlong", "Times Like These"])
+    for row in db_session.query(ListeningEvent).filter_by(source=artwork.LIVE_SOURCE).all():
+        row.album_name = None
+    db_session.commit()
+
+    with patch.object(artwork, "_lookup_track_album", return_value="One by One") as lookup:
+        counts = artwork.backfill_live_albums(db_session, pause_seconds=0)
+
+    assert counts["updated"] == 2
+    assert counts["lookups"] == 1
+    lookup.assert_called_once_with("Foo Fighters", "Times Like These")
+    by_track = {
+        row.track_name: row.album_name
+        for row in db_session.query(ListeningEvent).filter_by(source=artwork.LIVE_SOURCE).all()
+    }
+    assert by_track == {
+        "Everlong": "The Colour and the Shape",
+        "Times Like These": "One by One",
+    }

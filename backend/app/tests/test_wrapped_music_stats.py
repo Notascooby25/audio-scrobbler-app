@@ -200,3 +200,29 @@ def test_genres_from_cache(db_session):
     stats = build_music_stats(db_session, 1, START, END)
     assert [g["name"] for g in stats["top_genres"]] == ["rock", "indie"]
     assert stats["top_genres"][0]["share"] == 0.5
+
+
+def test_synthetic_live_at_gig_albums_are_excluded_from_top_albums(db_session):
+    for i, name in enumerate(["A", "B", "C"]):
+        _play(db_session, datetime(2026, 4, 1, 10, i), track=name, album="Real Album", artist="Band")
+    # 30 plays of a real gig setlist still carrying legacy "Live at ..." album_name
+    for i in range(30):
+        db_session.add(
+            ListeningEvent(
+                user_id=1,
+                track_id=f"live:{i}",
+                track_name=f"Song {i}",
+                artist_name="Band",
+                album_name="Live at Brixton",
+                played_at=datetime(2026, 5, 1, 20, i % 59),
+                duration_ms=210000,
+                source="setlistfm",
+                play_id=f"setlistfm_1_{i}",
+            )
+        )
+    db_session.commit()
+
+    stats = build_music_stats(db_session, 1, START, END)
+    album_names = [a["name"] for a in stats["top_albums"]]
+    assert "Live at Brixton" not in album_names
+    assert "Real Album" in album_names

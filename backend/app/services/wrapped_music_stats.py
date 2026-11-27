@@ -52,6 +52,7 @@ def build_music_stats(db: Session, user_id: int, start: datetime, end: datetime)
             ListeningEvent.artist_artwork_url,
             ListeningEvent.played_at,
             ListeningEvent.duration_ms,
+            ListeningEvent.source,
         )
         .where(
             ListeningEvent.user_id == user_id,
@@ -111,7 +112,12 @@ def build_music_stats(db: Session, user_id: int, start: datetime, end: datetime)
             song_key, {"name": row.track_name, "artist": row.artist_name, "artwork_url": row.artwork_url}
         )
 
-        if row.album_name:
+        is_synthetic_live_album = (
+            row.source == "setlistfm"
+            and row.album_name is not None
+            and row.album_name.lower().startswith("live at ")
+        )
+        if row.album_name and not is_synthetic_live_album:
             album_key = f"{row.album_name.casefold()}\u0000{artist_key}"
             album_plays[album_key] += 1
             album_tracks[album_key].add(row.track_name.casefold())
