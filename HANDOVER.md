@@ -545,6 +545,12 @@ the NAS listing.** The live setup has drifted from the repos before.
   make the 2025 sample for the owner, call
   `generate_year_review(db, user_id, 2025, "final", now, is_sample=True)` from a
   backend shell. Spec: `docs/superpowers/specs/2026-11-27-year-wrapped-design.md`.
+  The story is two parts (music on near-black, gigs on paper, an accent title card
+  opening each) with its own fixed palette, a deliberate exception to the flat
+  rules, written up in `DESIGN.md`. Snapshots carry `gigs.gig_list` (up to 18
+  nights) and artist pictures; the share picture copies covers as data first
+  (the security policy blocks blob fetches) and drops any it can't copy. The year
+  cards live in the **Wrapped** tab after Gigs on Reports.
 - **Dependency updates (2026-11-18, no version bump):** PyJWT 2.15.1 (backend),
   requests 2.34.2 and python-dotenv 1.2.4 (backend and worker). Sign-in tokens
   are unchanged: `backend/app/tests/test_jwt_compat.py` decodes a token minted by
