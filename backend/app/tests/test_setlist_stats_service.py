@@ -414,3 +414,41 @@ def test_venues_leaderboard_excludes_upcoming_events(db_session: Session):
 
     assert "Wembley" in venue_names
     assert "Madison Square Garden" not in venue_names
+
+
+def test_my_gigs_orders_headliner_above_support_on_same_date(db_session: Session):
+    fat_dog = _concert("fd-1", "Fat Dog", "O2 Institute", datetime(2026, 11, 26))
+    lemon = _concert("ls-2", "LEMONSUCKR", "O2 Institute", datetime(2026, 11, 26))
+    lemon.is_support_act = True
+    lemon.parent_setlist_id = "fd-1"
+    db_session.add_all([fat_dog, lemon])
+    db_session.commit()
+
+    gigs = SetlistStatsService(db=db_session).get_my_gigs(user_id=1)
+
+    assert [g["artist_name"] for g in gigs] == ["Fat Dog", "LEMONSUCKR"]
+
+
+def test_gig_bill_for_manual_gig_with_setlist_url_pulls_lineup(db_session: Session):
+    manual = _concert("manual-blossoms", "Blossoms", "Utilita Arena Birmingham", datetime(2026, 12, 4))
+    manual.setlist_url = "https://www.setlist.fm/setlist/blossoms/2026/utilita-arena-334a28f1.html"
+    db_session.add(manual)
+    db_session.commit()
+
+    setlist_service = MagicMock()
+    setlist_service.get_setlist.return_value = {"id": "334a28f1", "venue": {"id": "ven-99"}}
+    setlist_service.get_venue_date_setlists.return_value = [
+        {"id": "ark-1", "artist": {"name": "Arkayla"}},
+        {"id": "roy-2", "artist": {"name": "The Royston Club"}},
+    ]
+
+    bill = SetlistStatsService(db=db_session).get_gig_bill(1, manual, setlist_service)
+
+    setlist_service.get_setlist.assert_called_once_with("334a28f1")
+    setlist_service.get_venue_date_setlists.assert_called_once_with(
+        venue_id="ven-99",
+        event_date_str="04-12-2026",
+        exclude_setlist_id="334a28f1",
+    )
+    assert [a["artist_name"] for a in bill["acts"]] == ["Arkayla", "The Royston Club"]
+    assert bill["complete"] is True

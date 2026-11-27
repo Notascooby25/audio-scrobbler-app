@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from ..datetime_utils import utc_now
 from ..models import AttendedConcert, ListeningEvent
-from .setlist_service import SetlistApiAuthError, SetlistApiKeyMissingError, SetlistRateLimitError
+from .setlist_service import SetlistApiAuthError, SetlistApiKeyMissingError, SetlistRateLimitError, extract_setlist_id
 
 BILL_LIMIT = 10
 _SETLIST_FM_ID = re.compile(r"[0-9A-Za-z_-]{1,32}")
@@ -78,7 +78,7 @@ class SetlistStatsService:
         query = (
             self.db.query(AttendedConcert)
             .filter_by(user_id=user_id)
-            .order_by(desc(AttendedConcert.event_date), desc(AttendedConcert.id))
+            .order_by(desc(AttendedConcert.event_date), AttendedConcert.is_support_act.asc(), desc(AttendedConcert.id))
             .offset(offset)
             .limit(limit)
         )
@@ -158,12 +158,28 @@ class SetlistStatsService:
         venue_id = raw.get("venue", {}).get("id") if isinstance(raw.get("venue"), dict) else None
         # Stored data can come from an imported file, so only look up real-looking venue ids
         venue_id = str(venue_id) if venue_id is not None and _SETLIST_FM_ID.fullmatch(str(venue_id)) else None
-        if venue_id and night and not gig.setlist_id.startswith("manual-"):
+        exclude_id = gig.setlist_id
+        if not venue_id and night and gig.setlist_url and "setlist.fm" in gig.setlist_url.lower():
+            linked_id = extract_setlist_id(gig.setlist_url)
+            if linked_id:
+                exclude_id = linked_id
+                try:
+                    linked = setlist_service.get_setlist(linked_id)
+                except (SetlistRateLimitError, SetlistApiKeyMissingError, SetlistApiAuthError, httpx.HTTPError):
+                    complete = False
+                    linked = None
+                if isinstance(linked, dict):
+                    raw_venue_id = (
+                        (linked.get("venue") or {}).get("id") if isinstance(linked.get("venue"), dict) else None
+                    )
+                    if raw_venue_id is not None and _SETLIST_FM_ID.fullmatch(str(raw_venue_id)):
+                        venue_id = str(raw_venue_id)
+        if venue_id and night and (not gig.setlist_id.startswith("manual-") or exclude_id != gig.setlist_id):
             try:
                 listed = setlist_service.get_venue_date_setlists(
                     venue_id=venue_id,
                     event_date_str=night.strftime("%d-%m-%Y"),
-                    exclude_setlist_id=gig.setlist_id,
+                    exclude_setlist_id=exclude_id,
                 )
                 capped = len(listed) >= BILL_LIMIT
                 for s in listed:
