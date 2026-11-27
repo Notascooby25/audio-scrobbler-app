@@ -1,5 +1,13 @@
 export const CHANGELOG = [
   {
+    version: "0.54.0",
+    date: "2026-11-27",
+    changes: [
+      "New Share Scrobbles button on the profile of anyone you follow, next to Copy Scrobbles. Pick the start and end time of a journey or hangout and your scrobbles from that period are added to their history. It is Copy Scrobbles the other way round, for when your music was playing and your friend will forget to add it.",
+      "They get a notification saying who added how many scrobbles. Songs they already have are skipped, so sharing the same period twice does nothing, and your own history is not changed.",
+    ],
+  },
+  {
     version: "0.53.7",
     date: "2026-11-20",
     changes: [

@@ -166,6 +166,18 @@ export default function UserGuideSection() {
           </ol>
         </div>
 
+        <div className="guide-callout">
+          <strong>Or the other way round: share your tracks with a friend.</strong>
+          <p style={{ margin: "0.5rem 0" }}>
+            If it was <em>your</em> music that played and your friend will forget to add it, open
+            their Profile page, click <strong>Share Scrobbles</strong>, choose the{" "}
+            <strong>Start Time</strong> and <strong>End Time</strong>, and click{" "}
+            <strong>Share Scrobbles</strong>. Your songs from that period are added to their
+            history, and they get a notification so they know. You can only share with people you
+            follow.
+          </p>
+        </div>
+
         <p className="guide-note">
           <strong>Safe & Smart Deduplication:</strong> If you played music on your own phone during
           part of that time, don't worry. The app automatically checks your library and skips any

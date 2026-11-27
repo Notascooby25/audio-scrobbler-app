@@ -11,6 +11,10 @@ from ..queries.analytics_queries import build_report_period_count_query
 from ..schemas.users import LastScrobble, UserProfileResponse
 
 
+# How many play ids one lookup query may carry; well under Postgres's 65,535-value limit.
+PLAY_ID_LOOKUP_BATCH = 5000
+
+
 def get_active_user(db: Session, user_id: int) -> User | None:
     return db.query(User).filter(User.id == user_id, User.is_active.is_(True)).first()
 
@@ -223,10 +227,23 @@ def get_community_leaderboard(db: Session, user_id: int, start: datetime | None,
 
 
 def copy_scrobbles(db: Session, target_user_id: int, current_user_id: int, start_date: datetime, end_date: datetime) -> int:
+    """Pulls the target's plays in the range into the current user's own history."""
+    return _copy_events_between_users(db, target_user_id, current_user_id, start_date, end_date)
+
+
+def share_scrobbles(db: Session, sharer_id: int, recipient_id: int, start_date: datetime, end_date: datetime) -> int:
+    """Pushes the sharer's plays in the range into the recipient's history (the reverse of copy)."""
+    return _copy_events_between_users(db, sharer_id, recipient_id, start_date, end_date)
+
+
+def _copy_events_between_users(
+    db: Session, from_user_id: int, to_user_id: int, start_date: datetime, end_date: datetime
+) -> int:
+    """Copies plays from one user to another, skipping any the destination already has."""
     events = (
         db.query(ListeningEvent)
         .filter(
-            ListeningEvent.user_id == target_user_id,
+            ListeningEvent.user_id == from_user_id,
             ListeningEvent.played_at >= start_date,
             ListeningEvent.played_at <= end_date,
         )
@@ -237,20 +254,40 @@ def copy_scrobbles(db: Session, target_user_id: int, current_user_id: int, start
         return 0
         
     # to be absolutely bulletproof against IntegrityError without raw SQL UPSERT:
-    all_existing_keys = {
-        (row[0], row[1]) for row in db.query(ListeningEvent.source, ListeningEvent.play_id)
+    # Postgres refuses a query with more than 65,535 values, and a wide range can hold more
+    # plays than that, so look the play ids up in batches.
+    play_ids = [e.play_id for e in events]
+    all_existing_keys: set[tuple[str, str]] = set()
+    for offset in range(0, len(play_ids), PLAY_ID_LOOKUP_BATCH):
+        batch = play_ids[offset : offset + PLAY_ID_LOOKUP_BATCH]
+        rows = (
+            db.query(ListeningEvent.source, ListeningEvent.play_id)
+            .filter(ListeningEvent.user_id == to_user_id, ListeningEvent.play_id.in_(batch))
+            .all()
+        )
+        all_existing_keys.update((row[0], row[1]) for row in rows)
+
+    # The table also forbids two rows with the same track at the same moment for one user, even
+    # when their source or play id differ, so skip those too or the whole insert would fail.
+    existing_moments = {
+        (row[0], row[1])
+        for row in db.query(ListeningEvent.track_id, ListeningEvent.played_at)
         .filter(
-            ListeningEvent.user_id == current_user_id,
-            ListeningEvent.play_id.in_([e.play_id for e in events])
-        ).all()
+            ListeningEvent.user_id == to_user_id,
+            ListeningEvent.played_at >= min(e.played_at for e in events),
+            ListeningEvent.played_at <= max(e.played_at for e in events),
+        )
+        .all()
     }
-    
+
     new_events = []
     for ev in events:
-        if (ev.source, ev.play_id) not in all_existing_keys:
+        moment = (ev.track_id, ev.played_at)
+        if (ev.source, ev.play_id) not in all_existing_keys and moment not in existing_moments:
+            existing_moments.add(moment)
             new_events.append(
                 ListeningEvent(
-                    user_id=current_user_id,
+                    user_id=to_user_id,
                     track_id=ev.track_id,
                     track_name=ev.track_name,
                     artist_name=ev.artist_name,

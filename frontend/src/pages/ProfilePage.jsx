@@ -12,6 +12,7 @@ import {
 import FollowButton from "../components/FollowButton";
 import Artwork from "../components/Artwork";
 import CopyScrobblesModal from "../components/profile/CopyScrobblesModal";
+import ShareScrobblesModal from "../components/profile/ShareScrobblesModal";
 import { formatScrobbleTime } from "../timeFormatting";
 import { clearSession } from "../session";
 
@@ -36,6 +37,7 @@ export default function ProfilePage() {
   const [connectError, setConnectError] = useState("");
   const [spotifyRetryAfter, setSpotifyRetryAfter] = useState(null);
   const [showCopyModal, setShowCopyModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const navigate = useNavigate();
 
   const handleSignOut = () => {
@@ -323,6 +325,11 @@ export default function ProfilePage() {
                   Copy Scrobbles
                 </button>
               )}
+              {!profile.is_self && (
+                <button type="button" onClick={() => setShowShareModal(true)}>
+                  Share Scrobbles
+                </button>
+              )}
             </nav>
           )}
 
@@ -337,6 +344,14 @@ export default function ProfilePage() {
           userId={profile.id}
           username={profile.username}
           onClose={() => setShowCopyModal(false)}
+        />
+      )}
+
+      {showShareModal && profile && (
+        <ShareScrobblesModal
+          userId={profile.id}
+          username={profile.username}
+          onClose={() => setShowShareModal(false)}
         />
       )}
     </section>
