@@ -105,4 +105,80 @@ describe("FaqSection", () => {
     expect(answer).toHaveTextContent(/remove/i);
     expect(answer).toHaveTextContent(/friends page/i);
   });
+
+  it("explains the Discover filters", () => {
+    render(<FaqSection />);
+    const answer = screen
+      .getByText(/how do i use the filters on the discover tab/i)
+      .closest("details");
+    expect(answer).toHaveTextContent(/local radar/i);
+    expect(answer).toHaveTextContent(/newly announced/i);
+    expect(answer).toHaveTextContent(/artist criteria/i);
+    expect(answer).toHaveTextContent(/save these as my default/i);
+  });
+
+  it("finds the Discover filters answer by keyword", () => {
+    render(<FaqSection />);
+    fireEvent.change(screen.getByPlaceholderText(/search questions/i), {
+      target: { value: "discover" },
+    });
+    expect(screen.getByText(/how do i use the filters on the discover tab/i)).toBeInTheDocument();
+  });
+
+  it("explains the cover band or tribute act tick box", () => {
+    render(<FaqSection />);
+    const answer = screen
+      .getByText(/what does the cover band or tribute act tick box do/i)
+      .closest("details");
+    expect(answer).toHaveTextContent(/cover band/i);
+  });
+
+  it("explains Lucky Dip, the three-roll limit and the Flat and Arcade views", () => {
+    render(<FaqSection />);
+    const answer = screen.getByText(/how do lucky dip and re-roll work/i).closest("details");
+    expect(answer).toHaveTextContent(/three/i);
+    expect(answer).toHaveTextContent(/arcade/i);
+    expect(answer).toHaveTextContent(/flat/i);
+  });
+
+  it("names the gig report widgets and the customiser", () => {
+    render(<FaqSection />);
+    const answer = screen
+      .getByText(/what are the widgets on the gigs report, and can i hide them/i)
+      .closest("details");
+    expect(answer).toHaveTextContent(/gig odyssey map/i);
+    expect(answer).toHaveTextContent(/post-gig surge/i);
+    expect(answer).toHaveTextContent(/setlist replay tracker/i);
+  });
+
+  it("says where past Wrapped years live and how to share a slide", () => {
+    render(<FaqSection />);
+    const answer = screen.getByText(/where do i find my past wrapped years/i).closest("details");
+    expect(answer).toHaveTextContent(/wrapped tab/i);
+    expect(answer).toHaveTextContent(/2020/);
+    expect(answer).toHaveTextContent(/share/i);
+  });
+
+  it("explains the Timeline source markers, quiet gaps and Library Grid or List", () => {
+    render(<FaqSection />);
+    const answer = screen
+      .getByText(/what do the markers and quiet gaps on the today page mean/i)
+      .closest("details");
+    expect(answer).toHaveTextContent(/quiet gap/i);
+    expect(answer).toHaveTextContent(/grid/i);
+  });
+
+  it("says Share Scrobbles cannot be undone", () => {
+    render(<FaqSection />);
+    const answer = screen.getByText(/can i undo share scrobbles/i).closest("details");
+    expect(answer).toHaveTextContent(/cannot be undone|can't be undone/i);
+  });
+
+  it("page map lists Today, Discover and the Wrapped tab", () => {
+    render(<FaqSection />);
+    const answer = screen.getByText(/what does each page in the app do/i).closest("details");
+    expect(answer).toHaveTextContent(/today/i);
+    expect(answer).toHaveTextContent(/discover/i);
+    expect(answer).toHaveTextContent(/wrapped/i);
+  });
 });

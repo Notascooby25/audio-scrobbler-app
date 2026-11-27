@@ -57,6 +57,30 @@ describe("UserGuideSection", () => {
     expect(screen.getByText(/tap the ⓘ next to a chart or card title/i)).toBeInTheDocument();
   });
 
+  it("explains Lucky Dip rolls and the Flat and Arcade views", () => {
+    render(<UserGuideSection />);
+    expect(screen.getByText(/up to three rolls/i)).toBeInTheDocument();
+    expect(screen.getByText(/flat and arcade views/i)).toBeInTheDocument();
+  });
+
+  it("explains the Today page rail and the Library List and Grid buttons", () => {
+    render(<UserGuideSection />);
+    expect(screen.getByText(/the today page/i)).toBeInTheDocument();
+    expect(screen.getByText(/list and grid buttons/i)).toBeInTheDocument();
+  });
+
+  it("says Share Scrobbles cannot be undone", () => {
+    render(<UserGuideSection />);
+    expect(screen.getByText(/sharing cannot be undone/i)).toBeInTheDocument();
+  });
+
+  it("names the gig report widgets and says earlier Wrapped years have no banner", () => {
+    render(<UserGuideSection />);
+    expect(screen.getByText(/setlist replay tracker/i)).toBeInTheDocument();
+    expect(screen.getByText(/venue stomping grounds/i)).toBeInTheDocument();
+    expect(screen.getByText(/earlier years have no banner/i)).toBeInTheDocument();
+  });
+
   it("explains follower alerts and removing a follower", () => {
     render(<UserGuideSection />);
     expect(screen.getByText(/see who follows you/i)).toBeInTheDocument();

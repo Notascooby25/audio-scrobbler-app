@@ -1,5 +1,14 @@
 export const CHANGELOG = [
   {
+    version: "0.56.1",
+    date: "2026-11-28",
+    changes: [
+      "Help catch-up: the FAQ has new answers on the Discover tab filters, the Cover band / Tribute act tick box, Lucky Dip and the Flat and Arcade jukebox views, the Gigs report widgets, finding your past Wrapped years and sharing a slide, the Today page markers and quiet gaps, and the fact that Share Scrobbles can't be undone.",
+      "The page map in the FAQ now lists the Today page, the Discover tab and the Wrapped tab. The User Guide covers the same new ground.",
+      "Fixed help text that sent you to the wrong place: Reconnect Spotify is in Settings → Scrobble, and blocked items are unblocked in Settings → Data.",
+    ],
+  },
+  {
     version: "0.56.0",
     date: "2026-11-28",
     changes: [
