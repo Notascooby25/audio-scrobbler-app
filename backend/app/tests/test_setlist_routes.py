@@ -275,6 +275,78 @@ def test_log_manual_concert_route():
     assert patch_res.json()["is_cover_band"] is False
 
 
+def _manual_gig(artist: str) -> dict:
+    res = client.post(
+        "/setlists/manual",
+        json={
+            "artist_name": artist,
+            "venue_name": "O2 Institute",
+            "city": "Birmingham",
+            "country": "United Kingdom",
+            "event_date": "2026-11-26",
+        },
+    )
+    assert res.status_code == 201
+    return res.json()
+
+
+def _patch_gig(gig: dict, **extra):
+    return client.patch(
+        f"/setlists/{gig['id']}",
+        json={
+            "artist_name": gig["artist_name"],
+            "venue_name": "O2 Institute",
+            "city": "Birmingham",
+            "country": "United Kingdom",
+            "event_date": "2026-11-26",
+            **extra,
+        },
+    )
+
+
+def test_patch_support_act_tick_links_to_headliner_and_untick_clears():
+    headliner = _manual_gig("Fat Dog")
+    support = _manual_gig("LEMONSUCKR")
+
+    ticked = _patch_gig(support, is_support_act=True)
+    assert ticked.status_code == 200
+    assert ticked.json()["is_support_act"] is True
+    assert ticked.json()["parent_setlist_id"] == headliner["setlist_id"]
+
+    unticked = _patch_gig(support, is_support_act=False)
+    assert unticked.json()["is_support_act"] is False
+    assert unticked.json()["parent_setlist_id"] is None
+
+
+def test_patch_support_act_refused_when_gig_has_its_own_supports():
+    headliner = _manual_gig("Fat Dog")
+    support = _manual_gig("LEMONSUCKR")
+    assert _patch_gig(support, is_support_act=True).status_code == 200
+
+    res = _patch_gig(headliner, is_support_act=True)
+
+    assert res.status_code == 400
+    assert res.json()["detail"] == "Remove its support acts first."
+
+
+def test_manual_log_with_support_flag():
+    headliner = _manual_gig("Fat Dog")
+    res = client.post(
+        "/setlists/manual",
+        json={
+            "artist_name": "LEMONSUCKR",
+            "venue_name": "O2 Institute",
+            "city": "Birmingham",
+            "country": "United Kingdom",
+            "event_date": "2026-11-26",
+            "is_support_act": True,
+        },
+    )
+    assert res.status_code == 201
+    assert res.json()["is_support_act"] is True
+    assert res.json()["parent_setlist_id"] == headliner["setlist_id"]
+
+
 def test_get_single_attendance_is_owner_only():
     db = TestingSession()
     mine = AttendedConcert(

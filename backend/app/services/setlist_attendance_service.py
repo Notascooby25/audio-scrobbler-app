@@ -463,6 +463,60 @@ class SetlistAttendanceService:
             ListeningEvent.play_id.like(f"setlistfm_{setlist_id}_%"),
         )
 
+    def _set_support_act(self, user_id: int, concert: AttendedConcert, is_support: bool) -> None:
+        """Ticks or unticks "support act" on a gig (not committed).
+
+        Ticking links the gig to the other non-support gig the user logged at the same venue
+        on the same night (the first logged) and moves its scrobbles to the support slot;
+        unticking clears the link and moves them back to the headliner slot.
+        """
+        if is_support == concert.is_support_act:
+            return
+        day = datetime.combine(concert.event_date.date(), datetime.min.time())
+        if is_support:
+            has_supports = (
+                self.db.query(AttendedConcert)
+                .filter_by(user_id=user_id, parent_setlist_id=concert.setlist_id, is_support_act=True)
+                .filter(AttendedConcert.id != concert.id)
+                .count()
+            )
+            if has_supports:
+                raise ValueError("Remove its support acts first.")
+            venue_key = _venue_key(concert.venue_name, concert.city)
+            headliner = next(
+                (
+                    g
+                    for g in self.db.query(AttendedConcert)
+                    .filter_by(user_id=user_id, is_support_act=False)
+                    .filter(AttendedConcert.id != concert.id)
+                    .order_by(AttendedConcert.id)
+                    .all()
+                    if g.event_date.date() == day.date() and _venue_key(g.venue_name, g.city) == venue_key
+                ),
+                None,
+            )
+            concert.is_support_act = True
+            concert.parent_setlist_id = headliner.setlist_id if headliner else None
+            earlier_supports = (
+                self.db.query(AttendedConcert)
+                .filter_by(user_id=user_id, parent_setlist_id=concert.parent_setlist_id, is_support_act=True)
+                .filter(AttendedConcert.id != concert.id)
+                .count()
+                if headliner
+                else 0
+            )
+            target = day + timedelta(hours=18, minutes=45 + earlier_supports * 45)
+        else:
+            concert.is_support_act = False
+            concert.parent_setlist_id = None
+            target = day + timedelta(hours=20)
+
+        events = self.db.query(ListeningEvent).filter(*self._gig_events(user_id, concert.setlist_id)).all()
+        if events:
+            shift = target - min(event.played_at for event in events)
+            for event in events:
+                event.played_at = event.played_at + shift
+
     def update_concert_details(
         self,
         user_id: int,
@@ -477,6 +531,7 @@ class SetlistAttendanceService:
         is_festival: bool | None = None,
         festival_name: str | None = None,
         is_cover_band: bool | None = None,
+        is_support_act: bool | None = None,
     ) -> AttendedConcert:
         """Corrects a gig's details. Its scrobbles, and support acts logged under it, move
         with it. Setlist.fm's copy (raw_data) is left alone, so Refresh only updates songs."""
@@ -531,6 +586,9 @@ class SetlistAttendanceService:
                     **({"tour": tour} if gig is concert else {}),
                 }
 
+        if is_support_act is not None:
+            self._set_support_act(user_id, concert, is_support_act)
+
         self.db.commit()
         self.db.refresh(concert)
         return concert
@@ -559,6 +617,7 @@ class SetlistAttendanceService:
         is_festival: bool = False,
         festival_name: str | None = None,
         is_cover_band: bool = False,
+        is_support_act: bool = False,
     ) -> AttendedConcert:
         try:
             event_dt = datetime.strptime(event_date_str, "%Y-%m-%d")
@@ -612,6 +671,8 @@ class SetlistAttendanceService:
             notes=clean_notes,
         )
         self.db.add(concert)
+        if is_support_act:
+            self._set_support_act(user_id, concert, True)
         self.db.commit()
         self.db.refresh(concert)
         return concert
